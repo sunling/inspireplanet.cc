@@ -95,7 +95,7 @@ function copyScreenshotsToDocsAndGenerateHTML() {
   ensureDirSync(docsDir);
   ensureDirSync(docsGeneratedCardsDir);
 
-  const images = fs.readdirSync(screenshotsDir).filter(file => file.endsWith('.png'));
+  const images = fs.readdirSync(screenshotsDir).filter(file => file.endsWith('.png') && !file.startsWith('demo'));
   const imgTags = images.map(file => `<img src="generated_cards/${file}" width="300" style="margin:10px;">`).join('\n');
 
   for (const img of images) {
