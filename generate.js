@@ -77,4 +77,41 @@ function getDateFromEpisode(episodeStr, format = 'full') {
   }
 }
 
+function ensureDirSync(dirPath) {
+  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath);
+}
+
+function copyScreenshotsToDocsAndGenerateHTML() {
+  const screenshotsDir = path.resolve(__dirname, 'screenshots');
+  const docsDir = path.resolve(__dirname, 'docs');
+
+  ensureDirSync(docsDir);
+
+  const images = fs.readdirSync(screenshotsDir).filter(file => file.endsWith('.png'));
+  const imgTags = images.map(file => `<img src="${file}" width="300" style="margin:10px;">`).join('\n');
+
+  // Copy images to docs/
+  for (const img of images) {
+    fs.copyFileSync(path.join(screenshotsDir, img), path.join(docsDir, img));
+  }
+
+  // Generate index.html
+  const html = `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>启发星球金句卡片展示</title>
+</head>
+<body style="font-family: sans-serif; padding: 20px;">
+  <h1>启发星球金句卡片</h1>
+  <div style="display: flex; flex-wrap: wrap;">${imgTags}</div>
+</body>
+</html>`;
+
+  fs.writeFileSync(path.join(docsDir, 'index.html'), html, 'utf8');
+}
+
+copyScreenshotsToDocsAndGenerateHTML();
+
 
