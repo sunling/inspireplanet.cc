@@ -114,4 +114,15 @@ function copyScreenshotsToDocsAndGenerateHTML() {
 
 copyScreenshotsToDocsAndGenerateHTML();
 
+function generateImagesJson() {
+  const imagesDir = path.resolve(__dirname, 'images');
+  const docsDir = path.resolve(__dirname, 'docs');
+  const files = fs.readdirSync(imagesDir).filter(f => f.endsWith('.png') || f.endsWith('.jpg'));
 
+  const outputPath = path.join(docsDir, 'images.json');
+  fs.writeFileSync(outputPath, JSON.stringify(files, null, 2), 'utf8');
+
+  console.log(`✅ 生成 images.json，共 ${files.length} 张图`);
+}
+
+generateImagesJson();
