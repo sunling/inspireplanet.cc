@@ -60,6 +60,29 @@
     </div>
 
     <script>
+        function getDateFromEpisode(episodeStr) {
+            const match = episodeStr.match(/EP(\\d+)/i);
+            if (!match) return { date: '未知', meeting: '未知' };
+
+            const episodeNum = parseInt(match[1]);
+            const base = new Date('2025-04-12'); // EP13 日期
+            const diff = episodeNum - 13;
+
+            const currentDate = new Date(base.getTime() + diff * 7 * 24 * 60 * 60 * 1000);
+            const nextDate = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+            const fmt = (date) => {
+                const m = date.getMonth() + 1;
+                const d = date.getDate();
+                return `${m}月${d}日`;
+            };
+
+            return {
+                date: `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月${currentDate.getDate()}日`,
+                meeting: `${fmt(nextDate)}早8:00`
+            };
+        }
+
         async function loadImages() {
             try {
                 const res = await fetch('images.json');
@@ -67,7 +90,7 @@
                 const select = document.getElementById('image-select');
                 images.forEach(img => {
                     const option = document.createElement('option');
-                    option.value = `images/${img}`;  // ✅ 确保这里有 'images/' 前缀
+                    option.value = `images/${img}`;
                     option.textContent = img;
                     select.appendChild(option);
                 });
@@ -84,6 +107,7 @@
             const detail = document.getElementById('detail').value;
             const episode = document.getElementById('episode').value;
             const imagePath = document.getElementById('image-select').value;
+            const { date, meeting } = getDateFromEpisode(episode);
 
             const html = `
         <div class="title">${title}</div>
@@ -92,8 +116,8 @@
         <div class="section-title">具体的事</div>
         <p>${detail}</p>
         <div class="card-footer">
-          <div class="footer">来自启发星球 ${episode} · 自动生成</div>
-          <div class="meeting">下一次会议：自动 · 欢迎你加入腾讯会议：<span class="highlight">818 7279 2687</span></div>
+          <div class="footer">来自启发星球 EP${episode} · ${date}<</div>
+          <div class="meeting">下一次会议：${meeting} · 欢迎你加入腾讯会议：<span class="highlight">818 7279 2687</span></div>
         </div>`;
 
             document.getElementById('preview').innerHTML = html;
