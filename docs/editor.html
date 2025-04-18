@@ -1,85 +1,94 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-  <meta charset="UTF-8">
-  <title>启发星球卡片编辑器</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <link rel="stylesheet" href="card.css" />
-  <style>
-    body {
-      display: flex;
-      gap: 40px;
-      padding: 40px;
-      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-      background: #f5f5f5;
-    }
-    .form {
-      width: 320px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .form input, .form textarea, .form select {
-      width: 100%;
-      padding: 8px;
-      font-size: 14px;
-    }
-    .form label {
-      font-weight: bold;
-    }
-    .buttons {
-      display: flex;
-      gap: 12px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>启发星球卡片编辑器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="card.css" />
+    <style>
+        body {
+            display: flex;
+            gap: 40px;
+            padding: 40px;
+            font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+            background: #f5f5f5;
+        }
+
+        .form {
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form input,
+        .form textarea,
+        .form select {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        .form label {
+            font-weight: bold;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+        }
+    </style>
 </head>
+
 <body>
-  <div class="form">
-    <label>标题：<input id="title" value="不要等太阳照进来"></label>
-    <label>金句：<textarea id="quote">我不要做等待太阳照到自己的人，我要做在黑夜中自己发光的。</textarea></label>
-    <label>具体的事：<textarea id="detail">李影回忆三年前在低谷时，每周学英语、保持运动...</textarea></label>
-    <label>集数（如 EP14）：<input id="episode" value="EP14"></label>
-    <label>选择背景图：
-      <select id="image-select"></select>
-    </label>
-    <div class="buttons">
-      <button onclick="renderCard()">预览</button>
-      <button onclick="downloadCard()">下载</button>
+    <div class="form">
+        <label>标题：<input id="title" value="不要等太阳照进来"></label>
+        <label>金句：<textarea id="quote">我不要做等待太阳照到自己的人，我要做在黑夜中自己发光的。</textarea></label>
+        <label>具体的事：<textarea id="detail">李影回忆三年前在低谷时，每周学英语、保持运动...</textarea></label>
+        <label>集数（如 EP14）：<input id="episode" value="EP14"></label>
+        <label>选择背景图：
+            <select id="image-select"></select>
+        </label>
+        <div class="buttons">
+            <button onclick="renderCard()">预览</button>
+            <button onclick="downloadCard()">下载</button>
+        </div>
     </div>
-  </div>
-  <div id="preview" class="card">
-    <!-- 卡片内容将在这里生成 -->
-  </div>
+    <div id="preview" class="card">
+        <!-- 卡片内容将在这里生成 -->
+    </div>
 
-  <script>
-    async function loadImages() {
-      try {
-        const res = await fetch('images.json');
-        const images = await res.json();
-        const select = document.getElementById('image-select');
-        images.forEach(img => {
-          const option = document.createElement('option');
-          option.value = `images/${img}`;
-          option.textContent = img;
-          select.appendChild(option);
-        });
-        renderCard();
-      } catch (e) {
-        console.log("loading images is having error");
-      }
-    }
+    <script>
+        async function loadImages() {
+            try {
+                const res = await fetch('images.json');
+                const images = await res.json();
+                const select = document.getElementById('image-select');
+                images.forEach(img => {
+                    const option = document.createElement('option');
+                    option.value = `images/${img}`;  // ✅ 确保这里有 'images/' 前缀
+                    option.textContent = img;
+                    select.appendChild(option);
+                });
 
-    function renderCard() {
-      const title = document.getElementById('title').value;
-      const quote = document.getElementById('quote').value;
-      const detail = document.getElementById('detail').value;
-      const episode = document.getElementById('episode').value;
-      const imagePath = document.getElementById('image-select').value;
+                renderCard();
+            } catch (e) {
+                console.log("loading images is having error");
+            }
+        }
 
-      const html = `
+        function renderCard() {
+            const title = document.getElementById('title').value;
+            const quote = document.getElementById('quote').value;
+            const detail = document.getElementById('detail').value;
+            const episode = document.getElementById('episode').value;
+            const imagePath = document.getElementById('image-select').value;
+
+            const html = `
         <div class="title">${title}</div>
         <div class="quote-box">${quote}</div>
-        <img src="${imagePath}" onerror="this.style.display='none'" />
+        <img src="images/${imagePath}" onerror="this.style.display='none'" />
         <div class="section-title">具体的事</div>
         <p>${detail}</p>
         <div class="card-footer">
@@ -87,19 +96,20 @@
           <div class="meeting">下一次会议：自动 · 欢迎你加入腾讯会议：<span class="highlight">818 7279 2687</span></div>
         </div>`;
 
-      document.getElementById('preview').innerHTML = html;
-    }
+            document.getElementById('preview').innerHTML = html;
+        }
 
-    function downloadCard() {
-      html2canvas(document.getElementById('preview')).then(canvas => {
-        const link = document.createElement('a');
-        link.download = 'inspiration-card.png';
-        link.href = canvas.toDataURL();
-        link.click();
-      });
-    }
+        function downloadCard() {
+            html2canvas(document.getElementById('preview')).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'inspiration-card.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
 
-    window.onload = loadImages;
-  </script>
+        window.onload = loadImages;
+    </script>
 </body>
+
 </html>
