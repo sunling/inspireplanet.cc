@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>启发星球卡片编辑器</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="card.css" />
   <style>
     body {
       display: flex;
@@ -29,67 +30,6 @@
     .buttons {
       display: flex;
       gap: 12px;
-    }
-    .card {
-      width: 420px;
-      background: #323449;
-      color: #f1f1f1;
-      padding-bottom: 12px;
-      overflow: hidden;
-    }
-    .card h1 {
-      font-size: 24px;
-      text-align: center;
-      padding-top: 20px;
-    }
-    .quote-box {
-      background: #fff2ec;
-      margin: 16px 20px;
-      border-radius: 8px;
-      padding: 12px;
-      color: #ff7900;
-      font-style: italic;
-      font-weight: 600;
-      font-size: 22px;
-    }
-    .card img {
-      display: block;
-      width: 90%;
-      max-height: 250px;
-      object-fit: cover;
-      margin: 0 auto 20px;
-      border-radius: 12px;
-    }
-    .section-title {
-      color: #BCA88E;
-      font-weight: bold;
-      font-size: 16px;
-      margin: 0 20px 8px;
-    }
-    .card p {
-      font-size: 14px;
-      line-height: 1.7;
-      padding: 0 20px;
-      margin: 0 0 12px;
-    }
-    .card-footer {
-      padding: 0 20px 16px;
-      text-align: right;
-    }
-    .footer {
-      font-size: 13px;
-      color: #8faadc;
-      font-style: italic;
-      margin-bottom: 4px;
-    }
-    .meeting {
-      font-size: 13px;
-      color: #8faadc;
-    }
-    .highlight {
-      color: #FFDE59;
-      font-weight: bold;
-      font-style: normal;
     }
   </style>
 </head>
@@ -137,7 +77,7 @@
       const imagePath = document.getElementById('image-select').value;
 
       const html = `
-        <h1>${title}</h1>
+        <div class="title">${title}</div>
         <div class="quote-box">${quote}</div>
         <img src="${imagePath}" onerror="this.style.display='none'" />
         <div class="section-title">具体的事</div>
