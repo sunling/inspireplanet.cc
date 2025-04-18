@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>{{title}}</title>
+  <style>
+    * {
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    }
+
+    .card {
+      width: 420px;
+      background: #323449;
+      overflow: hidden;
+      color: #f1f1f1;
+      box-shadow: none;
+    }
+
+    .card h1 {
+      font-size: 24px;
+      text-align: center;
+      color: #fff;
+    }
+
+    .title {
+      font-size: 28px;
+      text-align: center;
+      padding: 20px 10px 0;
+      font-weight: bold;
+    }
+
+    .quote-box {
+      background: #fff2ec;
+      margin: 16px 20px;
+      border-radius: 8px;
+      padding: 12px;
+      color: #ff7900;
+      font-style: italic;
+      font-weight: 600;
+      font-size: 22px;
+    }
+
+    .card img {
+      display: block;
+      width: 90%;
+      max-height: 250px;
+      object-fit: cover;
+      margin: 0 auto 20px;
+      border-radius: 12px;
+    }
+
+    .section-title {
+      color: #BCA88E;
+      font-weight: bold;
+      font-size: 16px;
+      margin: 0 20px 8px;
+    }
+
+    .card p {
+      font-size: 14px;
+      line-height: 1.7;
+      padding: 0 20px 20px;
+      margin: 0;
+    }
+
+    .card-footer {
+      padding: 0 20px 16px;
+      text-align: right;
+    }
+
+    .footer {
+      font-size: 13px;
+      color: #8faadc;
+      font-style: italic;
+      margin-bottom: 4px;
+    }
+
+    .meeting {
+      font-size: 13px;
+      color: #8faadc;
+    }
+
+    .highlight {
+      color: #FFDE59;
+      font-weight: bold;
+      font-style: normal;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div class="title">{{title}}</div>
+    <div class="quote-box">{{quote}}</div>
+    <img id="quote-image" src="{{imagePath}}" alt="金句插图" />
+    <div class="section-title">具体的事</div>
+    <p>{{detail}}</p>
+    <div class="card-footer">
+      <div class="footer">来自启发星球 {{episode}} · {{date}}</div>
+      <div class="meeting">{{meetingTime}} 欢迎你加入腾讯会议：<span class="highlight">{{meetingId}}</span></div>
+    </div>
+  </div>
+</body>
+
+</html>
