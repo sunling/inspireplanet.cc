@@ -3,6 +3,10 @@
 一个用于生成【启发星球】金句卡片的自动化图文工具。  
 支持批量生成高质量截图，适用于公众号、小红书等平台发布。
 
+<p align="center" alt="demo">
+  <img src="screenshots/biking.png" alt="金句卡片示例" width="400"/>
+</p>
+
 ---
 
 ## 🧩 项目功能
@@ -41,7 +45,7 @@ npm install puppeteer
 
 ```json
 {
-  "id": "sunlitkitchen",   // 对应 images/sunlitkitchen.png
+  "id": "biking",   // 对应 images/biking.png
   ...
 }
 ```
@@ -53,7 +57,7 @@ npm install puppeteer
 ```json
 [
   {
-    "id": "sunlitkitchen",
+    "id": "biking",
     "title": "不要等太阳照进来",
     "quote": "我不要做等待太阳照到自己的人...",
     "detail": "李影回忆三年前在低谷时...",
