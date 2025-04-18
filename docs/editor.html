@@ -47,6 +47,7 @@
         <label>金句：<textarea id="quote">我不要做等待太阳照到自己的人，我要做在黑夜中自己发光的。</textarea></label>
         <label>具体的事：<textarea id="detail">李影回忆三年前在低谷时，每周学英语、保持运动...</textarea></label>
         <label>EP（如14）：<input id="episode" type="number" value="14"></label>
+        <label>腾讯会议号：<input id="meetingId" value="818 7279 2687"></label>
         <label>选择背景图：
             <select id="image-select"></select>
         </label>
@@ -104,16 +105,19 @@
             const episode = document.getElementById('episode').value;
             const imagePath = document.getElementById('image-select').value;
             const { date, meeting } = getDateFromEpisode(episode);
+            const meetingId = document.getElementById('meetingId').value;
 
             const html = `
-        <div class="title">${title}</div>
-        <div class="quote-box">${quote}</div>
-        <img src="${imagePath}" onerror="this.style.display='none'" />
-        <div class="section-title">具体的事</div>
-        <p>${detail}</p>
-        <div class="card-footer">
-          <div class="footer">来自启发星球 EP${episode} · ${date}</div>
-          <div class="meeting">下一次会议：${meeting} · 欢迎你加入腾讯会议：<span class="highlight">818 7279 2687</span></div>
+        <div class="card">
+            <div class="title">${title}</div>
+            <div class="quote-box">${quote}</div>
+            <img id="quote-image" src="${imagePath}" alt="金句插图" />
+            <div class="section-title">具体的事</div>
+            <p>${detail}</p>
+            <div class="card-footer">
+                <div class="footer">来自启发星球EP${episode} · ${date}</div>
+                <div class="meeting">${meeting} 欢迎你加入腾讯会议：<span class="highlight">${meetingId}</span></div>
+            </div>
         </div>`;
 
             document.getElementById('preview').innerHTML = html;
