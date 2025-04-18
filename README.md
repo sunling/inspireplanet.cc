@@ -4,7 +4,7 @@
 支持批量生成高质量截图，适用于公众号、小红书等平台发布。
 
 <p align="center" alt="demo">
-  <img src="screenshots/biking.png" alt="金句卡片示例" width="400"/>
+  <img src="screenshots/demo.png" alt="金句卡片示例" width="400"/>
 </p>
 
 ---

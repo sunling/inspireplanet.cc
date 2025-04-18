@@ -13,13 +13,15 @@ const path = require('path');
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
+  const screenshotTasks = [];
+
   for (const item of data) {
     const imageFullPath = 'file://' + path.resolve(__dirname, `docs/images/${item.id}.png`);
 
-    const date = getDateFromEpisode(item.episode || 'EP14');        // 例：2025年4月19日
-    const meetingTime = getDateFromEpisode(item.episode, 'meeting'); // 例：4月19日早8:00
+    const date = getDateFromEpisode(item.episode || 'EP14');
+    const meetingTime = getDateFromEpisode(item.episode, 'meeting');
     const meetingId = item.meeting_id || DEFAULT_MEETING_ID;
-    // 替换模板变量
+
     const html = template
       .replaceAll('{{title}}', item.title)
       .replace('{{quote}}', item.quote)
@@ -38,29 +40,33 @@ const path = require('path');
     await page.waitForSelector('.card');
 
     await page.setViewport({
-      width: 840, // 原始宽度 * 2
-      height: 1200, // 适配你的卡片高度，可动态算也行
-      deviceScaleFactor: 2.5, // 2倍高清
+      width: 840,
+      height: 1200,
+      deviceScaleFactor: 2.5,
     });
 
-    // 只截图卡片区域，避免白边
     const card = await page.$('.card');
-    await card.screenshot({ path: `screenshots/${item.episode}${item.id}.png` });
+    const screenshotPath = `screenshots/${item.episode}${item.id}.png`;
+    await card.screenshot({ path: screenshotPath });  // 立即截图
 
-    await page.close();
-    fs.unlinkSync(tempPath);
+    await page.close();     // ✅ 然后再关闭页面
+    fs.unlinkSync(tempPath); // ✅ 然后再删 html
   }
 
+  await Promise.all(screenshotTasks);
   await browser.close();
+
+  copyScreenshotsToDocsAndGenerateHTML();
+  generateImagesJson();
 })();
 
 function getDateFromEpisode(episodeStr, format = 'full') {
-  const baseDate = new Date(Date.UTC(2025, 3, 12)); // 2025-04-12 是 EP13（UTC 时间）
+  const baseDate = new Date(Date.UTC(2025, 3, 12));
   const epNum = parseInt(episodeStr.replace('EP', ''), 10);
   const weeksSince13 = epNum - 13;
 
   const contentDate = new Date(baseDate.getTime() + weeksSince13 * 7 * 24 * 60 * 60 * 1000);
-  const meetingDate = new Date(contentDate.getTime() + 7 * 24 * 60 * 60 * 1000); // 下一周
+  const meetingDate = new Date(contentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const getDateParts = (d) => ({
     year: d.getUTCFullYear(),
@@ -92,12 +98,32 @@ function copyScreenshotsToDocsAndGenerateHTML() {
   const images = fs.readdirSync(screenshotsDir).filter(file => file.endsWith('.png'));
   const imgTags = images.map(file => `<img src="generated_cards/${file}" width="300" style="margin:10px;">`).join('\n');
 
-  // Copy images to docs/
   for (const img of images) {
-    fs.copyFileSync(path.join(screenshotsDir, img), path.join(docsGeneratedCardsDir, img));
+    const src = path.join(screenshotsDir, img);
+    const dest = path.join(docsGeneratedCardsDir, img);
+
+    const srcStat = fs.statSync(src);
+    let shouldCopy = false;
+
+    if (!fs.existsSync(dest)) {
+      shouldCopy = true;
+    } else {
+      try {
+        const destStat = fs.statSync(dest);
+        shouldCopy = !destStat.isFile() || srcStat.mtimeMs > destStat.mtimeMs;
+      } catch (e) {
+        shouldCopy = true;
+      }
+    }
+
+    if (shouldCopy) {
+      fs.copyFileSync(src, dest);
+      console.log(`✅ copied/updated: ${img}`);
+    } else {
+      console.log(`⏭  skipped (up to date): ${img}`);
+    }
   }
 
-  // Generate index.html
   const html = `
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -114,8 +140,6 @@ function copyScreenshotsToDocsAndGenerateHTML() {
   fs.writeFileSync(path.join(docsDir, 'index.html'), html, 'utf8');
 }
 
-copyScreenshotsToDocsAndGenerateHTML();
-
 function generateImagesJson() {
   const imagesDir = path.resolve(__dirname, 'docs/images');
   const docsDir = path.resolve(__dirname, 'docs');
@@ -124,5 +148,3 @@ function generateImagesJson() {
   const outputPath = path.join(docsDir, 'images.json');
   fs.writeFileSync(outputPath, JSON.stringify(files, null, 2), 'utf8');
 }
-
-generateImagesJson();
