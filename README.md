@@ -1,3 +1,5 @@
+🌍 Looking for English? [Click here to read in English](./README.en.md)
+
 # 🌍 flashcard-for-inspiration-planet
 
 一个用于生成【启发星球】金句卡片的自动化图文工具  
