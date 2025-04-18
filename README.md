@@ -1,20 +1,22 @@
 # 🌍 flashcard-for-inspiration-planet
 
-一个用于生成【启发星球】金句卡片的自动化图文工具。  
-支持批量生成高质量截图，适用于公众号、小红书等平台发布。
+一个用于生成【启发星球】金句卡片的自动化图文工具  
+支持批量生成高质量截图 + 自动发布到 GitHub Pages，用于公众号、小红书等图文发布平台。
 
 <p align="center" alt="demo">
   <img src="screenshots/demo.png" alt="金句卡片示例" width="400"/>
 </p>
 
+
 ---
 
-## 🧩 项目功能
+## 🔥 在线预览
 
-- 📅 自动根据集数（episode）生成对应发布日期和下一次会议时间
-- 🖼 支持自定义配图，每张图对应一张卡片
-- 📸 使用 Puppeteer 截图 `.card` 元素，输出高清、无边框金句图
-- 🧠 支持多个金句数据批量导出
+👉 页面地址：  
+[https://sunling.github.io/flashcard-for-inspiration-planet/](https://sunling.github.io/flashcard-for-inspiration-planet/)
+
+👉 在线编辑器：  
+[https://sunling.github.io/flashcard-for-inspiration-planet/editor.html](https://sunling.github.io/flashcard-for-inspiration-planet/editor.html)
 
 ---
 
@@ -22,16 +24,32 @@
 
 ```
 flashcard-for-inspiration-planet/
-├── data.json            # 金句数据，仅需提供 episode、title、quote 等
-├── template.html        # 卡片 HTML 模板，支持 {{变量}} 占位符
-├── generate.js          # 生成器脚本，自动替换+截图
-├── images/              # 存放配图，文件名需与 data.json 中 id 对应
-└── screenshots/         # 输出目录，保存每张金句卡图（自动生成）
+├── data.json                 # 金句数据源，每条包含 title, quote, id, episode 等字段
+├── template.html             # 卡片 HTML 模板，支持变量替换
+├── card.css                  # 卡片统一样式，供 template/editor 共用
+├── generate.js               # 核心生成脚本：截图 + 发布 + 图文更新
+├── screenshots/              # 所有生成截图会先保存到这里
+├── docs/
+│   ├── index.html            # 自动生成的展示页（由 generate.js 生成）
+│   ├── editor.html           # 可视化金句编辑器，可在线预览与下载
+│   ├── images.json           # 自动生成的图片列表，供 editor 使用
+│   ├── images/               # 存放卡片插图，图片名称需与 id 匹配
+│   └── generated_cards/      # 自动生成的卡片截图（最终用于展示）
 ```
 
 ---
 
-## ✍️ 使用说明
+## ✨ 功能亮点
+
+- 🖼 卡片截图高清，自动裁边，支持高倍分辨率
+- ⏱ 日期 & 会议时间根据集数自动推算
+- 🔁 已生成的图片自动跳过，避免重复计算
+- 🧠 支持批量生成、可视化编辑与本地下载
+- 🌐 自动生成展示页面，托管在 GitHub Pages
+
+---
+
+## 🚀 使用说明
 
 ### 1. 安装依赖
 
@@ -39,62 +57,47 @@ flashcard-for-inspiration-planet/
 npm install puppeteer
 ```
 
-### 2. 添加图片到 `images/`
-
-确保每条数据的 `id` 对应一张图片，例如：
-
-```json
-{
-  "id": "biking",   // 对应 images/biking.png
-  ...
-}
-```
-
-### 3. 编写或编辑 `data.json`
-
-你只需要写：
-
-```json
-[
-  {
-    "id": "biking",
-    "title": "不要等太阳照进来",
-    "quote": "我不要做等待太阳照到自己的人...",
-    "detail": "李影回忆三年前在低谷时...",
-    "episode": "EP14"
-  }
-]
-```
-
-🧠 系统会自动生成：
-- `date`: 例如 `2025年4月19日`
-- `meeting`: 下一期会议时间，如 `4月26日早8:00`
-- `meeting_id`: 默认统一会议号 `818 7279 2687`
+> 🧠 mac 用户需手动指定 Chrome 路径，已在 generate.js 中设定
 
 ---
 
-### 4. 运行生成脚本
+### 2. 准备数据和图片
+
+- 在 `data.json` 中填写每一张卡片信息
+- 确保每条数据的 `id` 对应 `docs/images/` 中的图片
+
+---
+
+### 3. 生成卡片
 
 ```bash
 node generate.js
 ```
 
-生成的截图将保存在 `screenshots/` 文件夹中。
+完成以下步骤：
+- ⏳ 渲染并截图 `.card` 元素（每张一张）
+- 📁 自动复制新图至 `docs/generated_cards/`
+- 🌐 自动生成 `index.html` 和 `images.json`
+- ✅ GitHub Pages 页面即时可用！
 
 ---
 
-## ⚙️ 自动逻辑说明
+## 🧑‍💻 在线编辑器
 
-| 字段名       | 说明                              |
-|--------------|-----------------------------------|
-| `episode`    | 例如 "EP14"，从 EP13 开始推算日期 |
-| `date`       | 自动生成：每集对应的发布日期      |
-| `meeting`    | 自动生成：下一集的会议时间        |
-| `meeting_id` | 使用统一会议号，无需重复填写       |
+在浏览器中访问：
+
+```
+https://sunling.github.io/flashcard-for-inspiration-planet/editor.html
+```
+
+支持：
+- 填写字段实时预览
+- 更换图片插图
+- 下载 PNG 截图
 
 ---
 
-## 🧡 联系作者
+## 🧡 由谁创造
 
-由 [Ling Sun](https://sunling.github.io) 设计与使用。  
-如果你也想为社群内容自动生成精美图文，欢迎参考和复用 ✨
+由 [Ling Sun](https://sunling.github.io) 设计并持续维护  
+欢迎复用、提问或提出改进建议 ✨
