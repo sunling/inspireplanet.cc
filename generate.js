@@ -14,7 +14,7 @@ const path = require('path');
   });
 
   for (const item of data) {
-    const imageFullPath = 'file://' + path.resolve(__dirname, `images/${item.id}.png`);
+    const imageFullPath = 'file://' + path.resolve(__dirname, `docs/images/${item.id}.png`);
 
     const date = getDateFromEpisode(item.episode || 'EP14');        // 例：2025年4月19日
     const meetingTime = getDateFromEpisode(item.episode, 'meeting'); // 例：4月19日早8:00
@@ -45,7 +45,7 @@ const path = require('path');
 
     // 只截图卡片区域，避免白边
     const card = await page.$('.card');
-    await card.screenshot({ path: `screenshots/${item.id}.png` });
+    await card.screenshot({ path: `screenshots/${item.episode}${item.id}.png` });
 
     await page.close();
     fs.unlinkSync(tempPath);
@@ -84,15 +84,17 @@ function ensureDirSync(dirPath) {
 function copyScreenshotsToDocsAndGenerateHTML() {
   const screenshotsDir = path.resolve(__dirname, 'screenshots');
   const docsDir = path.resolve(__dirname, 'docs');
+  const docsGeneratedCardsDir = path.resolve(__dirname, 'docs/generated_cards');
 
   ensureDirSync(docsDir);
+  ensureDirSync(docsGeneratedCardsDir);
 
   const images = fs.readdirSync(screenshotsDir).filter(file => file.endsWith('.png'));
-  const imgTags = images.map(file => `<img src="${file}" width="300" style="margin:10px;">`).join('\n');
+  const imgTags = images.map(file => `<img src="generated_cards/${file}" width="300" style="margin:10px;">`).join('\n');
 
   // Copy images to docs/
   for (const img of images) {
-    fs.copyFileSync(path.join(screenshotsDir, img), path.join(docsDir, img));
+    fs.copyFileSync(path.join(screenshotsDir, img), path.join(docsGeneratedCardsDir, img));
   }
 
   // Generate index.html
@@ -115,14 +117,12 @@ function copyScreenshotsToDocsAndGenerateHTML() {
 copyScreenshotsToDocsAndGenerateHTML();
 
 function generateImagesJson() {
-  const imagesDir = path.resolve(__dirname, 'images');
+  const imagesDir = path.resolve(__dirname, 'docs/images');
   const docsDir = path.resolve(__dirname, 'docs');
   const files = fs.readdirSync(imagesDir).filter(f => f.endsWith('.png') || f.endsWith('.jpg'));
 
   const outputPath = path.join(docsDir, 'images.json');
   fs.writeFileSync(outputPath, JSON.stringify(files, null, 2), 'utf8');
-
-  console.log(`✅ 生成 images.json，共 ${files.length} 张图`);
 }
 
 generateImagesJson();
