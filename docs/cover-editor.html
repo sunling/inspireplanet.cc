@@ -73,29 +73,23 @@
         console.error("加载 images.json 出错", e);
       }
     }
-
-    function renderCover() {
+    function renderCard() {
       const k1 = document.getElementById('k1').value;
       const k2 = document.getElementById('k2').value;
       const k3 = document.getElementById('k3').value;
       const q = document.getElementById('question').value;
       const bg = document.getElementById('image-select').value;
 
-      const preview = document.getElementById('preview');
-      preview.innerHTML = '';
-      preview.className = 'cover';
-      preview.style.backgroundImage = `url('${bg}')`;
+        const html = `
+        <div class="bg" id="bg"></div>
+        <div class="content">
+          <div class="keywords" id="keywords">${k1} ｜ ${k2}  ｜ ${k3} </div>
+          <div class="question" id="question">${q}</div>
+        </div>`;
 
-      const title = document.createElement('div');
-      title.className = 'cover-title';
-      title.textContent = q;
-
-      const keywords = document.createElement('div');
-      keywords.className = 'cover-keywords';
-      keywords.textContent = `${k1} · ${k2} · ${k3}`;
-
-      preview.appendChild(keywords);
-      preview.appendChild(title);
+        document.getElementById('preview').innerHTML = html;
+        const preview = document.getElementById('preview');
+        preview.style.backgroundImage = `url('${bg}')`;
     }
 
     function downloadCover() {
