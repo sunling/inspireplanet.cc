@@ -52,7 +52,7 @@
     </div>
   </div>
 
-  <div id="preview" class="cover" style="width:900px;height:383px;border:none;background:#1a1a1a;color:#fff;position:relative;padding:20px;">
+  <div id="preview" class="cover">
     <!-- 封面图内容将在这里生成 -->
   </div>
 
@@ -81,15 +81,21 @@
       const q = document.getElementById('question').value;
       const bg = document.getElementById('image-select').value;
 
-      const html = `
-        <div style="width:100%;height:100%;background-image:url('${bg}');background-size:cover;background-position:center;position:relative;border-radius:10px;">
-          <div style="position:absolute;bottom:30px;left:30px;color:white;text-shadow:0 2px 4px rgba(0,0,0,0.4);">
-            <div style="font-size:20px;margin-bottom:4px;">${k1} · ${k2} · ${k3}</div>
-            <div style="font-size:28px;font-weight:bold;">${q}</div>
-          </div>
-        </div>`;
+      const preview = document.getElementById('preview');
+      preview.innerHTML = '';
+      preview.className = 'cover';
+      preview.style.backgroundImage = `url('${bg}')`;
 
-      document.getElementById('preview').innerHTML = html;
+      const title = document.createElement('div');
+      title.className = 'cover-title';
+      title.textContent = q;
+
+      const keywords = document.createElement('div');
+      keywords.className = 'cover-keywords';
+      keywords.textContent = `${k1} · ${k2} · ${k3}`;
+
+      preview.appendChild(keywords);
+      preview.appendChild(title);
     }
 
     function downloadCover() {
