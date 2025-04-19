@@ -1,0 +1,11 @@
+{
+  "name": "flashcard-for-inspiration-planet",
+  "version": "1.0.0",
+  "scripts": {
+    "gen:cover": "node scripts/generate-cover.js",
+    "gen:cards": "node scripts/generate-card.js"
+  },
+  "dependencies": {
+    "puppeteer": "^24.6.1"
+  }
+}

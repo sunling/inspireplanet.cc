@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>封面图生成器</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+      display: flex;
+      gap: 40px;
+      padding: 40px;
+      background: #f4f4f4;
+    }
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 300px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select {
+      padding: 6px 10px;
+      font-size: 14px;
+    }
+    #preview-container {
+      background: #1a1a1a;
+      padding: 30px;
+    }
+    #preview {
+      width: 900px;
+      height: 383px;
+      border: none;
+      background: white;
+    }
+    button {
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="form">
+    <label>关键词1：<input id="k1" value="自燃" /></label>
+    <label>关键词2：<input id="k2" value="火种" /></label>
+    <label>关键词3：<input id="k3" value="迷茫" /></label>
+    <label>引导问题（&lt;8字）：<input id="q" value="你最近被什么点燃？" /></label>
+    <label>选择背景图：
+      <select id="bg"></select>
+    </label>
+    <button onclick="render()">预览</button>
+    <button onclick="downloadImage()">下载</button>
+  </div>
+
+  <div id="preview-container">
+    <iframe id="preview"></iframe>
+  </div>
+
+  <script>
+    const bgSelect = document.getElementById('bg');
+    fetch('../docs/images.json')
+      .then(res => res.json())
+      .then(images => {
+        images.forEach(img => {
+          const option = document.createElement('option');
+          option.value = `../docs/images/${img}`;
+          option.textContent = img;
+          bgSelect.appendChild(option);
+        });
+        render();
+      });
+
+    function render() {
+      const k1 = encodeURIComponent(document.getElementById('k1').value);
+      const k2 = encodeURIComponent(document.getElementById('k2').value);
+      const k3 = encodeURIComponent(document.getElementById('k3').value);
+      const q = encodeURIComponent(document.getElementById('q').value);
+      const bg = encodeURIComponent(document.getElementById('bg').value);
+      const url = `/templates/cover.html?k1=${k1}&k2=${k2}&k3=${k3}&q=${q}&bg=${bg}`;
+      document.getElementById('preview').src = url;
+    }
+
+    function downloadImage() {
+      const iframe = document.getElementById('preview');
+      html2canvas(iframe.contentDocument.body).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'cover.png';
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    }
+  </script>
+
+  <!-- 使用 html2canvas 截图 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</body>
+</html>
