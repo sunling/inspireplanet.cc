@@ -3,14 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>通用封面图</title>
+  <link rel="stylesheet" href="../docs/cover.css" />
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-font-smoothing: antialiased;
-    }
-
     body {
       width: 900px;
       height: 383px;
@@ -21,40 +15,6 @@
       display: flex;
       justify-content: center;
       align-items: center;
-    }
-
-    .bg {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      background-size: cover;
-      background-position: center;
-      filter: brightness(0.45);
-    }
-
-    .content {
-      position: relative;
-      z-index: 1;
-      width: 90%;
-      text-align: center;
-      color: #f1f1f1;
-    }
-
-    .keywords {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 24px;
-      font-size: 16px;
-      font-weight: 500;
-      color: #FFDE59;
-    }
-
-    .question {
-      font-size: 32px;
-      font-weight: 700;
-      color: #ffffff;
-      padding: 0 20px;
     }
   </style>
 </head>
@@ -71,7 +31,7 @@
     const k2 = params.get('k2') || '关键词二';
     const k3 = params.get('k3') || '关键词三';
     const q  = params.get('q') || '这是一个问题';
-    const bg = params.get('bg') || 'docs/images/fieldtools.png';
+    const bg = params.get('bg') || '../docs/images/fieldtools.png';
 
     document.getElementById('keywords').textContent = `${k1} ｜ ${k2} ｜ ${k3}`;
     document.getElementById('question').textContent = q;
