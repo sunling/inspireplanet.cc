@@ -1,99 +1,107 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <title>封面图生成器</title>
+  <meta charset="UTF-8">
+  <title>启发星球封面图编辑器</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="cover.css" />
   <style>
+    * {
+      -webkit-font-smoothing: antialiased;
+    }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
       display: flex;
       gap: 40px;
       padding: 40px;
-      background: #f4f4f4;
+      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: #f5f5f5;
     }
     .form {
+      width: 320px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      width: 300px;
+      gap: 16px;
     }
-    label {
+    .form input,
+    .form select {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+    }
+    .form label {
       font-weight: bold;
     }
-    input, select {
-      padding: 6px 10px;
-      font-size: 14px;
-    }
-    #preview-container {
-      background: #1a1a1a;
-      padding: 30px;
-    }
-    #preview {
-      width: 900px;
-      height: 383px;
-      border: none;
-      background: white;
-    }
-    button {
-      padding: 8px 12px;
-      font-size: 14px;
-      cursor: pointer;
+    .buttons {
+      display: flex;
+      gap: 12px;
     }
   </style>
 </head>
 <body>
   <div class="form">
-    <label>关键词1：<input id="k1" value="自燃" /></label>
-    <label>关键词2：<input id="k2" value="火种" /></label>
-    <label>关键词3：<input id="k3" value="迷茫" /></label>
-    <label>引导问题（&lt;8字）：<input id="q" value="你最近被什么点燃？" /></label>
+    <label>关键词 1：<input id="k1" value="自燃"></label>
+    <label>关键词 2：<input id="k2" value="火种"></label>
+    <label>关键词 3：<input id="k3" value="迷茫"></label>
+    <label>引导问题（<8字）：<input id="question" value="你最近被什么点燃？"></label>
     <label>选择背景图：
-      <select id="bg"></select>
+      <select id="image-select"></select>
     </label>
-    <button onclick="render()">预览</button>
-    <button onclick="downloadImage()">下载</button>
+    <div class="buttons">
+      <button onclick="renderCover()">预览</button>
+      <button onclick="downloadCover()">下载</button>
+    </div>
   </div>
 
-  <div id="preview-container">
-    <iframe id="preview"></iframe>
+  <div id="preview" class="cover" style="width:900px;height:383px;border:none;background:#1a1a1a;color:#fff;position:relative;padding:20px;">
+    <!-- 封面图内容将在这里生成 -->
   </div>
 
   <script>
-    const bgSelect = document.getElementById('bg');
-    fetch('../docs/images.json')
-      .then(res => res.json())
-      .then(images => {
+    async function loadImages() {
+      try {
+        const res = await fetch('docs/images.json');
+        const images = await res.json();
+        const select = document.getElementById('image-select');
         images.forEach(img => {
           const option = document.createElement('option');
-          option.value = `../docs/images/${img}`;
+          option.value = `docs/images/${img}`;
           option.textContent = img;
-          bgSelect.appendChild(option);
+          select.appendChild(option);
         });
-        render();
-      });
-
-    function render() {
-      const k1 = encodeURIComponent(document.getElementById('k1').value);
-      const k2 = encodeURIComponent(document.getElementById('k2').value);
-      const k3 = encodeURIComponent(document.getElementById('k3').value);
-      const q = encodeURIComponent(document.getElementById('q').value);
-      const bg = encodeURIComponent(document.getElementById('bg').value);
-      const url = `/templates/cover.html?k1=${k1}&k2=${k2}&k3=${k3}&q=${q}&bg=${bg}`;
-      document.getElementById('preview').src = url;
+        renderCover();
+      } catch (e) {
+        console.error("加载 images.json 出错", e);
+      }
     }
 
-    function downloadImage() {
-      const iframe = document.getElementById('preview');
-      html2canvas(iframe.contentDocument.body).then(canvas => {
+    function renderCover() {
+      const k1 = document.getElementById('k1').value;
+      const k2 = document.getElementById('k2').value;
+      const k3 = document.getElementById('k3').value;
+      const q = document.getElementById('question').value;
+      const bg = document.getElementById('image-select').value;
+
+      const html = `
+        <div style="width:100%;height:100%;background-image:url('${bg}');background-size:cover;background-position:center;position:relative;border-radius:10px;">
+          <div style="position:absolute;bottom:30px;left:30px;color:white;text-shadow:0 2px 4px rgba(0,0,0,0.4);">
+            <div style="font-size:20px;margin-bottom:4px;">${k1} · ${k2} · ${k3}</div>
+            <div style="font-size:28px;font-weight:bold;">${q}</div>
+          </div>
+        </div>`;
+
+      document.getElementById('preview').innerHTML = html;
+    }
+
+    function downloadCover() {
+      html2canvas(document.getElementById('preview')).then(canvas => {
         const link = document.createElement('a');
-        link.download = 'cover.png';
+        link.download = 'inspiration-cover.png';
         link.href = canvas.toDataURL();
         link.click();
       });
     }
-  </script>
 
-  <!-- 使用 html2canvas 截图 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    window.onload = loadImages;
+  </script>
 </body>
 </html>
