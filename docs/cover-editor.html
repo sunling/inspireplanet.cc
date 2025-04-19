@@ -59,7 +59,7 @@
   <script>
     async function loadImages() {
       try {
-        const res = await fetch('docs/images.json');
+        const res = await fetch('images.json');
         const images = await res.json();
         const select = document.getElementById('image-select');
         images.forEach(img => {
