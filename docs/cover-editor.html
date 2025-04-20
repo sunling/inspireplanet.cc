@@ -81,14 +81,14 @@
       const bg = document.getElementById('image-select').value;
 
         const html = `
-        <div class="bg" id="bg"></div>
+        <div class="bg" id="bg" style="background-image: url('${bg}')"></div>
         <div class="content">
           <div class="keywords" id="keywords">${k1} ｜ ${k2}  ｜ ${k3} </div>
           <div class="question" id="question">${q}</div>
         </div>`;
 
         // set up the background image
-        document.getElementById("bg").style.backgroundImage= `url('${bg}')`;
+        // document.getElementById("bg").style.backgroundImage= `url('${bg}')`;
         document.getElementById('preview').innerHTML = html;
     }
 
