@@ -14,39 +14,6 @@
   filter: brightness(0.45);
 }
 
-.cover {
-  width: 900px;
-  height: 383px;
-  position: relative;
-  border-radius: 4px;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  color: #fff;
-  padding: 40px;
-  box-sizing: border-box;
-  font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-}
-
-.cover-keywords {
-  color: #FFDE59;
-  font-size: 18px;
-  text-align: center;
-  margin-bottom: 16px;
-  font-weight: 500;
-}
-
-.cover-title {
-  font-size: 32px;
-  font-weight: bold;
-  text-align: center;
-  line-height: 1.5;
-  color: #ffffff;
-}
-
 .content {
   position: relative;
   z-index: 1;
