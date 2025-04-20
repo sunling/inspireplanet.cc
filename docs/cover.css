@@ -14,23 +14,6 @@
   filter: brightness(0.45);
 }
 
-.cover {
-  width: 900px;
-  height: 383px;
-  position: relative;
-  border-radius: 4px;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  color: #fff;
-  padding: 40px;
-  box-sizing: border-box;
-  font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-}
-
 .content {
   position: relative;
   z-index: 1;
