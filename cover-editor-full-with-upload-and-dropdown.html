@@ -1,6 +1,6 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
   <meta charset="UTF-8">
   <title>封面图编辑器（完整功能：背景图上传 + 下拉选择）</title>
@@ -13,34 +13,21 @@
       font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
       background: #f5f5f5;
     }
-
     .form {
       width: 320px;
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
-
-    .form input,
-    .form select {
+    .form input, .form select {
       width: 100%;
       padding: 8px 12px;
       font-size: 14px;
       border: 1px solid #ddd;
       border-radius: 4px;
     }
-
-    .form label {
-      font-weight: 500;
-      font-size: 14px;
-    }
-
-    .buttons {
-      display: flex;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
+    .form label { font-weight: 500; font-size: 14px; }
+    .buttons { display: flex; gap: 12px; margin-top: 8px; }
     button {
       padding: 8px 16px;
       background: #323449;
@@ -49,7 +36,6 @@
       border-radius: 4px;
       cursor: pointer;
     }
-
     #preview .cover {
       position: relative;
       width: 900px;
@@ -57,7 +43,6 @@
       overflow: hidden;
       background: #323449;
     }
-
     #preview .bg {
       position: absolute;
       width: 100%;
@@ -66,45 +51,39 @@
       background-position: center;
       z-index: 0;
     }
-
     #preview .overlay {
       position: absolute;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0,0,0,0.3);
       z-index: 1;
     }
-
     #preview .content {
       position: absolute;
       z-index: 2;
       color: white;
       width: 80%;
     }
-
     .main-title {
       font-size: 42px;
       font-weight: bold;
-      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
+      text-shadow: 2px 2px 5px rgba(0,0,0,0.6);
     }
-
     .sub-title {
       font-size: 24px;
       margin-top: 12px;
       color: #eee0c5;
-      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
     }
-
     .keywords {
       color: #FFDE59;
       font-size: 18px;
       margin-top: 24px;
       font-weight: 600;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
     }
   </style>
 </head>
-
 <body>
   <div class="form">
     <label>主标题（3~5字）:<input id="main-title" value="我想放空"></label>
@@ -162,17 +141,8 @@
 
     function loadImages() {
       const images = [
-        "artisanbasket.png",
-        "biking.png",
-        "fieldtools.png",
-        "freshproduce.png",
-        "frostedwindow.png",
-        "rainywalk.png",
-        "reading.png",
-        "repairman.png",
-        "sunlitcorridor.png",
-        "sunlitkitchen.png",
-        "teahouse.png"
+        "biking.png", "reading.png", "sunlitkitchen.png",
+        "rainywalk.png", "frostedwindow.png", "repairman.png"
       ];
       const select = document.getElementById("image-select");
       select.innerHTML = "";
@@ -234,5 +204,4 @@
     };
   </script>
 </body>
-
 </html>
