@@ -26,7 +26,7 @@
 <body>
   <div class="bg" id="bg"></div>
   <div class="content">
-    <div class="keywords" id="keywords">关键词一 ｜ 关键词二 ｜ 关键词三</div>
+    <div class="keywords" id="keywords">关键词一 / 关键词二 / 关键词三</div>
     <div class="question" id="question">这是一个不超过8字的问题</div>
   </div>
 
@@ -38,7 +38,7 @@
     const q = params.get('q') || '这是一个问题';
     const bg = params.get('bg') || 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=900&q=80';
 
-    document.getElementById('keywords').textContent = `${k1} ｜ ${k2} ｜ ${k3}`;
+    document.getElementById('keywords').textContent = `${k1} / ${k2} / ${k3}`;
     document.getElementById('question').textContent = q;
     document.getElementById('bg').style.backgroundImage = `url(${bg})`;
   </script>
