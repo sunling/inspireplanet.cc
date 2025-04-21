@@ -84,23 +84,32 @@
             };
         }
 
-        async function loadImages() {
-            try {
-                const res = await fetch('images.json');
-                const images = await res.json();
-                const select = document.getElementById('image-select');
-                images.forEach(img => {
-                    const option = document.createElement('option');
-                    option.value = `images/${img}`;
-                    option.textContent = img;
-                    select.appendChild(option);
-                });
+        function loadImages() {
+          fetch('images.json')
+            .then(res => res.json())
+            .then(images => {
+              const select = document.getElementById('image-select');
 
-                renderCard();
-            } catch (e) {
-                console.log("loading images is having error");
-            }
-        }
+              // 清空现有选项
+              select.innerHTML = '';
+
+              // 添加新选项
+              images.forEach(img => {
+                const option = new Option(img, `images/${img}`);
+                select.add(option);
+              });
+
+              // 初始化渲染
+              renderCover();
+            })
+            .catch(e => {
+              console.error('加载背景图失败:', e);
+              // 设置默认背景
+              document.getElementById('image-select').innerHTML = `
+                <option value="images/biking.png">默认背景</option>
+              `;
+            });
+          }
 
         function renderCard() {
             const title = document.getElementById('title').value;
@@ -111,7 +120,7 @@
             const { date, meeting } = getDateFromEpisode(episode);
             const meetingId = document.getElementById('meetingId').value;
 
-            const html = `
+            document.getElementById('preview').innerHTML = `
         <div class="card">
             <div class="title">${title}</div>
             <div class="quote-box">${quote}</div>
@@ -124,17 +133,37 @@
             </div>
         </div>`;
 
-            document.getElementById('preview').innerHTML = html;
         }
 
-        function downloadCard() {
-            html2canvas(document.getElementById('preview')).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'inspiration-card.png';
-                link.href = canvas.toDataURL();
-                link.click();
+        function downloadCover() {
+          // 确保捕获的是渲染完成的封面
+          const cardElement = document.getElementById('preview');
+
+          // 添加延时确保渲染完成
+          setTimeout(() => {
+            html2canvas(cardElement, {
+              scale: 2, // 提高导出质量
+              logging: true,
+              useCORS: true // 允许跨域图片
+            }).then(canvas => {
+              const link = document.createElement('a');
+              link.download = 'inspiration-card-' + new Date().getTime() + '.png';
+              link.href = canvas.toDataURL('image/png');
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
             });
+          }, 500);
         }
+
+        // function downloadCard() {
+        //     html2canvas(document.getElementById('preview')).then(canvas => {
+        //         const link = document.createElement('a');
+        //         link.download = 'inspiration-card.png';
+        //         link.href = canvas.toDataURL();
+        //         link.click();
+        //     });
+        // }
 
         window.onload = loadImages;
     </script>
