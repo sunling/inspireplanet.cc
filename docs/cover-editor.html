@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>启发星球封面图编辑器</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="cover.css" />
   <style>
     * {
@@ -91,6 +92,21 @@
     <label>选择背景图：
       <select id="image-select"></select>
     </label>
+    <label>选择字体：
+    <select id="title-font" onchange="renderCover()">
+      <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+      <option value="'PingFang SC', sans-serif">苹方</option>
+      <option value="'KaiTi', serif">楷体</option
+      <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+    </select>
+  </label>
+  <label>正文字体：
+    <select id="body-font" onchange="renderCover()">
+      <option value="'PingFang SC', sans-serif">苹方</option>
+      <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+      <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+    </select>
+  </label>
     <div class="buttons">
       <button onclick="renderCover()">预览</button>
       <button onclick="downloadCover()">下载</button>
@@ -133,18 +149,19 @@
       const k2 = document.getElementById('k2').value;
       const k3 = document.getElementById('k3').value;
       const q = document.getElementById('question').value;
-
       // 确保select元素的ID是'image-select'
       const bgSelect = document.getElementById('image-select');
       const bg = bgSelect ? bgSelect.value : ''; // 安全获取背景图路径
+      const titleFont = document.getElementById('title-font').value;
+      const bodyFont = document.getElementById('body-font').value;
 
       console.log('当前背景图路径:', bg); // 调试用
 
       document.getElementById('preview').innerHTML = `
         <div class="cover">
           <div class="bg" style="background-image: url('${bg}')"></div>
-          <div class="content">
-            <div class="keywords">${k1}｜${k2}｜${k3}</div>
+          <div class="content" style="font-family: ${titleFont}">
+            <div class="keywords" style="font-family: ${bodyFont}">${k1}｜${k2}｜${k3}</div>
             <div class="question">${q}</div>
           </div>
         </div>`;
