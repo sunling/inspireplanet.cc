@@ -142,6 +142,7 @@
     </label>
     <div class="buttons">
       <button onclick="renderCover()">预览</button>
+      <button onclick="downloadCover()">下载</button>
     </div>
   </div>
 
@@ -215,6 +216,24 @@
         content.style.transform = "none";
         content.style.textAlign = "left";
       }
+    }
+
+    function downloadCover() {
+      const coverElement = document.querySelector('#preview .cover');
+      setTimeout(() => {
+        html2canvas(coverElement, {
+          scale: 2,
+          logging: true,
+          useCORS: true
+        }).then(canvas => {
+          const link = document.createElement('a');
+          link.download = 'inspiration-cover-' + new Date().getTime() + '.png';
+          link.href = canvas.toDataURL('image/png');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+      }, 500);
     }
 
     document.getElementById("bgUpload").addEventListener("change", function (event) {
