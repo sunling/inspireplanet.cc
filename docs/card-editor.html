@@ -133,6 +133,7 @@
 
   <script>
     let customBgImage = '';
+
     function loadImages() {
       fetch('images.json')
         .then(res => res.json())
@@ -157,7 +158,8 @@
       const k3 = document.getElementById('k3').value;
       const q = document.getElementById('question').value;
       const bgSelect = document.getElementById('image-select');
-      const bg = bgSelect ? bgSelect.value : '';
+      const selectedBg = bgSelect ? bgSelect.value : '';
+      const bg = customBgImage || selectedBg;
       const titleFont = document.getElementById('title-font').value;
       const bodyFont = document.getElementById('body-font').value;
 
@@ -191,21 +193,14 @@
 
     window.onload = function () {
       loadImages();
-
       document.getElementById("bgUpload").addEventListener("change", function (event) {
         const file = event.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = function (e) {
-          const imageUrl = e.target.result;
-          const previewBg = document.querySelector("#preview .bg");
-          if (previewBg) {
-            customBgImage = imageUrl;
-            previewBg.style.backgroundImage = `url('${imageUrl}')`;
-            previewBg.style.backgroundSize = 'cover';
-            previewBg.style.backgroundPosition = 'center';
-          }
+          customBgImage = e.target.result;
+          renderCover();
         };
         reader.readAsDataURL(file);
       });

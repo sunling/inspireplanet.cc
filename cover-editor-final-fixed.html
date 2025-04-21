@@ -1,6 +1,6 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
   <meta charset="UTF-8">
   <title>启发星球封面图编辑器</title>
@@ -8,93 +8,44 @@
   <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="cover.css" />
   <style>
-    * {
-      -webkit-font-smoothing: antialiased;
-      box-sizing: border-box;
-    }
-
+    * {-webkit-font-smoothing: antialiased; box-sizing: border-box;}
     body {
-      display: flex;
-      gap: 40px;
-      padding: 40px;
+      display: flex; gap: 40px; padding: 40px;
       font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
       background: #f5f5f5;
     }
-
-    .form {
-      width: 320px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+    .form { width: 320px; display: flex; flex-direction: column; gap: 16px; }
+    .form input, .form select {
+      width: 100%; padding: 8px 12px; font-size: 14px;
+      border: 1px solid #ddd; border-radius: 4px;
     }
-
-    .form input,
-    .form select {
-      width: 100%;
-      padding: 8px 12px;
-      font-size: 14px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-
-    .form label {
-      font-weight: 500;
-      font-size: 14px;
-    }
-
-    .buttons {
-      display: flex;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
+    .form label { font-weight: 500; font-size: 14px; }
+    .buttons { display: flex; gap: 12px; margin-top: 8px; }
     button {
-      padding: 8px 16px;
-      background: #323449;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
+      padding: 8px 16px; background: #323449;
+      color: white; border: none; border-radius: 4px; cursor: pointer;
     }
-
     #preview .cover {
-      position: relative;
-      width: 900px;
-      height: 383px;
-      overflow: hidden;
-      background: #323449;
+      position: relative; width: 900px; height: 383px;
+      overflow: hidden; background: #323449;
     }
-
     #preview .bg {
-      position: absolute;
-      width: 100%;
-      height: 100%;
+      position: absolute; width: 100%; height: 100%;
       background-size: cover;
     }
-
     #preview .content {
-      position: absolute;
-      top: 50%;
-      left: 50%;
+      position: absolute; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      text-align: center;
-      color: white;
-      width: 80%;
+      text-align: center; color: white; width: 80%;
     }
-
     #preview .keywords {
-      color: #FFDE59;
-      font-size: 18px;
-      margin-bottom: 20px;
+      color: #FFDE59; font-size: 18px; margin-bottom: 20px;
     }
-
     #preview .question {
-      font-size: 36px;
-      font-weight: bold;
+      font-size: 36px; font-weight: bold;
     }
   </style>
 </head>
-
 <body>
   <div class="form">
     <label>关键词 1: <input id="k1" value="自燃"></label>
@@ -133,6 +84,7 @@
 
   <script>
     let customBgImage = '';
+
     function loadImages() {
       fetch('images.json')
         .then(res => res.json())
@@ -157,7 +109,8 @@
       const k3 = document.getElementById('k3').value;
       const q = document.getElementById('question').value;
       const bgSelect = document.getElementById('image-select');
-      const bg = bgSelect ? bgSelect.value : '';
+      const selectedBg = bgSelect ? bgSelect.value : '';
+      const bg = customBgImage || selectedBg;
       const titleFont = document.getElementById('title-font').value;
       const bodyFont = document.getElementById('body-font').value;
 
@@ -191,26 +144,18 @@
 
     window.onload = function () {
       loadImages();
-
       document.getElementById("bgUpload").addEventListener("change", function (event) {
         const file = event.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = function (e) {
-          const imageUrl = e.target.result;
-          const previewBg = document.querySelector("#preview .bg");
-          if (previewBg) {
-            customBgImage = imageUrl;
-            previewBg.style.backgroundImage = `url('${imageUrl}')`;
-            previewBg.style.backgroundSize = 'cover';
-            previewBg.style.backgroundPosition = 'center';
-          }
+          customBgImage = e.target.result;
+          renderCover();
         };
         reader.readAsDataURL(file);
       });
     };
   </script>
 </body>
-
 </html>
