@@ -73,7 +73,8 @@
     }
 
     #preview .content {
-      position: absolute;
+      position: relative;
+      z-index: 2;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -83,14 +84,17 @@
     }
 
     #preview .keywords {
-      color: #f1f0ec;
+      color: #FFDE59;
       font-size: 18px;
       margin-bottom: 20px;
+      font-weight: 600;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
     }
 
     #preview .question {
       font-size: 36px;
       font-weight: bold;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
     }
   </style>
 </head>
@@ -165,6 +169,7 @@
       document.getElementById('preview').innerHTML = `
         <div class="cover">
           <div class="bg" style="background-image: url('${bg}')"></div>
+          <div class="overlay"></div>
           <div class="content" style="font-family: ${titleFont}">
             <div class="keywords" style="font-family: ${bodyFont}">${k1} / ${k2} / ${k3}</div>
             <div class="question">${q}</div>

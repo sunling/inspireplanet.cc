@@ -17,12 +17,21 @@
   /* filter: brightness(0.45); */
 }
 
+.overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.3);  /* 半透明黑色 */
+  z-index: 1;
+}
+
 .content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: 90%;
   text-align: center;
   color: #f1f1f1;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
 }
 
 .keywords {
@@ -31,13 +40,13 @@
   gap: 20px;
   margin-bottom: 24px;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   color: #FFDE59;
 }
 
 .question {
   font-size: 32px;
   font-weight: 700;
-  color: #ffffff;
+  color: #fefefe;
   padding: 0 20px;
 }
