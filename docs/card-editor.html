@@ -3,12 +3,14 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>启发星球卡片编辑器</title>
+  <title>启发星球封面图编辑器</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <link rel="stylesheet" href="card.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="cover.css" />
   <style>
     * {
       -webkit-font-smoothing: antialiased;
+      box-sizing: border-box;
     }
 
     body {
@@ -27,127 +29,158 @@
     }
 
     .form input,
-    .form textarea,
     .form select {
       width: 100%;
-      padding: 8px;
+      padding: 8px 12px;
       font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
     }
 
     .form label {
-      font-weight: bold;
+      font-weight: 500;
+      font-size: 14px;
     }
 
     .buttons {
       display: flex;
       gap: 12px;
+      margin-top: 8px;
+    }
+
+    button {
+      padding: 8px 16px;
+      background: #323449;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #preview .cover {
+      position: relative;
+      width: 900px;
+      height: 383px;
+      overflow: hidden;
+      background: #323449;
+    }
+
+    #preview .bg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+    }
+
+    #preview .content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: white;
+      width: 80%;
+    }
+
+    #preview .keywords {
+      color: #FFDE59;
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+
+    #preview .question {
+      font-size: 36px;
+      font-weight: bold;
     }
   </style>
 </head>
 
 <body>
   <div class="form">
-    <label>标题：<input id="title" value="不要等太阳照进来"></label>
-    <label>金句：<textarea id="quote">我不要做等待太阳照到自己的人，我要做在黑夜中自己发光的。</textarea></label>
-    <label>具体的事：<textarea id="detail">李影回忆三年前在低谷时，每周学英语、保持运动...</textarea></label>
-    <label>EP（如14）：<input id="episode" type="number" value="14"></label>
-    <label>腾讯会议号：<input id="meetingId" value="818 7279 2687"></label>
+    <label>关键词 1: <input id="k1" value="自燃"></label>
+    <label>关键词 2: <input id="k2" value="火种"></label>
+    <label>关键词 3: <input id="k3" value="迷茫"></label>
+    <label>引导问题 (<8字): <input id="question" value="你最近被什么点燃？"></label>
     <label>选择背景图：
       <select id="image-select"></select>
     </label>
+    <label>或上传自定义背景图：
+      <input type="file" id="bgUpload" accept="image/*" />
+    </label>
+    <label>标题字体：
+      <select id="title-font" onchange="renderCover()">
+        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+        <option value="'PingFang SC', sans-serif">苹方</option>
+        <option value="'KaiTi', serif">楷体</option>
+        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+      </select>
+    </label>
+    <label>正文字体：
+      <select id="body-font" onchange="renderCover()">
+        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+        <option value="'PingFang SC', sans-serif">苹方</option>
+        <option value="'KaiTi', serif">楷体</option>
+        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+      </select>
+    </label>
     <div class="buttons">
-      <button onclick="renderCard()">预览</button>
-      <button onclick="downloadCard()">下载</button>
+      <button onclick="renderCover()">预览</button>
+      <button onclick="downloadCover()">下载</button>
     </div>
   </div>
-  <div id="preview" class="card">
-    <!-- 卡片内容将在这里生成 -->
-  </div>
+
+  <div id="preview"></div>
 
   <script>
-    function getDateFromEpisode(episodeNum) {
-      const base = new Date('2025-04-12'); // EP13 日期
-      const diff = episodeNum - 13;
-
-      const currentDate = new Date(base.getTime() + diff * 7 * 24 * 60 * 60 * 1000);
-      const nextDate = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-      const fmt = (date) => {
-        const m = date.getMonth() + 1;
-        const d = date.getDate();
-        return `${m}月${d}日`;
-      };
-
-      return {
-        date: `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月${currentDate.getDate()}日`,
-        meeting: `${fmt(nextDate)}早8:00`
-      };
-    }
-
+    let customBgImage = '';
     function loadImages() {
       fetch('images.json')
         .then(res => res.json())
         .then(images => {
           const select = document.getElementById('image-select');
-
-          // 清空现有选项
           select.innerHTML = '';
-
-          // 添加新选项
           images.forEach(img => {
             const option = new Option(img, `images/${img}`);
             select.add(option);
           });
-
-          // 初始化渲染
-          renderCard();
+          renderCover();
         })
         .catch(e => {
           console.error('加载背景图失败:', e);
-          // 设置默认背景
-          document.getElementById('image-select').innerHTML = `
-                <option value="images/biking.png">默认背景</option>
-              `;
+          document.getElementById('image-select').innerHTML = '<option value="images/biking.png">默认背景</option>';
         });
     }
 
-    function renderCard() {
-      const title = document.getElementById('title').value;
-      const quote = document.getElementById('quote').value;
-      const detail = document.getElementById('detail').value;
-      const episode = document.getElementById('episode').value;
-      const imagePath = document.getElementById('image-select').value;
-      const { date, meeting } = getDateFromEpisode(episode);
-      const meetingId = document.getElementById('meetingId').value;
+    function renderCover() {
+      const k1 = document.getElementById('k1').value;
+      const k2 = document.getElementById('k2').value;
+      const k3 = document.getElementById('k3').value;
+      const q = document.getElementById('question').value;
+      const bgSelect = document.getElementById('image-select');
+      const bg = bgSelect ? bgSelect.value : '';
+      const titleFont = document.getElementById('title-font').value;
+      const bodyFont = document.getElementById('body-font').value;
 
       document.getElementById('preview').innerHTML = `
-        <div class="card">
-            <div class="title">${title}</div>
-            <div class="quote-box">${quote}</div>
-            <img id="quote-image" src="${imagePath}" alt="金句插图" />
-            <div class="section-title">具体的事</div>
-            <p>${detail}</p>
-            <div class="card-footer">
-                <div class="footer">来自启发星球EP${episode} · ${date}</div>
-                <div class="meeting">${meeting} 欢迎你加入腾讯会议：<span class="highlight">${meetingId}</span></div>
-            </div>
+        <div class="cover">
+          <div class="bg" style="background-image: url('${bg}')"></div>
+          <div class="content" style="font-family: ${titleFont}">
+            <div class="keywords" style="font-family: ${bodyFont}">${k1} / ${k2} / ${k3}</div>
+            <div class="question">${q}</div>
+          </div>
         </div>`;
-
     }
 
-    function downloadCard() {
-      // 确保捕获的是渲染完成的封面
-      const cardElement = document.getElementById('preview');
-
-      // 添加延时确保渲染完成
+    function downloadCover() {
+      const coverElement = document.querySelector('#preview .cover');
       setTimeout(() => {
-        html2canvas(cardElement, {
-          scale: 2, // 提高导出质量
+        html2canvas(coverElement, {
+          scale: 2,
           logging: true,
-          useCORS: true // 允许跨域图片
+          useCORS: true
         }).then(canvas => {
           const link = document.createElement('a');
-          link.download = 'inspiration-card-' + new Date().getTime() + '.png';
+          link.download = 'inspiration-cover-' + new Date().getTime() + '.png';
           link.href = canvas.toDataURL('image/png');
           document.body.appendChild(link);
           link.click();
@@ -156,16 +189,27 @@
       }, 500);
     }
 
-    // function downloadCard() {
-    //     html2canvas(document.getElementById('preview')).then(canvas => {
-    //         const link = document.createElement('a');
-    //         link.download = 'inspiration-card.png';
-    //         link.href = canvas.toDataURL();
-    //         link.click();
-    //     });
-    // }
+    window.onload = function () {
+      loadImages();
 
-    window.onload = loadImages;
+      document.getElementById("bgUpload").addEventListener("change", function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const imageUrl = e.target.result;
+          const previewBg = document.querySelector("#preview .bg");
+          if (previewBg) {
+            customBgImage = imageUrl;
+            previewBg.style.backgroundImage = `url('${imageUrl}')`;
+            previewBg.style.backgroundSize = 'cover';
+            previewBg.style.backgroundPosition = 'center';
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    };
   </script>
 </body>
 

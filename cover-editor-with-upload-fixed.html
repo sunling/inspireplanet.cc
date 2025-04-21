@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 
@@ -133,6 +132,7 @@
   <div id="preview"></div>
 
   <script>
+    let customBgImage = '';
     function loadImages() {
       fetch('images.json')
         .then(res => res.json())
@@ -151,9 +151,7 @@
         });
     }
 
-    let customBgImage = '';
-
-function renderCover() {
+    function renderCover() {
       const k1 = document.getElementById('k1').value;
       const k2 = document.getElementById('k2').value;
       const k3 = document.getElementById('k3').value;
@@ -203,6 +201,7 @@ function renderCover() {
           const imageUrl = e.target.result;
           const previewBg = document.querySelector("#preview .bg");
           if (previewBg) {
+            customBgImage = imageUrl;
             previewBg.style.backgroundImage = `url('${imageUrl}')`;
             previewBg.style.backgroundSize = 'cover';
             previewBg.style.backgroundPosition = 'center';
