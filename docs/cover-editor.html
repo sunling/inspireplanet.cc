@@ -101,45 +101,54 @@
   <div id="preview"></div>
 
   <script>
-    async function loadImages() {
-      try {
-        const res = await fetch('images.json');
-        const images = await res.json();
+  function loadImages() {
+    fetch('images.json')
+      .then(res => res.json())
+      .then(images => {
         const select = document.getElementById('image-select');
 
+        // 清空现有选项
+        select.innerHTML = '';
+
+        // 添加新选项
         images.forEach(img => {
-          select.add(new Option(img, `images/${img}`));
+          const option = new Option(img, `images/${img}`);
+          select.add(option);
         });
 
-        // 初始化预览
-        document.getElementById('preview').innerHTML = `
-          <div class="cover">
-            <div class="bg" style="background-image: url('${select.value}')"></div>
-            <div class="content">
-              <div class="keywords">自燃 ｜ 火种 ｜ 迷茫</div>
-              <div class="question">你最近被什么点燃？</div>
-            </div>
-          </div>`;
-
-      } catch (e) {
-        console.error("加载背景图失败", e);
-        alert("背景图加载失败，请检查images.json");
-      }
+        // 初始化渲染
+        renderCover();
+      })
+      .catch(e => {
+        console.error('加载背景图失败:', e);
+        // 设置默认背景
+        document.getElementById('image-select').innerHTML = `
+          <option value="images/biking.png">默认背景</option>
+        `;
+      });
     }
 
     function renderCover() {
-      // 使用中文全角分隔符
-      const keywordsDiv = `<div class="keywords">${k1}　|　${k2}　|　${k3}</div>`
-        .replace(/\|/g, '｜'); // 替换为全角符号
+      // 确保这些ID与你的HTML表单完全匹配
+      const k1 = document.getElementById('k1').value;
+      const k2 = document.getElementById('k2').value;
+      const k3 = document.getElementById('k3').value;
+      const q = document.getElementById('question').value;
+
+      // 确保select元素的ID是'image-select'
+      const bgSelect = document.getElementById('image-select');
+      const bg = bgSelect ? bgSelect.value : ''; // 安全获取背景图路径
+
+      console.log('当前背景图路径:', bg); // 调试用
 
       document.getElementById('preview').innerHTML = `
-      <div class="cover">
-        <div class="bg" style="background-image: url('${bg}')"></div>
-        <div class="content">
-          ${keywordsDiv}
-          <div class="question">${q}</div>
-        </div>
-      </div>`;
+        <div class="cover">
+          <div class="bg" style="background-image: url('${bg}')"></div>
+          <div class="content">
+            <div class="keywords">${k1}｜${k2}｜${k3}</div>
+            <div class="question">${q}</div>
+          </div>
+        </div>`;
     }
 
     function downloadCover() {
