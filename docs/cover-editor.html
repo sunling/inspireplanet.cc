@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 
@@ -57,7 +58,6 @@
       cursor: pointer;
     }
 
-    /* 强制重置预览区域样式 */
     #preview .cover {
       position: relative;
       width: 900px;
@@ -71,7 +71,6 @@
       width: 100%;
       height: 100%;
       background-size: cover;
-      /* filter: brightness(0.6); */
     }
 
     #preview .content {
@@ -106,6 +105,9 @@
     <label>选择背景图：
       <select id="image-select"></select>
     </label>
+    <label>或上传自定义背景图：
+      <input type="file" id="bgUpload" accept="image/*" />
+    </label>
     <label>标题字体：
       <select id="title-font" onchange="renderCover()">
         <option value="'Noto Sans SC', sans-serif">思源黑体</option>
@@ -136,41 +138,28 @@
         .then(res => res.json())
         .then(images => {
           const select = document.getElementById('image-select');
-
-          // 清空现有选项
           select.innerHTML = '';
-
-          // 添加新选项
           images.forEach(img => {
             const option = new Option(img, `images/${img}`);
             select.add(option);
           });
-
-          // 初始化渲染
           renderCover();
         })
         .catch(e => {
           console.error('加载背景图失败:', e);
-          // 设置默认背景
-          document.getElementById('image-select').innerHTML = `
-          <option value="images/biking.png">默认背景</option>
-        `;
+          document.getElementById('image-select').innerHTML = '<option value="images/biking.png">默认背景</option>';
         });
     }
 
     function renderCover() {
-      // 确保这些ID与你的HTML表单完全匹配
       const k1 = document.getElementById('k1').value;
       const k2 = document.getElementById('k2').value;
       const k3 = document.getElementById('k3').value;
       const q = document.getElementById('question').value;
-      // 确保select元素的ID是'image-select'
       const bgSelect = document.getElementById('image-select');
-      const bg = bgSelect ? bgSelect.value : ''; // 安全获取背景图路径
+      const bg = bgSelect ? bgSelect.value : '';
       const titleFont = document.getElementById('title-font').value;
       const bodyFont = document.getElementById('body-font').value;
-
-      console.log('当前背景图路径:', bg); // 调试用
 
       document.getElementById('preview').innerHTML = `
         <div class="cover">
@@ -183,15 +172,12 @@
     }
 
     function downloadCover() {
-      // 确保捕获的是渲染完成的封面
       const coverElement = document.querySelector('#preview .cover');
-
-      // 添加延时确保渲染完成
       setTimeout(() => {
         html2canvas(coverElement, {
-          scale: 2, // 提高导出质量
+          scale: 2,
           logging: true,
-          useCORS: true // 允许跨域图片
+          useCORS: true
         }).then(canvas => {
           const link = document.createElement('a');
           link.download = 'inspiration-cover-' + new Date().getTime() + '.png';
@@ -203,7 +189,26 @@
       }, 500);
     }
 
-    window.onload = loadImages;
+    window.onload = function () {
+      loadImages();
+
+      document.getElementById("bgUpload").addEventListener("change", function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const imageUrl = e.target.result;
+          const previewBg = document.querySelector("#preview .bg");
+          if (previewBg) {
+            previewBg.style.backgroundImage = `url('${imageUrl}')`;
+            previewBg.style.backgroundSize = 'cover';
+            previewBg.style.backgroundPosition = 'center';
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    };
   </script>
 </body>
 
