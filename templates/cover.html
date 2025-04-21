@@ -5,16 +5,19 @@
   <title>通用封面图</title>
   <link rel="stylesheet" href="../docs/cover.css" />
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
     body {
-      width: 900px;
-      height: 383px;
-      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-      background: #323449;
+      margin: 0;
+      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: #121218;
       position: relative;
       overflow: hidden;
       display: flex;
       justify-content: center;
       align-items: center;
+      width: 900px;
+      height: 383px;
     }
   </style>
 </head>
@@ -31,7 +34,7 @@
     const k2 = params.get('k2') || '关键词二';
     const k3 = params.get('k3') || '关键词三';
     const q  = params.get('q') || '这是一个问题';
-    const bg = params.get('bg') || '../docs/images/fieldtools.png';
+    const bg = params.get('bg') || 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=900&q=80';
 
     document.getElementById('keywords').textContent = `${k1} ｜ ${k2} ｜ ${k3}`;
     document.getElementById('question').textContent = q;

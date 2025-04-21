@@ -1,85 +1,75 @@
-/* card.css - 通用于 template.html 与 editor.html 的共享样式 */
-* {
-    -webkit-font-smoothing: antialiased;
+/* 基础样式 */
+body {
+  margin: 0;
+  padding: 0;
 }
 
-.card {
-    width: 420px;
-    background: #323449;
-    overflow: hidden;
-    color: #f1f1f1;
-    box-shadow: none;
+/* 背景图层 */
+.bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.6) contrast(1.1);
+  z-index: 0;
 }
 
-.card h1 {
-    font-size: 24px;
-    text-align: center;
-    color: #fff;
+/* 内容容器 */
+.content {
+  position: relative;
+  z-index: 1;
+  width: 80%;
+  max-width: 700px;
+  text-align: center;
+  color: white;
+  padding: 40px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
-.title {
-    font-size: 28px;
-    text-align: center;
-    padding: 20px 10px 0;
-    font-weight: bold;
+/* 关键词样式 */
+.keywords {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 28px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFDE59;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
 }
 
-.quote-box {
-    background: #fff2ec;
-    margin: 16px 20px;
-    border-radius: 8px;
-    padding: 12px;
-    color: #ff7900;
-    font-style: italic;
-    font-weight: 600;
-    font-size: 22px;
+.keywords::before, .keywords::after {
+  content: "•";
+  color: rgba(255, 255, 255, 0.5);
 }
 
-.card img {
-    display: block;
+/* 问题标题样式 */
+.question {
+  font-size: 42px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.3;
+  margin: 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  letter-spacing: 1px;
+}
+
+/* 响应式调整 */
+@media (max-width: 600px) {
+  .content {
     width: 90%;
-    max-height: 250px;
-    object-fit: cover;
-    margin: 0 auto 20px;
-    border-radius: 12px;
-}
-
-.section-title {
-    color: #BCA88E;
-    font-weight: bold;
+    padding: 30px 20px;
+  }
+  .keywords {
     font-size: 16px;
-    margin: 0 20px 8px;
-}
-
-.card p {
-    font-size: 14px;
-    line-height: 1.7;
-    padding: 0 20px 20px;
-    margin: 0;
-}
-
-.card-footer {
-    padding: 0 20px 16px;
-    text-align: right;
-}
-
-.footer {
-    font-size: 13px;
-    color: #8faadc;
-    font-style: italic;
-    margin-bottom: 4px;
-}
-
-.meeting {
-    font-size: 13px;
-    color: #8faadc;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.highlight {
-    color: #FFDE59;
-    font-weight: bold;
-    font-style: normal;
+    gap: 16px;
+  }
+  .question {
+    font-size: 32px;
+  }
 }

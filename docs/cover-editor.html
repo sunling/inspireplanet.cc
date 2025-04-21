@@ -8,6 +8,7 @@
   <style>
     * {
       -webkit-font-smoothing: antialiased;
+      box-sizing: border-box;
     }
     body {
       display: flex;
@@ -22,18 +23,36 @@
       flex-direction: column;
       gap: 16px;
     }
-    .form input,
-    .form select {
+    .form input, .form select {
       width: 100%;
-      padding: 8px;
+      padding: 8px 12px;
       font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
     }
     .form label {
-      font-weight: bold;
+      font-weight: 500;
+      font-size: 14px;
     }
     .buttons {
       display: flex;
       gap: 12px;
+      margin-top: 8px;
+    }
+    button {
+      padding: 8px 16px;
+      background: #323449;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #preview {
+      width: 900px;
+      height: 383px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
   </style>
 </head>
@@ -52,9 +71,7 @@
     </div>
   </div>
 
-  <div id="preview" class="cover">
-    <!-- 封面图内容将在这里生成 -->
-  </div>
+  <div id="preview"></div>
 
   <script>
     async function loadImages() {
@@ -62,43 +79,46 @@
         const res = await fetch('images.json');
         const images = await res.json();
         const select = document.getElementById('image-select');
+
         images.forEach(img => {
-          const option = document.createElement('option');
-          option.value = `images/${img}`;
-          option.textContent = img;
-          select.appendChild(option);
+          select.add(new Option(img, `images/${img}`));
         });
-        renderCover();
+
+        // 初始化预览
+        document.getElementById('preview').innerHTML = `
+          <div class="cover">
+            <div class="bg" style="background-image: url('${select.value}')"></div>
+            <div class="content">
+              <div class="keywords">自燃 ｜ 火种 ｜ 迷茫</div>
+              <div class="question">你最近被什么点燃？</div>
+            </div>
+          </div>`;
+
       } catch (e) {
-        console.error("加载 images.json 出错", e);
+        console.error("加载背景图失败", e);
+        alert("背景图加载失败，请检查images.json");
       }
     }
+
     function renderCover() {
-      const k1 = document.getElementById('k1').value;
-      const k2 = document.getElementById('k2').value;
-      const k3 = document.getElementById('k3').value;
-      const q = document.getElementById('question').value;
-      const bg = document.getElementById('image-select').value;
+      const keywords = [
+        document.getElementById('k1').value,
+        document.getElementById('k2').value,
+        document.getElementById('k3').value
+      ].join(' ｜ ');
 
-        const html = `
-        <div class="cover">
-          <div class="bg" id="bg" style="background-image: url('${bg}')"></div>
-          <div class="content">
-            <div class="keywords" id="keywords">${k1} ｜ ${k2}  ｜ ${k3} </div>
-            <div class="question" id="question">${q}</div>
-          </div>
-        </div>`;
-
-        // set up the background image
-        // document.getElementById("bg").style.backgroundImage= `url('${bg}')`;
-        document.getElementById('preview').innerHTML = html;
+      document.querySelector('#preview .keywords').textContent = keywords;
+      document.querySelector('#preview .question').textContent =
+        document.getElementById('question').value;
+      document.querySelector('#preview .bg').style.backgroundImage =
+        `url('${document.getElementById('image-select').value}')`;
     }
 
     function downloadCover() {
-      html2canvas(document.getElementById('preview')).then(canvas => {
+      html2canvas(document.querySelector('#preview .cover')).then(canvas => {
         const link = document.createElement('a');
         link.download = 'inspiration-cover.png';
-        link.href = canvas.toDataURL();
+        link.href = canvas.toDataURL('image/png', 1.0);
         link.click();
       });
     }
