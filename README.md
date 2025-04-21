@@ -15,8 +15,8 @@
 - 后续支持情绪标签筛选背景图
 
 👉 在线体验：
-- [关键词式编辑器](https://sunling.github.io/flashcard-for-inspiration-planet/docs/cover-editor.html)
-- [对话式封面编辑器](https://sunling.github.io/flashcard-for-inspiration-planet/docs/cover-dialogue-editor.html)
+- [关键词式编辑器](https://sunling.github.io/flashcard-for-inspiration-planet/cover-editor.html)
+- [金句卡片编辑器](https://sunling.github.io/flashcard-for-inspiration-planet/card-editor.html)
 
 ---
 
@@ -26,7 +26,7 @@
 - 每张卡片配背景图，导出为高清竖图
 - 本地批量生成 + 上传展示
 
-👉 示例展示：[所有卡片](https://sunling.github.io/flashcard-for-inspiration-planet/docs/index.html)
+👉 示例展示：[所有卡片](https://sunling.github.io/flashcard-for-inspiration-planet)
 
 ---
 
