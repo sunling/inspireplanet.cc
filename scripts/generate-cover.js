@@ -3,9 +3,9 @@ const fs = require('fs');
 const path = require('path');
 
 async function generateCovers() {
-  const data = JSON.parse(fs.readFileSync('../data/cover-data.json', 'utf8'));
+  const data = JSON.parse(fs.readFileSync('data/cover-data.json', 'utf8'));
   const templatePath = path.resolve(__dirname, '../templates/cover.html');
-  const outputDir = path.resolve(__dirname, 'docs/generated/covers');
+  const outputDir = path.resolve(__dirname, '../docs/generated/covers');
 
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
