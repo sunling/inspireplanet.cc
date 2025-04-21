@@ -5,13 +5,21 @@
   -webkit-font-smoothing: antialiased;
 }
 
+.cover {
+    /* width: 420px; */
+    background: #323449;
+    overflow: hidden;
+    color: #f1f1f1;
+    box-shadow: none;
+}
+
 .bg {
   position: absolute;
   inset: 0;
   z-index: 0;
   background-size: cover;
   background-position: center;
-  filter: brightness(0.45);
+  /* filter: brightness(0.45); */
 }
 
 .content {
