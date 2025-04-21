@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>启发星球封面图编辑器（完整功能 + 背景图上传）</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    body {
+      display: flex;
+      gap: 40px;
+      padding: 40px;
+      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: #f5f5f5;
+    }
+    .form {
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .form input, .form select {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .form label { font-weight: 500; font-size: 14px; }
+    .buttons { display: flex; gap: 12px; margin-top: 8px; }
+    button {
+      padding: 8px 16px;
+      background: #323449;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #preview .cover {
+      position: relative;
+      width: 900px;
+      height: 383px;
+      overflow: hidden;
+      background: #323449;
+    }
+    #preview .bg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      z-index: 0;
+    }
+    #preview .overlay {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.3);
+      z-index: 1;
+    }
+    #preview .content {
+      position: absolute;
+      z-index: 2;
+      color: white;
+      width: 80%;
+    }
+    .main-title {
+      font-size: 42px;
+      font-weight: bold;
+      text-shadow: 2px 2px 5px rgba(0,0,0,0.6);
+    }
+    .sub-title {
+      font-size: 24px;
+      margin-top: 12px;
+      color: #eee0c5;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+    }
+    .keywords {
+      color: #FFDE59;
+      font-size: 18px;
+      margin-top: 24px;
+      font-weight: 600;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="form">
+    <label>主标题（3~5字）:<input id="main-title" value="我想放空"></label>
+    <label>副标题（短句）:<input id="sub-title" value="可连放空也需要练习"></label>
+    <label>关键词 1:<input id="k1" value="自燃"></label>
+    <label>关键词 2:<input id="k2" value="火种"></label>
+    <label>关键词 3:<input id="k3" value="迷茫"></label>
+    <label>文字布局风格：
+      <select id="layout-select" onchange="renderCover()">
+        <option value="center">居中排版</option>
+        <option value="left-top">左上排版</option>
+      </select>
+    </label>
+    <label>标题字体：
+      <select id="title-font" onchange="renderCover()">
+        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+        <option value="'PingFang SC', sans-serif">苹方</option>
+        <option value="'KaiTi', serif">楷体</option>
+        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+      </select>
+    </label>
+    <label>正文字体：
+      <select id="body-font" onchange="renderCover()">
+        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+        <option value="'PingFang SC', sans-serif">苹方</option>
+        <option value="'KaiTi', serif">楷体</option>
+        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+      </select>
+    </label>
+    <label>上传自定义背景图：
+      <input type="file" id="bgUpload" accept="image/*" />
+    </label>
+    <div class="buttons">
+      <button onclick="renderCover()">预览</button>
+    </div>
+  </div>
+
+  <div id="preview">
+    <div class="cover">
+      <div class="bg" id="bg"></div>
+      <div class="overlay"></div>
+      <div class="content" id="content">
+        <div class="main-title" id="title">我想放空</div>
+        <div class="sub-title" id="subtitle">可连放空也需要练习</div>
+        <div class="keywords" id="keywords">自燃 / 火种 / 迷茫</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let customBgImage = '';
+
+    function renderCover() {
+      const main = document.getElementById("main-title").value;
+      const sub = document.getElementById("sub-title").value;
+      const k1 = document.getElementById("k1").value;
+      const k2 = document.getElementById("k2").value;
+      const k3 = document.getElementById("k3").value;
+      const layout = document.getElementById("layout-select").value;
+      const titleFont = document.getElementById("title-font").value;
+      const bodyFont = document.getElementById("body-font").value;
+
+      document.getElementById("title").innerText = main;
+      document.getElementById("subtitle").innerText = sub;
+      document.getElementById("keywords").innerText = `${k1} / ${k2} / ${k3}`;
+      const content = document.getElementById("content");
+      content.style.fontFamily = titleFont;
+      document.getElementById("keywords").style.fontFamily = bodyFont;
+
+      const bg = document.getElementById("bg");
+      if (customBgImage) {
+        bg.style.backgroundImage = `url('${customBgImage}')`;
+      }
+
+      if (layout === "center") {
+        content.style.top = "50%";
+        content.style.left = "50%";
+        content.style.transform = "translate(-50%, -50%)";
+        content.style.textAlign = "center";
+      } else {
+        content.style.top = "40px";
+        content.style.left = "40px";
+        content.style.transform = "none";
+        content.style.textAlign = "left";
+      }
+    }
+
+    document.getElementById("bgUpload").addEventListener("change", function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        customBgImage = e.target.result;
+        renderCover();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    window.onload = renderCover;
+  </script>
+</body>
+</html>
