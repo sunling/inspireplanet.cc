@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <title>启发星球封面图编辑器</title>
@@ -11,6 +12,7 @@
       -webkit-font-smoothing: antialiased;
       box-sizing: border-box;
     }
+
     body {
       display: flex;
       gap: 40px;
@@ -18,28 +20,34 @@
       font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
       background: #f5f5f5;
     }
+
     .form {
       width: 320px;
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
-    .form input, .form select {
+
+    .form input,
+    .form select {
       width: 100%;
       padding: 8px 12px;
       font-size: 14px;
       border: 1px solid #ddd;
       border-radius: 4px;
     }
+
     .form label {
       font-weight: 500;
       font-size: 14px;
     }
+
     .buttons {
       display: flex;
       gap: 12px;
       margin-top: 8px;
     }
+
     button {
       padding: 8px 16px;
       background: #323449;
@@ -48,6 +56,7 @@
       border-radius: 4px;
       cursor: pointer;
     }
+
     /* 强制重置预览区域样式 */
     #preview .cover {
       position: relative;
@@ -56,6 +65,7 @@
       overflow: hidden;
       background: #323449;
     }
+
     #preview .bg {
       position: absolute;
       width: 100%;
@@ -63,6 +73,7 @@
       background-size: cover;
       /* filter: brightness(0.6); */
     }
+
     #preview .content {
       position: absolute;
       top: 50%;
@@ -72,17 +83,20 @@
       color: white;
       width: 80%;
     }
+
     #preview .keywords {
       color: #FFDE59;
       font-size: 18px;
       margin-bottom: 20px;
     }
+
     #preview .question {
       font-size: 36px;
       font-weight: bold;
     }
   </style>
 </head>
+
 <body>
   <div class="form">
     <label>关键词 1：<input id="k1" value="自燃"></label>
@@ -93,21 +107,21 @@
       <select id="image-select"></select>
     </label>
     <label>标题字体：
-    <select id="title-font" onchange="renderCover()">
-      <option value="'Noto Sans SC', sans-serif">思源黑体</option>
-      <option value="'PingFang SC', sans-serif">苹方</option>
-      <option value="'KaiTi', serif">楷体</option>
-      <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
-    </select>
-  </label>
-  <label>正文字体：
-    <select id="body-font" onchange="renderCover()">
-      <option value="'Noto Sans SC', sans-serif">思源黑体</option>
-      <option value="'PingFang SC', sans-serif">苹方</option>
-      <option value="'KaiTi', serif">楷体</option>
-      <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
-    </select>
-  </label>
+      <select id="title-font" onchange="renderCover()">
+        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+        <option value="'PingFang SC', sans-serif">苹方</option>
+        <option value="'KaiTi', serif">楷体</option>
+        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+      </select>
+    </label>
+    <label>正文字体：
+      <select id="body-font" onchange="renderCover()">
+        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+        <option value="'PingFang SC', sans-serif">苹方</option>
+        <option value="'KaiTi', serif">楷体</option>
+        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+      </select>
+    </label>
     <div class="buttons">
       <button onclick="renderCover()">预览</button>
       <button onclick="downloadCover()">下载</button>
@@ -117,31 +131,31 @@
   <div id="preview"></div>
 
   <script>
-  function loadImages() {
-    fetch('images.json')
-      .then(res => res.json())
-      .then(images => {
-        const select = document.getElementById('image-select');
+    function loadImages() {
+      fetch('images.json')
+        .then(res => res.json())
+        .then(images => {
+          const select = document.getElementById('image-select');
 
-        // 清空现有选项
-        select.innerHTML = '';
+          // 清空现有选项
+          select.innerHTML = '';
 
-        // 添加新选项
-        images.forEach(img => {
-          const option = new Option(img, `images/${img}`);
-          select.add(option);
-        });
+          // 添加新选项
+          images.forEach(img => {
+            const option = new Option(img, `images/${img}`);
+            select.add(option);
+          });
 
-        // 初始化渲染
-        renderCover();
-      })
-      .catch(e => {
-        console.error('加载背景图失败:', e);
-        // 设置默认背景
-        document.getElementById('image-select').innerHTML = `
+          // 初始化渲染
+          renderCover();
+        })
+        .catch(e => {
+          console.error('加载背景图失败:', e);
+          // 设置默认背景
+          document.getElementById('image-select').innerHTML = `
           <option value="images/biking.png">默认背景</option>
         `;
-      });
+        });
     }
 
     function renderCover() {
@@ -192,4 +206,5 @@
     window.onload = loadImages;
   </script>
 </body>
+
 </html>

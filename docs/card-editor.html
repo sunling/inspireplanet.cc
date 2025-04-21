@@ -2,125 +2,125 @@
 <html lang="zh-CN">
 
 <head>
-    <meta charset="UTF-8">
-    <title>启发星球卡片编辑器</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link rel="stylesheet" href="card.css" />
-    <style>
-        * {
-            -webkit-font-smoothing: antialiased;
-        }
+  <meta charset="UTF-8">
+  <title>启发星球卡片编辑器</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="card.css" />
+  <style>
+    * {
+      -webkit-font-smoothing: antialiased;
+    }
 
-        body {
-            display: flex;
-            gap: 40px;
-            padding: 40px;
-            font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-            background: #f5f5f5;
-        }
+    body {
+      display: flex;
+      gap: 40px;
+      padding: 40px;
+      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: #f5f5f5;
+    }
 
-        .form {
-            width: 320px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
+    .form {
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
 
-        .form input,
-        .form textarea,
-        .form select {
-            width: 100%;
-            padding: 8px;
-            font-size: 14px;
-        }
+    .form input,
+    .form textarea,
+    .form select {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+    }
 
-        .form label {
-            font-weight: bold;
-        }
+    .form label {
+      font-weight: bold;
+    }
 
-        .buttons {
-            display: flex;
-            gap: 12px;
-        }
-    </style>
+    .buttons {
+      display: flex;
+      gap: 12px;
+    }
+  </style>
 </head>
 
 <body>
-    <div class="form">
-        <label>标题：<input id="title" value="不要等太阳照进来"></label>
-        <label>金句：<textarea id="quote">我不要做等待太阳照到自己的人，我要做在黑夜中自己发光的。</textarea></label>
-        <label>具体的事：<textarea id="detail">李影回忆三年前在低谷时，每周学英语、保持运动...</textarea></label>
-        <label>EP（如14）：<input id="episode" type="number" value="14"></label>
-        <label>腾讯会议号：<input id="meetingId" value="818 7279 2687"></label>
-        <label>选择背景图：
-            <select id="image-select"></select>
-        </label>
-        <div class="buttons">
-            <button onclick="renderCard()">预览</button>
-            <button onclick="downloadCard()">下载</button>
-        </div>
+  <div class="form">
+    <label>标题：<input id="title" value="不要等太阳照进来"></label>
+    <label>金句：<textarea id="quote">我不要做等待太阳照到自己的人，我要做在黑夜中自己发光的。</textarea></label>
+    <label>具体的事：<textarea id="detail">李影回忆三年前在低谷时，每周学英语、保持运动...</textarea></label>
+    <label>EP（如14）：<input id="episode" type="number" value="14"></label>
+    <label>腾讯会议号：<input id="meetingId" value="818 7279 2687"></label>
+    <label>选择背景图：
+      <select id="image-select"></select>
+    </label>
+    <div class="buttons">
+      <button onclick="renderCard()">预览</button>
+      <button onclick="downloadCard()">下载</button>
     </div>
-    <div id="preview" class="card">
-        <!-- 卡片内容将在这里生成 -->
-    </div>
+  </div>
+  <div id="preview" class="card">
+    <!-- 卡片内容将在这里生成 -->
+  </div>
 
-    <script>
-        function getDateFromEpisode(episodeNum) {
-            const base = new Date('2025-04-12'); // EP13 日期
-            const diff = episodeNum - 13;
+  <script>
+    function getDateFromEpisode(episodeNum) {
+      const base = new Date('2025-04-12'); // EP13 日期
+      const diff = episodeNum - 13;
 
-            const currentDate = new Date(base.getTime() + diff * 7 * 24 * 60 * 60 * 1000);
-            const nextDate = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const currentDate = new Date(base.getTime() + diff * 7 * 24 * 60 * 60 * 1000);
+      const nextDate = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-            const fmt = (date) => {
-                const m = date.getMonth() + 1;
-                const d = date.getDate();
-                return `${m}月${d}日`;
-            };
+      const fmt = (date) => {
+        const m = date.getMonth() + 1;
+        const d = date.getDate();
+        return `${m}月${d}日`;
+      };
 
-            return {
-                date: `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月${currentDate.getDate()}日`,
-                meeting: `${fmt(nextDate)}早8:00`
-            };
-        }
+      return {
+        date: `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月${currentDate.getDate()}日`,
+        meeting: `${fmt(nextDate)}早8:00`
+      };
+    }
 
-        function loadImages() {
-          fetch('images.json')
-            .then(res => res.json())
-            .then(images => {
-              const select = document.getElementById('image-select');
+    function loadImages() {
+      fetch('images.json')
+        .then(res => res.json())
+        .then(images => {
+          const select = document.getElementById('image-select');
 
-              // 清空现有选项
-              select.innerHTML = '';
+          // 清空现有选项
+          select.innerHTML = '';
 
-              // 添加新选项
-              images.forEach(img => {
-                const option = new Option(img, `images/${img}`);
-                select.add(option);
-              });
+          // 添加新选项
+          images.forEach(img => {
+            const option = new Option(img, `images/${img}`);
+            select.add(option);
+          });
 
-              // 初始化渲染
-              renderCard();
-            })
-            .catch(e => {
-              console.error('加载背景图失败:', e);
-              // 设置默认背景
-              document.getElementById('image-select').innerHTML = `
+          // 初始化渲染
+          renderCard();
+        })
+        .catch(e => {
+          console.error('加载背景图失败:', e);
+          // 设置默认背景
+          document.getElementById('image-select').innerHTML = `
                 <option value="images/biking.png">默认背景</option>
               `;
-            });
-          }
+        });
+    }
 
-        function renderCard() {
-            const title = document.getElementById('title').value;
-            const quote = document.getElementById('quote').value;
-            const detail = document.getElementById('detail').value;
-            const episode = document.getElementById('episode').value;
-            const imagePath = document.getElementById('image-select').value;
-            const { date, meeting } = getDateFromEpisode(episode);
-            const meetingId = document.getElementById('meetingId').value;
+    function renderCard() {
+      const title = document.getElementById('title').value;
+      const quote = document.getElementById('quote').value;
+      const detail = document.getElementById('detail').value;
+      const episode = document.getElementById('episode').value;
+      const imagePath = document.getElementById('image-select').value;
+      const { date, meeting } = getDateFromEpisode(episode);
+      const meetingId = document.getElementById('meetingId').value;
 
-            document.getElementById('preview').innerHTML = `
+      document.getElementById('preview').innerHTML = `
         <div class="card">
             <div class="title">${title}</div>
             <div class="quote-box">${quote}</div>
@@ -133,40 +133,40 @@
             </div>
         </div>`;
 
-        }
+    }
 
-        function downloadCard() {
-          // 确保捕获的是渲染完成的封面
-          const cardElement = document.getElementById('preview');
+    function downloadCard() {
+      // 确保捕获的是渲染完成的封面
+      const cardElement = document.getElementById('preview');
 
-          // 添加延时确保渲染完成
-          setTimeout(() => {
-            html2canvas(cardElement, {
-              scale: 2, // 提高导出质量
-              logging: true,
-              useCORS: true // 允许跨域图片
-            }).then(canvas => {
-              const link = document.createElement('a');
-              link.download = 'inspiration-card-' + new Date().getTime() + '.png';
-              link.href = canvas.toDataURL('image/png');
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            });
-          }, 500);
-        }
+      // 添加延时确保渲染完成
+      setTimeout(() => {
+        html2canvas(cardElement, {
+          scale: 2, // 提高导出质量
+          logging: true,
+          useCORS: true // 允许跨域图片
+        }).then(canvas => {
+          const link = document.createElement('a');
+          link.download = 'inspiration-card-' + new Date().getTime() + '.png';
+          link.href = canvas.toDataURL('image/png');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+      }, 500);
+    }
 
-        // function downloadCard() {
-        //     html2canvas(document.getElementById('preview')).then(canvas => {
-        //         const link = document.createElement('a');
-        //         link.download = 'inspiration-card.png';
-        //         link.href = canvas.toDataURL();
-        //         link.click();
-        //     });
-        // }
+    // function downloadCard() {
+    //     html2canvas(document.getElementById('preview')).then(canvas => {
+    //         const link = document.createElement('a');
+    //         link.download = 'inspiration-card.png';
+    //         link.href = canvas.toDataURL();
+    //         link.click();
+    //     });
+    // }
 
-        window.onload = loadImages;
-    </script>
+    window.onload = loadImages;
+  </script>
 </body>
 
 </html>

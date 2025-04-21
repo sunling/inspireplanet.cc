@@ -12,10 +12,10 @@ const path = require('path');
     throw new Error('Chrome not found at expected path. Please edit generate.js to set correct path.');
   }
   const browser = await puppeteer.launch({
-  executablePath,
-  headless: true,
-  args: ['--no-sandbox', '--disable-setuid-sandbox'],
-});
+    executablePath,
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
 
   const screenshotTasks = [];
 
