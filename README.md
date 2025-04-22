@@ -14,8 +14,8 @@ A visual toolkit for creators to craft beautiful **quote cards** and **cover ima
 - **情绪标签筛选**：快速找到符合意境的背景图（开发中）
 
 👉 在线体验：
-- [桌面版编辑器](https://sunling.github.io/flashcard-for-inspiration-planet/cover-editor.html)
-- [移动端优化版](https://sunling.github.io/flashcard-for-inspiration-planet/cover-editor-mobile.html)
+- [桌面版编辑器](https://sunling.github.io/content-crafter-kit/cover-editor.html)
+- [移动端优化版](https://sunling.github.io/content-crafter-kit/cover-editor-mobile.html)
 
 ---
 
@@ -27,8 +27,8 @@ A visual toolkit for creators to craft beautiful **quote cards** and **cover ima
 - **在线展示**：生成后可立即发布查看
 
 👉 在线体验：
-- [卡片编辑器](https://sunling.github.io/flashcard-for-inspiration-planet/card-editor.html)
-- [示例展示墙](https://sunling.github.io/flashcard-for-inspiration-planet)
+- [卡片编辑器](https://sunling.github.io/content-crafter-kit/card-editor.html)
+- [示例展示墙](https://sunling.github.io/content-crafter-kit)
 
 ---
 
@@ -52,7 +52,7 @@ npm run gen:cover   # 批量生成封面图
 ## 🗂 项目结构概览
 
 ```
-flashcard-for-inspiration-planet/
+content-crafter-kit/
 ├── data/                   # 金句卡片和封面图数据 json
 ├── docs/                   # GitHub Pages 托管目录
 │   ├── cover-editor.html   # 封面图关键词式编辑器
@@ -77,9 +77,9 @@ flashcard-for-inspiration-planet/
 └── README.md
 ```
 
-🙌 项目缘起
+### 🙌 项目缘起
 这个工具起源于「启发星球」社群的内容分享需求，现在已发展为适用于所有创作者的可视化表达工具包。如果你也在创作卡片、做内容社群、写公众号/小红书，欢迎使用和反馈！
 
-📮 联系我
+### 📮 联系我
 Created by Sun Ling(https://sunling.github.io/) ｜公众号：孙玲在美国
 欢迎使用、Star ⭐、Fork 或提 issue！
