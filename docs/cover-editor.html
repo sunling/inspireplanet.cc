@@ -3,16 +3,9 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>启发星球封面图编辑器</title>
+  <title>封面图编辑器（完整功能：背景图上传 + 下拉选择）</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="cover.css" />
   <style>
-    * {
-      -webkit-font-smoothing: antialiased;
-      box-sizing: border-box;
-    }
-
     body {
       display: flex;
       gap: 40px;
@@ -70,46 +63,58 @@
       width: 100%;
       height: 100%;
       background-size: cover;
+      background-position: center;
+      z-index: 0;
+    }
+
+    #preview .overlay {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 1;
     }
 
     #preview .content {
-      position: relative;
+      position: absolute;
       z-index: 2;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
       color: white;
       width: 80%;
     }
 
-    #preview .keywords {
-      color: #FFDE59;
-      font-size: 18px;
-      margin-bottom: 20px;
-      font-weight: 600;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+    .main-title {
+      font-size: 42px;
+      font-weight: bold;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
     }
 
-    #preview .question {
-      font-size: 36px;
-      font-weight: bold;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+    .sub-title {
+      font-size: 24px;
+      margin-top: 12px;
+      color: #eee0c5;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    .keywords {
+      color: #FFDE59;
+      font-size: 18px;
+      margin-top: 24px;
+      font-weight: 600;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
     }
   </style>
 </head>
 
 <body>
   <div class="form">
-    <label>关键词 1: <input id="k1" value="自燃"></label>
-    <label>关键词 2: <input id="k2" value="火种"></label>
-    <label>关键词 3: <input id="k3" value="迷茫"></label>
-    <label>引导问题 (<8字): <input id="question" value="你最近被什么点燃？"></label>
-    <label>选择背景图：
-      <select id="image-select"></select>
-    </label>
-    <label>或上传自定义背景图：
-      <input type="file" id="bgUpload" accept="image/*" />
+    <label>主标题(3~5字):<input id="main-title" value="我想放空"></label>
+    <label>副标题(短句):<input id="sub-title" value="可连放空也需要练习"></label>
+    <label>关键词(空格分割):<input id="tags" value="tag1 tag2 tag3"></label>
+    <label>文字布局风格：
+      <select id="layout-select" onchange="renderCover()">
+        <option value="center">居中排版</option>
+        <option value="left-top">左上排版</option>
+      </select>
     </label>
     <label>标题字体：
       <select id="title-font" onchange="renderCover()">
@@ -127,54 +132,86 @@
         <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
       </select>
     </label>
+    <label>选择背景图：
+      <select id="image-select" onchange="renderCover()"></select>
+    </label>
+    <label>上传自定义背景图：
+      <input type="file" id="bgUpload" accept="image/*" />
+    </label>
+    <label>背景位置左右：<input type="range" id="bgX" min="0" max="100" value="50" /></label>
+    <label>背景位置上下：<input type="range" id="bgY" min="0" max="100" value="50" /></label>
     <div class="buttons">
       <button onclick="renderCover()">预览</button>
       <button onclick="downloadCover()">下载</button>
     </div>
   </div>
 
-  <div id="preview"></div>
+  <div id="preview">
+    <div class="cover">
+      <div class="bg" id="bg"></div>
+      <div class="overlay"></div>
+      <div class="content" id="content">
+        <div class="main-title" id="title">我想放空</div>
+        <div class="sub-title" id="subtitle">可连放空也需要练习</div>
+        <div class="keywords" id="keywords">自燃 / 火种 / 迷茫</div>
+      </div>
+    </div>
+  </div>
 
   <script>
     function loadImages() {
-      fetch('images.json')
-        .then(res => res.json())
-        .then(images => {
-          const select = document.getElementById('image-select');
-          select.innerHTML = '';
-          images.forEach(img => {
-            const option = new Option(img, `images/${img}`);
-            select.add(option);
-          });
-          renderCover();
-        })
-        .catch(e => {
-          console.error('加载背景图失败:', e);
-          document.getElementById('image-select').innerHTML = '<option value="images/biking.png">默认背景</option>';
-        });
+      const images = [
+        "artisanbasket.png",
+        "biking.png",
+        "fieldtools.png",
+        "freshproduce.png",
+        "frostedwindow.png",
+        "rainywalk.png",
+        "reading.png",
+        "repairman.png",
+        "sunlitcorridor.png",
+        "sunlitkitchen.png",
+        "teahouse.png"
+      ];
+      const select = document.getElementById("image-select");
+      select.innerHTML = "";
+      images.forEach(img => {
+        const option = new Option(img, `images/${img}`);
+        select.add(option);
+      });
     }
 
-    let customBgImage = '';
+    function renderCover(customBgImage = "") {
+      const main = document.getElementById("main-title").value;
+      const sub = document.getElementById("sub-title").value;
+      const tags = document.getElementById("tags").value;
+      const layout = document.getElementById("layout-select").value;
+      const titleFont = document.getElementById("title-font").value;
+      const bodyFont = document.getElementById("body-font").value;
+      const selectedBg = document.getElementById("image-select").value;
 
-    function renderCover() {
-      const k1 = document.getElementById('k1').value;
-      const k2 = document.getElementById('k2').value;
-      const k3 = document.getElementById('k3').value;
-      const q = document.getElementById('question').value;
-      const bgSelect = document.getElementById('image-select');
-      const bg = bgSelect ? bgSelect.value : '';
-      const titleFont = document.getElementById('title-font').value;
-      const bodyFont = document.getElementById('body-font').value;
+      document.getElementById("title").innerText = main;
+      document.getElementById("subtitle").innerText = sub;
+      document.getElementById("keywords").innerText = tags.split(" ").join(" / ");
+      const content = document.getElementById("content");
+      content.style.fontFamily = titleFont;
+      document.getElementById("keywords").style.fontFamily = bodyFont;
 
-      document.getElementById('preview').innerHTML = `
-        <div class="cover">
-          <div class="bg" style="background-image: url('${bg}')"></div>
-          <div class="overlay"></div>
-          <div class="content" style="font-family: ${titleFont}">
-            <div class="keywords" style="font-family: ${bodyFont}">${k1} / ${k2} / ${k3}</div>
-            <div class="question">${q}</div>
-          </div>
-        </div>`;
+      const bg = document.getElementById("bg");
+      const finalBg = customBgImage || selectedBg;
+      bg.style.backgroundImage = `url('${finalBg}')`;
+
+      if (layout === "center") {
+        content.style.top = "50%";
+        content.style.left = "50%";
+        content.style.transform = "translate(-50%, -50%)";
+        content.style.textAlign = "center";
+      } else {
+        content.style.top = "40px";
+        content.style.left = "40px";
+        content.style.transform = "none";
+        content.style.textAlign = "left";
+      }
     }
 
     function downloadCover() {
@@ -195,24 +232,31 @@
       }, 500);
     }
 
+    function updateBgPosition() {
+      const x = document.getElementById("bgX").value;
+      const y = document.getElementById("bgY").value;
+      bg.style.backgroundPosition = `${x}% ${y}%`;
+    }
+
     window.onload = function () {
       loadImages();
-
+      renderCover();
+      // upload bg image
       document.getElementById("bgUpload").addEventListener("change", function (event) {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = function (e) {
-          const imageUrl = e.target.result;
-          const previewBg = document.querySelector("#preview .bg");
-          if (previewBg) {
-            previewBg.style.backgroundImage = `url('${imageUrl}')`;
-            previewBg.style.backgroundSize = 'cover';
-            previewBg.style.backgroundPosition = 'center';
-          }
+          renderCover(e.target.result);
         };
         reader.readAsDataURL(file);
+      });
+
+      document.getElementById("bgX").addEventListener("input", () => {
+        updateBgPosition();
+      });
+      document.getElementById("bgY").addEventListener("input", () => {
+        updateBgPosition();
       });
     };
   </script>

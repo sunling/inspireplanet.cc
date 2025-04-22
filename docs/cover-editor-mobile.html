@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>封面图编辑器 - 移动适配</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 16px;
+      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: #f5f5f5;
+    }
+
+    .form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .form input,
+    .form select {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .form label {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    button {
+      padding: 8px 16px;
+      background: #323449;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #preview {
+      display: flex;
+      justify-content: center;
+    }
+
+    #preview .cover {
+      position: relative;
+      width: 100%;
+      max-width: 360px;
+      aspect-ratio: 3 / 4; /* mobile friendly size */
+      overflow: hidden;
+      background: #323449;
+      border-radius: 8px;
+    }
+
+    #preview .bg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      z-index: 0;
+    }
+
+    #preview .overlay {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 1;
+    }
+
+    #preview .content {
+      position: absolute;
+      z-index: 2;
+      color: white;
+      width: 90%;
+      left: 5%;
+      top: 50%;
+      transform: translateY(-50%);
+      text-align: center;
+    }
+
+    .main-title {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .sub-title {
+      font-size: 16px;
+      margin-top: 8px;
+      color: #eee0c5;
+    }
+
+    .keywords {
+      color: #FFDE59;
+      font-size: 14px;
+      margin-top: 16px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="form">
+    <label>主标题:<input id="main-title" value="我想放空"></label>
+    <label>副标题:<input id="sub-title" value="可连放空也需要练习"></label>
+    <label>关键词(空格分隔):<input id="tags" value="tag1 tag2 tag3"></label>
+    <label>背景图：
+      <select id="image-select"></select>
+    </label>
+    <div class="buttons">
+      <button onclick="renderCover()">预览</button>
+      <button onclick="downloadCover()">下载</button>
+    </div>
+  </div>
+
+  <div id="preview">
+    <div class="cover">
+      <div class="bg" id="bg"></div>
+      <div class="overlay"></div>
+      <div class="content" id="content">
+        <div class="main-title" id="title">我想放空</div>
+        <div class="sub-title" id="subtitle">可连放空也需要练习</div>
+        <div class="keywords" id="keywords">tag1 / tag2 / tag3</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function loadImages() {
+      const images = [
+        "artisanbasket.png", "biking.png", "fieldtools.png", "freshproduce.png",
+        "frostedwindow.png", "rainywalk.png", "reading.png", "repairman.png",
+        "sunlitcorridor.png", "sunlitkitchen.png", "teahouse.png"
+      ];
+      const select = document.getElementById("image-select");
+      select.innerHTML = "";
+      images.forEach(img => {
+        const option = new Option(img, `images/${img}`);
+        select.add(option);
+      });
+    }
+
+    function renderCover() {
+      const main = document.getElementById("main-title").value;
+      const sub = document.getElementById("sub-title").value;
+      const tags = document.getElementById("tags").value;
+      const selectedBg = document.getElementById("image-select").value;
+
+      document.getElementById("title").innerText = main;
+      document.getElementById("subtitle").innerText = sub;
+      document.getElementById("keywords").innerText = tags.split(" ").join(" / ");
+      document.getElementById("bg").style.backgroundImage = `url('${selectedBg}')`;
+    }
+
+    function downloadCover() {
+      const coverElement = document.querySelector('#preview .cover');
+      setTimeout(() => {
+        html2canvas(coverElement, {
+          scale: 2,
+          useCORS: true
+        }).then(canvas => {
+          const link = document.createElement('a');
+          link.download = 'mobile-cover-' + new Date().getTime() + '.png';
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        });
+      }, 300);
+    }
+
+    window.onload = function () {
+      loadImages();
+      renderCover();
+    };
+  </script>
+</body>
+</html>
