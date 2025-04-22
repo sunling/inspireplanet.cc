@@ -1,6 +1,6 @@
-# ✨ 启发星球金句卡片 & 封面图生成器
-
-这是一个为「启发星球」项目设计的视觉内容生成器，支持创建带关键词/引导语的**金句卡片**与**封面图**，并支持本地批量生成、在线编辑、下载与部署展示。
+# Content Crafter Kit
+A visual toolkit for creators to craft beautiful **quote cards** and **cover images** — all in the browser.  
+打造你的创作内容视觉风格，一站式生成「金句卡片」和「封面图」。并支持本地批量生成、在线编辑、下载与部署展示。
 
 ---
 
@@ -77,6 +77,9 @@ flashcard-for-inspiration-planet/
 └── README.md
 ```
 
----
+🙌 项目缘起
+这个工具起源于「启发星球」社群的内容分享需求，现在已发展为适用于所有创作者的可视化表达工具包。如果你也在创作卡片、做内容社群、写公众号/小红书，欢迎使用和反馈！
 
-欢迎体验 & 欢迎建议 🌱
+📮 联系我
+Created by Sun Ling(https://sunling.github.io/) ｜公众号：孙玲在美国
+欢迎使用、Star ⭐、Fork 或提 issue！
