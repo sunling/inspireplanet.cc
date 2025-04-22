@@ -116,20 +116,12 @@
         <option value="left-top">左上排版</option>
       </select>
     </label>
-    <label>标题字体：
-      <select id="title-font" onchange="renderCover()">
+    <label>选择字体：
+      <select id="choose-font" onchange="renderCover()">
+        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
         <option value="'Noto Sans SC', sans-serif">思源黑体</option>
         <option value="'PingFang SC', sans-serif">苹方</option>
         <option value="'KaiTi', serif">楷体</option>
-        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
-      </select>
-    </label>
-    <label>正文字体：
-      <select id="body-font" onchange="renderCover()">
-        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
-        <option value="'PingFang SC', sans-serif">苹方</option>
-        <option value="'KaiTi', serif">楷体</option>
-        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
       </select>
     </label>
     <label>选择背景图：
@@ -138,8 +130,6 @@
     <label>上传自定义背景图：
       <input type="file" id="bgUpload" accept="image/*" />
     </label>
-    <label>背景位置左右：<input type="range" id="bgX" min="0" max="100" value="50" /></label>
-    <label>背景位置上下：<input type="range" id="bgY" min="0" max="100" value="50" /></label>
     <div class="buttons">
       <button onclick="renderCover()">预览</button>
       <button onclick="downloadCover()">下载</button>
@@ -186,16 +176,15 @@
       const sub = document.getElementById("sub-title").value;
       const tags = document.getElementById("tags").value;
       const layout = document.getElementById("layout-select").value;
-      const titleFont = document.getElementById("title-font").value;
-      const bodyFont = document.getElementById("body-font").value;
+      const selectedFont = document.getElementById("choose-font").value;
       const selectedBg = document.getElementById("image-select").value;
 
       document.getElementById("title").innerText = main;
       document.getElementById("subtitle").innerText = sub;
       document.getElementById("keywords").innerText = tags.split(" ").join(" / ");
       const content = document.getElementById("content");
-      content.style.fontFamily = titleFont;
-      document.getElementById("keywords").style.fontFamily = bodyFont;
+      content.style.fontFamily = selectedFont;
+      document.getElementById("keywords").style.fontFamily = selectedFont;
 
       const bg = document.getElementById("bg");
       const finalBg = customBgImage || selectedBg;
@@ -232,12 +221,6 @@
       }, 500);
     }
 
-    function updateBgPosition() {
-      const x = document.getElementById("bgX").value;
-      const y = document.getElementById("bgY").value;
-      bg.style.backgroundPosition = `${x}% ${y}%`;
-    }
-
     window.onload = function () {
       loadImages();
       renderCover();
@@ -250,13 +233,6 @@
           renderCover(e.target.result);
         };
         reader.readAsDataURL(file);
-      });
-
-      document.getElementById("bgX").addEventListener("input", () => {
-        updateBgPosition();
-      });
-      document.getElementById("bgY").addEventListener("input", () => {
-        updateBgPosition();
       });
     };
   </script>
