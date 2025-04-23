@@ -32,9 +32,9 @@
 
     .card-body p {
       flex-grow: 1;
-      font-size: 14px;
+      font-size: 15px;
       margin-bottom: 20px;
-      min-height: 150px;
+      min-height: 130px;
     }
 
     .form {
@@ -229,7 +229,7 @@
 
           // 添加新选项
           images.forEach(img => {
-            const option = new Option(img, `images/${img}`);
+            const option = new Option(img.desc, `images/${img.file}`);
             select.add(option);
           });
 
