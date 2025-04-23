@@ -6,6 +6,7 @@
   <title>启发时刻卡片编辑器</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="utils.js"></script>
+  <link rel="stylesheet" href="common.css" />
   <link rel="stylesheet" href="card.css" />
   <link
     href="https://fonts.googleapis.com/css2?family=Inter&family=Playfair+Display&family=Montserrat&family=Lato&family=Dancing+Script&display=swap"
@@ -56,41 +57,6 @@
     .form label {
       font-weight: bold;
     }
-
-    .buttons {
-      display: flex;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
-    button {
-      padding: 8px 16px;
-      background: #323449;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .upload-btn {
-      font-size: 13px;
-      padding: 6px 14px;
-      background-color: #f0f0f0;
-      color: #333;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .upload-btn:hover {
-      background-color: #e6e6e6;
-      border-color: #999;
-    }
-
-    .upload-btn:active {
-      background-color: #ddd;
-    }
   </style>
 </head>
 
@@ -138,14 +104,10 @@
     <label>上传自定义插图:
       <div class="file-upload-wrapper">
         <button type="button" id="uploadBtn" class="upload-btn">上传图片</button>
-        <span id="fileStatus" style="color: #888; font-size: 9px;">未选择文件</span>
+        <span id="fileStatus" style="color: #888; font-size: 12px;">未选择文件</span>
         <input type="file" id="bgUpload" accept="image/*" style="display: none;">
       </div>
     </label>
-    <!-- <label>上传自定义插图:
-      <input type="file" id="bgUpload" accept="image/*" onchange="onUploadBg(event, renderCard)"/>
-      <span id="fileStatus" style="font-size: 10px; color: #666;"></span>
-    </label> -->
     <label>你的启发:
       <small style="color: #888; font-size: 9px;">记录下‘说到你心里去了’的那一刻吧</small>
       <textarea id="detail" oninput="renderCard()" style="min-height: 80px; resize: vertical;"
