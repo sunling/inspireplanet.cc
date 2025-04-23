@@ -64,9 +64,7 @@
     </label>
     <label>听到的观点: <textarea id="quote">我不要做等待太阳照到自己的人，我要做在黑夜中自己发光的。</textarea></label>
     <label>你的启发(最多128字): <textarea id="detail" maxlength="128">说意见具体的事吧，不用很长</textarea></label>
-    <label>脚注(写上你的名字): 
-      <textarea id="footer">创作者：{你的名字}<br> 欢迎你加入每周六早8点的启发星球的线上腾讯会议: 818 7279 2687</textarea>
-    </label>
+    <label>创作者: <input id="creator" value="你的名字"></label>
     
     <div class="buttons">
       <button onclick="renderCard()">预览</button>
@@ -129,7 +127,7 @@
       const quote = document.getElementById('quote').value;
       const detail = document.getElementById('detail').value;
       const imagePath = document.getElementById('image-select').value;
-      const footer = document.getElementById('footer').value;
+      const creator = document.getElementById('creator').value;
       const selectedFont = document.getElementById('choose-font').value;
       //金句插图
       const finalImage = customBgImage || imagePath;
@@ -141,7 +139,8 @@
             <img id="quote-image" src="${finalImage}" alt="金句插图" />
             <p>${detail}</p>
             <div class="card-footer">
-                <div class="footer">${footer}</div>
+                <div class="footer">创作者：${creator}</div>
+                <div class="meeting">欢迎你加入每周六早8点的启发星球的线上腾讯会议: <span class="highlight">818 7279 2687</span></div>
             </div>
         </div>`;
     }
