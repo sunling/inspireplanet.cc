@@ -260,14 +260,6 @@
       //<div class="meeting">欢迎你参加每周六早8点的启发星球线上腾讯会议: <span class="highlight">818 7279 2687</span></div>
     }
 
-    function getCurrentDate() {
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, '0'); // 月份从0开始
-      const dd = String(now.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    }
-
     function downloadCard() {
       // 确保捕获的是渲染完成的封面
       const cardElement = document.getElementById('preview');

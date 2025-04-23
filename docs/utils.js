@@ -32,5 +32,11 @@ function loadImages(onLoadedFunc, selectId = "image-select", jsonPath = "images.
       });
   }
   
-  // 你可以在这里添加更多公用函数，例如 applyTheme、debounce 等
+  function getCurrentDate() {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0'); // 月份从0开始
+    const dd = String(now.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
   
