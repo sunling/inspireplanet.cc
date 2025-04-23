@@ -133,34 +133,35 @@
 </head>
 
 <body>
-  <div class="form">
-    <label>主标题:<input id="main-title" value="我想放空"></label>
-    <label>副标题:<input id="sub-title" value="可连放空也需要练习"></label>
-    <label>关键词(空格分隔):<input id="tags" value="tag1 tag2 tag3"></label>
-    <label>背景图：
-      <select id="image-select"></select>
-    </label>
-    <label>上传自定义背景图：
-      <input type="file" id="bgUpload" accept="image/*" />
-    </label>
-    <div class="buttons">
-      <button onclick="renderCover()">预览</button>
-      <button onclick="downloadCover()">下载</button>
+  <div class="container">
+    <div class="form">
+      <label>主标题:<input id="main-title" value="我想放空"></label>
+      <label>副标题:<input id="sub-title" value="可连放空也需要练习"></label>
+      <label>关键词(空格分隔):<input id="tags" value="tag1 tag2 tag3"></label>
+      <label>背景图：
+        <select id="image-select"></select>
+      </label>
+      <label>上传自定义背景图：
+        <input type="file" id="bgUpload" accept="image/*" />
+      </label>
+      <div class="buttons">
+        <button onclick="renderCover()">预览</button>
+        <button onclick="downloadCover()">下载</button>
+      </div>
     </div>
-  </div>
 
-  <div id="preview">
-    <div class="cover">
-      <div class="bg" id="bg"></div>
-      <div class="overlay"></div>
-      <div class="content" id="content">
-        <div class="main-title" id="title">我想放空</div>
-        <div class="sub-title" id="subtitle">可连放空也需要练习</div>
-        <div class="keywords" id="keywords">tag1 / tag2 / tag3</div>
+    <div id="preview">
+      <div class="cover">
+        <div class="bg" id="bg"></div>
+        <div class="overlay"></div>
+        <div class="content" id="content">
+          <div class="main-title" id="title">我想放空</div>
+          <div class="sub-title" id="subtitle">可连放空也需要练习</div>
+          <div class="keywords" id="keywords">tag1 / tag2 / tag3</div>
+        </div>
       </div>
     </div>
   </div>
-
   <script>
     function loadImages() {
       const images = [
