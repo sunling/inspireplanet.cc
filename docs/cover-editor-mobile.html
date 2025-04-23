@@ -135,11 +135,11 @@
 <body>
   <div class="container">
     <div class="form">
-      <label>主标题:<input id="main-title" value="我想放空"></label>
-      <label>副标题:<input id="sub-title" value="可连放空也需要练习"></label>
-      <label>关键词(空格分隔):<input id="tags" value="tag1 tag2 tag3"></label>
+      <label>主标题:<input id="main-title" placeholder="我想放空" oninput="renderCover()"></label>
+      <label>副标题:<input id="sub-title" placeholder="可连放空也需要练习" oninput="renderCover()"></label>
+      <label>关键词(空格分隔):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
       <label>背景图：
-        <select id="image-select"></select>
+        <select id="image-select" oninput="renderCover()"></select>
       </label>
       <label>上传自定义背景图：
         <input type="file" id="bgUpload" accept="image/*" />
