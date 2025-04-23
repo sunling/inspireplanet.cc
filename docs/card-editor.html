@@ -47,6 +47,14 @@
 
 <body>
   <div class="form">
+    <label>选择字体：
+      <select id="choose-font" onchange="renderCard()">
+        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+        <option value="'PingFang SC', sans-serif">苹方</option>
+        <option value="'KaiTi', serif">楷体</option>
+      </select>
+    </label>
     <label>标题: <input id="title" value="不要等太阳照进来"></label>
     <label>金句: <textarea id="quote">我不要做等待太阳照到自己的人，我要做在黑夜中自己发光的。</textarea></label>
     <label>具体的事: <textarea id="detail">李影回忆三年前在低谷时，每周学英语、保持运动...</textarea></label>
@@ -122,6 +130,9 @@
       const imagePath = document.getElementById('image-select').value;
       const { date, meeting } = getDateFromEpisode(episode);
       const meetingId = document.getElementById('meetingId').value;
+      const selectedFont = document.getElementById("choose-font").value;
+      const content = document.getElementsByClassName("card");
+      content.style.fontFamily = selectedFont;
       //金句插图
       const finalImage = customBgImage || imagePath;
 
