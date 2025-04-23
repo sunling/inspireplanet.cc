@@ -87,14 +87,14 @@
         <option value="'KaiTi', serif">楷体</option>
       </select>
     </label>
-    <label>标题: 
+    <label>标题:
       <input id="title" placeholder="这一刻，我想说..." oninput="renderCard()">
     </label>
-    <label>听到的观点: 
+    <label>听到的观点:
       <small style="color: #888; font-size: 9px;">
         来自书籍、播客、电影、对话中让你眼前一亮的句子都可以写下来哦
       </small>
-      <textarea id="quote" oninput="renderCard()" placeholder="一本书里某句话<br>播客里的一个观点<br>电影里的片段……<br>那些突然触动你的时刻，都值得记录。"></textarea>
+      <textarea id="quote" oninput="renderCard()" placeholder="一本书里某句话/播客里的一个观点/电影里的片段……那些突然触动你的时刻，都值得记录。"></textarea>
     </label>
     <label>选择插图:
       <select id="image-select" onchange="onSelectImage()"></select>
@@ -104,8 +104,8 @@
     </label>
     <label>你的启发:
       <small style="color: #888; font-size: 9px;">记录下‘说到你心里去了’的那一刻吧</small>
-      <textarea id="detail" oninput="renderCard()"
-        style="min-height: 80px; resize: vertical;" placeholder="听完/读完之后，我做/思考了..."></textarea>
+      <textarea id="detail" oninput="renderCard()" style="min-height: 80px; resize: vertical;"
+        placeholder="听完/读完之后，我做/思考了..."></textarea>
     </label>
     <label>创作者: <input id="creator" placeholder="你的名字" oninput="renderCard()"></label>
 

@@ -107,9 +107,9 @@
 
 <body>
   <div class="form">
-    <label>主标题(3~5字):<input id="main-title" value="我想放空"></label>
-    <label>副标题(短句):<input id="sub-title" value="可连放空也需要练习"></label>
-    <label>关键词(空格分割):<input id="tags" value="tag1 tag2 tag3"></label>
+    <label>主标题(3~5字):<input id="main-title" placeholder="我想放空" oninput="renderCover()"></label>
+    <label>副标题(短句):<input id="sub-title" placeholder="可连放空也需要练习" oninput="renderCover()"></label>
+    <label>关键词(空格分割):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
     <label>文字布局风格：
       <select id="layout-select" onchange="renderCover()">
         <option value="center">居中排版</option>
@@ -172,9 +172,9 @@
     }
 
     function renderCover(customBgImage = "") {
-      const main = document.getElementById("main-title").value;
-      const sub = document.getElementById("sub-title").value;
-      const tags = document.getElementById("tags").value;
+      const main = document.getElementById("main-title").value || "主标题";
+      const sub = document.getElementById("sub-title").value || "副标题";
+      const tags = document.getElementById("tags").value || "tag1 tag2 tag3";
       const layout = document.getElementById("layout-select").value;
       const selectedFont = document.getElementById("choose-font").value;
       const selectedBg = document.getElementById("image-select").value;
