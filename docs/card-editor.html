@@ -91,10 +91,10 @@
       <input id="title" value="这一刻，我想说..." oninput="renderCard()">
     </label>
     <label>听到的观点: 
-      <small style="color: #888; font-size: 12px;">
+      <small style="color: #888; font-size: 9px;">
         小提示：来自书籍、播客、电影、对话中让你眼前一亮的句子都可以写下来。
       </small>
-      <textarea id="quote" oninput="renderCard()">📖 一本书里某句话、🎙️播客里的一个观点、🎬电影里的片段……那些突然触动你的时刻，都值得记录。</textarea>
+      <textarea id="quote" oninput="renderCard()">一本书里某句话<br>播客里的一个观点<br>电影里的片段……<br>那些突然触动你的时刻，都值得记录。</textarea>
     </label>
     <label>选择插图:
       <select id="image-select" onchange="onSelectImage()"></select>
@@ -103,8 +103,9 @@
       <input type="file" id="bgUpload" accept="image/*" />
     </label>
     <label>你的启发:
+      <small style="color: #888; font-size: 9px;">小提示：记录‘说到你心里去了’的那一刻</small>
       <textarea id="detail" oninput="renderCard()"
-        style="min-height: 80px; resize: vertical;">被什么打动 → 做了什么小行动 → 感受到什么不同</textarea>
+        style="min-height: 80px; resize: vertical;">听完/读完之后，我做/思考了...</textarea>
     </label>
     <label>创作者: <input id="creator" value="你的名字" oninput="renderCard()"></label>
 
