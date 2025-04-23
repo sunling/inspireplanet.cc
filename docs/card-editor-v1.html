@@ -191,9 +191,23 @@
       //金句插图
       const finalImage = customImage || imagePath;
       const todaydate = getCurrentDate();
+      //主题设置
+      const theme = document.getElementById("theme-select").value;
+      const themes = {
+        darkblue: { background: "#2f2f46", color: "#ffffff" },
+        green: { background: "#2e4a3f", color: "#f5f5dc" },
+        brown: { background: "#4b3832", color: "#f5f5dc" },
+        purple: { background: "#3e2f5b", color: "#f8e1f4" },
+        grayblue: { background: "#2f3e46", color: "#ffffff" },
+      };
+      const selectedTheme = themes[theme];
 
       document.getElementById('preview').innerHTML = `
-        <div class="card" style="font-family: ${selectedFont}">
+        <div class="card" style="
+              font-family: ${selectedFont};
+              background-color: ${selectedTheme.background};
+              color: ${selectedTheme.color};
+            ">
              <div class="card-body">
               <div class="title">${title}</div>
               <div class="quote-box">${quote}</div>
@@ -238,25 +252,6 @@
           document.body.removeChild(link);
         });
       }, 500);
-    }
-
-    function applyTheme() {
-      const theme = document.getElementById("theme-select").value;
-      const preview = document.getElementById("preview");
-
-      const themes = {
-        darkblue: { background: "#2f2f46", color: "#ffffff" },
-        green: { background: "#2e4a3f", color: "#f5f5dc" },
-        brown: { background: "#4b3832", color: "#f5f5dc" },
-        purple: { background: "#3e2f5b", color: "#f8e1f4" },
-        grayblue: { background: "#2f3e46", color: "#ffffff" },
-      };
-
-      const selected = themes[theme];
-      if (selected) {
-        preview.style.backgroundColor = selected.background;
-        preview.style.color = selected.color;
-      }
     }
 
     window.onload = function () {
