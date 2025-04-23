@@ -118,7 +118,7 @@
     <label>上传自定义插图:
       <div class="file-upload-wrapper">
         <button type="button" id="uploadBtn">上传图片</button>
-        <span id="fileStatus" class="status-text">未选择文件</span>
+        <span id="fileStatus" style="color: #888; font-size: 9px;">未选择文件</span>
         <input type="file" id="bgUpload" accept="image/*" style="display: none;">
       </div>
     </label>
@@ -260,7 +260,7 @@
       bindCustomFileUpload({
         inputId: "bgUpload",
         buttonId: "uploadBtn",
-        statusId: "uploadStatus",
+        statusId: "fileStatus",
         onLoad: renderCard
       });
     };
