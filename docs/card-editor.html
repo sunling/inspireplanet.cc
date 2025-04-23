@@ -216,7 +216,9 @@
           scale: 2, // 提高导出质量
           logging: true,
           useCORS: true, // 允许跨域图片
-          backgroundColor: '#2f2f46'
+          backgroundColor: '#2f2f46',
+          windowWidth: document.body.scrollWidth,
+          windowHeight: document.body.scrollHeight,
         }).then(canvas => {
           const link = document.createElement('a');
           link.download = 'inspiration-card-' + new Date().getTime() + '.png';
