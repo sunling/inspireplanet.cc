@@ -196,7 +196,8 @@
       setTimeout(() => {
         html2canvas(coverElement, {
           scale: 2,
-          useCORS: true
+          useCORS: true,
+          backgroundColor: null
         }).then(canvas => {
           const link = document.createElement('a');
           link.download = 'mobile-cover-' + new Date().getTime() + '.png';
