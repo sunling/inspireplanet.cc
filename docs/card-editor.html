@@ -19,6 +19,56 @@
       background: #f5f5f5;
     }
 
+    .card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 400px;
+      min-height: 600px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .card .title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .card .quote-box {
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+
+    .card img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 12px 0;
+    }
+
+    .card p {
+      font-size: 14px;
+      line-height: 1.5;
+      flex-grow: 1;
+      margin: 0 0 20px 0;
+      overflow-wrap: break-word;
+    }
+
+    .card-footer {
+      font-size: 12px;
+      color: #666;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
+
+    .card-footer .highlight {
+      color: #e35a5a;
+      font-weight: bold;
+    }
+
     .form {
       width: 320px;
       display: flex;
@@ -66,16 +116,19 @@
       </select>
     </label>
     <label>标题: <input id="title" value="不要等太阳照进来"></label>
+    <label>听到的观点 (最多50字): <textarea id="quote" maxlength="50">我不要做等待太阳照到自己的人</textarea></label>
     <label>选择插图:
       <select id="image-select"></select>
     </label>
     <label>上传自定义插图:
       <input type="file" id="bgUpload" accept="image/*" />
     </label>
-    <label>听到的观点: <textarea id="quote">我不要做等待太阳照到自己的人</textarea></label>
-    <label>你的启发(最多128字): <textarea id="detail" maxlength="128">被什么打动 →  做了什么小行动 → 感受到什么不同</textarea></label>
+    <label>你的启发(最多500字):
+      <textarea id="detail" maxlength="500"
+        style="min-height: 80px; resize: vertical;">被什么打动 → 做了什么小行动 → 感受到什么不同</textarea>
+    </label>
     <label>创作者: <input id="creator" value="你的名字"></label>
-    
+
     <div class="buttons">
       <button onclick="renderCard()">预览</button>
       <button onclick="downloadCard()">下载</button>
