@@ -6,7 +6,6 @@
   <title>金句卡片编辑器</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link rel="stylesheet" href="card.css" />
-  <!-- 示例：添加多个字体支持 -->
   <link
     href="https://fonts.googleapis.com/css2?family=Inter&family=Playfair+Display&family=Montserrat&family=Lato&family=Dancing+Script&display=swap"
     rel="stylesheet">
@@ -92,7 +91,7 @@
     <label>标题: <input id="title" value="不要等太阳照进来" oninput="renderCard()"></label>
     <label>听到的观点 (最多50字): <textarea id="quote" maxlength="50" oninput="renderCard()">我不要做等待太阳照到自己的人</textarea></label>
     <label>选择插图:
-      <select id="image-select" onchange="renderCard()"></select>
+      <select id="image-select" onchange="onSelectImage()"></select>
     </label>
     <label>上传自定义插图:
       <input type="file" id="bgUpload" accept="image/*" />
@@ -113,6 +112,7 @@
   </div>
 
   <script>
+    const customImage = "";
     function getDateFromEpisode(episodeNum) {
       const base = new Date('2025-04-12'); // EP13 日期
       const diff = episodeNum - 13;
@@ -159,15 +159,12 @@
         });
     }
 
-    function getCurrentDate() {
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, '0'); // 月份从0开始
-      const dd = String(now.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
+    function onSelectImage(){
+      customImage = "";
+      renderCard();
     }
 
-    function renderCard(customBgImage = "") {
+    function renderCard() {
       const title = document.getElementById('title').value;
       const quote = document.getElementById('quote').value;
       const detail = document.getElementById('detail').value;
@@ -175,7 +172,7 @@
       const creator = document.getElementById('creator').value;
       const selectedFont = document.getElementById('choose-font').value;
       //金句插图
-      const finalImage = customBgImage || imagePath;
+      const finalImage = customImage || imagePath;
       const todaydate = getCurrentDate();
 
       document.getElementById('preview').innerHTML = `
@@ -192,6 +189,14 @@
         </div>`;
       //<div class="meeting">欢迎你参加每周六早8点的启发星球线上腾讯会议: <span class="highlight">818 7279 2687</span></div>
 
+    }
+
+    function getCurrentDate() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0'); // 月份从0开始
+      const dd = String(now.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
     }
 
     function downloadCard() {
@@ -224,7 +229,8 @@
         if (!file) return;
         const reader = new FileReader();
         reader.onload = function (e) {
-          renderCard(e.target.result);
+          customImage = e.target.result;
+          renderCard();
         };
         reader.readAsDataURL(file);
       });
