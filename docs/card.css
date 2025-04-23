@@ -69,10 +69,11 @@
     font-size: 13px;
     color: #8faadc;
     font-style: italic;
+    padding-bottom:4px;
 }
 
 .meeting {
-    font-size: 11px;
+    font-size: 9px;
     color: #BCA88E;
     white-space: nowrap;
     overflow: hidden;
