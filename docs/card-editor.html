@@ -60,7 +60,7 @@
     <label>具体的事: <textarea id="detail">李影回忆三年前在低谷时，每周学英语、保持运动...</textarea></label>
     <label>EP(如14): <input id="episode" type="number" value="14"></label>
     <label>腾讯会议号：<input id="meetingId" value="818 7279 2687"></label>
-    <label>选择插图: 
+    <label>选择插图:
       <select id="image-select"></select>
     </label>
     <label>上传自定义插图:
@@ -122,7 +122,7 @@
         });
     }
 
-    function renderCard(customBgImage="") {
+    function renderCard(customBgImage = "") {
       const title = document.getElementById('title').value;
       const quote = document.getElementById('quote').value;
       const detail = document.getElementById('detail').value;
@@ -130,9 +130,7 @@
       const imagePath = document.getElementById('image-select').value;
       const { date, meeting } = getDateFromEpisode(episode);
       const meetingId = document.getElementById('meetingId').value;
-      const selectedFont = document.getElementById("choose-font").value;
-      const content = document.getElementsByClassName("card");
-      content.style.fontFamily = selectedFont;
+
       //金句插图
       const finalImage = customBgImage || imagePath;
 
@@ -148,7 +146,9 @@
                 <div class="meeting">${meeting} 欢迎你加入腾讯会议：<span class="highlight">${meetingId}</span></div>
             </div>
         </div>`;
-
+      const selectedFont = document.getElementById("choose-font").value;
+      const content = document.getElementsByClassName("card");
+      content.style.fontFamily = selectedFont;
     }
 
     function downloadCard() {
