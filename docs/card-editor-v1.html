@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <title>金句卡片编辑器</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="card.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter&family=Playfair+Display&family=Montserrat&family=Lato&family=Dancing+Script&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      gap: 40px;
+      padding: 40px;
+      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    }
+
+    .card-body {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-body p {
+      flex-grow: 1;
+      font-size: 14px;
+      margin-bottom: 20px;
+      min-height: 150px;
+    }
+
+    .form {
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form input,
+    .form textarea,
+    .form select {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+    }
+
+    .form label {
+      font-weight: bold;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    button {
+      padding: 8px 16px;
+      background: #323449;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="form">
+    <label>选择主题配色：
+      <select id="theme-select" onchange="applyTheme()">
+        <option value="darkblue">深蓝经典</option>
+        <option value="green">深绿米白</option>
+        <option value="brown">深棕温暖</option>
+        <option value="purple">深紫柔粉</option>
+        <option value="grayblue">灰蓝极简</option>
+      </select>
+    </label>
+
+    <label>选择字体：
+      <select id="choose-font" onchange="renderCard()">
+        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+        <option value="'LXGW WenKai', serif">霞鹜文楷</option>
+        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+        <option value="'Alibaba PuHuiTi', sans-serif">阿里汉仪智能黑体</option>
+        <option value="'Smiley Sans', sans-serif">得意黑</option>
+        <option value="'Noto Serif SC', serif">思源宋体</option>
+        <option value="'PingFang SC', sans-serif">苹方</option>
+        <option value="'KaiTi', serif">楷体</option>
+      </select>
+    </label>
+    <label>标题:
+      <input id="title" placeholder="这一刻，我想说..." oninput="renderCard()">
+    </label>
+    <label>听到的观点:
+      <small style="color: #888; font-size: 9px;">
+        来自书籍、播客、电影、对话中让你眼前一亮的句子都可以写下来哦
+      </small>
+      <textarea id="quote" oninput="renderCard()" placeholder="一本书里某句话/播客里的一个观点/电影里的片段……那些突然触动你的时刻，都值得记录。"></textarea>
+    </label>
+    <label>选择插图:
+      <select id="image-select" onchange="onSelectImage()"></select>
+    </label>
+    <label>上传自定义插图:
+      <input type="file" id="bgUpload" accept="image/*" />
+    </label>
+    <label>你的启发:
+      <small style="color: #888; font-size: 9px;">记录下‘说到你心里去了’的那一刻吧</small>
+      <textarea id="detail" oninput="renderCard()" style="min-height: 80px; resize: vertical;"
+        placeholder="听完/读完之后，我做/思考了..."></textarea>
+    </label>
+    <label>创作者: <input id="creator" placeholder="你的名字" oninput="renderCard()"></label>
+
+    <div class="buttons">
+      <button onclick="renderCard()">预览</button>
+      <button onclick="downloadCard()">下载</button>
+    </div>
+  </div>
+  <div id="preview" class="card">
+    <!-- 卡片内容将在这里生成 -->
+  </div>
+
+  <script>
+    let customImage = "";
+    function getDateFromEpisode(episodeNum) {
+      const base = new Date('2025-04-12');
+      const diff = episodeNum - 13;
+
+      const currentDate = new Date(base.getTime() + diff * 7 * 24 * 60 * 60 * 1000);
+      const nextDate = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+      const fmt = (date) => {
+        const m = date.getMonth() + 1;
+        const d = date.getDate();
+        return `${m}月${d}日`;
+      };
+
+      return {
+        date: `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月${currentDate.getDate()}日`,
+        meeting: `${fmt(nextDate)}早8:00`
+      };
+    }
+
+    function loadImages() {
+      fetch('images.json')
+        .then(res => res.json())
+        .then(images => {
+          const select = document.getElementById('image-select');
+
+          // 清空现有选项
+          select.innerHTML = '';
+
+          // 添加新选项
+          images.forEach(img => {
+            const option = new Option(img, `images/${img}`);
+            select.add(option);
+          });
+
+          // 初始化渲染
+          renderCard();
+        })
+        .catch(e => {
+          console.error('加载背景图失败:', e);
+          // 设置默认背景
+          document.getElementById('image-select').innerHTML = `
+                <option value="images/biking.png">默认背景</option>
+              `;
+        });
+    }
+
+    function onSelectImage() {
+      customImage = "";
+      renderCard();
+    }
+
+    function renderCard() {
+      const title = document.getElementById('title').value || "这一刻，我想说...";
+      const quote = document.getElementById('quote').value || "例如《原则》里说：人避免不了痛苦，尤其是在追求雄心勃勃的目标时。信不信由你，如果以正确的态度对待痛苦，感到痛苦就是你的幸运，因为这将提示你寻找解决方案以便继续前进。";
+      const detail = document.getElementById('detail').value || "你怎么看呢？";
+      const imagePath = document.getElementById('image-select').value;
+      const creator = document.getElementById('creator').value || "你的名字";
+      const selectedFont = document.getElementById('choose-font').value;
+      //金句插图
+      const finalImage = customImage || imagePath;
+      const todaydate = getCurrentDate();
+
+      document.getElementById('preview').innerHTML = `
+        <div class="card" style="font-family: ${selectedFont}">
+             <div class="card-body">
+              <div class="title">${title}</div>
+              <div class="quote-box">${quote}</div>
+              <img id="quote-image" src="${finalImage}" alt="金句插图" />
+              <p>${detail}</p>
+            </div>
+            <div class="card-footer">
+                <div class="footer">——作者：${creator} · ${todaydate}</div>
+            </div>
+        </div>`;
+      //<div class="meeting">欢迎你参加每周六早8点的启发星球线上腾讯会议: <span class="highlight">818 7279 2687</span></div>
+      applyTheme(); // 应用当前主题
+    }
+
+    function getCurrentDate() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0'); // 月份从0开始
+      const dd = String(now.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function downloadCard() {
+      // 确保捕获的是渲染完成的封面
+      const cardElement = document.getElementById('preview');
+
+      // 添加延时确保渲染完成
+      setTimeout(() => {
+        html2canvas(cardElement, {
+          scale: 2, // 提高导出质量
+          logging: true,
+          useCORS: true, // 允许跨域图片
+          backgroundColor: null,
+          windowWidth: document.body.scrollWidth,
+          windowHeight: document.body.scrollHeight,
+        }).then(canvas => {
+          const link = document.createElement('a');
+          link.download = 'inspiration-card-' + new Date().getTime() + '.png';
+          link.href = canvas.toDataURL('image/png');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+      }, 500);
+    }
+
+    function applyTheme() {
+      const theme = document.getElementById("theme-select").value;
+      const preview = document.getElementById("preview");
+
+      const themes = {
+        darkblue: { background: "#2f2f46", color: "#ffffff" },
+        green: { background: "#2e4a3f", color: "#f5f5dc" },
+        brown: { background: "#4b3832", color: "#f5f5dc" },
+        purple: { background: "#3e2f5b", color: "#f8e1f4" },
+        grayblue: { background: "#2f3e46", color: "#ffffff" },
+      };
+
+      const selected = themes[theme];
+      if (selected) {
+        preview.style.backgroundColor = selected.background;
+        preview.style.color = selected.color;
+      }
+    }
+
+    window.onload = function () {
+      loadImages();
+      renderCard();
+      // upload image
+      document.getElementById("bgUpload").addEventListener("change", function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          customImage = e.target.result;
+          renderCard();
+        };
+        reader.readAsDataURL(file);
+      });
+    };
+  </script>
+</body>
+
+</html>
