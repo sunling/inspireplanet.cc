@@ -37,7 +37,7 @@ function loadImages(onLoadedFunc, selectId = "image-select", jsonPath = "images.
  * @param {string} elementId - 要截图的元素 id（默认是 "preview"）
  * @param {string} filenamePrefix - 下载文件名前缀（默认是 "inspiration-card"）
  */
-function downloadCard(elementId = "preview", filenamePrefix = "inspiration-card") {
+function download(elementId = "preview", filenamePrefix = "inspiration-card") {
     const cardElement = document.getElementById(elementId);
     if (!cardElement) {
         console.warn(`元素 #${elementId} 不存在`);

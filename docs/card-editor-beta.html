@@ -116,7 +116,7 @@
       <select id="image-select" onchange="onSelectImage()"></select>
     </label>
     <label>上传自定义插图:
-      <input type="file" id="bgUpload" accept="image/*" />
+      <input type="file" id="bgUpload" accept="image/*" onchange="onUploadBg(event)"/>
     </label>
     <label>你的启发:
       <small style="color: #888; font-size: 9px;">记录下‘说到你心里去了’的那一刻吧</small>
@@ -127,7 +127,7 @@
 
     <div class="buttons">
       <button onclick="renderCard()">预览</button>
-      <button onclick="downloadCard()">下载</button>
+      <button onclick="download()">下载</button>
     </div>
   </div>
   <div id="preview">
@@ -200,28 +200,20 @@
 
     };
 
-    function getDateFromEpisode(episodeNum) {
-      const base = new Date('2025-04-12');
-      const diff = episodeNum - 13;
-
-      const currentDate = new Date(base.getTime() + diff * 7 * 24 * 60 * 60 * 1000);
-      const nextDate = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-      const fmt = (date) => {
-        const m = date.getMonth() + 1;
-        const d = date.getDate();
-        return `${m}月${d}日`;
-      };
-
-      return {
-        date: `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月${currentDate.getDate()}日`,
-        meeting: `${fmt(nextDate)}早8:00`
-      };
-    }
-
     function onSelectImage() {
       customImage = "";
       renderCard();
+    }
+
+    function onUploadBg(event) {
+      const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          customImage = e.target.result;
+          renderCard();
+        };
+        reader.readAsDataURL(file);
     }
 
     function renderCard() {
@@ -263,17 +255,6 @@
     window.onload = function () {
       renderCard();
       loadImages(renderCard);
-      // upload image
-      document.getElementById("bgUpload").addEventListener("change", function (event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          customImage = e.target.result;
-          renderCard();
-        };
-        reader.readAsDataURL(file);
-      });
     };
   </script>
 </body>
