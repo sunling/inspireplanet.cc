@@ -130,12 +130,13 @@
       const imagePath = document.getElementById('image-select').value;
       const { date, meeting } = getDateFromEpisode(episode);
       const meetingId = document.getElementById('meetingId').value;
+      const selectedFont = document.getElementById("choose-font").value;
 
       //金句插图
       const finalImage = customBgImage || imagePath;
 
       document.getElementById('preview').innerHTML = `
-        <div class="card">
+        <div class="card" style="font-family: ${selectedFont}">
             <div class="title">${title}</div>
             <div class="quote-box">${quote}</div>
             <img id="quote-image" src="${finalImage}" alt="金句插图" />
@@ -146,9 +147,6 @@
                 <div class="meeting">${meeting} 欢迎你加入腾讯会议：<span class="highlight">${meetingId}</span></div>
             </div>
         </div>`;
-      const selectedFont = document.getElementById("choose-font").value;
-      const content = document.getElementsByClassName("card");
-      content.style.fontFamily = selectedFont;
     }
 
     function downloadCard() {
