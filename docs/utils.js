@@ -74,6 +74,8 @@ function onUploadBg(event, callBackFunc) {
     const reader = new FileReader();
     reader.onload = function (e) {
         if (typeof callBackFunc === "function") callBackFunc(e.target.result);
+        // reset
+        event.target.value = '';
     };
     reader.readAsDataURL(file);
 }
