@@ -75,13 +75,26 @@
 
 <body>
   <div class="form">
+    <label>选择主题配色：
+      <select id="theme-select" onchange="renderCard()">
+        <option value="morning">晨光米杏</option>
+        <option value="darkblue">深蓝经典</option>
+        <option value="green">深绿米白</option>
+        <option value="brown">深棕温暖</option>
+        <option value="purple">深紫柔粉</option>
+        <option value="grayblue">灰蓝极简</option>
+        <option value="mistyblue">浅雾蓝灰</option>
+        <option value="roseclay">豆沙玫瑰</option>
+      </select>
+    </label>
+
     <label>选择字体：
       <select id="choose-font" onchange="renderCard()">
+        <option value="'Smiley Sans', sans-serif">得意黑</option>
         <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
         <option value="'LXGW WenKai', serif">霞鹜文楷</option>
         <option value="'Noto Sans SC', sans-serif">思源黑体</option>
         <option value="'Alibaba PuHuiTi', sans-serif">阿里汉仪智能黑体</option>
-        <option value="'Smiley Sans', sans-serif">得意黑</option>
         <option value="'Noto Serif SC', serif">思源宋体</option>
         <option value="'PingFang SC', sans-serif">苹方</option>
         <option value="'KaiTi', serif">楷体</option>
@@ -114,12 +127,63 @@
       <button onclick="downloadCard()">下载</button>
     </div>
   </div>
-  <div id="preview" class="card">
+  <div id="preview">
     <!-- 卡片内容将在这里生成 -->
   </div>
 
   <script>
     let customImage = "";
+    const themes = {
+      darkblue: {
+        background: "#2f2f46",
+        color: "#ffffff",
+        quoteBg: "#fef6ec",
+        quoteColor: "#ff7f2a",
+      },
+      green: {
+        background: "#2e4a3f",
+        color: "#f5f5dc",
+        quoteBg: "#edf5ef",
+        quoteColor: "#45715a",
+      },
+      brown: {
+        background: "#4b3832",
+        color: "#f5f5dc",
+        quoteBg: "#f5e9dc",
+        quoteColor: "#a0522d",
+      },
+      purple: {
+        background: "#3e2f5b",
+        color: "#f8e1f4",
+        quoteBg: "#f9e7fd",
+        quoteColor: "#9147b6",
+      },
+      grayblue: {
+        background: "#2f3e46",
+        color: "#ffffff",
+        quoteBg: "#e0e0e0",
+        quoteColor: "#1f2937",
+      },
+      morning: {
+        background: "#fefaf3",
+        color: "#5e4b2b",
+        quoteBg: "#fff2da",
+        quoteColor: "#d26a00",
+      },
+      mistyblue: {
+        background: "#eef2f3",
+        color: "#3c4a54",
+        quoteBg: "#dceaf3",
+        quoteColor: "#336699",
+      },
+      roseclay: {
+        background: "#f8e8e0",
+        color: "#5f3d42",
+        quoteBg: "#ffece7",
+        quoteColor: "#c06060",
+      },
+    };
+
     function getDateFromEpisode(episodeNum) {
       const base = new Date('2025-04-12');
       const diff = episodeNum - 13;
@@ -181,21 +245,30 @@
       //金句插图
       const finalImage = customImage || imagePath;
       const todaydate = getCurrentDate();
+      //主题设置
+      const theme = document.getElementById("theme-select").value;
+      const selectedTheme = themes[theme];
 
       document.getElementById('preview').innerHTML = `
-        <div class="card" style="font-family: ${selectedFont}">
+        <div class="card" style="
+              font-family: ${selectedFont};
+              background-color: ${selectedTheme.background};
+              color: ${selectedTheme.color};
+            ">
              <div class="card-body">
               <div class="title">${title}</div>
-              <div class="quote-box">${quote}</div>
+              <div class="quote-box" style="
+                background-color: ${selectedTheme.quoteBg}; 
+                color: ${selectedTheme.quoteColor};
+              ">${quote}</div>
               <img id="quote-image" src="${finalImage}" alt="金句插图" />
               <p>${detail}</p>
             </div>
             <div class="card-footer">
-                <div class="footer">——作者：${creator} · ${todaydate}</div>
+                <div class="footer" style="color: ${selectedTheme.color}">——作者：${creator} · ${todaydate}</div>
             </div>
         </div>`;
       //<div class="meeting">欢迎你参加每周六早8点的启发星球线上腾讯会议: <span class="highlight">818 7279 2687</span></div>
-
     }
 
     function getCurrentDate() {
