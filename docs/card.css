@@ -72,8 +72,8 @@
 }
 
 .meeting {
-    font-size: 13px;
-    color: #8faadc;
+    font-size: 11px;
+    color: #BCA88E;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
