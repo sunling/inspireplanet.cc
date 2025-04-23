@@ -114,7 +114,7 @@
   <script>
     let customImage = "";
     function getDateFromEpisode(episodeNum) {
-      const base = new Date('2025-04-12'); // EP13 日期
+      const base = new Date('2025-04-12');
       const diff = episodeNum - 13;
 
       const currentDate = new Date(base.getTime() + diff * 7 * 24 * 60 * 60 * 1000);
@@ -169,7 +169,7 @@
       const quote = document.getElementById('quote').value;
       const detail = document.getElementById('detail').value;
       const imagePath = document.getElementById('image-select').value;
-      const creator = document.getElementById('creator').value;
+      const creator = document.getElementById('creator').value || "请加上你的名字";
       const selectedFont = document.getElementById('choose-font').value;
       //金句插图
       const finalImage = customImage || imagePath;
