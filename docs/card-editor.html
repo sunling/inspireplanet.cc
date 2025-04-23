@@ -92,7 +92,7 @@
     <label>标题: <input id="title" value="不要等太阳照进来" oninput="renderCard()"></label>
     <label>听到的观点 (最多50字): <textarea id="quote" maxlength="50" oninput="renderCard()">我不要做等待太阳照到自己的人</textarea></label>
     <label>选择插图:
-      <select id="image-select"></select>
+      <select id="image-select" onchange="renderCard()"></select>
     </label>
     <label>上传自定义插图:
       <input type="file" id="bgUpload" accept="image/*" />
