@@ -219,33 +219,6 @@
       };
     }
 
-    function loadImages() {
-      fetch('images-beta.json')
-        .then(res => res.json())
-        .then(images => {
-          const select = document.getElementById('image-select');
-
-          // 清空现有选项
-          select.innerHTML = '';
-
-          // 添加新选项
-          images.forEach(img => {
-            const option = new Option(img.desc, `images/${img.file}`);
-            select.add(option);
-          });
-
-          // 初始化渲染
-          renderCard();
-        })
-        .catch(e => {
-          console.error('加载背景图失败:', e);
-          // 设置默认背景
-          document.getElementById('image-select').innerHTML = `
-                <option value="images/biking.png">默认背景</option>
-              `;
-        });
-    }
-
     function onSelectImage() {
       customImage = "";
       renderCard();
@@ -320,8 +293,8 @@
     }
 
     window.onload = function () {
-      loadImages();
       renderCard();
+      loadImages(renderCard);
       // upload image
       document.getElementById("bgUpload").addEventListener("change", function (event) {
         const file = event.target.files[0];

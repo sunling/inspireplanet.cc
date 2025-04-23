@@ -197,9 +197,8 @@
     }
 
     window.onload = function () {
-      loadImages();
+      loadImages(renderCover);
       renderCover();
-
       // upload bg image
       document.getElementById("bgUpload").addEventListener("change", function (event) {
         const file = event.target.files[0];
