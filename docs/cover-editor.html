@@ -56,6 +56,7 @@
       height: 383px;
       overflow: hidden;
       background: #323449;
+      border-radius: 4px;
     }
 
     #preview .bg {
@@ -209,7 +210,10 @@
         html2canvas(coverElement, {
           scale: 2,
           logging: true,
-          useCORS: true
+          useCORS: true,
+          backgroundColor: null,
+          windowWidth: document.body.scrollWidth,
+          windowHeight: document.body.scrollHeight,
         }).then(canvas => {
           const link = document.createElement('a');
           link.download = 'inspiration-cover-' + new Date().getTime() + '.png';

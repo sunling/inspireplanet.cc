@@ -197,7 +197,9 @@
         html2canvas(coverElement, {
           scale: 2,
           useCORS: true,
-          backgroundColor: null
+          backgroundColor: null,
+          windowWidth: document.body.scrollWidth,
+          windowHeight: document.body.scrollHeight,
         }).then(canvas => {
           const link = document.createElement('a');
           link.download = 'mobile-cover-' + new Date().getTime() + '.png';
