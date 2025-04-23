@@ -78,6 +78,8 @@
     <label>选择主题配色：
       <select id="theme-select" onchange="renderCard()">
         <option value="morning">晨光米杏</option>
+        <option value="creamMatcha">奶油抹茶</option>
+        <option value="lavenderMist">云雾紫灰</option>
         <option value="darkblue">深蓝经典</option>
         <option value="green">深绿米白</option>
         <option value="brown">深棕温暖</option>
@@ -90,10 +92,10 @@
 
     <label>选择字体：
       <select id="choose-font" onchange="renderCard()">
+        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
         <option value="'Smiley Sans', sans-serif">得意黑</option>
         <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
         <option value="'LXGW WenKai', serif">霞鹜文楷</option>
-        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
         <option value="'Alibaba PuHuiTi', sans-serif">阿里汉仪智能黑体</option>
         <option value="'Noto Serif SC', serif">思源宋体</option>
         <option value="'PingFang SC', sans-serif">苹方</option>
@@ -182,6 +184,19 @@
         quoteBg: "#ffece7",
         quoteColor: "#c06060",
       },
+      creamMatcha: {
+        background: "#f3f6ef",
+        color: "#4a5a3c",
+        quoteBg: "#e8f4df",
+        quoteColor: "#5d7b4c",
+      },
+      lavenderMist: {
+        background: "#f4f0f8",
+        color: "#5a4c68",
+        quoteBg: "#f2e8ff",
+        quoteColor: "#9b5fb8",
+      },
+
     };
 
     function getDateFromEpisode(episodeNum) {
