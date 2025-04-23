@@ -22,7 +22,6 @@
       gap: 40px;
       padding: 40px;
       font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-      background: #2f2f46; /* 和卡片背景一致 */
     }
 
     .card-body {
@@ -159,7 +158,7 @@
         });
     }
 
-    function onSelectImage(){
+    function onSelectImage() {
       customImage = "";
       renderCard();
     }
@@ -208,7 +207,8 @@
         html2canvas(cardElement, {
           scale: 2, // 提高导出质量
           logging: true,
-          useCORS: true // 允许跨域图片
+          useCORS: true, // 允许跨域图片
+          backgroundColor: '#2f2f46'
         }).then(canvas => {
           const link = document.createElement('a');
           link.download = 'inspiration-card-' + new Date().getTime() + '.png';
