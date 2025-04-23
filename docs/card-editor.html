@@ -87,8 +87,15 @@
         <option value="'KaiTi', serif">楷体</option>
       </select>
     </label>
-    <label>标题: <input id="title" value="不要等太阳照进来" oninput="renderCard()"></label>
-    <label>听到的观点: <textarea id="quote" oninput="renderCard()">我不要做等待太阳照到自己的人</textarea></label>
+    <label>标题: 
+      <input id="title" value="这一刻，我想说..." oninput="renderCard()">
+    </label>
+    <label>听到的观点: 
+      <small style="color: #888; font-size: 12px;">
+        小提示：来自书籍、播客、电影、对话中让你眼前一亮的句子都可以写下来。
+      </small>
+      <textarea id="quote" oninput="renderCard()">📖 一本书里某句话、🎙️播客里的一个观点、🎬电影里的片段……那些突然触动你的时刻，都值得记录。</textarea>
+    </label>
     <label>选择插图:
       <select id="image-select" onchange="onSelectImage()"></select>
     </label>
