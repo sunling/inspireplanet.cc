@@ -68,12 +68,17 @@ function download(elementId = "preview", filenamePrefix = "inspiration-card") {
  * @param {EventListener} event 
  * @returns 
  */
-function onUploadBg(event, callBackFunc) {
+function onUploadBg(event, callBackFunc, previewLabelId = "fileStatus") {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = function (e) {
         if (typeof callBackFunc === "function") callBackFunc(e.target.result);
+        // 更新显示上传状态
+        if (previewLabelId) {
+            const label = document.getElementById(previewLabelId);
+            if (label) label.textContent = `已上传：${file.name}`;
+        }
         // reset
         event.target.value = '';
     };
