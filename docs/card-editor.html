@@ -159,6 +159,14 @@
         });
     }
 
+    function getCurrentDate() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0'); // 月份从0开始
+      const dd = String(now.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
     function renderCard(customBgImage = "") {
       const title = document.getElementById('title').value;
       const quote = document.getElementById('quote').value;
@@ -168,6 +176,7 @@
       const selectedFont = document.getElementById('choose-font').value;
       //金句插图
       const finalImage = customBgImage || imagePath;
+      const todaydate = getCurrentDate();
 
       document.getElementById('preview').innerHTML = `
         <div class="card" style="font-family: ${selectedFont}">
@@ -178,7 +187,7 @@
               <p>${detail}</p>
             </div>
             <div class="card-footer">
-                <div class="footer">——作者：${creator} 日期：${new Date()}</div>
+                <div class="footer">——作者：${creator} 日期：${todaydate}</div>
             </div>
         </div>`;
       //<div class="meeting">欢迎你参加每周六早8点的启发星球线上腾讯会议: <span class="highlight">818 7279 2687</span></div>
