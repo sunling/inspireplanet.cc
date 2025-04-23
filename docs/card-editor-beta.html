@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>金句卡片编辑器</title>
+  <title>启发时刻卡片编辑器</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link rel="stylesheet" href="card.css" />
   <link
@@ -78,6 +78,8 @@
     <label>选择主题配色：
       <select id="theme-select" onchange="renderCard()">
         <option value="morning">晨光米杏</option>
+        <option value="creamMatcha">奶油抹茶</option>
+        <option value="lavenderMist">云雾紫灰</option>
         <option value="darkblue">深蓝经典</option>
         <option value="green">深绿米白</option>
         <option value="brown">深棕温暖</option>
@@ -90,10 +92,10 @@
 
     <label>选择字体：
       <select id="choose-font" onchange="renderCard()">
+        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
         <option value="'Smiley Sans', sans-serif">得意黑</option>
         <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
         <option value="'LXGW WenKai', serif">霞鹜文楷</option>
-        <option value="'Noto Sans SC', sans-serif">思源黑体</option>
         <option value="'Alibaba PuHuiTi', sans-serif">阿里汉仪智能黑体</option>
         <option value="'Noto Serif SC', serif">思源宋体</option>
         <option value="'PingFang SC', sans-serif">苹方</option>
@@ -103,7 +105,7 @@
     <label>标题:
       <input id="title" placeholder="这一刻，我想说..." oninput="renderCard()">
     </label>
-    <label>听到的观点:
+    <label>触动你的观点:
       <small style="color: #888; font-size: 9px;">
         来自书籍、播客、电影、对话中让你眼前一亮的句子都可以写下来哦
       </small>
@@ -182,6 +184,19 @@
         quoteBg: "#ffece7",
         quoteColor: "#c06060",
       },
+      creamMatcha: {
+        background: "#f3f6ef",
+        color: "#4a5a3c",
+        quoteBg: "#e8f4df",
+        quoteColor: "#5d7b4c",
+      },
+      lavenderMist: {
+        background: "#f4f0f8",
+        color: "#5a4c68",
+        quoteBg: "#f2e8ff",
+        quoteColor: "#9b5fb8",
+      },
+
     };
 
     function getDateFromEpisode(episodeNum) {
@@ -237,7 +252,7 @@
 
     function renderCard() {
       const title = document.getElementById('title').value || "这一刻，我想说...";
-      const quote = document.getElementById('quote').value || "例如《原则》里说：人避免不了痛苦，尤其是在追求雄心勃勃的目标时。信不信由你，如果以正确的态度对待痛苦，感到痛苦就是你的幸运，因为这将提示你寻找解决方案以便继续前进。";
+      const quote = document.getElementById('quote').value || "《原则》：人避免不了痛苦，尤其是在追求雄心勃勃的目标时。信不信由你，如果以正确的态度对待痛苦，感到痛苦就是你的幸运，因为这将提示你寻找解决方案以便继续前进。";
       const detail = document.getElementById('detail').value || "你怎么看呢？";
       const imagePath = document.getElementById('image-select').value;
       const creator = document.getElementById('creator').value || "你的名字";
@@ -286,7 +301,7 @@
       // 添加延时确保渲染完成
       setTimeout(() => {
         html2canvas(cardElement, {
-          scale: 2, // 提高导出质量
+          scale: 3, // 提高导出质量
           logging: true,
           useCORS: true, // 允许跨域图片
           backgroundColor: null,
