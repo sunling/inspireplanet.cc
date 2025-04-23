@@ -116,9 +116,16 @@
       <select id="image-select" onchange="onSelectImage()"></select>
     </label>
     <label>上传自定义插图:
+      <div class="file-upload-wrapper">
+        <button type="button" id="uploadBtn">上传图片</button>
+        <span id="fileStatus" class="status-text">未选择文件</span>
+        <input type="file" id="bgUpload" accept="image/*" style="display: none;">
+      </div>
+    </label>
+    <!-- <label>上传自定义插图:
       <input type="file" id="bgUpload" accept="image/*" onchange="onUploadBg(event, renderCard)"/>
       <span id="fileStatus" style="font-size: 10px; color: #666;"></span>
-    </label>
+    </label> -->
     <label>你的启发:
       <small style="color: #888; font-size: 9px;">记录下‘说到你心里去了’的那一刻吧</small>
       <textarea id="detail" oninput="renderCard()" style="min-height: 80px; resize: vertical;"
@@ -208,7 +215,7 @@
 
     function renderCard(customInsertImage) {
       // 如果参数customInsertImage有值，那么更新
-      if(customInsertImage) {
+      if (customInsertImage) {
         customImage = customInsertImage;
       }
 
@@ -250,6 +257,12 @@
     window.onload = function () {
       renderCard();
       loadImages(renderCard);
+      bindCustomFileUpload({
+        inputId: "bgUpload",
+        buttonId: "uploadBtn",
+        statusId: "uploadStatus",
+        onLoad: renderCard
+      });
     };
   </script>
 </body>

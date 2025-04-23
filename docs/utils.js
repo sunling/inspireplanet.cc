@@ -85,6 +85,42 @@ function onUploadBg(event, callBackFunc, previewLabelId = "fileStatus") {
     reader.readAsDataURL(file);
 }
 
+/**
+ * 绑定一个自定义上传按钮 + 状态显示，用于隐藏原生 file input 的 file 选择。
+ * @param {Object} config - 配置项
+ * @param {string} config.inputId - 隐藏的 file input 的 ID
+ * @param {string} config.buttonId - 自定义触发上传按钮的 ID
+ * @param {string} config.statusId - 用于显示上传状态的 span/div 的 ID
+ * @param {Function} config.onLoad - 上传完成后回调函数，参数为 base64 url
+ */
+function bindCustomFileUpload({ inputId, buttonId, statusId, onLoad }) {
+    const input = document.getElementById(inputId);
+    const button = document.getElementById(buttonId);
+    const status = document.getElementById(statusId);
+
+    if (!input || !button || !status) {
+        console.warn("自定义上传绑定失败：元素未找到");
+        return;
+    }
+
+    // 点击按钮触发隐藏 input
+    button.addEventListener("click", () => input.click());
+
+    // 处理上传逻辑
+    input.addEventListener("change", function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            onLoad(e.target.result);
+            status.textContent = "已上传：" + file.name;
+            event.target.value = ''; // 清空值以支持重复上传
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 function getCurrentDate() {
     const now = new Date();
     const yyyy = now.getFullYear();
