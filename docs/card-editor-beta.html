@@ -219,7 +219,7 @@
     }
 
     function loadImages() {
-      fetch('images.json')
+      fetch('images-beta.json')
         .then(res => res.json())
         .then(images => {
           const select = document.getElementById('image-select');
@@ -229,7 +229,7 @@
 
           // 添加新选项
           images.forEach(img => {
-            const option = new Option(img, `images/${img}`);
+            const option = new Option(img.desc, `images/${img.file}`);
             select.add(option);
           });
 
