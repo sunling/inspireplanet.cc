@@ -28,6 +28,7 @@
       padding: 16px;
       font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
       background: #f5f5f5;
+      border-radius: 3px;
     }
 
     .form {
@@ -180,7 +181,7 @@
     function renderCover(customBgImage = "") {
       const main = document.getElementById("main-title").value || "主标题";
       const sub = document.getElementById("sub-title").value || "副标题";
-      const tags = document.getElementById("tags").value || ['tag1', 'tag2', 'tag3'];
+      const tags = document.getElementById("tags").value || 'tag1 tag2 tag3';
       const selectedBg = document.getElementById("image-select").value;
 
       document.getElementById("title").innerText = main;
