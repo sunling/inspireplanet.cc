@@ -22,7 +22,7 @@
       gap: 40px;
       padding: 40px;
       font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-      background: #f5f5f5;
+      background: #2f2f46; /* 和卡片背景一致 */
     }
 
     .card-body {
@@ -80,12 +80,12 @@
       <select id="choose-font" onchange="renderCard()">
         <option value="'LXGW WenKai', serif">霞鹜文楷</option>
         <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+        <option value="'Alibaba PuHuiTi', sans-serif">阿里汉仪智能黑体</option>
+        <option value="'Smiley Sans', sans-serif">得意黑</option>
         <option value="'Noto Serif SC', serif">思源宋体</option>
         <option value="'PingFang SC', sans-serif">苹方</option>
         <option value="'KaiTi', serif">楷体</option>
-        <option value="'Smiley Sans', sans-serif">得意黑</option>
-        <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
-        <option value="'Alibaba PuHuiTi', sans-serif">阿里汉仪智能黑体</option>
       </select>
     </label>
     <label>标题: <input id="title" value="不要等太阳照进来" oninput="renderCard()"></label>
