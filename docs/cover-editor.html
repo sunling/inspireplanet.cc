@@ -108,21 +108,21 @@
 
 <body>
   <div class="form">
-    <label>主标题(3~5字):<input id="main-title" placeholder="我想放空" oninput="renderCover()"></label>
-    <label>副标题(短句):<input id="sub-title" placeholder="可连放空也需要练习" oninput="renderCover()"></label>
-    <label>关键词(空格分割):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
-    <label>文字布局风格：
-      <select id="layout-select" onchange="renderCover()">
-        <option value="center">居中排版</option>
-        <option value="left-top">左上排版</option>
-      </select>
-    </label>
     <label>选择字体：
       <select id="choose-font" onchange="renderCover()">
         <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
         <option value="'Noto Sans SC', sans-serif">思源黑体</option>
         <option value="'PingFang SC', sans-serif">苹方</option>
         <option value="'KaiTi', serif">楷体</option>
+      </select>
+    </label>
+    <label>主标题:<input id="main-title" placeholder="我想放空" oninput="renderCover()"></label>
+    <label>副标题:<input id="sub-title" placeholder="可连放空也需要练习" oninput="renderCover()"></label>
+    <label>关键词(空格分割):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
+    <label>文字布局风格：
+      <select id="layout-select" onchange="renderCover()">
+        <option value="center">居中排版</option>
+        <option value="left-top">左上排版</option>
       </select>
     </label>
     <label>选择背景图：
