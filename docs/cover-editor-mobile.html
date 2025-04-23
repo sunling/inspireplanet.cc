@@ -7,6 +7,12 @@
   <title>封面图编辑器 - 移动适配</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="utils.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter&family=Playfair+Display&family=Montserrat&family=Lato&family=Dancing+Script&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+
   <style>
     .container {
       display: flex;
@@ -137,6 +143,18 @@
 <body>
   <div class="container">
     <div class="form">
+      <label>选择字体：
+        <select id="choose-font" onchange="renderCover()">
+          <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+          <option value="'Smiley Sans', sans-serif">得意黑</option>
+          <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+          <option value="'LXGW WenKai', serif">霞鹜文楷</option>
+          <option value="'Alibaba PuHuiTi', sans-serif">阿里汉仪智能黑体</option>
+          <option value="'Noto Serif SC', serif">思源宋体</option>
+          <option value="'PingFang SC', sans-serif">苹方</option>
+          <option value="'KaiTi', serif">楷体</option>
+        </select>
+      </label>
       <label>主标题:<input id="main-title" placeholder="我想放空" oninput="renderCover()"></label>
       <label>副标题:<input id="sub-title" placeholder="可连放空也需要练习" oninput="renderCover()"></label>
       <label>关键词(空格分隔):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
@@ -170,12 +188,14 @@
       const sub = document.getElementById("sub-title").value || "副标题";
       const tags = document.getElementById("tags").value || 'tag1 tag2 tag3';
       const selectedBg = document.getElementById("image-select").value;
+      const selectedFont = document.getElementById("choose-font").value;
 
       document.getElementById("title").innerText = main;
       document.getElementById("subtitle").innerText = sub;
       document.getElementById("keywords").innerText = tags.split(" ").join(" / ");
       const bgImage = customBgImage || selectedBg;
       document.getElementById("bg").style.backgroundImage = `url('${bgImage}')`;
+      document.getElementById("content").style.fontFamily = selectedFont;
     }
     
     window.onload = function () {
