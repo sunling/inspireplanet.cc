@@ -130,6 +130,39 @@
 
   <script>
     let customImage = "";
+    const themes = {
+      darkblue: {
+        background: "#2f2f46",
+        color: "#ffffff",
+        quoteBg: "#fef6ec",
+        quoteColor: "#ff7f2a",
+      },
+      green: {
+        background: "#2e4a3f",
+        color: "#f5f5dc",
+        quoteBg: "#edf5ef",
+        quoteColor: "#45715a",
+      },
+      brown: {
+        background: "#4b3832",
+        color: "#f5f5dc",
+        quoteBg: "#f5e9dc",
+        quoteColor: "#a0522d",
+      },
+      purple: {
+        background: "#3e2f5b",
+        color: "#f8e1f4",
+        quoteBg: "#f9e7fd",
+        quoteColor: "#9147b6",
+      },
+      grayblue: {
+        background: "#2f3e46",
+        color: "#ffffff",
+        quoteBg: "#e0e0e0",
+        quoteColor: "#1f2937",
+      },
+    };
+
     function getDateFromEpisode(episodeNum) {
       const base = new Date('2025-04-12');
       const diff = episodeNum - 13;
@@ -193,13 +226,6 @@
       const todaydate = getCurrentDate();
       //主题设置
       const theme = document.getElementById("theme-select").value;
-      const themes = {
-        darkblue: { background: "#2f2f46", color: "#ffffff" },
-        green: { background: "#2e4a3f", color: "#f5f5dc" },
-        brown: { background: "#4b3832", color: "#f5f5dc" },
-        purple: { background: "#3e2f5b", color: "#f8e1f4" },
-        grayblue: { background: "#2f3e46", color: "#ffffff" },
-      };
       const selectedTheme = themes[theme];
 
       document.getElementById('preview').innerHTML = `
@@ -210,7 +236,10 @@
             ">
              <div class="card-body">
               <div class="title">${title}</div>
-              <div class="quote-box">${quote}</div>
+              <div class="quote-box" style="
+                background-color: ${selected.quoteBg}; 
+                color: ${selected.quoteColor};
+              ">${quote}</div>
               <img id="quote-image" src="${finalImage}" alt="金句插图" />
               <p>${detail}</p>
             </div>
