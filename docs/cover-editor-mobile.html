@@ -158,11 +158,15 @@
       <label>主标题:<input id="main-title" placeholder="我想放空" oninput="renderCover()"></label>
       <label>副标题:<input id="sub-title" placeholder="可连放空也需要练习" oninput="renderCover()"></label>
       <label>关键词(空格分隔):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
-      <label>背景图：
-        <select id="image-select" oninput="renderCover()"></select>
+      <label>选择背景图：
+        <select id="image-select" onchange="onSelectImage()"></select>
       </label>
-      <label>上传自定义背景图：
-        <input type="file" id="bgUpload" accept="image/*" onchange="onUploadBg(event, renderCover)"/>
+      <label>自定义插图:
+        <div class="file-upload-wrapper">
+          <button type="button" id="uploadBtn" class="upload-btn">上传图片</button>
+          <span id="fileStatus" style="color: #888; font-size: 12px;">未选择文件</span>
+          <input type="file" id="bgUpload" accept="image/*" style="display: none;">
+        </div>
       </label>
       <div class="buttons">
         <button onclick="renderCover()">预览</button>
@@ -183,6 +187,11 @@
     </div>
   </div>
   <script>
+    function onSelectImage() {
+      document.getElementById("fileStatus").value = "";
+      renderCover();
+    }
+
     function renderCover(customBgImage = "") {
       const main = document.getElementById("main-title").value || "主标题";
       const sub = document.getElementById("sub-title").value || "副标题";
@@ -197,7 +206,7 @@
       document.getElementById("bg").style.backgroundImage = `url('${bgImage}')`;
       document.getElementById("content").style.fontFamily = selectedFont;
     }
-    
+
     window.onload = function () {
       loadImages(renderCover);
       renderCover();
