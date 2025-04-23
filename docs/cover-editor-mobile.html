@@ -144,7 +144,7 @@
         <select id="image-select" oninput="renderCover()"></select>
       </label>
       <label>上传自定义背景图：
-        <input type="file" id="bgUpload" accept="image/*" />
+        <input type="file" id="bgUpload" accept="image/*" onchange="onUploadBg(event, renderCover)"/>
       </label>
       <div class="buttons">
         <button onclick="renderCover()">预览</button>
@@ -178,31 +178,9 @@
       document.getElementById("bg").style.backgroundImage = `url('${bgImage}')`;
     }
     
-    function onUploadBg(event) {
-      const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          customImage = e.target.result;
-          renderCard();
-        };
-        reader.readAsDataURL(file);
-    }
-
-    
     window.onload = function () {
       loadImages(renderCover);
       renderCover();
-      // upload bg image
-      document.getElementById("bgUpload").addEventListener("change", function (event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          renderCover(e.target.result);
-        };
-        reader.readAsDataURL(file);
-      });
     };
   </script>
 </body>
