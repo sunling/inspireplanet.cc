@@ -148,7 +148,7 @@
       </label>
       <div class="buttons">
         <button onclick="renderCover()">预览</button>
-        <button onclick="downloadCover()">下载</button>
+        <button onclick="download('preview', 'cover-')">下载</button>
       </div>
     </div>
 
@@ -177,25 +177,19 @@
       const bgImage = customBgImage || selectedBg;
       document.getElementById("bg").style.backgroundImage = `url('${bgImage}')`;
     }
-
-    function downloadCover() {
-      const coverElement = document.querySelector('#preview .cover');
-      setTimeout(() => {
-        html2canvas(coverElement, {
-          scale: 3,
-          useCORS: true,
-          backgroundColor: null,
-          windowWidth: document.body.scrollWidth,
-          windowHeight: document.body.scrollHeight,
-        }).then(canvas => {
-          const link = document.createElement('a');
-          link.download = 'mobile-cover-' + new Date().getTime() + '.png';
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-        });
-      }, 300);
+    
+    function onUploadBg(event) {
+      const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          customImage = e.target.result;
+          renderCard();
+        };
+        reader.readAsDataURL(file);
     }
 
+    
     window.onload = function () {
       loadImages(renderCover);
       renderCover();

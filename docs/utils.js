@@ -63,6 +63,20 @@ function download(elementId = "preview", filenamePrefix = "inspiration-card") {
     }, 500);
 }
 
+/**
+ * 上传图片
+ * @param {EventListener} event 
+ * @returns 
+ */
+function onUploadBg(event, callBackFunc) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        if (typeof callBackFunc === "function") callBackFunc(e.target.result);
+    };
+    reader.readAsDataURL(file);
+}
 
 function getCurrentDate() {
     const now = new Date();

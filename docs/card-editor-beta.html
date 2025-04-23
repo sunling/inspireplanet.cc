@@ -116,7 +116,7 @@
       <select id="image-select" onchange="onSelectImage()"></select>
     </label>
     <label>上传自定义插图:
-      <input type="file" id="bgUpload" accept="image/*" onchange="onUploadBg(event)"/>
+      <input type="file" id="bgUpload" accept="image/*" onchange="onUploadBg(event, renderCard)"/>
     </label>
     <label>你的启发:
       <small style="color: #888; font-size: 9px;">记录下‘说到你心里去了’的那一刻吧</small>
@@ -127,7 +127,7 @@
 
     <div class="buttons">
       <button onclick="renderCard()">预览</button>
-      <button onclick="download()">下载</button>
+      <button onclick="download('preview', 'inspiration-card-')">下载</button>
     </div>
   </div>
   <div id="preview">
@@ -205,18 +205,12 @@
       renderCard();
     }
 
-    function onUploadBg(event) {
-      const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          customImage = e.target.result;
-          renderCard();
-        };
-        reader.readAsDataURL(file);
-    }
+    function renderCard(customInsertImage) {
+      // 如果参数customInsertImage有值，那么更新
+      if(customInsertImage) {
+        customImage = customInsertImage;
+      }
 
-    function renderCard() {
       const title = document.getElementById('title').value || "这一刻，我想说...";
       const quote = document.getElementById('quote').value || "《原则》：人避免不了痛苦，尤其是在追求雄心勃勃的目标时。信不信由你，如果以正确的态度对待痛苦，感到痛苦就是你的幸运，因为这将提示你寻找解决方案以便继续前进。";
       const detail = document.getElementById('detail').value || "你怎么看呢？";
