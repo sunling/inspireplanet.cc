@@ -210,6 +210,12 @@
     window.onload = function () {
       loadImages(renderCover);
       renderCover();
+      bindCustomFileUpload({
+        inputId: "bgUpload",
+        buttonId: "uploadBtn",
+        statusId: "fileStatus",
+        onLoad: renderCover
+      });
     };
   </script>
 </body>
