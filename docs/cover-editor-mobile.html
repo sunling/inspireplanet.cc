@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>封面图编辑器 - 移动适配</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="utils.js"></script>
   <style>
     .container {
       display: flex;
@@ -164,20 +165,6 @@
     </div>
   </div>
   <script>
-    function loadImages() {
-      const images = [
-        "artisanbasket.png", "biking.png", "fieldtools.png", "freshproduce.png",
-        "frostedwindow.png", "rainywalk.png", "reading.png", "repairman.png",
-        "sunlitcorridor.png", "sunlitkitchen.png", "teahouse.png"
-      ];
-      const select = document.getElementById("image-select");
-      select.innerHTML = "";
-      images.forEach(img => {
-        const option = new Option(img, `images/${img}`);
-        select.add(option);
-      });
-    }
-
     function renderCover(customBgImage = "") {
       const main = document.getElementById("main-title").value || "主标题";
       const sub = document.getElementById("sub-title").value || "副标题";
