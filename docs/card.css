@@ -9,6 +9,8 @@
     overflow: hidden;
     color: #f1f1f1;
     box-shadow: none;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .card h1 {
