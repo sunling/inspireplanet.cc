@@ -108,7 +108,7 @@
         <input type="file" id="bgUpload" accept="image/*" style="display: none;">
       </div>
     </label>
-    <label>你的启发:
+    <label>你的启发(按回车换行):
       <small style="color: #888; font-size: 9px;">记录下‘说到你心里去了’的那一刻吧</small>
       <textarea id="detail" oninput="renderCard()" style="min-height: 80px; resize: vertical;"
         placeholder="听完/读完之后，我做/思考了..."></textarea>
@@ -204,7 +204,8 @@
 
       const title = document.getElementById('title').value || "这一刻，我想说...";
       const quote = document.getElementById('quote').value || "《原则》：人避免不了痛苦，尤其是在追求雄心勃勃的目标时。信不信由你，如果以正确的态度对待痛苦，感到痛苦就是你的幸运，因为这将提示你寻找解决方案以便继续前进。";
-      const detail = document.getElementById('detail').value || "你怎么看呢？".replace(/\n/g, '<br>');
+      const detailRaw = document.getElementById('detail').value || "你怎么看呢？";
+      const detail = detailRaw.replace(/\n/g, '<br>');
 
       const imagePath = document.getElementById('image-select').value;
       const creator = document.getElementById('creator').value || "你的名字";
@@ -229,12 +230,13 @@
                 color: ${selectedTheme.quoteColor};
               ">${quote}</div>
               <img id="quote-image" src="${finalImage}" alt="金句插图" />
-              <p>${detail}</p>
+              <p id="detail-text">${detail}</p>
             </div>
             <div class="card-footer">
                 <div class="footer" style="color: ${selectedTheme.color}">——作者：${creator} · ${todaydate}</div>
             </div>
         </div>`;
+        document.getElementById('detail-text').innerHTML = detail;
       //<div class="meeting">欢迎你参加每周六早8点的启发星球线上腾讯会议: <span class="highlight">818 7279 2687</span></div>
     }
 
