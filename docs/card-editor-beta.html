@@ -116,13 +116,8 @@
     <label>创作者: <input id="creator" placeholder="你的名字" oninput="renderCard()"></label>
 
     <div class="buttons">
-<<<<<<< HEAD
       <button onclick="submitCard()">提交到 Airtable</button>
-      <button onclick="download('preview', 'inspiration-card-')">下载</button>
-=======
-      <button onclick="renderCard()">预览</button>
       <button onclick="saveCard('preview', 'inspiration-card-')">下载</button>
->>>>>>> 216e0a1399c8987cf2eb60d289834987ffcc1583
     </div>
   </div>
   <div id="preview">
@@ -131,70 +126,7 @@
 
   <script>
     let customImage = "";
-    const themes = {
-      darkblue: {
-        background: "#2f2f46",
-        color: "#ffffff",
-        quoteBg: "#fef6ec",
-        quoteColor: "#ff7f2a",
-      },
-      green: {
-        background: "#2e4a3f",
-        color: "#f5f5dc",
-        quoteBg: "#edf5ef",
-        quoteColor: "#45715a",
-      },
-      brown: {
-        background: "#4b3832",
-        color: "#f5f5dc",
-        quoteBg: "#f5e9dc",
-        quoteColor: "#a0522d",
-      },
-      purple: {
-        background: "#3e2f5b",
-        color: "#f8e1f4",
-        quoteBg: "#f9e7fd",
-        quoteColor: "#9147b6",
-      },
-      grayblue: {
-        background: "#2f3e46",
-        color: "#ffffff",
-        quoteBg: "#e0e0e0",
-        quoteColor: "#1f2937",
-      },
-      morning: {
-        background: "#fefaf3",
-        color: "#5e4b2b",
-        quoteBg: "#fff2da",
-        quoteColor: "#d26a00",
-      },
-      mistyblue: {
-        background: "#eef2f3",
-        color: "#3c4a54",
-        quoteBg: "#dceaf3",
-        quoteColor: "#336699",
-      },
-      roseclay: {
-        background: "#f8e8e0",
-        color: "#5f3d42",
-        quoteBg: "#ffece7",
-        quoteColor: "#c06060",
-      },
-      creamMatcha: {
-        background: "#f3f6ef",
-        color: "#4a5a3c",
-        quoteBg: "#e8f4df",
-        quoteColor: "#5d7b4c",
-      },
-      lavenderMist: {
-        background: "#f4f0f8",
-        color: "#5a4c68",
-        quoteBg: "#f2e8ff",
-        quoteColor: "#9b5fb8",
-      },
-
-    };
-
+   
     function onSelectImage() {
       customImage = "";
       document.getElementById("fileStatus").value = "";
@@ -202,8 +134,9 @@
     }
 
     function submitCard() {
+      console.log(themes[document.getElementById('theme-select').value]);
       uploadCardToAirtable({
-        theme: document.getElementById('theme-select').value,
+        theme: themes[document.getElementById('theme-select').value],
         font: document.getElementById("choose-font").value,
         title: document.getElementById('title').value,
         quote: document.getElementById('quote').value,
@@ -220,7 +153,8 @@
       }
 
       const title = document.getElementById('title').value || "这一刻，我想说...";
-      const quote = document.getElementById('quote').value || "《原则》：人避免不了痛苦，尤其是在追求雄心勃勃的目标时。信不信由你，如果以正确的态度对待痛苦，感到痛苦就是你的幸运，因为这将提示你寻找解决方案以便继续前进。";
+      const quoteRaw = document.getElementById('quote').value || "《原则》：人避免不了痛苦，尤其是在追求雄心勃勃的目标时。信不信由你，如果以正确的态度对待痛苦，感到痛苦就是你的幸运，因为这将提示你寻找解决方案以便继续前进。";
+      const quote = quoteRaw.replace(/\n/g, '<br>');
       const detailRaw = document.getElementById('detail').value || "你怎么看呢？";
       const detail = detailRaw.replace(/\n/g, '<br>');
 

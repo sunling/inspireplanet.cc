@@ -1,5 +1,73 @@
 // utils.js - 公共脚本函数集合
 
+const themes = {
+    darkblue: {
+        background: "#2f2f46",
+        color: "#ffffff",
+        quoteBg: "#fef6ec",
+        quoteColor: "#ff7f2a",
+    },
+    green: {
+        background: "#2e4a3f",
+        color: "#f5f5dc",
+        quoteBg: "#edf5ef",
+        quoteColor: "#45715a",
+    },
+    brown: {
+        background: "#4b3832",
+        color: "#f5f5dc",
+        quoteBg: "#f5e9dc",
+        quoteColor: "#a0522d",
+    },
+    purple: {
+        background: "#3e2f5b",
+        color: "#f8e1f4",
+        quoteBg: "#f9e7fd",
+        quoteColor: "#9147b6",
+    },
+    grayblue: {
+        background: "#2f3e46",
+        color: "#ffffff",
+        quoteBg: "#e0e0e0",
+        quoteColor: "#1f2937",
+    },
+    morning: {
+        background: "#fefaf3",
+        color: "#5e4b2b",
+        quoteBg: "#fff2da",
+        quoteColor: "#d26a00",
+    },
+    mistyblue: {
+        background: "#eef2f3",
+        color: "#3c4a54",
+        quoteBg: "#dceaf3",
+        quoteColor: "#336699",
+    },
+    roseclay: {
+        background: "#f8e8e0",
+        color: "#5f3d42",
+        quoteBg: "#ffece7",
+        quoteColor: "#c06060",
+    },
+    creamMatcha: {
+        background: "#f3f6ef",
+        color: "#4a5a3c",
+        quoteBg: "#e8f4df",
+        quoteColor: "#5d7b4c",
+    },
+    lavenderMist: {
+        background: "#f4f0f8",
+        color: "#5a4c68",
+        quoteBg: "#f2e8ff",
+        quoteColor: "#9b5fb8",
+    },
+
+};
+
+const AIRTABLE_TOKEN = 'pat1SqY1PwRJ71zY9.fa8c811c52fbe5807ba0cb11e2366dae0cb84e9478a71f5fcbbecfdcbd3075d2'.replace(/[^\x00-\x7F]/g, '');
+const AIRTABLE_BASE_NAME = 'appUORauHPotUXTn2';
+const AIRTABLE_TABLE_NAME = 'tbl5mj8cEZSC6HdIK';
+
 /**
  * 加载图像列表并填充 image-select 下拉菜单
  * @param {Function} onLoaded 回调函数（完成后可调用 onLoadFunc 等）
@@ -140,22 +208,15 @@ function bindCustomFileUpload({ inputId, buttonId, statusId, onLoad }) {
     });
 }
 
-
-
-
-async function uploadCardToAirtable({ theme, font, title, quote, detail, creator }) {
-    const token = 'pat1SqY1PwRJ71zY9.fa8c811c52fbe5807ba0cb11e2366dae0cb84e9478a71f5fcbbecfdcbd3075d2'.replace(/[^\x00-\x7F]/g, '');
-    const baseId = 'appUORauHPotUXTn2';
-    const tableName = 'tbl5mj8cEZSC6HdIK';
-
-    const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
-
+async function uploadCardToAirtable({ theme, font, title, quote, imagePath, detail, creator }) {
+    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME}`;
     const record = {
         fields: {
-            Theme: theme,
+            Theme: JSON.stringify(theme),
             Font: font,
             Title: title,
             Quote: quote,
+            ImagePath: imagePath,
             Detail: detail,
             Creator: creator
         }
@@ -164,7 +225,7 @@ async function uploadCardToAirtable({ theme, font, title, quote, detail, creator
     const res = await fetch(url, {
         method: 'POST',
         headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${AIRTABLE_TOKEN}`,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(record)
@@ -180,6 +241,24 @@ async function uploadCardToAirtable({ theme, font, title, quote, detail, creator
     }
 }
 
+async function fetchAirtableCards() {
+    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME}`;
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+            'Content-Type': 'application/json'
+        }
+    });
+    const data = await res.json();
+    if (res.ok) {
+        console.log("✅ 成功获取记录:", data.records);
+        return data.records.map(r => r.fields);
+    } else {
+        console.error("❌ 读取失败:", data);
+        return [];
+    }
+}
 
 function getCurrentDate() {
     const now = new Date();

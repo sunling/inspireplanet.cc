@@ -27,7 +27,7 @@ const path = require('path');
     const meetingId = item.meeting_id || DEFAULT_MEETING_ID;
 
     const html = template
-      .replaceAll('{{title}}', item.title)
+      .replace('{{title}}', item.title)
       .replace('{{quote}}', item.quote)
       .replace('{{detail}}', item.detail)
       .replace('{{episode}}', item.episode)
