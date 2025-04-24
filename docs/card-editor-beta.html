@@ -116,7 +116,7 @@
     <label>创作者: <input id="creator" placeholder="你的名字" oninput="renderCard()"></label>
 
     <div class="buttons">
-      <button onclick="renderCard()">预览</button>
+      <button onclick="submitCard()">提交到 Airtable</button>
       <button onclick="download('preview', 'inspiration-card-')">下载</button>
     </div>
   </div>
@@ -194,6 +194,18 @@
       customImage = "";
       document.getElementById("fileStatus").value = "";
       renderCard();
+    }
+
+    function submitCard() {
+      uploadCardToAirtable({
+        theme: document.getElementById('theme-select').value,
+        font: document.getElementById("choose-font").value,
+        title: document.getElementById('title').value,
+        quote: document.getElementById('quote').value,
+        imagePath: document.getElementById('image-select').value,
+        detail: document.getElementById('detail').value,
+        creator: document.getElementById('creator').value
+      });
     }
 
     function renderCard(customInsertImage) {

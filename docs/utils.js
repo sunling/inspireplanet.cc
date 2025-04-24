@@ -121,6 +121,44 @@ function bindCustomFileUpload({ inputId, buttonId, statusId, onLoad }) {
     });
 }
 
+async function uploadCardToAirtable({ theme, font, title, quote, detail, creator }) {
+    const token = 'pat1SqY1PwRJ71zY9.fa8c811c52fbe5807ba0cb11e2366dae0cb84e9478a71f5fcbbecfdcbd3075d2'.replace(/[^\x00-\x7F]/g, '');
+    const baseId = 'appUORauHPotUXTn2';
+    const tableName = 'tbl5mj8cEZSC6HdIK';
+
+    const url = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+
+    const record = {
+        fields: {
+            Theme: theme,
+            Font: font,
+            Title: title,
+            Quote: quote,
+            Detail: detail,
+            Creator: creator
+        }
+    };
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(record)
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+        alert('提交成功 ✅');
+        console.log('Airtable 返回:', data);
+    } else {
+        alert('提交失败，请检查控制台错误信息 ❌');
+        console.error('Airtable 错误:', data);
+    }
+}
+
+
 function getCurrentDate() {
     const now = new Date();
     const yyyy = now.getFullYear();
