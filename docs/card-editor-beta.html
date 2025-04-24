@@ -255,6 +255,55 @@
       }
 
     }
+
+    function saveDraft() {
+      const card = {
+        title: document.getElementById("title").value,
+        quote: document.getElementById("quote").value,
+        detail: document.getElementById("detail").value,
+        creator: document.getElementById("creator").value,
+        image: document.getElementById("image-select").value,
+        font: document.getElementById("choose-font").value,
+        theme: document.getElementById("theme-select").value
+      };
+      localStorage.setItem("draftCard", JSON.stringify(card));
+    }
+
+    function loadDraft() {
+      const card = JSON.parse(localStorage.getItem("draftCard") || "null");
+      if (!card) return;
+      document.getElementById("title").value = card.title;
+      document.getElementById("quote").value = card.quote;
+      document.getElementById("detail").value = card.detail;
+      document.getElementById("creator").value = card.creator;
+      // 加在图片
+      setTimeout(() => {
+        const imageSelect = document.getElementById("image-select");
+        for (let i = 0; i < imageSelect.options.length; i++) {
+          if (imageSelect.options[i].value === card.image) {
+            imageSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }, 50);
+      document.getElementById("choose-font").value = card.font;
+      document.getElementById("theme-select").value = card.theme;
+      renderCard(card.image);
+    }
+
+    function autoSaveDraft() {
+      const fields = ["title", "quote", "detail", "creator", "image-select", "choose-font", "theme-select"];
+      fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("input", () => saveDraft());
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadDraft();
+      autoSaveDraft();
+    });
+
     window.onload = function () {
       renderCard();
       loadImages(renderCard);
