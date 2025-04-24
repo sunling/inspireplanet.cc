@@ -174,10 +174,12 @@
       const selectedFont = document.getElementById('choose-font').value;
       //金句插图
       const finalImage = customImage || imagePath;
-      const todaydate = getCurrentDate();
       //主题设置
       const theme = document.getElementById("theme-select").value;
       const selectedTheme = themes[theme];
+
+      const nowObj = new Date();
+      const formatted = `${nowObj.getFullYear()}年${nowObj.getMonth() + 1}月${nowObj.getDate()}日 ${nowObj.getHours()}:${String(nowObj.getMinutes()).padStart(2, '0')}`;
 
       document.getElementById('preview').innerHTML = `
         <div class="card" style="
@@ -195,7 +197,7 @@
               <p id="detail-text">${detail}</p>
             </div>
             <div class="card-footer">
-                <div class="footer" style="color: ${selectedTheme.color}">——作者：${creator} · ${todaydate}</div>
+                <div class="footer" style="color: ${selectedTheme.color}">——作者：${creator} · ${formatted}</div>
             </div>
         </div>`;
       document.getElementById('detail-text').innerHTML = detail;
@@ -273,7 +275,7 @@
       renderCard();
       loadImages(() => {
         loadDraft();
-        renderCard();  
+        renderCard();
       });
       bindCustomFileUpload({
         inputId: "bgUpload",
