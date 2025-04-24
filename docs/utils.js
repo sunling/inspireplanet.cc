@@ -121,6 +121,27 @@ function bindCustomFileUpload({ inputId, buttonId, statusId, onLoad }) {
     });
 }
 
+function downloadCardToImageView(previewId = "preview", filenamePrefix = "inspiration-card") {
+    const cardElement = document.getElementById(previewId);
+
+    html2canvas(cardElement, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: null
+    }).then(canvas => {
+        const imgURL = canvas.toDataURL("image/png");
+
+        // 创建图片展示容器
+        const result = document.createElement("div");
+        result.innerHTML = `
+        <p style="font-size: 14px; color: #444;">⏬ 长按图片保存到相册：</p>
+        <img src="${imgURL}" style="max-width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"/>
+      `;
+        document.body.appendChild(result);
+    });
+}
+
+
 function getCurrentDate() {
     const now = new Date();
     const yyyy = now.getFullYear();
