@@ -189,5 +189,5 @@ function generateDisplayIndexHtml(episodeStr) {
       <div style="display: flex; flex-wrap: wrap;">${imgTags}</div>
     </body>
     </html>`;
-  fs.writeFileSync(path.join(generatedCardsDir, `${episodeStr}.html`), html, 'utf8');
+  fs.writeFileSync(path.join(generatedCardsDir, `index.html`), html, 'utf8');
 }
