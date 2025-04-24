@@ -240,13 +240,15 @@
       //<div class="meeting">欢迎你参加每周六早8点的启发星球线上腾讯会议: <span class="highlight">818 7279 2687</span></div>
     }
 
-    function isMobile() {
-      return /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    function isMobileDevice() {
+      return (
+        /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        window.innerWidth < 768
+      );
     }
 
     function saveCard(previewId, prefix) {
-      if (isMobile()) {
-        console.log("is mobile");
+      if (isMobileDevice()) {
         downloadCardToImageView(previewId, prefix);
       } else {
         download(previewId, prefix);

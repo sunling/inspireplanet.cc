@@ -117,7 +117,7 @@
 
     <div class="buttons">
       <button onclick="renderCard()">预览</button>
-      <button onclick="download('preview', 'inspiration-card-')">下载</button>
+      <button onclick="saveCard('preview', 'inspiration-card-')">下载</button>
     </div>
   </div>
   <div id="preview">
@@ -229,17 +229,32 @@
                 background-color: ${selectedTheme.quoteBg}; 
                 color: ${selectedTheme.quoteColor};
               ">${quote}</div>
-              <img id="quote-image" src="${finalImage}" alt="金句插图"/>
+              <img id="quote-image" src="${finalImage}" alt="金句插图" />
               <p id="detail-text">${detail}</p>
             </div>
             <div class="card-footer">
                 <div class="footer" style="color: ${selectedTheme.color}">——作者：${creator} · ${todaydate}</div>
             </div>
         </div>`;
-        document.getElementById('detail-text').innerHTML = detail;
+      document.getElementById('detail-text').innerHTML = detail;
       //<div class="meeting">欢迎你参加每周六早8点的启发星球线上腾讯会议: <span class="highlight">818 7279 2687</span></div>
     }
 
+    function isMobileDevice() {
+      return (
+        /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        window.innerWidth < 768
+      );
+    }
+
+    function saveCard(previewId, prefix) {
+      if (isMobileDevice()) {
+        downloadCardToImageView(previewId, prefix);
+      } else {
+        download(previewId, prefix);
+      }
+
+    }
     window.onload = function () {
       renderCard();
       loadImages(renderCard);
