@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
+const targetEpisode = process.argv[2]; // 取第三个参数，例如 "EP15"
 
 const themes = {
   darkblue: {
@@ -82,7 +83,12 @@ const themes = {
   const screenshotTasks = [];
   const episodes = new Set();
 
-  for (const item of data) {
+  // 如果没传参数，就返回全部
+  const filtereData = targetEpisode
+    ? data.filter(card => card.episode === targetEpisode)
+    : allCards;
+
+  for (const item of filtereData) {
     // 先确保和创建截图要保存的目录
     const screenshotsDir = path.resolve(__dirname, `../docs/generated/weekly-cards/2025/${item.episode}`);
     ensureDirSync(screenshotsDir);
@@ -140,7 +146,8 @@ const themes = {
 
   // 图片生成好之后，生成展示页面，每一集是一个页面
   for (const ep of episodes) {
-    generateDisplayIndexHtml(ep);
+    generateIndexHtmlForEpisode(ep);
+    updateWeeklyIndexHtml(ep);
   }
 })();
 
@@ -171,12 +178,12 @@ function ensureDirSync(dirPath) {
   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
 }
 
-function generateDisplayIndexHtml(episodeStr) {
+function generateIndexHtmlForEpisode(episodeStr) {
   const generatedCardsDir = path.resolve(__dirname, `../docs/generated/weekly-cards/2025/${episodeStr}`);
 
   ensureDirSync(generatedCardsDir);
 
-  const images = fs.readdirSync(generatedCardsDir).filter(file=>file.endsWith("png"));
+  const images = fs.readdirSync(generatedCardsDir).filter(file => file.endsWith("png"));
   const imgTags = images.map(file => `<img src="${file}" width="300" style="margin:10px;">`).join('\n');
   const html = `
     <!DOCTYPE html>
@@ -190,4 +197,26 @@ function generateDisplayIndexHtml(episodeStr) {
     </body>
     </html>`;
   fs.writeFileSync(path.join(generatedCardsDir, `index.html`), html, 'utf8');
+}
+
+function updateWeeklyIndexHtml(ep) {
+  const indexHtmlPath = path.resolve(__dirname, '../docs/generated/weekly-cards/index.html');
+
+  let indexHtml = fs.readFileSync(indexHtmlPath, 'utf-8');
+  const marker = '<!-- auto:ep-links -->';
+  const markerIndex = indexHtml.indexOf(marker);
+
+  if (markerIndex === -1) {
+    return;
+  }
+
+  // 生成 HTML 列表项
+  const epLinksHtml = `<li><a href="./2025/${ep}/">${ep}</a></li>`;
+
+  // 插入更新内容
+  const before = indexHtml.slice(0, markerIndex);
+  const after = indexHtml.slice(markerIndex + marker.length);
+  const newHtml = `${before}\n${epLinksHtml}\n<!-- auto:ep-links -->\n${after}`;
+
+  fs.writeFileSync(indexHtmlPath, newHtml, 'utf-8');
 }
