@@ -107,5 +107,5 @@ function generateDisplayIndexHtml() {
     </body>
     </html>`;
 
-  fs.writeFileSync(path.join(generatedCardsDir, `inspirations.html`), html, 'utf8');
+  fs.writeFileSync(path.join(generatedCardsDir, `index.html`), html, 'utf8');
 }
