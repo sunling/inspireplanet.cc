@@ -176,7 +176,7 @@ function generateDisplayIndexHtml(episodeStr) {
 
   ensureDirSync(generatedCardsDir);
 
-  const images = fs.readdirSync(generatedCardsDir);
+  const images = fs.readdirSync(generatedCardsDir).filter(file=>file.endsWith("png"));
   const imgTags = images.map(file => `<img src="${file}" width="300" style="margin:10px;">`).join('\n');
   const html = `
     <!DOCTYPE html>
