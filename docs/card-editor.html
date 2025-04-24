@@ -203,7 +203,8 @@
       }
 
       const title = document.getElementById('title').value || "这一刻，我想说...";
-      const quote = document.getElementById('quote').value || "《原则》：人避免不了痛苦，尤其是在追求雄心勃勃的目标时。信不信由你，如果以正确的态度对待痛苦，感到痛苦就是你的幸运，因为这将提示你寻找解决方案以便继续前进。";
+      const quoteRaw = document.getElementById('quote').value || "《原则》：人避免不了痛苦，尤其是在追求雄心勃勃的目标时。信不信由你，如果以正确的态度对待痛苦，感到痛苦就是你的幸运，因为这将提示你寻找解决方案以便继续前进。";
+      const quote = quoteRaw.replace(/\n/g, '<br>');
       const detailRaw = document.getElementById('detail').value || "你怎么看呢？";
       const detail = detailRaw.replace(/\n/g, '<br>');
 
@@ -225,7 +226,7 @@
             ">
              <div class="card-body">
               <div class="title">${title}</div>
-              <div class="quote-box" style="
+              <div class="quote-box" id="quote-text" style="
                 background-color: ${selectedTheme.quoteBg}; 
                 color: ${selectedTheme.quoteColor};
               ">${quote}</div>
@@ -236,6 +237,7 @@
                 <div class="footer" style="color: ${selectedTheme.color}">——作者：${creator} · ${todaydate}</div>
             </div>
         </div>`;
+      document.getElementById('quote-text').innerHTML = quote;
       document.getElementById('detail-text').innerHTML = detail;
       //<div class="meeting">欢迎你参加每周六早8点的启发星球线上腾讯会议: <span class="highlight">818 7279 2687</span></div>
     }

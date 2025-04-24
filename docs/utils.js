@@ -59,24 +59,27 @@ function download(elementId = "preview", filenamePrefix = "inspiration-card") {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }).catch(err => {
+            console.log("截图失败", err);
         });
     }, 500);
 }
 
 function downloadCardToImageView(previewId = "preview", filenamePrefix = "inspiration-card") {
-    // const cardElement = document.getElementById(previewId);
     html2canvas(document.getElementById(previewId), {
         scale: 3,
         useCORS: true,
         backgroundColor: null
-      }).then(canvas => {
-        canvas.toBlob(function(blob) {
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = `${filenamePrefix}-${Date.now()}.png`;
-          link.click();
+    }).then(canvas => {
+        canvas.toBlob(function (blob) {
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `${filenamePrefix}-${Date.now()}.png`;
+            link.click();
         }, "image/png");
-      });
+    }).catch(err => {
+        console.log("截图失败", err);
+    });
 }
 
 /**
