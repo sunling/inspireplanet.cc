@@ -59,8 +59,27 @@ function download(elementId = "preview", filenamePrefix = "inspiration-card") {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }).catch(err => {
+            console.log("截图失败", err);
         });
     }, 500);
+}
+
+function downloadCardToImageView(previewId = "preview", filenamePrefix = "inspiration-card") {
+    html2canvas(document.getElementById(previewId), {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: null
+    }).then(canvas => {
+        canvas.toBlob(function (blob) {
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `${filenamePrefix}-${Date.now()}.png`;
+            link.click();
+        }, "image/png");
+    }).catch(err => {
+        console.log("截图失败", err);
+    });
 }
 
 /**
@@ -120,6 +139,9 @@ function bindCustomFileUpload({ inputId, buttonId, statusId, onLoad }) {
         reader.readAsDataURL(file);
     });
 }
+
+
+
 
 async function uploadCardToAirtable({ theme, font, title, quote, detail, creator }) {
     const token = 'pat1SqY1PwRJ71zY9.fa8c811c52fbe5807ba0cb11e2366dae0cb84e9478a71f5fcbbecfdcbd3075d2'.replace(/[^\x00-\x7F]/g, '');
