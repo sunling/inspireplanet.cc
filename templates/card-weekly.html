@@ -12,7 +12,6 @@
 
   <style>
     body {
-      background: #1a1a1a;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -83,10 +82,23 @@
     }
 
     .footer {
-      font-size: 12px;
-      color: #8faadc;
+      font-size: 10px;
       font-style: italic;
       padding-bottom: 4px;
+    }
+
+    .meeting {
+      font-size: 9px;
+      color: #BCA88E;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .highlight {
+      color: #ff7900;
+      font-weight: bold;
+      font-style: normal;
     }
   </style>
 </head>
@@ -107,7 +119,7 @@
       <p id="detail-text">{{detail}}</p>
     </div>
     <div class="card-footer" style="color: {{color}}">
-      <div class="footer">来自启发星球 {{episode}} + AI · {{date}}</div>
+      <div class="footer">——启发星球 {{episode}} + AI总结 · {{date}}</div>
       <div class="meeting">{{meetingTime}} 欢迎你加入腾讯会议：<span class="highlight">818 7279 2687</span></div>
     </div>
   </div>

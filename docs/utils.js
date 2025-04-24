@@ -208,7 +208,7 @@ function bindCustomFileUpload({ inputId, buttonId, statusId, onLoad }) {
     });
 }
 
-async function uploadCardToAirtable({ theme, font, title, quote, imagePath, detail, creator }) {
+async function uploadCardToAirtable({ theme, font, title, quote, imagePath, detail, creator, upload }) {
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME}`;
     const record = {
         fields: {
@@ -218,6 +218,7 @@ async function uploadCardToAirtable({ theme, font, title, quote, imagePath, deta
             Quote: quote,
             ImagePath: imagePath,
             Detail: detail,
+            Upload: upload,
             Creator: creator
         }
     };
@@ -233,11 +234,9 @@ async function uploadCardToAirtable({ theme, font, title, quote, imagePath, deta
 
     const data = await res.json();
     if (res.ok) {
-        alert('提交成功 ✅');
-        console.log('Airtable 返回:', data);
+        alert("🎉 提交成功！卡片将进入展示候选区，稍后由编辑生成图像后展示。感谢你的分享！");
     } else {
         alert('提交失败，请检查控制台错误信息 ❌');
-        console.error('Airtable 错误:', data);
     }
 }
 

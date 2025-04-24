@@ -83,6 +83,10 @@ const themes = {
   const episodes = new Set();
 
   for (const item of data) {
+    // 先确保和创建截图要保存的目录
+    const screenshotsDir = path.resolve(__dirname, `../docs/generated/weekly-cards/2025/${item.episode}`);
+    ensureDirSync(screenshotsDir);
+
     const date = getDateFromEpisode(item.episode || 'EP14');
     const meetingTime = getDateFromEpisode(item.episode, 'meeting');
     // 随机选取一个themme
@@ -91,8 +95,7 @@ const themes = {
     // 随机选取一个插图
     const imagesDir = path.resolve(__dirname, '../docs/images');
     const imageFiles = fs.readdirSync(imagesDir);
-    // 随机选择
-    const randomFile = imageFiles[Math.floor(Math.random() * imageFiles.length)];
+    const randomFile = imageFiles[Math.floor(Math.random() * imageFiles.length)]; // 随机选择
     const imagePath = `images/${randomFile}`;
     const imageFullPath = path.resolve(__dirname, `../docs/${imagePath}`);
 
@@ -124,17 +127,18 @@ const themes = {
     });
 
     const card = await page.$('.card');
-    const screenshotPath = path.resolve(__dirname, '../docs/generated/cards', `${item.episode}${item.id}.png`);
-    await card.screenshot({ path: screenshotPath });  // 立即截图
+    const screenshotPath = path.resolve(__dirname, screenshotsDir, `${item.name}.png`);
+    fs.mkdirSync(screenshotsDir, { recursive: true });
+    await card.screenshot({ path: screenshotPath });  // 立即截图保存到目录
 
     await page.close();
     fs.unlinkSync(tempPath);
     episodes.add(item.episode);
   }
-
   await Promise.all(screenshotTasks);
   await browser.close();
 
+  // 图片生成好之后，生成展示页面，每一集是一个页面
   for (const ep of episodes) {
     generateDisplayIndexHtml(ep);
   }
@@ -164,30 +168,26 @@ function getDateFromEpisode(episodeStr, format = 'full') {
 }
 
 function ensureDirSync(dirPath) {
-  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath);
+  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
 }
 
 function generateDisplayIndexHtml(episodeStr) {
-  const docsDir = path.resolve(__dirname, '../docs/2025display');
-  const docsGeneratedCardsDir = path.resolve(__dirname, '../docs/generated/cards');
+  const generatedCardsDir = path.resolve(__dirname, `../docs/generated/weekly-cards/2025/${episodeStr}`);
 
-  ensureDirSync(docsDir);
-  ensureDirSync(docsGeneratedCardsDir);
+  ensureDirSync(generatedCardsDir);
 
-  const images = fs.readdirSync(docsGeneratedCardsDir);
-  const imgTags = images.map(file => `<img src="generated/cards/${file}" width="300" style="margin:10px;">`).join('\n');
+  const images = fs.readdirSync(generatedCardsDir);
+  const imgTags = images.map(file => `<img src="${file}" width="300" style="margin:10px;">`).join('\n');
   const html = `
     <!DOCTYPE html>
     <html lang="zh-CN">
     <head>
       <meta charset="UTF-8">
-      <title>启发星球金句卡片展示</title>
+      <title>启发星球金句卡片展示-${episodeStr}</title>
     </head>
     <body style="font-family: sans-serif; padding: 20px;">
-      <h1>启发星球金句卡片</h1>
       <div style="display: flex; flex-wrap: wrap;">${imgTags}</div>
     </body>
     </html>`;
-
-  fs.writeFileSync(path.join(docsDir, `${episodeStr}.html`), html, 'utf8');
+  fs.writeFileSync(path.join(generatedCardsDir, `${episodeStr}.html`), html, 'utf8');
 }

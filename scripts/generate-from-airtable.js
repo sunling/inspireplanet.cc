@@ -28,11 +28,19 @@ const { fetchAirtableData } = require('./utils');
       continue; // 👈 直接跳过
     }
 
-    const imageFullPath = path.resolve(__dirname, `../docs/${item.ImagePath || 'images/biking.png'}`);
+    // 如果用户没有选择内置图或者自定义，随机选择一张插图
+    let imagePath = item.ImagePath;
+    if (item.Upload !== 'No file chosen') {
+      const imagesDir = path.resolve(__dirname, '../docs/images');
+      const imageFiles = fs.readdirSync(imagesDir);
+      const randomFile = imageFiles[Math.floor(Math.random() * imageFiles.length)]; // 随机选择
+      imagePath = `images/${randomFile}`;
+    }
+    const imageFullPath = path.resolve(__dirname, `../docs/${imagePath}`);
     const style = JSON.parse(item.Theme || '{}');
     const dateObj = new Date(item.Created);
     const formatted = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日 ${dateObj.getHours()}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
-    
+
     const html = template
       .replace('{{title}}', item.Title || '')
       .replace('{{quote}}', item.Quote || '')
@@ -81,26 +89,23 @@ function ensureDirSync(dirPath) {
 }
 
 function generateDisplayIndexHtml() {
-  const docsDir = path.resolve(__dirname, '../docs');
-  const docsGeneratedCardsDir = path.resolve(__dirname, '../docs/generated/inspiration-cards');
+  const generatedCardsDir = path.resolve(__dirname, `../docs/generated/inspiration-cards`);
 
-  ensureDirSync(docsDir);
-  ensureDirSync(docsGeneratedCardsDir);
+  ensureDirSync(generatedCardsDir);
 
-  const images = fs.readdirSync(docsGeneratedCardsDir);
-  const imgTags = images.map(file => `<img src="generated/cards/${file}" width="300" style="margin:10px;">`).join('\n');
+  const images = fs.readdirSync(generatedCardsDir);
+  const imgTags = images.map(file => `<img src="${file}" width="300" style="margin:10px;">`).join('\n');
   const html = `
     <!DOCTYPE html>
     <html lang="zh-CN">
     <head>
       <meta charset="UTF-8">
-      <title>启发星球金句卡片展示</title>
+      <title>启发时刻卡片展示</title>
     </head>
     <body style="font-family: sans-serif; padding: 20px;">
-      <h1>启发星球金句卡片</h1>
       <div style="display: flex; flex-wrap: wrap;">${imgTags}</div>
     </body>
     </html>`;
 
-  fs.writeFileSync(path.join(docsDir, 'inspiration.html'), html, 'utf8');
+  fs.writeFileSync(path.join(generatedCardsDir, `inspirations.html`), html, 'utf8');
 }
