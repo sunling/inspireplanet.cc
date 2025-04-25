@@ -18,27 +18,27 @@ jobs:
             fonts-lato \
             fonts-noto-cjk \
             fonts-noto-core \
-            fonts-noto-ui-core \
-            fonts-noto-serif
+            fonts-noto-ui-core
       
           mkdir -p ~/.fonts
       
-          # Inter
-          wget -O ~/.fonts/Inter.ttf https://github.com/google/fonts/raw/main/ofl/inter/Inter-Regular.ttf
-      
           # Playfair Display
-          wget -O ~/.fonts/PlayfairDisplay.ttf https://github.com/google/fonts/raw/main/ofl/playfairdisplay/PlayfairDisplay-Regular.ttf
+          wget -O ~/.fonts/PlayfairDisplay.ttf https://github.com/technext/cozastore/blob/master/fonts/PlayfairDisplay/PlayfairDisplay-Regular.ttf
       
           # Montserrat
-          wget -O ~/.fonts/Montserrat.ttf https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat-Regular.ttf
+          wget -O ~/.fonts/Montserrat.ttf https://github.com/technext/cozastore/blob/master/fonts/Montserrat/Montserrat-Regular.ttf
       
           # Dancing Script
-          wget -O ~/.fonts/DancingScript.ttf https://github.com/google/fonts/raw/main/ofl/dancingscript/DancingScript-Regular.ttf
+          wget -O ~/.fonts/DancingScript.ttf https://github.com/Jolg42/FontSquirrel-Fonts/blob/master/Fonts/dancing-script-ot/web%20fonts/dancingscript_regular_macroman/DancingScript-Regular-webfont.woff
       
           # Ma Shan Zheng
           wget -O ~/.fonts/MaShanZheng.ttf https://github.com/google/fonts/raw/main/ofl/mashanzheng/MaShanZheng-Regular.ttf
       
           fc-cache -fv
+
+          echo "✅ Installed fonts:"
+          fc-list :lang=zh
+          fc-list | grep -i "inter\|playfair\|montserrat\|dancing\|shan"
           
       - name: Checkout code
         uses: actions/checkout@v3
