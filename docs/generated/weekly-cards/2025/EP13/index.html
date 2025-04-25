@@ -1,16 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
 
-    <!DOCTYPE html>
-    <html lang="zh-CN">
-    <head>
-      <meta charset="UTF-8">
-      <title>启发星球金句卡片展示-EP13</title>
-    </head>
-    <body style="font-family: sans-serif; padding: 20px;">
-      <div style="display: flex; flex-wrap: wrap;"><img src="artisanbasket.png" width="300" style="margin:10px;">
-<img src="biking.png" width="300" style="margin:10px;">
-<img src="fieldtools.png" width="300" style="margin:10px;">
-<img src="repairman.png" width="300" style="margin:10px;">
-<img src="sunlitcorridor.png" width="300" style="margin:10px;">
-<img src="teahouse.png" width="300" style="margin:10px;"></div>
-    </body>
-    </html>
+<head>
+  <meta charset="UTF-8">
+  <title>启发星球金句卡片展示-EP13</title>
+  <style>
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      padding: 40px;
+      background: #f9f9f9;
+    }
+
+    .gallery img {
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: transform 0.2s ease;
+    }
+
+    .gallery img:hover {
+      transform: scale(1.02);
+    }
+  </style>
+</head>
+
+<body style="font-family: sans-serif; padding: 20px;">
+  <div class="gallery">
+    <img src="artisanbasket.png" width="300" style="margin:10px;">
+    <img src="biking.png" width="300" style="margin:10px;">
+    <img src="fieldtools.png" width="300" style="margin:10px;">
+    <img src="repairman.png" width="300" style="margin:10px;">
+    <img src="sunlitcorridor.png" width="300" style="margin:10px;">
+    <img src="teahouse.png" width="300" style="margin:10px;">
+  </div>
+  </div>
+</body>
+</html>
