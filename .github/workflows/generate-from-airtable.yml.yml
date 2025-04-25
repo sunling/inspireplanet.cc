@@ -28,7 +28,7 @@ jobs:
           npm ls puppeteer-core || echo "✅ puppeteer-core removed"
 
       - name: Install puppeteer Chromium
-        run: npx puppeteer install chrome
+        run: npx puppeteer browsers install chrome
 
       - name: Run generate-from-airtable.js
         run: node scripts/generate-from-airtable.js
