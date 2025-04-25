@@ -41,7 +41,9 @@ jobs:
           git config user.email "actions@github.com"
       
           # 设置 remote URL 为 Token 身份
-          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
+          git remote remove origin
+          git remote add origin "https://x-access-token:${GH_PAT}@github.com/${GITHUB_REPOSITORY}"
+          # git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
       
           # 清除不提交的文件
           git restore package-lock.json
