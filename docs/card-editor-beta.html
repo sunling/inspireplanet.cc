@@ -264,12 +264,13 @@
     }
 
     function saveCard(previewId, prefix) {
-      if (isMobileDevice()) {
-        downloadCardToImageView(previewId, prefix);
-      } else {
-        downloadCardOnly(prefix);
-      }
+      // if (isMobileDevice()) {
+      //   downloadCardToImageView(previewId, prefix);
+      // } else {
+      //   downloadCardOnly(prefix);
+      // }
 
+      downloadCardOnly(prefix);
     }
 
     function saveDraft() {
