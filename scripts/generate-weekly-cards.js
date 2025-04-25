@@ -201,7 +201,7 @@ function generateIndexHtmlForEpisode(episodeStr) {
   ensureDirSync(generatedCardsDir);
 
   const images = fs.readdirSync(generatedCardsDir).filter(file => file.endsWith("png"));
-  const imgTags = images.map(file => `<img src="${file}" style="margin:10px;">`).join('\n\t\t');
+  const imgTags = images.map(file => `<img src="${file}" style="margin:10px;">`).join('\n\t\t\t\t');
   const html = `
     <!DOCTYPE html>
     <html lang="zh-CN">
