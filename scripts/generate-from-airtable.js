@@ -75,12 +75,13 @@ const { fetchAirtableData } = require('./utils');
 
     await page.close();
     fs.unlinkSync(tempPath);
+
+    updateIndexHtml(imagePath);
   }
 
   await Promise.all(screenshotTasks);
   await browser.close();
-
-  generateDisplayIndexHtml();
+  // generateDisplayIndexHtml();
 })();
 
 
@@ -109,3 +110,26 @@ function generateDisplayIndexHtml() {
 
   fs.writeFileSync(path.join(generatedCardsDir, `index.html`), html, 'utf8');
 }
+
+function updateIndexHtml(imagePath) {
+  const indexHtmlPath = path.resolve(__dirname, '../docs/generated/inspiration-cards/index.html');
+
+  let indexHtml = fs.readFileSync(indexHtmlPath, 'utf-8');
+  const marker = '<!-- auto:ep-links -->';
+  const markerIndex = indexHtml.indexOf(marker);
+
+  if (markerIndex === -1) {
+    return;
+  }
+
+  // 生成 HTML 列表项
+  const newImgTag = `<img src="${imagePath}" width="300" style="margin:10px;">`;
+
+  // 插入更新内容
+  const before = indexHtml.slice(0, markerIndex);
+  const after = indexHtml.slice(markerIndex + marker.length);
+  const newHtml = `${before}\n${newImgTag}\n<!-- auto:ep-links -->\n${after}`;
+
+  fs.writeFileSync(indexHtmlPath, newHtml, 'utf-8');
+}
+

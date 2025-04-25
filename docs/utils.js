@@ -210,12 +210,20 @@ function bindCustomFileUpload({ inputId, buttonId, statusId, onLoad }) {
 
 function hashCard(card) {
     if (!card.title || !card.quote || !card.detail) return null;
-    return btoa(unescape(encodeURIComponent(`${card.title}|${card.quote}|${card.detail}`)));
+
+    const normalized = [
+        card.title.trim().replace(/\s+/g, ' '),
+        card.quote.trim().replace(/\s+/g, ' '),
+        card.detail.trim().replace(/\s+/g, ' ')
+    ].join('|');
+
+    const encoded = new TextEncoder().encode(normalized);
+    return btoa(String.fromCharCode(...encoded));
 }
 
 async function uploadCardToAirtable({ theme, font, title, quote, imagePath, detail, creator, upload }) {
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME}`;
-    const hash = hashCard({ title, quote, detail });
+    const hash = hashCard({ title, quote, detail, creator });
     const record = {
         fields: {
             Theme: JSON.stringify(theme),
@@ -229,8 +237,8 @@ async function uploadCardToAirtable({ theme, font, title, quote, imagePath, deta
             Hash: hash
         }
     };
-    const formula = `FILTER_BY_FORMULA=${encodeURIComponent(`{Hash} = "${hash}"`)}`;
-    const checkIfExistUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME}?${formula}`;
+    const formula = `{Hash} = "${hash}"`;
+    const checkIfExistUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME}?filterByFormula=${encodeURIComponent(formula)}`;
     const existsRes = await fetch(checkIfExistUrl,
         {
             headers: {
@@ -238,7 +246,9 @@ async function uploadCardToAirtable({ theme, font, title, quote, imagePath, deta
             }
         }
     );
+
     const exists = await existsRes.json();
+    console.log(exists);
     if (exists.records && exists.records.length > 0) {
         console.log("❗️这张卡片已存在，跳过重复提交 ✅");
         return;
