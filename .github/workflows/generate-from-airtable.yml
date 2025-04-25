@@ -85,7 +85,7 @@ jobs:
           cp -r ../docs/generated/* ./docs/generated/
           
           git add .
-          git commit -m "🤖 generate inspiration cards"
+          git commit -m "🤖 generate cards"
           git push origin main --force-with-lease
           
       - name: Show logs
