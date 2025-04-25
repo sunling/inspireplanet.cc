@@ -33,23 +33,28 @@ jobs:
       - name: Run generate-from-airtable.js
         run: node scripts/generate-from-airtable.js
 
-      - name: Commit and push with token
+      - name: Commit and push generated cards
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          
-          echo "🔐 设置远程地址为 token 模式"
+      
+          # 设置 remote URL 为 Token 身份
           git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
       
-          echo "🧹 还原不需要提交的文件"
+          # 清除不提交的文件
           git restore package-lock.json
       
-          echo "📦 添加更改"
+          # 添加生成内容
           git add docs/generated/inspiration-cards/
           git commit -m "🤖 更新 Airtable 卡片图和展示页" || echo "No changes to commit"
       
-          echo "🚀 推送主分支"
+          # 打印 remote 验证是否成功
+          echo "🔍 Remote:"
+          git remote -v
+      
+          # 推送
           git push origin HEAD:main --force-with-lease
+
 
