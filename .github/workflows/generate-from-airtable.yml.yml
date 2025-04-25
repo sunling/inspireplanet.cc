@@ -33,18 +33,18 @@ jobs:
       - name: Run generate-from-airtable.js
         run: node scripts/generate-from-airtable.js
 
-      - name: Force override Git remote with token
+      - name: Commit and push cards
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
       
-          echo "🔧 手动覆盖 .git/config 以设置 Token Remote"
+          echo "🔧 设置 remote"
           git config --unset-all remote.origin.url || true
           git config --add remote.origin.url "https://x-access-token:${GH_PAT}@github.com/${GITHUB_REPOSITORY}"
       
-          echo "🧪 验证 remote 设置："
+          echo "🧪 当前 remote："
           git remote -v
       
           git restore package-lock.json
@@ -53,4 +53,5 @@ jobs:
       
           echo "🚀 正在推送"
           git push origin HEAD:main --force-with-lease
+
 
