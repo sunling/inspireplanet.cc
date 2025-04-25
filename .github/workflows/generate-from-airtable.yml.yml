@@ -22,6 +22,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Debug installed puppeteer
+        run: |
+          npm ls puppeteer
+          npx puppeteer --version || echo "puppeteer not found"
+
       - name: Install dependencies for Puppeteer
         run: sudo apt-get update && sudo apt-get install -y libxshmfence1 libgbm-dev
 
