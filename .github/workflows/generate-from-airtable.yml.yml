@@ -2,7 +2,7 @@ name: Auto Generate Cards from Airtable
 
 on:
   schedule:
-    - cron: '0,30 * * * *'  # 每天 UTC 8:00 执行一次（即北京时间 16:00）
+    - cron: '0,30 * * * *'  # 每30分钟执行一次
   workflow_dispatch:     # 也支持手动点击运行
 
 jobs:
@@ -21,6 +21,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Install dependencies for Puppeteer
+        run: sudo apt-get update && sudo apt-get install -y libxshmfence1 libgbm-dev
 
       - name: Run generate-from-airtable.js
         run: node scripts/generate-from-airtable.js
