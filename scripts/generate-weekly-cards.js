@@ -207,7 +207,7 @@ function generateIndexHtmlForEpisode(episodeStr) {
     <html lang="zh-CN">
     <head>
       <meta charset="UTF-8">
-      <title>启发星球金句卡片展示-EP13</title>
+      <title>启发星球金句卡片展示-${episodeStr}</title>
       <style>
         .gallery {
           display: grid;
