@@ -51,10 +51,10 @@ jobs:
           git checkout -b main origin/main
           
           # ⬇️ now copy doc/
-          cp -r ../docs/* .
+          cp -r ../docs/generated/inspiration-cards/* .
           
           git add .
-          git commit -m "🤖 自动生成并推送 docs"
+          git commit -m "🤖 自动生成并推送 inspiration cards"
           git push origin main --force-with-lease
           
       - name: Show logs
