@@ -33,28 +33,24 @@ jobs:
       - name: Run generate-from-airtable.js
         run: node scripts/generate-from-airtable.js
 
-      - name: Commit and push generated cards
+      - name: Force override Git remote with token
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          - name: Force override Git remote with token
-          env:
-            GH_PAT: ${{ secrets.GH_PAT }}
-          run: |
-            git config user.name "github-actions"
-            git config user.email "actions@github.com"
-        
-            echo "🔧 手动覆盖 .git/config 以设置 Token Remote"
-            git config --unset-all remote.origin.url || true
-            git config --add remote.origin.url "https://x-access-token:${GH_PAT}@github.com/${GITHUB_REPOSITORY}"
-        
-            echo "🧪 验证 remote 设置："
-            git remote -v
-        
-            git restore package-lock.json
-            git add docs/generated/inspiration-cards/
-            git commit -m "🤖 更新 Airtable 卡片图和展示页" || echo "⚠️ No changes to commit"
-        
-            echo "🚀 正在推送"
-            git push origin HEAD:main --force-with-lease
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+      
+          echo "🔧 手动覆盖 .git/config 以设置 Token Remote"
+          git config --unset-all remote.origin.url || true
+          git config --add remote.origin.url "https://x-access-token:${GH_PAT}@github.com/${GITHUB_REPOSITORY}"
+      
+          echo "🧪 验证 remote 设置："
+          git remote -v
+      
+          git restore package-lock.json
+          git add docs/generated/inspiration-cards/
+          git commit -m "🤖 更新 Airtable 卡片图和展示页" || echo "⚠️ No changes to commit"
+      
+          echo "🚀 正在推送"
+          git push origin HEAD:main --force-with-lease
 
