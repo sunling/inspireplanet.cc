@@ -208,8 +208,14 @@ function bindCustomFileUpload({ inputId, buttonId, statusId, onLoad }) {
     });
 }
 
+function hashCard(card) {
+    if (!card.title || !card.quote || !card.detail) return null;
+    return btoa(unescape(encodeURIComponent(`${card.title}|${card.quote}|${card.detail}`)));
+}
+
 async function uploadCardToAirtable({ theme, font, title, quote, imagePath, detail, creator, upload }) {
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME}`;
+    const hash = hashCard({ title, quote, detail });
     const record = {
         fields: {
             Theme: JSON.stringify(theme),
@@ -219,10 +225,24 @@ async function uploadCardToAirtable({ theme, font, title, quote, imagePath, deta
             ImagePath: imagePath,
             Detail: detail,
             Upload: upload,
-            Creator: creator
+            Creator: creator,
+            Hash: hash
         }
     };
-
+    const formula = `FILTER_BY_FORMULA=${encodeURIComponent(`{Hash} = "${hash}"`)}`;
+    const checkIfExistUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME}?${formula}`;
+    const existsRes = await fetch(checkIfExistUrl,
+        {
+            headers: {
+                Authorization: `Bearer ${AIRTABLE_TOKEN}`
+            }
+        }
+    );
+    const exists = await existsRes.json();
+    if (exists.records && exists.records.length > 0) {
+        console.log("❗️这张卡片已存在，跳过重复提交 ✅");
+        return;
+    }
     const res = await fetch(url, {
         method: 'POST',
         headers: {
