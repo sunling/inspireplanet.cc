@@ -8,13 +8,8 @@ const { fetchAirtableData } = require('./utils');
   const data = await fetchAirtableData();
   const template = fs.readFileSync('templates/card.html', 'utf8');
 
-  let executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-  if (!fs.existsSync(executablePath)) {
-    throw new Error('Chrome not found at expected path. Please edit generate.js to set correct path.');
-  }
   const browser = await puppeteer.launch({
-    executablePath,
-    headless: true,
+    headless: 'new', // 使用 Puppeteer 内置的 Chromium
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
