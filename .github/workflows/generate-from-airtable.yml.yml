@@ -22,9 +22,6 @@ jobs:
       
           mkdir -p ~/.fonts
       
-          # Inter
-          wget -O ~/.fonts/Inter.ttf https://github.com/google/fonts/raw/main/apache/inter/Inter-Regular.ttf
-      
           # Playfair Display
           wget -O ~/.fonts/PlayfairDisplay.ttf https://github.com/google/fonts/raw/main/ofl/playfairdisplay/PlayfairDisplay-Regular.ttf
       
