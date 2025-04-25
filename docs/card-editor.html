@@ -174,7 +174,7 @@
         href="https://sunling.github.io/content-crafter-kit/generated/inspiration-cards" target="_blank">
         查看启发卡片展示区
       </a>
-      <button onclick="saveCard('preview', 'inspiration-card-')">下载</button>
+      <button onclick="downloadCard()">下载</button>
     </div>
     <p style="font-size: 13px; color: #666; margin-top: 8px;">
       📌 提交后，卡片内容将进入展示候选区，由编辑审核后生成图片并公开展示。
@@ -261,15 +261,6 @@
         /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
         window.innerWidth < 768
       );
-    }
-
-    function saveCard(previewId, prefix) {
-      if (isMobileDevice()) {
-        downloadCardToImageView(previewId, prefix);
-      } else {
-        downloadCardOnly(prefix);
-      }
-
     }
 
     function saveDraft() {

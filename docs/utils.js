@@ -105,36 +105,36 @@ function loadImages(onLoadedFunc, selectId = "image-select", jsonPath = "images.
  * @param {string} elementId - 要截图的元素 id（默认是 "preview"）
  * @param {string} filenamePrefix - 下载文件名前缀（默认是 "inspiration-card"）
  */
-function download(elementId = "preview", filenamePrefix = "inspiration-card") {
-    const cardElement = document.getElementById(elementId);
+function downloadCover(elementId = ".cover", filenamePrefix = "cover") {
+    const cardElement = document.querySelector(elementId);
     if (!cardElement) {
         console.warn(`元素 #${elementId} 不存在`);
         return;
     }
-
     setTimeout(() => {
         html2canvas(cardElement, {
             scale: 3, // 高清导出
             logging: true,
             useCORS: true,
             backgroundColor: null,
-            windowWidth: document.body.scrollWidth,
-            windowHeight: document.body.scrollHeight,
         }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = `${filenamePrefix}-${Date.now()}.png`;
-            link.href = canvas.toDataURL('image/png');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            canvas.toBlob(function (blob) {
+                const link = document.createElement('a');
+                link.download = `${filenamePrefix}-${Date.now()}.png`;
+                link.href = URL.createObjectURL(blob);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                document.body.removeChild(sandbox);
+            }, "image/png");
         }).catch(err => {
             console.log("截图失败", err);
         }, 500);
     });
 }
 
-function downloadCardOnly(filenamePrefix = "inspiration-card") {
-    const cardContent = document.querySelector(".card"); // 或 .card-content
+function downloadCard(divElement = ".card", filenamePrefix = "inspiration-card") {
+    const cardContent = document.querySelector(divElement);
     if (!cardContent) return;
 
     // 克隆并脱离布局
@@ -172,23 +172,6 @@ function downloadCardOnly(filenamePrefix = "inspiration-card") {
             }, "image/png");
         });
     }, 300);
-}
-
-function downloadCardToImageView(previewId = "preview", filenamePrefix = "inspiration-card") {
-    html2canvas(document.getElementById(previewId), {
-        scale: 3,
-        useCORS: true,
-        backgroundColor: null
-    }).then(canvas => {
-        canvas.toBlob(function (blob) {
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `${filenamePrefix}-${Date.now()}.png`;
-            link.click();
-        }, "image/png");
-    }).catch(err => {
-        console.log("截图失败", err);
-    });
 }
 
 /**
