@@ -1,7 +1,7 @@
+const { DateTime } = require("luxon");
 
 async function fetchAirtableData() {
     const AIRTABLE_TOKEN = process.env.AIRTABLE_API_KEY;
-    // const AIRTABLE_TOKEN = 'pat1SqY1PwRJ71zY9.fa8c811c52fbe5807ba0cb11e2366dae0cb84e9478a71f5fcbbecfdcbd3075d2'.replace(/[^\x00-\x7F]/g, '');
     const AIRTABLE_BASE_NAME = 'appUORauHPotUXTn2';
     const AIRTABLE_TABLE_NAME = 'tbl5mj8cEZSC6HdIK';
     const halfHourAgo = new Date(Date.now() - 50 * 60 * 1000); // 50分钟
@@ -23,4 +23,14 @@ async function fetchAirtableData() {
     }));
 }
 
-module.exports = { fetchAirtableData };
+/**
+ * 将 Airtable 的 UTC ISO 时间字符串转换为北京时间（格式化输出）
+ * @param {string} isoString - 来自 Airtable 的 ISO 格式时间字符串（UTC）
+ * @returns {string} 格式为 "YYYY年M月D日 HH:mm" 的北京时间
+ */
+function formatToBeijingTime(isoString) {
+    const bjTime = DateTime.fromISO(isoString, { zone: 'utc' }).setZone('Asia/Shanghai');
+    return `${bjTime.year}年${bjTime.month}月${bjTime.day}日 ${bjTime.hour}:${String(bjTime.minute).padStart(2, '0')}`;
+}
+
+module.exports = { fetchAirtableData, formatToBeijingTime };

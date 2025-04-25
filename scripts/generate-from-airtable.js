@@ -2,21 +2,21 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
-const { fetchAirtableData } = require('./utils');
+const { fetchAirtableData, formatToBeijingTime } = require('./utils');
 
 (async () => {
   const data = await fetchAirtableData();
   const template = fs.readFileSync('templates/card.html', 'utf8');
 
   // let executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-  //   if (!fs.existsSync(executablePath)) {
-  //     throw new Error('Chrome not found at expected path. Please edit generate.js to set correct path.');
-  //   }
-  //   const browser = await puppeteer.launch({
-  //     executablePath,
-  //     headless: true,
-  //     args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  //   });
+  // if (!fs.existsSync(executablePath)) {
+  //   throw new Error('Chrome not found at expected path. Please edit generate.js to set correct path.');
+  // }
+  // const browser = await puppeteer.launch({
+  //   executablePath,
+  //   headless: true,
+  //   args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  // });
 
   const browser = await puppeteer.launch({
     headless: 'new', // 使用 Puppeteer 内置的 Chromium
@@ -43,11 +43,7 @@ const { fetchAirtableData } = require('./utils');
     }
     const imageFullPath = path.resolve(__dirname, `../docs/${imagePath}`);
     const style = JSON.parse(item.Theme || '{}');
-    const pt = new Date(item.Created);
-    // 转换成北京时间
-    const bjTime = new Date(pt.getTime() + 15 * 60 * 60 * 1000);
-    const formatted = `${bjTime.getFullYear()}年${bjTime.getMonth() + 1}月${bjTime.getDate()}日 ${bjTime.getHours()}:${String(bjTime.getMinutes()).padStart(2, '0')}`;
-
+    const bjt = formatToBeijingTime(item.Created);
     const html = template
       .replace('{{title}}', item.Title || '这一刻，我想说')
       .replace('{{quote}}', item.Quote || '')
@@ -58,7 +54,7 @@ const { fetchAirtableData } = require('./utils');
       .replace('{{quoteColor}}', style.quoteColor || '#000')
       .replace('{{finalImage}}', imageFullPath)
       .replace('{{creator}}', item.Creator)
-      .replace('{{created}}', formatted)
+      .replace('{{created}}', bjt)
       .replace('{{detail}}', item.Detail || '')
 
     const tempPath = `temp-${item.id}.html`;
@@ -118,7 +114,7 @@ function updateIndexHtml(imagePath) {
   // 插入更新内容
   const before = indexHtml.slice(0, markerIndex);
   const after = indexHtml.slice(markerIndex + marker.length);
-  const newHtml = `${before}\t\t${newImgTag}\n<!-- auto:ep-links -->${after}`;
+  const newHtml = `${before}\t\t${newImgTag}\n\t\t<!-- auto:ep-links -->${after}`;
 
   fs.writeFileSync(indexHtmlPath, newHtml, 'utf-8');
 }
