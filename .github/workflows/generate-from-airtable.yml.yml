@@ -29,9 +29,10 @@ jobs:
             libatk-bridge2.0-0 libcups2 libdrm2 libxdamage1 libxrandr2 \
             libgtk-3-0 libnss3 libxss1 libxcomposite1 libx11-xcb1 libxext6 \
             libxfixes3 libxrender1 libpangocairo-1.0-0
-
-      - name: Install dependencies for Puppeteer
-        run: sudo apt-get update && sudo apt-get install -y libxshmfence1 libgbm-dev
+      - name: Debug puppeteer
+        run: |
+          npm ls puppeteer
+          npm ls puppeteer-core || echo "✅ puppeteer-core removed"
 
       - name: Run generate-from-airtable.js
         run: node scripts/generate-from-airtable.js
