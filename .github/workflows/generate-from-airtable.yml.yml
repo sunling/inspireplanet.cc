@@ -1,0 +1,34 @@
+name: Auto Generate Cards from Airtable
+
+on:
+  schedule:
+    - cron: '0,30 * * * *'  # 每天 UTC 8:00 执行一次（即北京时间 16:00）
+  workflow_dispatch:     # 也支持手动点击运行
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    env:
+      AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run generate-from-airtable.js
+        run: node scripts/generate-from-airtable.js
+
+      - name: Commit and push generated cards
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/generated/inspiration-cards/
+          git commit -m "🤖 更新 Airtable 卡片图和展示页" || echo "No changes to commit"
+          git push
