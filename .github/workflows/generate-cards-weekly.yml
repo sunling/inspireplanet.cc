@@ -1,8 +1,6 @@
 name: Auto Generate Cards from Airtable
 
 on:
-  schedule:
-    - cron: '0,10086 * * * *'  # 每7天
   workflow_dispatch:     # 也支持手动点击运行
 
 jobs:
