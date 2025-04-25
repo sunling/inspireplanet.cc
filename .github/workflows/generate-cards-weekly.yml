@@ -1,4 +1,4 @@
-name: Auto Generate Cards from Airtable
+name: Generate Weekly Cards from Airtable
 
 on:
   workflow_dispatch:     # 也支持手动点击运行
@@ -80,7 +80,7 @@ jobs:
           cp -r ../docs/generated/weekly-cards/* ./docs/generated/weekly-cards/
           
           git add .
-          git commit -m "🤖 generate cards"
+          git commit -m "🤖 generate weekly cards"
           git push origin main --force-with-lease
           
       - name: Show logs
