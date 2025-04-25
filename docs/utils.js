@@ -129,8 +129,47 @@ function download(elementId = "preview", filenamePrefix = "inspiration-card") {
             document.body.removeChild(link);
         }).catch(err => {
             console.log("截图失败", err);
+        }, 500);
+    });
+}
+
+function downloadCardOnly(filenamePrefix = "inspiration-card") {
+    const cardContent = document.querySelector(".card"); // 或 .card-content
+    if (!cardContent) return;
+
+    // 克隆并脱离布局
+    const clone = cardContent.cloneNode(true);
+    clone.style.margin = "0"; // 去除外边距
+    clone.style.position = "absolute";
+    clone.style.top = "0";
+    clone.style.left = "0";
+
+    const sandbox = document.createElement("div");
+    sandbox.style.position = "fixed";
+    sandbox.style.left = "-9999px";
+    sandbox.style.top = "0";
+    sandbox.style.zIndex = "-1";
+    sandbox.style.background = "white";
+    sandbox.appendChild(clone);
+    document.body.appendChild(sandbox);
+
+    // 用 clone 的实际内容高度截图
+    setTimeout(() => {
+        html2canvas(clone, {
+            scale: 3,
+            useCORS: true,
+            backgroundColor: null,
+            width: clone.scrollWidth,
+            height: clone.scrollHeight,
+        }).then(canvas => {
+            const link = document.createElement("a");
+            link.download = `${filenamePrefix}-${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            document.body.removeChild(link);
+            document.body.removeChild(sandbox);
         });
-    }, 500);
+    }, 300);
 }
 
 function downloadCardToImageView(previewId = "preview", filenamePrefix = "inspiration-card") {
