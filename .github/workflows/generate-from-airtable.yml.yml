@@ -18,8 +18,7 @@ jobs:
             fonts-lato \
             fonts-noto-cjk \
             fonts-noto-core \
-            fonts-noto-ui-core \
-            fonts-noto-serif
+            fonts-noto-ui-core
       
           mkdir -p ~/.fonts
       
