@@ -60,12 +60,19 @@ const { fetchAirtableData } = require('./utils');
     const page = await browser.newPage();
     await page.goto(`file://${path.resolve(tempPath)}`, { waitUntil: 'networkidle0' });
     await page.waitForSelector('.card');
-
+    const dimensions = await page.evaluate(() => {
+      return {
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight
+      };
+    });
     await page.setViewport({
-      width: 840,
-      height: 1200,
-      deviceScaleFactor: 3,
+      scale: 3, // 高清导出
+      logging: true,
+      useCORS: true,
       backgroundColor: null,
+      width: dimensions.width,
+      height: dimensions.height,
     });
 
     const card = await page.$('.card');
@@ -99,7 +106,7 @@ function updateIndexHtml(imagePath) {
   }
 
   // 生成 HTML 列表项
-  const newImgTag = `<img src="${imagePath}" width="300" style="margin:10px;">`;
+  const newImgTag = `<img src="${imagePath}" style="margin:10px;">`;
 
   // 插入更新内容
   const before = indexHtml.slice(0, markerIndex);

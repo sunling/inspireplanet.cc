@@ -4,34 +4,44 @@
 <head>
   <meta charset="UTF-8">
   <title>启发时刻卡片展示</title>
+  <style>
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      padding: 40px;
+      background: #f9f9f9;
+    }
+
+    .gallery img {
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: transform 0.2s ease;
+    }
+
+    .gallery img:hover {
+      transform: scale(1.02);
+    }
+  </style>
 </head>
 
 <body style="font-family: sans-serif; padding: 20px;">
-  <div style="display: flex; flex-wrap: wrap;">
+  <div class="gallery">
+    <img src="1.png" style="margin:10px;">
+
+    <img src="2.png" style="margin:10px;">
 
     <img src="3.png" style="margin:10px;">
+
+    <img src="4.png" style="margin:10px;">
 
     <img src="5.png" style="margin:10px;">
 
     <img src="6.png" style="margin:10px;">
 
-    <img src="8.png" style="margin:10px;">
-
-    <img src="9.png" style="margin:10px;">
-
-    <img src="10.png" style="margin:10px;">
-
-    <img src="14.png" style="margin:10px;">
-
-    <img src="16.png" style="margin:10px;">
+    <img src="7.png" style="margin:10px;">
     <!-- auto:ep-links -->
-
-
-
-
-
-
-
 
 
 

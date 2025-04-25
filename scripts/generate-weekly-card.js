@@ -127,9 +127,12 @@ const themes = {
     await page.waitForSelector('.card');
 
     await page.setViewport({
-      width: 840,
-      height: 1200,
-      deviceScaleFactor: 2.5,
+      scale: 3, // 高清导出
+      logging: true,
+      useCORS: true,
+      backgroundColor: null,
+      windowWidth: document.body.scrollWidth,
+      windowHeight: document.body.scrollHeight,
     });
 
     const card = await page.$('.card');
