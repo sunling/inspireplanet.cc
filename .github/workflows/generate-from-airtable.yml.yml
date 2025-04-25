@@ -23,7 +23,7 @@ jobs:
           mkdir -p ~/.fonts
       
           # Inter
-          wget -O ~/.fonts/Inter.ttf https://github.com/google/fonts/raw/main/ofl/inter/Inter-Regular.ttf
+          wget -O ~/.fonts/Inter.ttf https://github.com/google/fonts/raw/main/apache/inter/Inter-Regular.ttf
       
           # Playfair Display
           wget -O ~/.fonts/PlayfairDisplay.ttf https://github.com/google/fonts/raw/main/ofl/playfairdisplay/PlayfairDisplay-Regular.ttf
@@ -38,6 +38,10 @@ jobs:
           wget -O ~/.fonts/MaShanZheng.ttf https://github.com/google/fonts/raw/main/ofl/mashanzheng/MaShanZheng-Regular.ttf
       
           fc-cache -fv
+
+          echo "✅ Installed fonts:"
+          fc-list :lang=zh
+          fc-list | grep -i "inter\|playfair\|montserrat\|dancing\|shan"
           
       - name: Checkout code
         uses: actions/checkout@v3
