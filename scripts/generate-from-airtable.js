@@ -113,7 +113,7 @@ function updateIndexHtml(imagePath) {
   // 插入更新内容
   const before = indexHtml.slice(0, markerIndex);
   const after = indexHtml.slice(markerIndex + marker.length);
-  const newHtml = `${before}\n${newImgTag}\n<!-- auto:ep-links -->${after}`;
+  const newHtml = `${before}\t\t${newImgTag}\n\t\t<!-- auto:ep-links -->${after}`;
 
   fs.writeFileSync(indexHtmlPath, newHtml, 'utf-8');
 }
