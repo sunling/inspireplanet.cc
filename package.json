@@ -12,6 +12,6 @@
     "puppeteer": "^24.7.2"
   },
   "resolutions": {
-    "puppeteer-core": "npm:puppeteer@21.3.8"
+    "puppeteer-core": "npm:puppeteer@^24.7.2"
   }
 }
