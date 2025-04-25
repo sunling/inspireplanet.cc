@@ -231,12 +231,12 @@ function validateCard({ title, quote, detail }) {
             !/(.)\\1{4,}/.test(trimmed) // 不允许重复字符过多
         );
     };
-    if (!title || title.trim().length < 2 || title.length > 50) {
-        alert("❗️请填写有效的标题（2～50 字符）");
+    if (!title || title.trim().length < 2) {
+        alert("❗️请填写有效的标题（至少2个字吧）");
         return false;
     }
-    if (!quote || quote.trim().length < 5 || quote.length > 60) {
-        alert("❗️请填写金句（5～60 字符）");
+    if (!quote || quote.trim().length < 5) {
+        alert("❗️请填写`被触动的观点`（至少5个字吧）");
         return false;
     }
     if (!detail || detail.length < 10 || !isMeaningful(detail)) {
