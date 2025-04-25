@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { fetchWeeklyAirtableData } = require('./utils');
 
-const targetEpisode = process.argv[2]; // 取第三个参数，例如 "EP15"
+// const targetEpisode = process.argv[2]; // 取第三个参数，例如 "EP15"
 
 const themes = {
   darkblue: {
@@ -95,6 +95,13 @@ const themes = {
     const screenshotsDir = path.resolve(__dirname, `../docs/generated/weekly-cards/2025/${item.Episode}`);
     ensureDirSync(screenshotsDir);
 
+    // 如果已经生成过，就不生成了
+    const outputPath = path.resolve(__dirname, `${screenshotsDir}/${item.Name}.png`);
+    if (fs.existsSync(outputPath)) {
+      console.log(`✅ 跳过已生成记录：${item.id}`);
+      continue;
+    }
+    
     const date = getDateFromEpisode(item.Episode || 'EP14');
     const meetingTime = getDateFromEpisode(item.Episode, 'meeting');
     // 随机选取一个themme
