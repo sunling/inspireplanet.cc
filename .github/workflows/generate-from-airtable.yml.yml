@@ -42,21 +42,25 @@ jobs:
           mkdir temp-push
           cp -r docs temp-push/docs
           cd temp-push
-      
+          
           git init
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git remote add origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
-      
+          
+          git fetch origin main
+          git checkout -b main origin/main
+          
+          cp -r docs/* .
+          
           git add .
           git commit -m "🤖 自动生成并推送 docs"
-          git branch -M main
-          git fetch origin main
-          git reset --soft origin/main
           git push origin main --force-with-lease
-      
-          echo "✅ 推送完成"
-
+          
+      - name: Show logs
+        if: always()
+        run: |
+          echo "🎯 Workflow 执行完成"
 
 
 
