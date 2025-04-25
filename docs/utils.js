@@ -221,7 +221,33 @@ function hashCard(card) {
     return btoa(String.fromCharCode(...encoded));
 }
 
+function validateCard({ title, quote, detail }) {
+    const isMeaningful = str => {
+        if (!str) return false;
+        const trimmed = str.trim();
+        return (
+            trimmed.length >= 5 &&
+            !/^([\\d\\W_\\s])+$/.test(trimmed) && // 不全是数字/标点/空格
+            !/(.)\\1{4,}/.test(trimmed) // 不允许重复字符过多
+        );
+    };
+    if (!title || title.trim().length < 2 || title.length > 50) {
+        alert("❗️请填写有效的标题（2～50 字符）");
+        return false;
+    }
+    if (!quote || quote.trim().length < 5 || quote.length > 60) {
+        alert("❗️请填写金句（5～60 字符）");
+        return false;
+    }
+    if (!detail || detail.length < 10 || !isMeaningful(detail)) {
+        alert("❗️请填写启发内容（至少10个字吧，不能全是标点或无效字符）");
+        return false;
+    }
+    return true;
+}
+
 async function uploadCardToAirtable({ theme, font, title, quote, imagePath, detail, creator, upload }) {
+    if (!validateCard({ title, quote, detail })) { return; }
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME}`;
     const hash = hashCard({ title, quote, detail, creator });
     const record = {
@@ -248,7 +274,6 @@ async function uploadCardToAirtable({ theme, font, title, quote, imagePath, deta
     );
 
     const exists = await existsRes.json();
-    console.log(exists);
     if (exists.records && exists.records.length > 0) {
         console.log("❗️这张卡片已存在，跳过重复提交 ✅");
         return;
