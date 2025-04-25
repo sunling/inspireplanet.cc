@@ -1,6 +1,8 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
+const { fetchWeeklyAirtableData } = require('./utils');
+
 const targetEpisode = process.argv[2]; // 取第三个参数，例如 "EP15"
 
 const themes = {
@@ -67,7 +69,7 @@ const themes = {
 };
 
 (async () => {
-  const data = JSON.parse(fs.readFileSync('data/card_data.json', 'utf8'));
+  const data = await fetchWeeklyAirtableData();
   const template = fs.readFileSync('templates/card-weekly.html', 'utf8');
 
   let executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -83,18 +85,13 @@ const themes = {
   const screenshotTasks = [];
   const episodes = new Set();
 
-  // 如果没传参数，就返回全部
-  const filtereData = targetEpisode
-    ? data.filter(card => card.episode === targetEpisode)
-    : allCards;
-
-  for (const item of filtereData) {
+  for (const item of data) {
     // 先确保和创建截图要保存的目录
-    const screenshotsDir = path.resolve(__dirname, `../docs/generated/weekly-cards/2025/${item.episode}`);
+    const screenshotsDir = path.resolve(__dirname, `../docs/generated/weekly-cards/2025/${item.Episode}`);
     ensureDirSync(screenshotsDir);
 
-    const date = getDateFromEpisode(item.episode || 'EP14');
-    const meetingTime = getDateFromEpisode(item.episode, 'meeting');
+    const date = getDateFromEpisode(item.Episode || 'EP14');
+    const meetingTime = getDateFromEpisode(item.Episode, 'meeting');
     // 随机选取一个themme
     const keys = Object.keys(themes);
     const randomKey = keys[Math.floor(Math.random() * keys.length)];
@@ -106,43 +103,48 @@ const themes = {
     const imageFullPath = path.resolve(__dirname, `../docs/${imagePath}`);
 
     const html = template
-      .replace('{{title}}', item.title || '')
-      .replace('{{quote}}', item.quote || '')
+      .replace('{{title}}', item.Title || '')
+      .replace('{{quote}}', item.Quote || '')
       .replace('{{selectedFont}}', "'PingFang SC'") //  固定字体先
       .replace('{{background}}', themes[randomKey].background || '#ffffff')
       .replaceAll('{{color}}', themes[randomKey].color || '#333')
       .replace('{{quoteBg}}', themes[randomKey].quoteBg || '#f0f0f0')
       .replace('{{quoteColor}}', themes[randomKey].quoteColor || '#000')
       .replace('{{finalImage}}', imageFullPath)
-      .replace('{{detail}}', item.detail || '')
-      .replace('{{episode}}', item.episode)
+      .replace('{{detail}}', item.Detail || '')
+      .replace('{{episode}}', item.Episode)
       .replace('{{date}}', date)
       .replace('{{meetingTime}}', meetingTime);
 
-    const tempPath = `temp-${item.id}.html`;
+    const tempPath = `temp-${item.Name}.html`;
     fs.writeFileSync(tempPath, html, 'utf8');
 
     const page = await browser.newPage();
     await page.goto(`file://${path.resolve(tempPath)}`, { waitUntil: 'networkidle0' });
     await page.waitForSelector('.card');
-
+    const dimensions = await page.evaluate(() => {
+      return {
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight
+      };
+    });
     await page.setViewport({
       scale: 3, // 高清导出
       logging: true,
       useCORS: true,
       backgroundColor: null,
-      windowWidth: document.body.scrollWidth,
-      windowHeight: document.body.scrollHeight,
+      width: dimensions.width,
+      height: dimensions.height,
     });
 
     const card = await page.$('.card');
-    const screenshotPath = path.resolve(__dirname, screenshotsDir, `${item.name}.png`);
+    const screenshotPath = path.resolve(__dirname, screenshotsDir, `${item.Name}.png`);
     fs.mkdirSync(screenshotsDir, { recursive: true });
-    await card.screenshot({ path: screenshotPath });  // 立即截图保存到目录
+    await card.screenshot({ path: screenshotPath });
 
     await page.close();
     fs.unlinkSync(tempPath);
-    episodes.add(item.episode);
+    episodes.add(item.Episode);
   }
   await Promise.all(screenshotTasks);
   await browser.close();
@@ -187,17 +189,38 @@ function generateIndexHtmlForEpisode(episodeStr) {
   ensureDirSync(generatedCardsDir);
 
   const images = fs.readdirSync(generatedCardsDir).filter(file => file.endsWith("png"));
-  const imgTags = images.map(file => `<img src="${file}" width="300" style="margin:10px;">`).join('\n');
+  const imgTags = images.map(file => `<img src="${file}" style="margin:10px;">`).join('\n\t\t');
   const html = `
     <!DOCTYPE html>
     <html lang="zh-CN">
     <head>
       <meta charset="UTF-8">
-      <title>启发星球金句卡片展示-${episodeStr}</title>
+      <title>启发星球金句卡片展示-EP13</title>
+      <style>
+        .gallery {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 20px;
+          padding: 40px;
+          background: #f9f9f9;
+        }
+
+        .gallery img {
+          width: 100%;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+          transition: transform 0.2s ease;
+        }
+
+        .gallery img:hover {
+          transform: scale(1.02);
+        }
+      </style>
     </head>
-    <body style="font-family: sans-serif; padding: 20px;">
-      <div style="display: flex; flex-wrap: wrap;">${imgTags}</div>
-    </body>
+      <body style="font-family: sans-serif; padding: 20px;">
+        <div class="gallery">
+          ${imgTags}
+      </body>
     </html>`;
   fs.writeFileSync(path.join(generatedCardsDir, `index.html`), html, 'utf8');
 }
@@ -219,7 +242,7 @@ function updateWeeklyIndexHtml(ep) {
   // 插入更新内容
   const before = indexHtml.slice(0, markerIndex);
   const after = indexHtml.slice(markerIndex + marker.length);
-  const newHtml = `${before}\n${epLinksHtml}\n<!-- auto:ep-links -->\n${after}`;
+  const newHtml = `${before}${epLinksHtml}\n\t\t<!-- auto:ep-links -->${after}`;
 
   fs.writeFileSync(indexHtmlPath, newHtml, 'utf-8');
 }
