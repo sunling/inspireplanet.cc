@@ -23,13 +23,13 @@ jobs:
           mkdir -p ~/.fonts
       
           # Playfair Display
-          wget -O ~/.fonts/PlayfairDisplay.ttf https://github.com/google/fonts/raw/main/ofl/playfairdisplay/PlayfairDisplay-Regular.ttf
+          wget -O ~/.fonts/PlayfairDisplay.ttf https://github.com/technext/cozastore/blob/master/fonts/PlayfairDisplay/PlayfairDisplay-Regular.ttf
       
           # Montserrat
-          wget -O ~/.fonts/Montserrat.ttf https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat-Regular.ttf
+          wget -O ~/.fonts/Montserrat.ttf https://github.com/technext/cozastore/blob/master/fonts/Montserrat/Montserrat-Regular.ttf
       
           # Dancing Script
-          wget -O ~/.fonts/DancingScript.ttf https://github.com/google/fonts/raw/main/ofl/dancingscript/DancingScript-Regular.ttf
+          wget -O ~/.fonts/DancingScript.ttf https://github.com/Jolg42/FontSquirrel-Fonts/blob/master/Fonts/dancing-script-ot/web%20fonts/dancingscript_regular_macroman/DancingScript-Regular-webfont.woff
       
           # Ma Shan Zheng
           wget -O ~/.fonts/MaShanZheng.ttf https://github.com/google/fonts/raw/main/ofl/mashanzheng/MaShanZheng-Regular.ttf
