@@ -33,25 +33,28 @@ jobs:
       - name: Run generate-from-airtable.js
         run: node scripts/generate-from-airtable.js
 
-      - name: Commit and push cards
+      - name: Push generated cards using GH_PAT (safe clean repo)
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
+          echo "🚀 使用 Token 创建干净的 Git 仓库推送 docs/generated/inspiration-cards"
+          
+          mkdir push-repo
+          cp -r docs push-repo/docs
+          cd push-repo
+          
+          git init
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-      
-          echo "🔧 设置 remote"
-          git config --unset-all remote.origin.url || true
-          git config --add remote.origin.url "https://x-access-token:${GH_PAT}@github.com/${GITHUB_REPOSITORY}"
-      
-          echo "🧪 当前 remote："
-          git remote -v
-      
-          git restore package-lock.json
-          git add docs/generated/inspiration-cards/
-          git commit -m "🤖 更新 Airtable 卡片图和展示页" || echo "⚠️ No changes to commit"
-      
-          echo "🚀 正在推送"
-          git push origin HEAD:main --force-with-lease
+          
+          git remote add origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
+          
+          git add .
+          git commit -m "🤖 自动提交卡片图像"
+          git branch -M main
+          git fetch origin main
+          git reset --soft origin/main  # 保持同步
+          git push origin main --force-with-lease
+
 
 
