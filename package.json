@@ -9,6 +9,6 @@
   },
   "dependencies": {
     "node-fetch": "^3.3.2",
-    "puppeteer": "^24.6.1"
+    "puppeteer": "^24.7.2"
   }
 }
