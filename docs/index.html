@@ -1,23 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
 
-    <!DOCTYPE html>
-    <html lang="zh-CN">
-    <head>
-      <meta charset="UTF-8">
-      <title>启发星球金句卡片展示</title>
-    </head>
-    <body style="font-family: sans-serif; padding: 20px;">
-      <h1>启发星球金句卡片</h1>
-      <div style="display: flex; flex-wrap: wrap;"><img src="generated/cards/1.png" width="300" style="margin:10px;">
-<img src="generated/cards/EP13artisanbasket.png" width="300" style="margin:10px;">
-<img src="generated/cards/EP13biking.png" width="300" style="margin:10px;">
-<img src="generated/cards/EP13fieldtools.png" width="300" style="margin:10px;">
-<img src="generated/cards/EP13repairman.png" width="300" style="margin:10px;">
-<img src="generated/cards/EP13sunlitcorridor.png" width="300" style="margin:10px;">
-<img src="generated/cards/EP13teahouse.png" width="300" style="margin:10px;">
-<img src="generated/cards/EP14frostedwindow.png" width="300" style="margin:10px;">
-<img src="generated/cards/EP14reading.png" width="300" style="margin:10px;">
-<img src="generated/cards/EP14repairman.png" width="300" style="margin:10px;">
-<img src="generated/cards/EP14sunlitcorridor.png" width="300" style="margin:10px;">
-<img src="generated/cards/EP14teahouse.png" width="300" style="margin:10px;"></div>
-    </body>
-    </html>
+<head>
+  <meta charset="UTF-8">
+  <title>启发星球 - 金句卡片展示</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f9f9f9, #e0eafc);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 40px;
+      padding-top: 60px;
+      animation: fadeIn 1s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .banner {
+      text-align: center;
+    }
+
+    .banner h1 {
+      font-size: 32px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .banner p {
+      font-size: 18px;
+      color: #666;
+      margin: 0;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+    }
+
+    .link-box {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 30px 40px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      width: 280px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .link-box:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .link-box a {
+      display: block;
+      font-size: 22px;
+      font-weight: bold;
+      color: #4a6fa5;
+      text-decoration: none;
+    }
+
+    .link-box span {
+      display: block;
+      margin-top: 8px;
+      font-size: 16px;
+      color: #999;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="banner">
+    <h1>启发星球 ✨ Inspiration Planet</h1>
+    <p>记录每一次被点燃的时刻</p>
+  </div>
+
+  <div class="links">
+    <div class="link-box">
+      <a href="./generated/weekly-cards/index.html">📅 每周金句卡片</a>
+      <span>EP13、EP14、EP15...</span>
+    </div>
+    <div class="link-box">
+      <a href="./generated/inspiration-cards/index.html">📝 成员投稿卡片</a>
+      <span>自由分享的灵感火花</span>
+    </div>
+  </div>
+</body>
+
+</html>

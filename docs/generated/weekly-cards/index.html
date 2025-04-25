@@ -1,39 +1,79 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-  <meta charset="UTF-8">
-  <title>启发星球 · 每周展示卡片</title>
-  <style>
-    body {
-      font-family: 'PingFang SC', sans-serif;
-      padding: 40px;
-      line-height: 1.8;
-    }
-    h1 {
-      margin-bottom: 24px;
-    }
-    ul {
-      padding-left: 1em;
-    }
-    li {
-      margin: 6px 0;
-    }
-    a {
-      color: #2f4f4f;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>启发星球每周金句 - Weekly Cards</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px 20px;
+            font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #f9f9f9, #e0eafc);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 1s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 30px;
+            color: #333;
+            text-align: center;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            max-width: 1000px;
+        }
+
+        li {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        li:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        a {
+            text-decoration: none;
+            font-size: 20px;
+            color: #4a6fa5;
+            font-weight: bold;
+        }
+    </style>
 </head>
+
 <body>
-  <h1>✨ 启发星球每周卡片展示区</h1>
-  <h2>2025</h2>
-  <ul>
-    <li><a href="./2025/EP13/">EP13</a></li>
-    <li><a href="./2025/EP14/">EP14</a></li>
-    <!-- auto:ep-links -->
-  </ul>
+    <h1>启发星球每周金句卡片</h1>
+    <ul>
+        <li><a href="./2025/EP13/">EP13</a></li>
+        <li><a href="./2025/EP14/">EP14</a></li>
+        <!-- auto:ep-links -->
+    </ul>
 </body>
+
 </html>
