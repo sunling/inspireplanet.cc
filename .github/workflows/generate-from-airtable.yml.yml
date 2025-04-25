@@ -37,6 +37,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git restore package-lock.json
           git add docs/generated/inspiration-cards/
           git commit -m "🤖 更新 Airtable 卡片图和展示页" || echo "No changes to commit"
-          git push
+          git pull origin main --rebase
+          git push origin HEAD:main
