@@ -25,7 +25,7 @@ const { fetchAirtableData } = require('./utils');
     const outputPath = path.resolve(__dirname, `../docs/generated/inspiration-cards/${item.id}.png`);
     if (fs.existsSync(outputPath)) {
       console.log(`✅ 跳过已生成记录：${item.id}`);
-      continue; // 👈 直接跳过
+      continue;
     }
 
     // 如果用户没有选择内置图或者自定义，随机选择一张插图
@@ -33,7 +33,7 @@ const { fetchAirtableData } = require('./utils');
     if (item.Upload !== 'No file chosen') {
       const imagesDir = path.resolve(__dirname, '../docs/images');
       const imageFiles = fs.readdirSync(imagesDir);
-      const randomFile = imageFiles[Math.floor(Math.random() * imageFiles.length)]; // 随机选择
+      const randomFile = imageFiles[Math.floor(Math.random() * imageFiles.length)];
       imagePath = `images/${randomFile}`;
     }
     const imageFullPath = path.resolve(__dirname, `../docs/${imagePath}`);
@@ -42,9 +42,8 @@ const { fetchAirtableData } = require('./utils');
     const formatted = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日 ${dateObj.getHours()}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
 
     const html = template
-      .replace('{{title}}', item.Title || '')
+      .replace('{{title}}', item.Title || '这一刻，我想说')
       .replace('{{quote}}', item.Quote || '')
-      .replace('{{selectedFont}}', item.Font || '')
       .replace('{{selectedFont}}', item.font || "'PingFang SC'")
       .replace('{{background}}', style.background || '#ffffff')
       .replaceAll('{{color}}', style.color || '#333')
@@ -76,39 +75,16 @@ const { fetchAirtableData } = require('./utils');
     await page.close();
     fs.unlinkSync(tempPath);
 
-    updateIndexHtml(imagePath);
+    updateIndexHtml(`${item.id}.png`);
   }
 
   await Promise.all(screenshotTasks);
   await browser.close();
-  // generateDisplayIndexHtml();
 })();
 
 
 function ensureDirSync(dirPath) {
   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath);
-}
-
-function generateDisplayIndexHtml() {
-  const generatedCardsDir = path.resolve(__dirname, `../docs/generated/inspiration-cards`);
-
-  ensureDirSync(generatedCardsDir);
-
-  const images = fs.readdirSync(generatedCardsDir);
-  const imgTags = images.map(file => `<img src="${file}" width="300" style="margin:10px;">`).join('\n');
-  const html = `
-    <!DOCTYPE html>
-    <html lang="zh-CN">
-    <head>
-      <meta charset="UTF-8">
-      <title>启发时刻卡片展示</title>
-    </head>
-    <body style="font-family: sans-serif; padding: 20px;">
-      <div style="display: flex; flex-wrap: wrap;">${imgTags}</div>
-    </body>
-    </html>`;
-
-  fs.writeFileSync(path.join(generatedCardsDir, `index.html`), html, 'utf8');
 }
 
 function updateIndexHtml(imagePath) {
