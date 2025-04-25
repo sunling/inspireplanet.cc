@@ -19,7 +19,7 @@ async function fetchAirtableData() {
 
     const data = await res.json();
     return data.records.map((record, idx) => ({
-        id: idx + 1,
+        id: record.id,
         ...record.fields
     }));
 }

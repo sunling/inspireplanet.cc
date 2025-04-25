@@ -38,8 +38,10 @@ const { fetchAirtableData } = require('./utils');
     }
     const imageFullPath = path.resolve(__dirname, `../docs/${imagePath}`);
     const style = JSON.parse(item.Theme || '{}');
-    const dateObj = new Date(item.Created);
-    const formatted = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日 ${dateObj.getHours()}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
+    const pt = new Date(item.Created);
+    // 转换成北京时间
+    const bjTime = new Date(pt.getTime() + 15 * 60 * 60 * 1000);
+    const formatted = `${bjTime.getFullYear()}年${bjTime.getMonth() + 1}月${bjTime.getDate()}日 ${bjTime.getHours()}:${String(bjTime.getMinutes()).padStart(2, '0')}`;
 
     const html = template
       .replace('{{title}}', item.Title || '这一刻，我想说')
@@ -111,7 +113,7 @@ function updateIndexHtml(imagePath) {
   // 插入更新内容
   const before = indexHtml.slice(0, markerIndex);
   const after = indexHtml.slice(markerIndex + marker.length);
-  const newHtml = `${before}\n${newImgTag}\n<!-- auto:ep-links -->\n${after}`;
+  const newHtml = `${before}\n${newImgTag}\n<!-- auto:ep-links -->${after}`;
 
   fs.writeFileSync(indexHtmlPath, newHtml, 'utf-8');
 }
