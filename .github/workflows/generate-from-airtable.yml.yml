@@ -11,10 +11,33 @@ jobs:
     env:
       AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
     steps:
-      - name: Install Chinese font (Noto Sans CJK)
+      - name: Install Google Fonts (system + manual)
         run: |
           sudo apt-get update
-          sudo apt-get install -y fonts-noto-cjk
+          sudo apt-get install -y \
+            fonts-lato \
+            fonts-noto-cjk \
+            fonts-noto-core \
+            fonts-noto-ui-core \
+            fonts-noto-serif
+      
+          mkdir -p ~/.fonts
+      
+          # Inter
+          wget -O ~/.fonts/Inter.ttf https://github.com/google/fonts/raw/main/ofl/inter/Inter-Regular.ttf
+      
+          # Playfair Display
+          wget -O ~/.fonts/PlayfairDisplay.ttf https://github.com/google/fonts/raw/main/ofl/playfairdisplay/PlayfairDisplay-Regular.ttf
+      
+          # Montserrat
+          wget -O ~/.fonts/Montserrat.ttf https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat-Regular.ttf
+      
+          # Dancing Script
+          wget -O ~/.fonts/DancingScript.ttf https://github.com/google/fonts/raw/main/ofl/dancingscript/DancingScript-Regular.ttf
+      
+          # Ma Shan Zheng
+          wget -O ~/.fonts/MaShanZheng.ttf https://github.com/google/fonts/raw/main/ofl/mashanzheng/MaShanZheng-Regular.ttf
+      
           fc-cache -fv
           
       - name: Checkout code
