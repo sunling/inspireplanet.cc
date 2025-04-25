@@ -162,12 +162,14 @@ function downloadCardOnly(filenamePrefix = "inspiration-card") {
             width: clone.scrollWidth,
             height: clone.scrollHeight,
         }).then(canvas => {
-            const link = document.createElement("a");
-            link.download = `${filenamePrefix}-${Date.now()}.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-            document.body.removeChild(link);
-            document.body.removeChild(sandbox);
+            canvas.toBlob(function (blob) {
+                const link = document.createElement("a");
+                link.download = `${filenamePrefix}-${Date.now()}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                document.body.removeChild(link);
+                document.body.removeChild(sandbox);
+            }, "image/png");
         });
     }, 300);
 }
