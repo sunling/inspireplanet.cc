@@ -70,7 +70,7 @@ const { fetchAirtableData, formatToBeijingTime } = require('./utils');
       };
     });
     await page.setViewport({
-      scale: 3, // 高清导出
+      deviceScaleFactor: 3, // 高清导出
       logging: true,
       useCORS: true,
       backgroundColor: null,
