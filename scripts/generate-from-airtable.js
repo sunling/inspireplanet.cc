@@ -109,7 +109,8 @@ function updateIndexHtml(imagePath) {
   }
 
   // 生成 HTML 列表项
-  const newImgTag = `<img src="${imagePath}" style="margin:10px;">`;
+  const githubPath = `https://sunling.github.io/content-crafter-kit/generated/inspiration-cards/`;
+  const newImgTag = `<img src="${githubPath}${imagePath}" style="margin:10px;">`;
 
   // 插入更新内容
   const before = indexHtml.slice(0, markerIndex);

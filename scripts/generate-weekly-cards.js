@@ -201,7 +201,8 @@ function generateIndexHtmlForEpisode(episodeStr) {
   ensureDirSync(generatedCardsDir);
 
   const images = fs.readdirSync(generatedCardsDir).filter(file => file.endsWith("png"));
-  const imgTags = images.map(file => `<img src="${file}" style="margin:10px;">`).join('\n\t\t\t\t');
+  const githubPath = `https://sunling.github.io/content-crafter-kit/generated/weekly-cards/2025/${episodeStr}`
+  const imgTags = images.map(file => `<img src="${githubPath}/${file}" style="margin:10px;">`).join('\n\t\t\t\t');
   const html = `
     <!DOCTYPE html>
     <html lang="zh-CN">
