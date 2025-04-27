@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>启发时刻卡片编辑器</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- Import the new combined utility file as a module -->
+  <script type="module" src="scripts/cardUtils.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter&family=Playfair+Display&family=Montserrat&family=Lato&family=Dancing+Script&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      -webkit-font-smoothing: antialiased;
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+      padding: 0;
+      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #f9f9f9, #e0eafc);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #4a6fa5, #6b8cbb);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url('images/mistyblue.png') center/cover no-repeat;
+      opacity: 0.1;
+      z-index: 0;
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 15px;
+      font-weight: bold;
+      animation: fadeInDown 1s ease;
+    }
+
+    .header p {
+      font-size: 18px;
+      line-height: 1.6;
+      margin: 0 auto;
+      animation: fadeIn 1.5s ease;
+    }
+
+    /* Container */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    .main-content {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      padding: 30px;
+      margin-bottom: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Form */
+    .form {
+      width: 420px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 15px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .form label {
+      font-weight: bold;
+      color: #4a6fa5;
+      font-size: 14px;
+    }
+
+    .form input,
+    .form textarea,
+    .form select {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+      transition: all 0.3s ease;
+    }
+
+    .form input:focus,
+    .form textarea:focus,
+    .form select:focus {
+      border-color: #4a6fa5;
+      box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
+      background-color: #fff;
+      outline: none;
+    }
+
+    /* Preview */
+    #preview {
+      width: 420px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    /* Card */
+    .card {
+      background: transparent;
+      overflow: hidden;
+      color: #f1f1f1;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-radius: 12px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-body {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-body .title {
+      font-size: 28px;
+      text-align: center;
+      padding: 20px 10px 0;
+      font-weight: bold;
+    }
+
+    .quote-box {
+      background: #fff2ec;
+      margin: 16px 20px;
+      border-radius: 8px;
+      padding: 12px;
+      font-style: italic;
+      font-weight: 600;
+      font-size: 20px;
+    }
+
+    .card img {
+      width: 90%;
+      max-height: 300px;
+      object-fit: contain;
+      border-radius: 12px;
+      margin: 0 20px;
+    }
+
+    .detail-text {
+      flex-grow: 1;
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 0 20px 20px;
+    }
+
+    .card-footer {
+      padding: 0 20px 16px;
+      text-align: right;
+      margin-bottom: 4px;
+    }
+
+    .footer {
+      font-size: 12px;
+      color: #8faadc;
+      font-style: italic;
+    }
+
+    /* Buttons */
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    button {
+      padding: 10px 16px;
+      background: #4a6fa5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: #3a5a8c;
+    }
+
+    .primary-btn {
+      background: #ff5722;
+    }
+
+    .primary-btn:hover {
+      background: #e64a19;
+    }
+
+    .upload-btn {
+      background: #f0f0f0;
+      color: #333;
+      border: 1px solid #ccc;
+    }
+
+    /* Carousel */
+    .latest-cards-section {
+      margin-top: 40px;
+      width: 100%;
+    }
+
+    .carousel-container {
+      width: 100%;
+      max-width: 1200px;
+      /* margin: 0 auto; */
+      /* padding: 20px 0; */
+    }
+
+    .swiper {
+      width: 100%;
+      padding-bottom: 40px;
+    }
+
+    .swiper-slide {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      /* padding: 10px; */
+    }
+
+    .carousel-card-wrapper {
+      width: 100%;
+      max-width: 420px;
+      /* min-width: 300px; */
+      box-sizing: border-box;
+    }
+
+    .swiper-pagination {
+      bottom: 0;
+    }
+
+    .swiper-button-next,
+    .swiper-button-prev {
+      color: #4a6fa5;
+    }
+
+    /* Download overlay */
+    .download-overlay {
+      position: absolute;
+      /* bottom: -40px; */
+      right: 10px;
+      background-color: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: bottom 0.3s ease;
+      /* z-index: 10; */
+    }
+
+    /* View all button */
+    .view-all-btn {
+      display: block;
+      width: fit-content;
+      margin: 20px auto;
+      padding: 12px 24px;
+      background: #4a6fa5;
+      color: white;
+      border-radius: 8px;
+      font-weight: bold;
+      text-align: center;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      align-items: right;
+    }
+
+    .view-all-btn:hover {
+      background: #3a5a8c;
+    }
+
+    /* Footer */
+    .page-footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+      margin-top: auto;
+      color: #666;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+      .main-content {
+        flex-direction: column;
+        padding: 20px;
+      }
+
+      .form,
+      #preview {
+        width: 100%;
+      }
+
+      .carousel-card-wrapper {
+        max-width: 90%;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+  <!-- Header Section -->
+  <header class="header">
+    <div class="header-content">
+      <h1>创造你的启发时刻卡片</h1>
+      <p>💬 嘿，今天哪个瞬间戳中了你？✨ 快记下来！这些碎片会在未来发芽🌱</p>
+      <p>▸ 书里某句让你猛划线的话？▸ 播客里那个让你突然按下暂停键的观点？▸ 电影里久久忘不掉的镜头？</p>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="theme-select">选择主题配色</label>
+            <select id="theme-select" onchange="updateCardPreview()">
+              <option value="morning">晨光米杏</option>
+              <option value="creamMatcha">奶油抹茶</option>
+              <option value="lavenderMist">云雾紫灰</option>
+              <option value="darkblue">深蓝经典</option>
+              <option value="green">深绿米白</option>
+              <option value="brown">深棕温暖</option>
+              <option value="purple">深紫柔粉</option>
+              <option value="grayblue">灰蓝极简</option>
+              <option value="mistyblue">浅雾蓝灰</option>
+              <option value="roseclay">豆沙玫瑰</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="choose-font">选择字体</label>
+            <select id="choose-font" onchange="updateCardPreview()">
+              <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+              <option value="'Smiley Sans', sans-serif">得意黑</option>
+              <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+              <option value="'LXGW WenKai', serif">霞鹜文楷</option>
+              <option value="'Alibaba PuHuiTi', sans-serif">阿里汉仪智能黑体</option>
+              <option value="'Noto Serif SC', serif">思源宋体</option>
+              <option value="'PingFang SC', sans-serif">苹方</option>
+              <option value="'KaiTi', serif">楷体</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="title">标题</label>
+          <input id="title" placeholder="这一刻，我想说..." oninput="updateCardPreview()">
+        </div>
+
+        <div class="form-group">
+          <label for="quote">触动你的观点<small style="color: #888; font-size: 9px;">按回车↩︎换行</small></label>
+          <textarea id="quote" oninput="updateCardPreview()" placeholder="写下让你触动的一句话、一段对话、或一个片段..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="image-select">选择插图</label>
+            <select id="image-select" onchange="onSelectImage()"></select>
+          </div>
+
+          <div class="form-group">
+            <label for="bgUpload">自定义插图</label>
+            <div class="file-upload-wrapper">
+              <button type="button" id="uploadBtn" class="upload-btn">📷 上传图片</button><br>
+              <small id="fileStatus" style="color: #888; font-size: 12px; margin-left: 10px;">No file chosen</small>
+              <input type="file" id="bgUpload" accept="image/*" style="display: none;">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="detail">你的启发<small style="color: #888; font-size: 9px;">按回车↩︎换行</small></label>
+          <textarea id="detail" oninput="updateCardPreview()" style="min-height: 80px; resize: vertical;"
+            placeholder="写下你的启发和行动吧..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="creator">创作者</label>
+          <input id="creator" placeholder="匿名" oninput="updateCardPreview()">
+        </div>
+
+        <div class="buttons">
+          <button onclick="submitCard()" class="primary-btn">📩 提交并加入展示队列</button>
+          <button onclick="downloadCardImage()">💾 下载卡片</button>
+        </div>
+      </div>
+
+      <div id="preview" class="animate__animated animate__fadeIn">
+        <!-- 卡片内容将在这里生成 -->
+      </div>
+    </div>
+
+    <!-- Latest Submitted Cards Section -->
+    <div class="latest-cards-section">
+      <h2>最新提交的卡片</h2>
+      <div class="carousel-container">
+        <div class="swiper" id="latest-cards-swiper">
+          <div class="swiper-wrapper" id="latest-cards">
+            <!-- Cards will be loaded here -->
+          </div>
+          <div class="swiper-pagination"></div>
+          <div class="swiper-button-next"></div>
+          <div class="swiper-button-prev"></div>
+        </div>
+        <a href="cards.html" class="view-all-btn">查看全部卡片</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="page-footer">
+    <p>启发星球 ✨ Inspiration Planet © 2025</p>
+  </footer>
+
+  <!-- Swiper JS -->
+  <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+
+  <!-- Main script using ES modules -->
+  <script type="module">
+    // Import functions from cardUtils.js
+    import {
+      renderEditorCard,
+      renderCarouselCard,
+      downloadCard,
+      uploadCardToAirtable,
+      fetchAirtableCards,
+      loadImages,
+      onUploadBg,
+      bindCustomFileUpload,
+      themes
+    } from './scripts/cardUtils.js';
+
+    // Make necessary functions available globally
+    window.themes = themes;
+
+    // Global variables
+    let customImage = "";
+    let swiper;
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function () {
+      // Load images for the select dropdown
+      loadImages(() => {
+        // Initial card render after images are loaded
+        updateCardPreview();
+      });
+
+      // Setup file upload
+      setupFileUpload();
+
+      // Load latest cards
+      loadLatestCardsCarousel();
+    });
+
+    // Function to handle image selection
+    window.onSelectImage = function () {
+      customImage = "";
+      document.getElementById("fileStatus").innerHTML = "";
+      updateCardPreview();
+    };
+
+    // Function to submit a card
+    window.submitCard = function () {
+      uploadCardToAirtable({
+        theme: themes[document.getElementById('theme-select').value],
+        font: document.getElementById("choose-font").value,
+        title: document.getElementById('title').value,
+        quote: document.getElementById('quote').value,
+        imagePath: document.getElementById('image-select').value,
+        detail: document.getElementById('detail').value,
+        creator: document.getElementById('creator').value,
+        upload: customImage
+      }).then((result) => {
+        if (result) {
+          // Refresh latest cards carousel
+          loadLatestCardsCarousel();
+        }
+      });
+    };
+
+    // Function to update the card preview
+    window.updateCardPreview = function (customInsertImage) {
+      // If customInsertImage is provided, update the customImage variable
+      if (customInsertImage) {
+        customImage = customInsertImage;
+      }
+      const options = {
+        title: document.getElementById('title').value || '这一刻，我想说...',
+        quote: document.getElementById('quote').value || '原话：“创作不是输出，而是通过输出重新理解自己。”',
+        detail: document.getElementById('detail').value || '启发：我一直纠结笔记是否要“有用”，现在明白记录本身就是梳理内心的过程。\n 行动：开始写“废稿日记”——即使零碎、矛盾的想法也随手记下，一周后回看竟发现隐藏的灵感线索。',
+        imagePath: document.getElementById('image-select').value,
+        creator: document.getElementById('creator').value || '匿名',
+        font: document.getElementById('choose-font').value || `'Noto Sans SC', sans-serif`,
+        theme: themes[document.getElementById('theme-select').value],
+        customImage: customImage
+      };
+
+      // Render the card
+      const cardElement = renderEditorCard(options);
+
+      // Clear the preview container and append the new card
+      const previewContainer = document.getElementById('preview');
+      previewContainer.innerHTML = cardElement;
+    };
+
+    // Function to download the current card
+    window.downloadCardImage = function () {
+      downloadCard(".card", "inspiration-card-");
+    };
+
+    // Setup file upload functionality
+    function setupFileUpload() {
+      const bgUpload = document.getElementById('bgUpload');
+      if (bgUpload) {
+        bgUpload.addEventListener('change', (event) => {
+          onUploadBg(event, updateCardPreview);
+        });
+      }
+
+      // Bind custom upload button
+      bindCustomFileUpload({
+        inputId: 'bgUpload',
+        buttonId: 'uploadBtn',
+        statusId: 'fileStatus',
+        onLoad: updateCardPreview
+      });
+    }
+
+    // Load and render latest cards to carousel
+    async function loadLatestCardsCarousel() {
+      const container = document.getElementById('latest-cards');
+      if (!container) return;
+
+      // Show loading indicator
+      container.innerHTML = '<div class="swiper-slide"><div class="loading-indicator">加载中...</div></div>';
+
+      try {
+        // Get cards from Airtable
+        const cards = await fetchAirtableCards();
+
+        if (!cards || cards.length === 0) {
+          container.innerHTML = '<div class="swiper-slide"><div class="loading-indicator">暂无卡片数据</div></div>';
+          return;
+        }
+
+        // Clear loading indicator
+        container.innerHTML = '';
+
+        // Filter valid cards and limit to 20
+        const validCards = cards.filter(card => card && card.Title && card.Quote);
+        const recentCards = validCards.slice(0, 20);
+
+        // Render each card
+        recentCards.forEach((card, index) => {
+          const cardElement = renderCarouselCard(card, index);
+          container.appendChild(cardElement);
+        });
+
+        // Initialize or update Swiper
+        initOrUpdateSwiper();
+      } catch (error) {
+        console.error('加载最新卡片失败:', error);
+        container.innerHTML = '<div class="swiper-slide"><div class="loading-indicator">加载失败，请稍后再试</div></div>';
+      }
+    }
+
+    // Initialize or update Swiper
+    function initOrUpdateSwiper() {
+      if (swiper) {
+        swiper.update();
+      } else {
+        swiper = new Swiper('#latest-cards-swiper', {
+          slidesPerView: 1,
+          spaceBetween: 30,
+          loop: true,
+          centeredSlides: true,
+          autoplay: {
+            delay: 5 * 60 * 1000,
+            disableOnInteraction: true,
+          },
+          pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+          },
+          navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+          },
+          breakpoints: {
+            640: {
+              slidesPerView: 1,
+            },
+            768: {
+              slidesPerView: 2,
+            },
+            1024: {
+              slidesPerView: 3,
+            },
+          }
+        });
+      }
+    }
+  </script>
+</body>
+
+</html>

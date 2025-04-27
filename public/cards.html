@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>启发星球 - 金句卡片展示</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter&family=Playfair+Display&family=Montserrat&family=Lato&family=Dancing+Script&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f9f9f9, #e0eafc);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 30px;
+      padding: 30px 20px;
+      animation: fadeIn 1s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .header {
+      text-align: center;
+      width: 100%;
+      max-width: 1200px;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 18px;
+      color: #666;
+      margin: 0;
+    }
+
+    .cards-container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .date-heading {
+      font-size: 24px;
+      color: #4a6fa5;
+      margin: 40px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e0eafc;
+      width: 100%;
+    }
+    
+    .date-cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .title {
+      font-size: 22px;
+      text-align: center;
+      padding: 15px 10px 0;
+      font-weight: bold;
+    }
+
+    .quote-box {
+      margin: 12px 15px;
+      border-radius: 8px;
+      padding: 10px;
+      font-style: italic;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .card img {
+      width: 90%;
+      height: auto;
+      object-fit: contain;
+      border-radius: 12px;
+      margin: 0 20px;
+    }
+
+    .detail-text {
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 0 20px 20px;
+      margin: 0;
+    }
+
+    .card-footer {
+      padding: 0 20px 15px;
+      text-align: right;
+    }
+
+    .footer {
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 10px 20px;
+      background: #4a6fa5;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .back-link:hover {
+      background: #3a5a8c;
+      transform: translateY(-2px);
+    }
+
+    .empty-message {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-size: 18px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script type="module">
+    // Import functions from cardUtils.js
+    import {
+      renderEditorCard,
+      renderCarouselCard,
+      downloadCard,
+      uploadCardToAirtable,
+      fetchAirtableCards,
+      loadImages,
+      onUploadBg,
+      bindCustomFileUpload,
+      fetchAndRenderAllCards,
+      themes
+    } from './scripts/cardUtils.js';
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function () {
+      fetchAndRenderAllCards('cards');
+    });
+  </script>
+</head>
+
+<body>
+  <div class="header">
+    <h1>灵感长河 ✨ 我们的卡片</h1>
+  </div>
+
+  <div class="cards-container" id="cards">
+  </div>
+
+  <a href="index.html" class="back-link">返回首页</a>
+</body>
+
+</html>

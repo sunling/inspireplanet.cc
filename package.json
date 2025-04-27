@@ -3,12 +3,18 @@
   "version": "1.0.0",
   "scripts": {
     "gen:weekly-cards": "node scripts/generate-weekly-cards.js",
-    "gen:inspiration-cards": "node scripts/generate-from-airtable.js"
+    "gen:inspiration-cards": "node scripts/generate-from-airtable.js",
+    "dev": "netlify dev",
+    "build": "netlify build"
   },
   "dependencies": {
+    "dotenv": "^16.3.1",
     "luxon": "^3.6.1",
-    "node-fetch": "^3.3.2",
+    "node-fetch": "^2.6.7",
     "puppeteer": "^24.7.2"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.10.1"
   },
   "resolutions": {
     "puppeteer-core": "npm:puppeteer@^24.7.2"
