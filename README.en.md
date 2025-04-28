@@ -1,98 +1,109 @@
-# 🌍 flashcard-for-inspiration-planet
+# Flashcard for Inspiration Planet ✨
 
-An automation tool for generating quote cards from the "Inspiration Planet" project.  
-Supports batch creation of high-quality visuals, automatic publication via GitHub Pages, and visual editing for sharing on platforms like WeChat Official Account or Xiaohongshu.
+A web application to create, upload, and showcase inspirational flashcards from books, podcasts, movies, and personal reflections. This project allows users to capture moments of inspiration and share them with others in a visually appealing format.
 
----
+## Project Overview
 
-## 🔥 Live Preview
+This web app enables users to create beautiful inspiration cards with customizable themes, fonts, and background images. Cards can be created individually through the web interface or uploaded in bulk through the admin panel. All cards are stored in Airtable and displayed on the website grouped by date or episode.
 
-👉 Public page:  
-[https://sunling.github.io/flashcard-for-inspiration-planet/](https://sunling.github.io/flashcard-for-inspiration-planet/)
-
-👉 Online Editor:  
-[https://sunling.github.io/flashcard-for-inspiration-planet/editor.html](https://sunling.github.io/flashcard-for-inspiration-planet/editor.html)
-
----
-
-## 📁 Project Structure
+## Project Structure
 
 ```
-flashcard-for-inspiration-planet/
-├── data.json                 # Data source for cards, each item includes title, quote, id, episode, etc.
-├── template.html             # HTML template for each card with placeholders
-├── card.css                  # Shared card styles for both template and editor
-├── generate.js               # Core script to generate screenshots & publish cards
-├── screenshots/              # Temporary screenshots before publishing
-├── docs/
-│   ├── index.html            # Auto-generated gallery page (via generate.js)
-│   ├── editor.html           # Interactive card editor for preview and download
-│   ├── images.json           # Auto-generated image list for editor
-│   ├── images/               # Background images, each matches an id
-│   └── generated_cards/      # Final card images for public view
+/docs          # Old pages (e.g., card-editor.html, cover-editor.html, etc.)
+/public        # Main production site
+  ├── /admin   # Bulk upload tools (bulk-uploader.html)
+  ├── /images  # Card background images
+  ├── /scripts # JavaScript files (cardUtils.js, bulk-uploader.js, etc.)
+  ├── cards.html         # Page to view all cards (grouped by dates)
+  ├── index.html         # Home page (create cards + latest cards carousel)
+  ├── weekly-cards.html  # Page to view weekly meeting cards (grouped by episode)
+/netlify/functions # Netlify serverless functions
+  ├── clearCache.js
+  ├── fetchAirtableData.js
+  ├── fetchAirtableDataWithoutCache.js
+  ├── uploadCardToAirtable.js
+  ├── uploadImageToGitHub.js
+  ├── uploadWeeklyCard.js
+/user_uploads  # Uploaded images
+images.json    # Defined list of images for cards
 ```
 
----
+## Netlify Functions
 
-## ✨ Features
+The project uses Netlify serverless functions to handle API requests securely:
 
-- 🖼 High-resolution screenshots with clean cropping
-- ⏱ Date & meeting time are auto-calculated from episode number
-- 🔁 Smart skip for already-generated images
-- 🧠 Supports batch generation and visual download
-- 🌐 Fully deployable via GitHub Pages
+- **fetchAirtableData.js** – Fetch cached latest 100 cards ordered by created date
+- **fetchAirtableDataWithoutCache.js** – Force fetch cards from Airtable (no cache)
+- **clearCache.js** – Clear the Airtable cache after upload
+- **uploadCardToAirtable.js** – Upload a single user-created card
+- **uploadImageToGitHub.js** – Upload user-uploaded images to a GitHub repo
+- **uploadWeeklyCard.js** – Upload weekly meeting cards in bulk
 
----
+## Main Features
 
-## 🚀 How to Use
+- **Create Personalized Cards**: Design inspiration cards with customizable themes, fonts, and images
+- **Secure Uploads**: All cards are uploaded to Airtable via serverless functions
+- **Organized Display**: View cards grouped by dates (all cards) or by episodes (weekly cards)
+- **Download Functionality**: Download cards directly from the site as high-quality images
+- **Latest Cards Carousel**: Browse through the most recent 10 cards on the homepage
+- **Admin Panel**: Bulk upload weekly meeting cards through a dedicated admin interface
 
-### 1. Install Dependencies
+## Deployment Information
 
-```bash
-npm install puppeteer
-```
+- **Hosting**: Netlify
+- **Production URL**: https://inspiration-planet.netlify.app
+- **Configuration**: Use `.env` file to configure Airtable API keys and table names
 
-> 💡 macOS users: Chrome path is manually set in `generate.js`
+## Local Development
 
----
+To set up the project locally:
 
-### 2. Prepare Data & Images
+1. Clone the repository
+   ```
+   git clone https://github.com/yourusername/flashcard-for-inspiration-planet.git
+   cd flashcard-for-inspiration-planet
+   ```
 
-- Fill in `data.json` with your card content
-- Ensure each `id` matches an image under `docs/images/`
+2. Install dependencies
+   ```
+   npm install
+   ```
 
----
+3. Create a `.env` file with the following variables:
+   ```
+   AIRTABLE_TOKEN=your_airtable_api_key
+   AIRTABLE_BASE_NAME=your_base_id
+   AIRTABLE_TABLE_NAME=your_table_id
+   AIRTABLE_TABLE_NAME_WEEKLY=your_weekly_table_id
+   GITHUB_TOKEN=your_github_token
+   GITHUB_REPO_OWNER=your_github_username
+   GITHUB_REPO_NAME=your_repo_name
+   GITHUB_BRANCH=main
+   ```
 
-### 3. Generate Cards
+4. Start the Netlify Dev server
+   ```
+   npx netlify dev
+   ```
 
-```bash
-node generate.js
-```
+5. Open your browser and navigate to `http://localhost:8888`
 
-The script will:
-- Render each `.card` to screenshot
-- Copy newly generated images into `docs/generated_cards/`
-- Generate `index.html` and `images.json`
-- Push to GitHub and automatically update your GitHub Pages!
+## Future Improvements
 
----
+- Improve mobile responsiveness for all pages
+- Add pagination to card display pages for better performance
+- Implement user authentication for personalized card collections
+- Add search and filtering capabilities
+- Create a dashboard for card statistics and analytics
+- Allow users to favorite or bookmark cards
+- Implement social sharing features
 
-## 🧑‍💻 Online Editor
+## Contributing
 
-Visit:
+Contributions are welcome! Feel free to submit issues or pull requests if you have ideas for improvements or find any bugs.
 
-```
-https://sunling.github.io/flashcard-for-inspiration-planet/editor.html
-```
+## Credits
 
-Supports:
-- Real-time preview with input
-- Switch background image
-- Export card to PNG
+Built with ❤️ for Inspiration Planet ✨.
 
----
-
-## 🧡 Created by
-
-Designed and maintained by [Ling Sun](https://sunling.github.io)  
-Feel free to reuse, adapt, or suggest improvements ✨
+By ([Sun ling](https://sunling.github.io/)).

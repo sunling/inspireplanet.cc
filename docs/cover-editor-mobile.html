@@ -2,206 +2,104 @@
 <html lang="zh-CN">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>封面图编辑器 - 移动适配</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="utils.js"></script>
-  <link rel="stylesheet" href="common.css" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter&family=Playfair+Display&family=Montserrat&family=Lato&family=Dancing+Script&display=swap"
-    rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
-
+  <meta charset="UTF-8">
+  <title>📢📢📢工具已升级</title>
   <style>
-    .container {
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f9f9f9, #e0eafc);
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 40px;
+      padding-top: 60px;
+      animation: fadeIn 1s ease forwards;
     }
 
-    @media (min-width: 768px) {
-      .container {
-        flex-direction: row;
-        align-items: flex-start;
-        justify-content: space-between;
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
       }
     }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      padding: 16px;
-      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-      background: #f5f5f5;
-      border-radius: 3px;
-    }
-
-    .form {
-      width: 32%;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .form input,
-    .form select {
-      width: 100%;
-      padding: 8px 12px;
-      font-size: 16px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-
-    .form label {
-      font-weight: 500;
-      font-size: 14px;
-    }
-
-    #preview {
-      display: flex;
-      width: 64%;
-      justify-content: flex-start;
-    }
-
-    #preview .cover {
-      position: relative;
-      width: 100%;
-      max-width: 360px;
-      aspect-ratio: 3 / 4;
-      /* mobile friendly size */
-      overflow: hidden;
-      background: #323449;
-      border-radius: 8px;
-    }
-
-    #preview .bg {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background-size: cover;
-      background-position: center;
-      z-index: 0;
-    }
-
-    #preview .overlay {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.3);
-      z-index: 1;
-    }
-
-    #preview .content {
-      position: absolute;
-      z-index: 2;
-      color: white;
-      width: 90%;
-      left: 5%;
-      top: 50%;
-      transform: translateY(-50%);
+    .banner {
       text-align: center;
     }
 
-    .main-title {
-      font-size: 24px;
+    .banner h1 {
+      font-size: 32px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .banner p {
+      font-size: 18px;
+      color: #666;
+      margin: 0;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+    }
+
+    .link-box {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 30px 40px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      width: 280px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .link-box:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .link-box a {
+      display: block;
+      font-size: 22px;
       font-weight: bold;
+      color: #4a6fa5;
+      text-decoration: none;
     }
 
-    .sub-title {
-      font-size: 16px;
+    .link-box span {
+      display: block;
       margin-top: 8px;
-      color: #eee0c5;
-    }
-
-    .keywords {
-      color: #FFDE59;
-      font-size: 14px;
-      margin-top: 16px;
-      font-weight: 500;
+      font-size: 16px;
+      color: #999;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <div class="form">
-      <label>选择字体：
-        <select id="choose-font" onchange="renderCover()">
-          <option value="'Noto Sans SC', sans-serif">思源黑体</option>
-          <option value="'Smiley Sans', sans-serif">得意黑</option>
-          <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
-          <option value="'LXGW WenKai', serif">霞鹜文楷</option>
-          <option value="'Alibaba PuHuiTi', sans-serif">阿里汉仪智能黑体</option>
-          <option value="'Noto Serif SC', serif">思源宋体</option>
-          <option value="'PingFang SC', sans-serif">苹方</option>
-          <option value="'KaiTi', serif">楷体</option>
-        </select>
-      </label>
-      <label>主标题:<input id="main-title" placeholder="我想放空" oninput="renderCover()"></label>
-      <label>副标题:<input id="sub-title" placeholder="可连放空也需要练习" oninput="renderCover()"></label>
-      <label>关键词(空格分隔):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
-      <label>选择背景图：
-        <select id="image-select" onchange="onSelectImage()"></select>
-      </label>
-      <label>自定义背景图:
-        <div class="file-upload-wrapper">
-          <button type="button" id="uploadBtn" class="upload-btn">上传图片</button>
-          <span id="fileStatus" style="color: #888; font-size: 12px;">未选择文件</span>
-          <input type="file" id="bgUpload" accept="image/*" style="display: none;">
-        </div>
-      </label>
-      <div class="buttons">
-        <button onclick="downloadCover()">下载</button>
-      </div>
-    </div>
+  <div class="banner">
+    <h1>启发星球 ✨ Inspiration Planet</h1>
+    <p>记录每一次被点燃的时刻</p>
+    <p>📢工具已升级，请点击下面的链接去体验</p>
+  </div>
 
-    <div id="preview">
-      <div class="cover">
-        <div class="bg" id="bg"></div>
-        <div class="overlay"></div>
-        <div class="content" id="content">
-          <div class="main-title" id="title">我想放空</div>
-          <div class="sub-title" id="subtitle">可连放空也需要练习</div>
-          <div class="keywords" id="keywords">tag1 / tag2 / tag3</div>
-        </div>
-      </div>
+  <div class="links">
+    <div class="link-box">
+      <a href="https://inspiration-planet.netlify.app/">工具已升级，请点击下面的链接去体验</a>
+      <span>创作你的卡片，查看他人分享的卡片，封面制作，每周会议金句卡片结合...</span>
     </div>
   </div>
-  <script>
-    function onSelectImage() {
-      document.getElementById("fileStatus").innerHTML = "";
-      renderCover();
-    }
-
-    function renderCover(customBgImage = "") {
-      const main = document.getElementById("main-title").value || "主标题";
-      const sub = document.getElementById("sub-title").value || "副标题";
-      const tags = document.getElementById("tags").value || 'tag1 tag2 tag3';
-      const selectedBg = document.getElementById("image-select").value;
-      const selectedFont = document.getElementById("choose-font").value;
-
-      document.getElementById("title").innerText = main;
-      document.getElementById("subtitle").innerText = sub;
-      document.getElementById("keywords").innerText = tags.split(" ").join(" / ");
-      const bgImage = customBgImage || selectedBg;
-      document.getElementById("bg").style.backgroundImage = `url('${bgImage}')`;
-      document.getElementById("content").style.fontFamily = selectedFont;
-    }
-
-    window.onload = function () {
-      loadImages(renderCover);
-      renderCover();
-      bindCustomFileUpload({
-        inputId: "bgUpload",
-        buttonId: "uploadBtn",
-        statusId: "fileStatus",
-        onLoad: renderCover
-      });
-    };
-  </script>
 </body>
 
 </html>
