@@ -1,6 +1,6 @@
-# 灵感星球闪卡 ✨
+# 启发星球闪卡 ✨
 
-一个用于创建、上传和展示来自书籍、播客、电影及个人感悟的灵感闪卡的网页应用。该项目让用户能够捕捉灵感瞬间，并以视觉吸引人的形式与他人分享。
+一个用于创建、上传和展示来自书籍、播客、电影及个人感悟的启发闪卡的网页应用。该项目让用户能够捕捉灵感瞬间，并以视觉吸引人的形式与他人分享。
 
 ## 项目概述
 
@@ -9,7 +9,7 @@
 ## 项目结构
 
 ```
-/docs          # 旧页面（如card-editor.html、cover-editor.html等）
+/docs          # 旧版页面（如card-editor.html、cover-editor.html等）
 /public        # 主生产站点
   ├── /admin   # 批量上传工具（bulk-uploader.html）
   ├── /images  # 卡片背景图片
@@ -17,6 +17,9 @@
   ├── cards.html         # 查看所有卡片的页面（按日期分组）
   ├── index.html         # 主页（创建卡片 + 最新卡片轮播）
   ├── weekly-cards.html  # 查看每周会议卡片的页面（按剧集分组）
+  ├── cover-editor.html  # 制作横版封面
+  ├── cover-editor-mobile.html  # 制作竖版封面
+  images.json    # 卡片背景图片的定义列表
 /netlify/functions # Netlify无服务器函数
   ├── clearCache.js
   ├── fetchAirtableData.js
@@ -25,7 +28,6 @@
   ├── uploadImageToGitHub.js
   ├── uploadWeeklyCard.js
 /user_uploads  # 用户上传的图片
-images.json    # 卡片背景图片的定义列表
 ```
 
 ## Netlify 函数
@@ -43,7 +45,7 @@ images.json    # 卡片背景图片的定义列表
 
 - **个性化卡片创建**：设计灵感卡片，支持自定义主题、字体和图片
 - **安全上传**：所有卡片通过无服务器函数上传至Airtable
-- **有序展示**：按日期（所有卡片）或剧集（每周卡片）分组查看
+- **有序展示**：按日期（所有卡片）或剧集（每周会议总结卡片）分组查看
 - **下载功能**：直接从网站下载高质量图片格式的卡片
 - **最新卡片轮播**：在主页浏览最近10张卡片
 - **管理面板**：通过专用管理界面批量上传每周会议卡片
@@ -71,13 +73,13 @@ images.json    # 卡片背景图片的定义列表
 
 3. 创建`.env`文件，包含以下变量：
    ```
-   AIRTABLE_TOKEN=你的airtable_api密钥
-   AIRTABLE_BASE_NAME=你的base_id
-   AIRTABLE_TABLE_NAME=你的table_id
-   AIRTABLE_TABLE_NAME_WEEKLY=你的weekly_table_id
-   GITHUB_TOKEN=你的github_token
-   GITHUB_REPO_OWNER=你的github用户名
-   GITHUB_REPO_NAME=你的仓库名
+   AIRTABLE_TOKEN=airtable api密钥
+   AIRTABLE_BASE_NAME=airtbable base id
+   AIRTABLE_TABLE_NAME=卡片airtable table id
+   AIRTABLE_TABLE_NAME_WEEKLY=每周会议总结的airtable table id
+   GITHUB_TOKEN=github classic token
+   GITHUB_REPO_OWNER=github用户名
+   GITHUB_REPO_NAME=仓库名
    GITHUB_BRANCH=main
    ```
 

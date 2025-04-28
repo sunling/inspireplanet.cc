@@ -998,6 +998,9 @@ export function loadImages(onLoadedFunc, selectId = "image-select", jsonPath = "
         select.add(option);
       });
 
+      // Random select one from the list
+      select.value = getRandomItem(select.options).value;
+
       if (typeof onLoadedFunc === "function") onLoadedFunc();
     })
     .catch(e => {
