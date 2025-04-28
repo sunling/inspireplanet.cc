@@ -60,8 +60,8 @@ images.json    # 卡片背景图片的定义列表
 
 1. 克隆仓库
    ```
-   git clone https://github.com/yourusername/flashcard-for-inspiration-planet.git
-   cd flashcard-for-inspiration-planet
+   git clone https://github.com/yourusername/content-crafter-kit.git
+   cd content-crafter-kit
    ```
 
 2. 安装依赖
