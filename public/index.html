@@ -37,11 +37,12 @@
     .header {
       background: linear-gradient(135deg, #4a6fa5, #6b8cbb);
       color: white;
-      padding: 30px 20px;
-      text-align: center;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       position: relative;
       overflow: hidden;
+      padding-top: 22px;
+      text-align: left;
+      margin-bottom: -8px;
     }
 
     .header::before {
@@ -51,13 +52,6 @@
       background: url('images/mistyblue.png') center/cover no-repeat;
       opacity: 0.1;
       z-index: 0;
-    }
-
-    .header-content {
-      position: relative;
-      z-index: 1;
-      max-width: 800px;
-      margin: 0 auto;
     }
 
     .header h1 {
@@ -80,6 +74,8 @@
       max-width: 1200px;
       margin: 0 auto;
       padding: 30px 20px;
+      gap: 40px;
+      align-items: flex-start;
     }
 
     .main-content {
@@ -313,16 +309,61 @@
       /* z-index: 10; */
     }
 
+    .quick-links-horizontal {
+      max-width: 1000px;
+      margin: 10px auto 20px auto;
+      padding: 0 20px;
+    }
+
+    .quick-links-header {
+      font-size: 16px;
+      color: #666;
+      font-weight: 500;
+      margin-bottom: 8px;
+      text-align: right;
+      /* 标题也靠右 */
+    }
+
+    .link-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      /* 按钮靠右 */
+      gap: 12px;
+    }
+
+    .link-button {
+      padding: 10px 18px;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      text-decoration: none;
+      color: #333;
+      font-size: 16px;
+      font-weight: 500;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+    }
+
+    .link-button:hover {
+      background: #f0f8ff;
+      border-color: #aaa;
+      color: #0070f3;
+      transform: translateY(-2px);
+    }
+
+
+
     /* View all button */
     .view-all-btn {
       display: inline-block;
       position: absolute;
       top: 0;
       right: 0;
-      margin: 20px;
+      margin: 15px;
       padding: 12px 20px;
-      background: #4a6fa5;
-      color: white;
+      background: white;
+      color: #3a5a8c;
       text-decoration: none;
       border-radius: 8px;
       font-weight: bold;
@@ -334,10 +375,10 @@
     }
 
     .view-all-btn:hover {
-  background: #3a5a8c;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
-}
+      background: #9cbdf1;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+    }
 
 
     /* Footer */
@@ -395,12 +436,21 @@
 <body>
   <!-- Header Section -->
   <header class="header">
-    <div class="header-content">
+    <div class="container">
       <h1>创造你的启发时刻卡片</h1>
       <p>💬 嘿，今天哪个瞬间戳中了你？✨ 快记下来！这些碎片会在未来发芽🌱</p>
       <p>▸ 书里某句让你猛划线的话？▸ 播客里那个让你突然按下暂停键的观点？▸ 电影里久久忘不掉的镜头？</p>
     </div>
+    <div>
+      <!-- 新增的四个功能入口 -->
+      <a href="/cover-editor-mobile.html" class="view-all-btn">制作竖版封面</a>
+      <a href="/cover-editor.html" class="view-all-btn" style="right: 150px;">制作横版封面</a>
+      <a href="weekly-cards.html" class="view-all-btn" style="right: 300px;">查看每周会议卡片</a>
+      <a href="cards.html" class="view-all-btn" style="right: 470px;">查看全部卡片</a>
+    </div>
+
   </header>
+
 
   <div class="container">
     <!-- Main Content -->
@@ -498,8 +548,6 @@
           <div class="swiper-button-next"></div>
           <div class="swiper-button-prev"></div>
         </div>
-        <a href="cards.html" class="view-all-btn">查看全部卡片</a>
-        <a href="weekly-cards.html" class="view-all-btn" style="right: 150px;">查看每周会议卡片</a>
       </div>
     </div>
   </div>
