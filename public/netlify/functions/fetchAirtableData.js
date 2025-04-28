@@ -65,6 +65,20 @@ exports.handler = async (event, context) => {
       }
     }
 
+    // Determine which table to use
+    let tableType = 'regular';
+    if (event.httpMethod === 'POST' && event.body) {
+      try {
+        const requestBody = JSON.parse(event.body);
+        if (requestBody.tableType === 'weekly') {
+          tableType = 'weekly';
+          selectedFields = ['Episode', 'Name', 'Title', 'Quote', 'Detail', 'Created'];
+        } 
+      } catch (e) {
+        console.error('Error parsing request body:', e);
+      }
+    }
+
     // Construct fields query and sorting parameters
     let queryParams = [];
 
@@ -73,23 +87,35 @@ exports.handler = async (event, context) => {
       queryParams = queryParams.concat(selectedFields.map(f => `fields[]=${encodeURIComponent(f)}`));
     }
 
-    // Add sorting by Created field in descending order
-    queryParams.push('sort[0][field]=Created');
-    queryParams.push('sort[0][direction]=desc');
+    // Add sorting parameters based on table type
+    if (tableType === 'weekly') {
+      // For weekly table, sort by Episode in descending order, then by Created in ascending order
+      queryParams.push('sort[0][field]=Episode');
+      queryParams.push('sort[0][direction]=desc');
+      queryParams.push('sort[1][field]=Created');
+      queryParams.push('sort[1][direction]=asc');
+    } else {
+      // For regular table, sort by Created in descending order
+      queryParams.push('sort[0][field]=Created');
+      queryParams.push('sort[0][direction]=desc');
+    }
 
-    // Limit to 100 records
-    queryParams.push('maxRecords=100');
+    // Limit to records (more for weekly table)
+    queryParams.push(`maxRecords=${tableType === 'weekly' ? 200 : 100}`);
 
     // Join all query parameters
     const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
 
     // Fetch data from Airtable
     const AIRTABLE_BASE_NAME = process.env.AIRTABLE_BASE_NAME;
-    const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME;
+    const AIRTABLE_TABLE_NAME = tableType === 'weekly' ? 
+      process.env.AIRTABLE_TABLE_NAME_WEEKLY : 
+      process.env.AIRTABLE_TABLE_NAME;
     const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME}${queryString}`;
 
+    console.log("ulr", url);
     const response = await fetch(url, {
       method: 'GET',
       headers: {

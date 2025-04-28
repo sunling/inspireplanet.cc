@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>启发星球 ✨ Weekly Inspiration Cards</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter&family=Playfair+Display&family=Montserrat&family=Lato&family=Dancing+Script&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f9f9f9, #e0eafc);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 30px;
+      padding: 30px 20px;
+      animation: fadeIn 1s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .header {
+      text-align: center;
+      width: 100%;
+      max-width: 1200px;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 18px;
+      color: #666;
+      margin: 0;
+    }
+
+    .cards-container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .date-heading {
+      font-size: 24px;
+      color: #4a6fa5;
+      margin: 40px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e0eafc;
+      width: 100%;
+    }
+    
+    .date-cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .title {
+      font-size: 22px;
+      text-align: center;
+      padding: 15px 10px 0;
+      font-weight: bold;
+    }
+
+    .quote-box {
+      margin: 12px 15px;
+      border-radius: 8px;
+      padding: 10px;
+      font-style: italic;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .card img {
+      width: 90%;
+      height: auto;
+      object-fit: contain;
+      border-radius: 12px;
+      margin: 0 20px;
+    }
+
+    .detail-text {
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 0 20px 20px;
+      margin: 0;
+    }
+
+    .card-footer {
+      padding: 0 20px 15px;
+      text-align: right;
+    }
+
+    .footer {
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 10px 20px;
+      background: #4a6fa5;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .back-link:hover {
+      background: #3a5a8c;
+      transform: translateY(-2px);
+    }
+
+    .empty-message {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-size: 18px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .episode-filter {
+      margin: 20px auto;
+      text-align: center;
+    }
+
+    .episode-filter select {
+      padding: 8px 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background-color: white;
+      font-size: 16px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .loading-indicator {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-size: 18px;
+    }
+    
+    /* Download button styles */
+    .card-container {
+      position: relative;
+    }
+    
+    .download-btn {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      background-color: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 10;
+      border: none;
+    }
+    
+    .card-container:hover .download-btn {
+      opacity: 1;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script type="module">
+    // Import functions from cardUtils.js
+    import {
+      renderEditorCard,
+      renderCarouselCard,
+      downloadCard,
+      uploadCardToAirtable,
+      fetchAirtableCards,
+      fetchWeeklyCards,
+      loadImages,
+      onUploadBg,
+      bindCustomFileUpload,
+      fetchAndRenderWeeklyCards,
+      themes
+    } from './scripts/cardUtils.js';
+    
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function () {
+      // Fetch and render weekly cards
+      fetchAndRenderWeeklyCards('cards');
+      
+      // Set up episode filter
+      setupEpisodeFilter();
+    });
+    
+    // Set up episode filter functionality
+    function setupEpisodeFilter() {
+      const filterSelect = document.getElementById('episode-filter');
+      if (!filterSelect) return;
+      
+      // Listen for changes to the filter
+      filterSelect.addEventListener('change', function() {
+        const selectedEpisode = this.value;
+        
+        if (selectedEpisode === 'all') {
+          // Show all episodes
+          document.querySelectorAll('.date-heading').forEach(heading => {
+            heading.style.display = 'block';
+          });
+          document.querySelectorAll('.date-cards-container').forEach(container => {
+            container.style.display = 'grid';
+          });
+        } else {
+          // Hide all episodes
+          document.querySelectorAll('.date-heading').forEach(heading => {
+            heading.style.display = 'none';
+          });
+          document.querySelectorAll('.date-cards-container').forEach(container => {
+            container.style.display = 'none';
+          });
+          
+          // Show only the selected episode
+          const selectedHeading = document.getElementById(`episode-${selectedEpisode.toLowerCase()}`);
+          const selectedContainer = document.getElementById(`episode-container-${selectedEpisode.toLowerCase()}`);
+          
+          if (selectedHeading) selectedHeading.style.display = 'block';
+          if (selectedContainer) selectedContainer.style.display = 'grid';
+          
+          // Scroll to the selected episode
+          if (selectedHeading) {
+            selectedHeading.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      });
+      
+      // Populate filter with available episodes
+      populateEpisodeFilter(filterSelect);
+    }
+    
+    // Populate episode filter with available episodes
+    async function populateEpisodeFilter(filterSelect) {
+      try {
+        // Get weekly cards
+        const cards = await fetchWeeklyCards();
+        
+        if (!cards || cards.length === 0) return;
+        
+        // Get unique episodes
+        const episodes = [...new Set(cards.map(card => card.Episode))].filter(Boolean);
+        
+        // Sort episodes in descending order
+        episodes.sort((a, b) => {
+          const numA = parseInt(a.replace(/\D/g, ''));
+          const numB = parseInt(b.replace(/\D/g, ''));
+          return numB - numA;
+        });
+        
+        // Clear existing options except "All Episodes"
+        while (filterSelect.options.length > 1) {
+          filterSelect.remove(1);
+        }
+        
+        // Add episode options
+        episodes.forEach(episode => {
+          const option = document.createElement('option');
+          option.value = episode;
+          option.textContent = episode;
+          filterSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Failed to populate episode filter:', error);
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div class="header">
+    <h1>启发星球 ✨ Weekly Inspiration Cards</h1>
+    <p>每一周，我们在分享与成长中汇聚火花 ✨</p>
+  </div>
+
+  <div class="episode-filter">
+    <select id="episode-filter">
+      <option value="all">所有会议</option>
+    </select>
+  </div>
+
+  <div class="cards-container" id="cards">
+    <div class="loading-indicator">加载中...</div>
+  </div>
+
+  <a href="index.html" class="back-link">返回首页</a>
+</body>
+
+</html>

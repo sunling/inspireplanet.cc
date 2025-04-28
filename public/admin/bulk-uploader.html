@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>启发星球 - 批量上传金句到 Airtable</title>
+  <script src="bulk-uploader.js" defer></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #f7f7f7;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    textarea {
+      width: 100%;
+      height: 300px;
+      font-size: 14px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      resize: vertical;
+    }
+    .buttons {
+      margin: 16px 0;
+      display: flex;
+      gap: 12px;
+    }
+    button {
+      padding: 10px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    #result {
+      margin-top: 20px;
+    }
+    .record {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .record:hover {
+      background-color: #f0f0f0;
+    }
+    .record-number {
+      font-weight: bold;
+      color: #666;
+      min-width: 30px;
+    }
+    .record-episode {
+      background-color: #e0f2f1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      min-width: 40px;
+      text-align: center;
+    }
+    .record-name {
+      color: #555;
+      margin-right: 10px;
+    }
+    .record-title {
+      font-weight: bold;
+      flex-grow: 1;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+      position: relative;
+    }
+    .error:hover .tooltip {
+      display: block;
+    }
+    .tooltip {
+      display: none;
+      position: absolute;
+      background-color: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      bottom: 100%;
+      right: 0;
+      width: 200px;
+      z-index: 1;
+    }
+    .summary {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #e8f5e9;
+      border-radius: 6px;
+      border-left: 4px solid #4CAF50;
+    }
+    .summary h3 {
+      margin-top: 0;
+      color: #2e7d32;
+    }
+  </style>
+</head>
+<body>
+
+<h1>启发星球 - 批量上传金句到 Airtable</h1>
+
+<textarea id="jsonInput" placeholder="请在这里粘贴 JSON 数据"></textarea>
+
+<div class="buttons">
+  <button id="parseBtn">解析数据</button>
+  <button id="uploadBtn" disabled>批量上传到 Airtable</button>
+</div>
+
+<div id="result"></div>
+
+</body>
+</html>

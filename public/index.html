@@ -315,23 +315,30 @@
 
     /* View all button */
     .view-all-btn {
-      display: block;
-      width: fit-content;
-      margin: 20px auto;
-      padding: 12px 24px;
+      display: inline-block;
+      position: absolute;
+      top: 0;
+      right: 0;
+      margin: 20px;
+      padding: 12px 20px;
       background: #4a6fa5;
       color: white;
+      text-decoration: none;
       border-radius: 8px;
       font-weight: bold;
       text-align: center;
       transition: all 0.3s ease;
-      text-decoration: none;
-      align-items: right;
+      font-size: 14px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      z-index: 10;
     }
 
     .view-all-btn:hover {
-      background: #3a5a8c;
-    }
+  background: #3a5a8c;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+}
+
 
     /* Footer */
     .page-footer {
@@ -492,6 +499,7 @@
           <div class="swiper-button-prev"></div>
         </div>
         <a href="cards.html" class="view-all-btn">查看全部卡片</a>
+        <a href="weekly-cards.html" class="view-all-btn" style="right: 150px;">查看每周会议卡片</a>
       </div>
     </div>
   </div>

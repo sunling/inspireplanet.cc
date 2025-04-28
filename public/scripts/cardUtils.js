@@ -238,12 +238,23 @@ export function renderCarouselCard(cardData, index) {
  * @param {string} containerId - ID of the container element
  * @param {Object} options - Additional options
  * @param {string} options.imgPrefix - Prefix for image paths
+ * @param {boolean} options.addDownloadBtn - Whether to add a download button
+ * @param {string} options.cardIdPrefix - Prefix for card ID
  * @returns {HTMLElement|null} - The appended card element or null if container not found
  */
 export function appendCardToContainer(cardData, containerId, options = {}) {
   const container = document.getElementById(containerId);
   if (!container) return null;
-  const { imgPrefix = '' } = options;
+  const { 
+    imgPrefix = '',
+    addDownloadBtn = false,
+    cardIdPrefix = ''
+  } = options;
+
+  // Generate a unique card ID
+  const uniqueCardId = cardIdPrefix 
+    ? `${cardIdPrefix}-${cardData.id || Date.now()}`
+    : cardData.id || `card-${Date.now()}`;
 
   // Prepare card data for rendering
   const normalizedCardData = {
@@ -259,21 +270,24 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
   };
 
   // Create card element using universal renderCard function
-  const cardElement = renderCard(normalizedCardData, { mode: 'list', cardId: cardData.id });
+  const cardElement = renderCard(normalizedCardData, { mode: 'list', cardId: uniqueCardId });
 
   // Create a wrapper for the card
   const cardWrapper = document.createElement('div');
   cardWrapper.className = 'card-container';
   cardWrapper.appendChild(cardElement);
 
-  // Add download button
-  // const downloadBtn = document.createElement('button');
-  // downloadBtn.className = 'download-btn';
-  // downloadBtn.innerHTML = '下载';
-  // downloadBtn.onclick = function () {
-  //   downloadCard(`#${cardData.id}`);
-  // };
-  // cardWrapper.appendChild(downloadBtn);
+  // Add download button if requested
+  if (addDownloadBtn) {
+    const downloadBtn = document.createElement('button');
+    downloadBtn.className = 'download-btn';
+    downloadBtn.innerHTML = '下载';
+    downloadBtn.onclick = function (e) {
+      e.stopPropagation(); // Prevent event bubbling
+      downloadCard(`#${uniqueCardId}`);
+    };
+    cardWrapper.appendChild(downloadBtn);
+  }
 
   // Append to container
   container.appendChild(cardWrapper);
@@ -309,6 +323,29 @@ export function groupCardsByDate(cards) {
     }
 
     grouped[dateKey].push(card);
+  });
+
+  return grouped;
+}
+
+/**
+ * Group cards by Episode
+ * @param {Array} cards - Array of card data
+ * @returns {Object} - Object with episodes as keys and arrays of cards as values
+ */
+export function groupCardsByEpisode(cards) {
+  const grouped = {};
+
+  cards.forEach(card => {
+    if (!card.Episode) return;
+
+    const episodeKey = card.Episode;
+
+    if (!grouped[episodeKey]) {
+      grouped[episodeKey] = [];
+    }
+
+    grouped[episodeKey].push(card);
   });
 
   return grouped;
@@ -413,6 +450,122 @@ export async function loadAndRenderLatestCards(containerId = 'latest-cards', lim
   } catch (error) {
     console.error('加载最新卡片失败:', error);
     container.innerHTML = '<div class="loading-indicator">加载失败，请稍后再试</div>';
+  }
+}
+
+/**
+ * Get a random item from an array
+ * @param {Array} array - Array to get random item from
+ * @returns {*} - Random item from array
+ */
+function getRandomItem(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+/**
+ * Load and render weekly cards to a container, grouped by episode
+ * @param {string} containerId - ID of the container element
+ * @returns {Promise<void>}
+ */
+export async function fetchAndRenderWeeklyCards(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  try {
+    // Show loading indicator
+    container.innerHTML = '<div class="loading-indicator">加载中...</div>';
+
+    // Get cards from Airtable
+    const cards = await fetchWeeklyCards();
+
+    if (!cards || cards.length === 0) {
+      container.innerHTML = '<div class="empty-message">暂无每周会议卡片数据</div>';
+      return;
+    }
+
+    // Clear container
+    container.innerHTML = '';
+
+    // 
+    const weeklyCards = cards.map((card)=>{return {...card, Creator:`启发星球${card.Episode}+AI总结`};});
+    // Group cards by episode
+    const groupedCards = groupCardsByEpisode(weeklyCards);
+
+    // Sort episodes in descending order (newest first)
+    const sortedEpisodes = Object.keys(groupedCards).sort((a, b) => {
+      // Extract episode numbers (e.g., "EP13" -> 13)
+      const numA = parseInt(a.replace(/\D/g, ''));
+      const numB = parseInt(b.replace(/\D/g, ''));
+      return numB - numA; // Descending order
+    });
+
+    // Load available images
+    let availableImages = [];
+    try {
+      const response = await fetch('images.json');
+      availableImages = await response.json();
+    } catch (error) {
+      console.error('加载图片列表失败:', error);
+      availableImages = [{ file: 'biking.png' }]; // Fallback
+    }
+
+    // Available fonts
+    const availableFonts = [
+      "'Noto Sans SC', sans-serif",
+      "'Noto Serif SC', serif",
+      // "'Ma Shan Zheng', cursive",
+      // "'PingFang SC', 'Helvetica Neue', sans-serif"
+    ];
+
+    // Available themes (keys from the themes object)
+    const availableThemes = Object.keys(themes);
+
+    // Render cards by episode groups
+    sortedEpisodes.forEach(episode => {
+      // Create episode heading
+      const episodeHeading = document.createElement('h2');
+      episodeHeading.className = 'date-heading';
+      episodeHeading.textContent = `2025${episode}`;
+      episodeHeading.id = `episode-${episode.toLowerCase()}`;
+      container.appendChild(episodeHeading);
+
+      // Create cards container for this episode
+      const episodeContainer = document.createElement('div');
+      episodeContainer.className = 'date-cards-container';
+      episodeContainer.id = `episode-container-${episode.toLowerCase()}`;
+      container.appendChild(episodeContainer);
+
+      // Sort cards by Created date (ascending)
+      const sortedCards = groupedCards[episode].sort((a, b) => {
+        return new Date(a.Created) - new Date(b.Created);
+      });
+
+      // Render cards for this episode with random styling
+      sortedCards.forEach((card, index) => {
+        // Randomly assign theme, font, and image for each card
+        const randomTheme = getRandomItem(availableThemes);
+        // const randomFont = getRandomItem(availableFonts);
+        const randomFont = "'Noto Sans SC', sans-serif";
+        const randomImage = getRandomItem(availableImages);
+        
+        // Prepare card data with random styling
+        const styledCard = {
+          ...card,
+          Theme: randomTheme,
+          Font: randomFont,
+          ImagePath: `images/${randomImage.file}`
+        };
+        
+        // Append card to container with download button and unique ID
+        appendCardToContainer(styledCard, episodeContainer.id, {
+          addDownloadBtn: true,
+          cardIdPrefix: `weekly-card-${episode.toLowerCase()}-${index}`
+        });
+      });
+    });
+  } catch (error) {
+    console.error('加载每周会议卡片失败:', error);
+    container.innerHTML = '<div class="empty-message">加载失败，请稍后再试</div>';
   }
 }
 
@@ -566,6 +719,36 @@ export async function fetchAirtableCards() {
     return data.records;
   } catch (error) {
     console.error("❌ 读取失败:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetch weekly cards from Airtable
+ * @returns {Promise<Array>} - Array of card data
+ */
+export async function fetchWeeklyCards() {
+  try {
+    // Call Netlify function to get cards with weekly table name
+    const response = await fetch(`${BASE_URL}/.netlify/functions/fetchAirtableData`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        tableType: 'weekly'
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("✅ 成功获取每周会议记录:", data);
+    return data.records;
+  } catch (error) {
+    console.error("❌ 读取每周会议记录失败:", error);
     return [];
   }
 }
