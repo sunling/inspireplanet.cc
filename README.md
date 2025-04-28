@@ -1,3 +1,5 @@
+[![Netlify Status](https://api.netlify.com/api/v1/badges/4a2ba2a5-6271-4ab1-86ce-581643e5dcfe/deploy-status)](https://app.netlify.com/sites/inspiration-planet/deploys)
+
 # 启发星球闪卡 ✨
 
 一个用于创建、上传和展示来自书籍、播客、电影及个人感悟的启发闪卡的网页应用。该项目让用户能够捕捉灵感瞬间，并以视觉吸引人的形式与他人分享。
