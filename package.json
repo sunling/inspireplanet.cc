@@ -5,7 +5,7 @@
     "gen:weekly-cards": "node scripts/generate-weekly-cards.js",
     "gen:inspiration-cards": "node scripts/generate-from-airtable.js",
     "dev": "netlify dev",
-    "build": "netlify build"
+    "build": "echo 'No build needed"
   },
   "dependencies": {
     "dotenv": "^16.3.1",
