@@ -108,6 +108,6 @@
 
 ## 致谢
 
-为灵感星球 ✨ 用心打造。
+为启发星球 ✨ 用心打造。
 
 作者：([Sun ling](https://sunling.github.io/))。

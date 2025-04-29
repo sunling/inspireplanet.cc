@@ -193,12 +193,24 @@
       bindCustomFileUpload
     } from './scripts/cardUtils.js';
 
-    function onSelectImage() {
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function () {
+      // Load images for the select dropdown
+      loadImages(() => {
+        // Initial card render after images are loaded
+        renderCover();
+      });
+
+      // Setup file upload
+      setupFileUpload();
+    });
+
+    window.onSelectImage = function () {
       document.getElementById("fileStatus").innerHTML = "";
       renderCover();
     }
 
-    function renderCover(customBgImage = "") {
+    window.renderCover = function (customBgImage = "") {
       const main = document.getElementById("main-title").value || "主标题";
       const sub = document.getElementById("sub-title").value || "副标题";
       const tags = document.getElementById("tags").value || 'tag1 tag2 tag3';
@@ -218,16 +230,23 @@
       downloadCover();
     };
 
-    window.onload = function () {
-      loadImages(renderCover);
-      renderCover();
+    // Setup file upload functionality
+    function setupFileUpload() {
+      const bgUpload = document.getElementById('bgUpload');
+      if (bgUpload) {
+        bgUpload.addEventListener('change', (event) => {
+          onUploadBg(event, updateCardPreview);
+        });
+      }
+
+      // Bind custom upload button
       bindCustomFileUpload({
-        inputId: "bgUpload",
-        buttonId: "uploadBtn",
-        statusId: "fileStatus",
-        onLoad: renderCover
+        inputId: 'bgUpload',
+        buttonId: 'uploadBtn',
+        statusId: 'fileStatus',
+        onLoad: updateCardPreview
       });
-    };
+    }
   </script>
 </body>
 

@@ -2,8 +2,6 @@
   "name": "flashcard-for-inspiration-planet",
   "version": "1.0.0",
   "scripts": {
-    "gen:weekly-cards": "node scripts/generate-weekly-cards.js",
-    "gen:inspiration-cards": "node scripts/generate-from-airtable.js",
     "dev": "netlify dev",
     "build": "echo No build needed"
   },
