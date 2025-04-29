@@ -164,6 +164,7 @@
   </div>
 
   <script type="module">
+    window.customBgImage = "";
     // Import functions from cardUtils.js
     import {
       downloadCover,
@@ -172,8 +173,8 @@
       bindCustomFileUpload
     } from './scripts/cardUtils.js';
 
-     // Initialize the page
-     document.addEventListener('DOMContentLoaded', function () {
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function () {
       // Load images for the select dropdown
       loadImages(() => {
         // Initial card render after images are loaded
@@ -184,12 +185,16 @@
       setupFileUpload();
     });
 
-    window.onSelectImage= function () {
+    window.onSelectImage = function () {
+      customBgImage = "";
       document.getElementById("fileStatus").innerHTML = "";
       renderCover();
     }
 
-    window.renderCover= function(customBgImage = "") {
+    window.renderCover = function (uploadImage = "") {
+      if (uploadImage) {
+        customBgImage = uploadImage;
+      }
       const main = document.getElementById("main-title").value || "主标题";
       const sub = document.getElementById("sub-title").value || "副标题";
       const tags = document.getElementById("tags").value || "tag1 tag2 tag3";
