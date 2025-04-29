@@ -519,7 +519,7 @@
     window.themes = themes;
     // Global variables
     window.customImage = "";
-    
+
     let swiper;
 
     // Initialize the page
@@ -564,10 +564,10 @@
     };
 
     // Function to update the card preview
-    window.updateCardPreview = function (customInsertImage) {
-      // If customInsertImage is provided, update the customImage variable
-      if (customInsertImage) {
-        customImage = customInsertImage;
+    window.updateCardPreview = function (uploadImg) {
+      // If uploadImg is provided, update the customImage variable
+      if (uploadImg) {
+        customImage = uploadImg;
       }
       const options = {
         title: document.getElementById('title').value || '这一刻，我想说...',
