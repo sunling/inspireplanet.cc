@@ -580,7 +580,7 @@ const BASE_URL = window.location.origin; // https://your-site.netlify.app (even 
 export const API_ENDPOINTS = {
   UPLOAD_CARD: `${BASE_URL}/.netlify/functions/uploadCardToAirtable`,
   UPLOAD_IMAGE: `${BASE_URL}/.netlify/functions/uploadImageToGitHub`,
-  FETCH_CARDS_NO_CACHE: `${BASE_URL}/.netlify/functions/fetchAirtableDataWithoutCache`,
+  FETCH_CARDS: `${BASE_URL}/.netlify/functions/fetchAirtableData`,
 };
 
 /**
@@ -673,6 +673,14 @@ export async function uploadCardToAirtable(cardData) {
     }
 
     if (response.ok && result.success) {
+      // Refresh the card list after successful submission
+      await fetch(API_ENDPOINTS.FETCH_CARDS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ invalidateCache: true })
+      });
       alert("🎉 提交成功!");
       return result;
     } else if (response.status === 409) {
@@ -703,7 +711,7 @@ export async function uploadCardToAirtable(cardData) {
 export async function fetchAirtableCards() {
   try {
     // Call Netlify function to get cards
-    const response = await fetch(API_ENDPOINTS.FETCH_CARDS_NO_CACHE, {
+    const response = await fetch(API_ENDPOINTS.FETCH_CARDS, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

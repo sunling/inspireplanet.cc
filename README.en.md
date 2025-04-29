@@ -20,7 +20,6 @@ This web app enables users to create beautiful inspiration cards with customizab
 /netlify/functions # Netlify serverless functions
   ├── clearCache.js
   ├── fetchAirtableData.js
-  ├── fetchAirtableDataWithoutCache.js
   ├── uploadCardToAirtable.js
   ├── uploadImageToGitHub.js
   ├── uploadWeeklyCard.js
@@ -33,7 +32,6 @@ images.json    # Defined list of images for cards
 The project uses Netlify serverless functions to handle API requests securely:
 
 - **fetchAirtableData.js** – Fetch cached latest 100 cards ordered by created date
-- **fetchAirtableDataWithoutCache.js** – Force fetch cards from Airtable (no cache)
 - **clearCache.js** – Clear the Airtable cache after upload
 - **uploadCardToAirtable.js** – Upload a single user-created card
 - **uploadImageToGitHub.js** – Upload user-uploaded images to a GitHub repo

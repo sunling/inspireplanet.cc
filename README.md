@@ -25,7 +25,6 @@
 /netlify/functions # Netlify无服务器函数
   ├── clearCache.js
   ├── fetchAirtableData.js
-  ├── fetchAirtableDataWithoutCache.js
   ├── uploadCardToAirtable.js
   ├── uploadImageToGitHub.js
   ├── uploadWeeklyCard.js
