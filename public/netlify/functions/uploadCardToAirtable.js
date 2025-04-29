@@ -80,22 +80,6 @@ exports.handler = async (event, context) => {
     const data = await res.json();
     
     if (res.ok) {
-      // Clear the cache by making a request to fetchAirtableData with cache invalidation flag
-      try {
-        const clearCacheUrl = `/.netlify/functions/fetchAirtableData`;
-        await fetch(clearCacheUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ invalidateCache: true })
-        });
-        console.log('Cache invalidation request sent');
-      } catch (cacheError) {
-        console.error('Failed to invalidate cache:', cacheError);
-        // Continue even if cache invalidation fails
-      }
-      
       return {
         statusCode: 200,
         body: JSON.stringify({ 

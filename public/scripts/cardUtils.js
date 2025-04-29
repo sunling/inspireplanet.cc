@@ -245,14 +245,14 @@ export function renderCarouselCard(cardData, index) {
 export function appendCardToContainer(cardData, containerId, options = {}) {
   const container = document.getElementById(containerId);
   if (!container) return null;
-  const { 
+  const {
     imgPrefix = '',
     addDownloadBtn = false,
     cardIdPrefix = ''
   } = options;
 
   // Generate a unique card ID
-  const uniqueCardId = cardIdPrefix 
+  const uniqueCardId = cardIdPrefix
     ? `${cardIdPrefix}-${cardData.id || Date.now()}`
     : cardData.id || `card-${Date.now()}`;
 
@@ -487,7 +487,7 @@ export async function fetchAndRenderWeeklyCards(containerId) {
     container.innerHTML = '';
 
     // 
-    const weeklyCards = cards.map((card)=>{return {...card, Creator:`启发星球${card.Episode}+AI总结`};});
+    const weeklyCards = cards.map((card) => { return { ...card, Creator: `启发星球${card.Episode}+AI总结` }; });
     // Group cards by episode
     const groupedCards = groupCardsByEpisode(weeklyCards);
 
@@ -547,7 +547,7 @@ export async function fetchAndRenderWeeklyCards(containerId) {
         // const randomFont = getRandomItem(availableFonts);
         const randomFont = "'Noto Sans SC', sans-serif";
         const randomImage = getRandomItem(availableImages);
-        
+
         // Prepare card data with random styling
         const styledCard = {
           ...card,
@@ -555,7 +555,7 @@ export async function fetchAndRenderWeeklyCards(containerId) {
           Font: randomFont,
           ImagePath: `images/${randomImage.file}`
         };
-        
+
         // Append card to container with download button and unique ID
         appendCardToContainer(styledCard, episodeContainer.id, {
           addDownloadBtn: true,
@@ -575,12 +575,22 @@ export async function fetchAndRenderWeeklyCards(containerId) {
  * ==========================
  */
 
-const BASE_URL = window.location.origin; // https://your-site.netlify.app (even in local dev!)
+export function getBaseUrl() {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  } else if (process && process.env && process.env.URL) {
+    return process.env.URL;
+  } else {
+    return 'http://localhost:8888'; // fallback for local dev
+  }
+}
+
+const BASE_URL = window.location.origin;
 // API endpoints for Netlify functions
 export const API_ENDPOINTS = {
-  UPLOAD_CARD: `${BASE_URL}/.netlify/functions/uploadCardToAirtable`,
-  UPLOAD_IMAGE: `${BASE_URL}/.netlify/functions/uploadImageToGitHub`,
-  FETCH_CARDS: `${BASE_URL}/.netlify/functions/fetchAirtableData`,
+  UPLOAD_CARD: `.netlify/functions/uploadCardToAirtable`,
+  UPLOAD_IMAGE: `.netlify/functions/uploadImageToGitHub`,
+  FETCH_CARDS: `.netlify/functions/fetchAirtableData`,
 };
 
 /**
@@ -647,7 +657,7 @@ export async function uploadCardToAirtable(cardData) {
 
   try {
     // Call Netlify function to upload card
-    const response = await fetch(API_ENDPOINTS.UPLOAD_CARD, {
+    const response = await fetch(`${getBaseUrl()}/${API_ENDPOINTS.UPLOAD_CARD}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -674,12 +684,12 @@ export async function uploadCardToAirtable(cardData) {
 
     if (response.ok && result.success) {
       // Refresh the card list after successful submission
-      await fetch(API_ENDPOINTS.FETCH_CARDS, {
+      await fetch(`${getBaseUrl()}/${API_ENDPOINTS.FETCH_CARDS}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ invalidateCache: true })
+        body: JSON.stringify({ invalidateCache: true, tableType: 'cards' })
       });
       alert("🎉 提交成功!");
       return result;
@@ -711,11 +721,12 @@ export async function uploadCardToAirtable(cardData) {
 export async function fetchAirtableCards() {
   try {
     // Call Netlify function to get cards
-    const response = await fetch(API_ENDPOINTS.FETCH_CARDS, {
-      method: 'GET',
+    const response = await fetch(`${getBaseUrl()}/${API_ENDPOINTS.FETCH_CARDS}`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      body: JSON.stringify({ tableType: 'cards' }) 
     });
 
     if (!response.ok) {
@@ -738,7 +749,7 @@ export async function fetchAirtableCards() {
 export async function fetchWeeklyCards() {
   try {
     // Call Netlify function to get cards with weekly table name
-    const response = await fetch(`${BASE_URL}/.netlify/functions/fetchAirtableData`, {
+    const response = await fetch(`${BASE_URL}/${API_ENDPOINTS.FETCH_CARDS}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -753,7 +764,6 @@ export async function fetchWeeklyCards() {
     }
 
     const data = await response.json();
-    console.log("✅ 成功获取每周会议记录:", data);
     return data.records;
   } catch (error) {
     console.error("❌ 读取每周会议记录失败:", error);
@@ -769,7 +779,7 @@ export async function fetchWeeklyCards() {
 export async function uploadImageToGitHub(base64Image) {
   try {
     // Call Netlify function to upload image
-    const response = await fetch(API_ENDPOINTS.UPLOAD_IMAGE, {
+    const response = await fetch(`${getBaseUrl()}/${API_ENDPOINTS.UPLOAD_IMAGE}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -959,28 +969,28 @@ export function downloadCard(selector = "#preview-card", filenamePrefix = "inspi
 export function downloadCover(elementId = ".cover", filenamePrefix = "cover") {
   const cardElement = document.querySelector(elementId);
   if (!cardElement) {
-      console.warn(`元素 #${elementId} 不存在`);
-      return;
+    console.warn(`元素 #${elementId} 不存在`);
+    return;
   }
   setTimeout(() => {
-      html2canvas(cardElement, {
-          scale: 3, // 高清导出
-          logging: true,
-          useCORS: true,
-          backgroundColor: null,
-      }).then(canvas => {
-          canvas.toBlob(function (blob) {
-              const link = document.createElement('a');
-              link.download = `${filenamePrefix}-${Date.now()}.png`;
-              link.href = URL.createObjectURL(blob);
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              document.body.removeChild(sandbox);
-          }, "image/png");
-      }).catch(err => {
-          console.log("截图失败", err);
-      }, 500);
+    html2canvas(cardElement, {
+      scale: 3, // 高清导出
+      logging: true,
+      useCORS: true,
+      backgroundColor: null,
+    }).then(canvas => {
+      canvas.toBlob(function (blob) {
+        const link = document.createElement('a');
+        link.download = `${filenamePrefix}-${Date.now()}.png`;
+        link.href = URL.createObjectURL(blob);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        document.body.removeChild(sandbox);
+      }, "image/png");
+    }).catch(err => {
+      console.log("截图失败", err);
+    }, 500);
   });
 }
 

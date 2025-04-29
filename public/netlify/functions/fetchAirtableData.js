@@ -1,14 +1,14 @@
 // netlify/functions/fetchAirtableData.js
-const fetch = require('node-fetch');
-
 // Cache implementation
-let cachedData = null;
-let cacheTimestamp = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+let cachedData = {
+  cards: null,
+  weekly: null
+};
+
+const DEFAULT_TABLE_TYPE = 'cards';  // 默认是 cards
 
 exports.handler = async (event, context) => {
   try {
-    // Check HTTP method
     if (event.httpMethod !== 'GET' && event.httpMethod !== 'POST') {
       return {
         statusCode: 405,
@@ -16,140 +16,64 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Check for cache invalidation request
+    let tableType = DEFAULT_TABLE_TYPE;
     if (event.httpMethod === 'POST' && event.body) {
       try {
+        console.log('Parsing request body for cache invalidation');
         const requestBody = JSON.parse(event.body);
         if (requestBody.invalidateCache) {
-          console.log('Cache invalidation requested, clearing cache');
-          cachedData = null;
-          cacheTimestamp = 0;
+          console.log('Cache invalidation requested');
+          if (requestBody.tableType === 'weekly') {
+            console.log('Clearing weekly cards cache only');
+            cachedData.weekly = null;
+          } else if (requestBody.tableType === 'cards') {
+            console.log('Clearing submitted cards cache only');
+            cachedData.cards = null;
+          } else {
+            console.log('Clearing all caches');
+            cachedData = { cards: null, weekly: null };
+          }
 
-          // Return success response for cache invalidation request
           return {
             statusCode: 200,
             body: JSON.stringify({ message: 'Cache invalidated successfully' })
           };
         }
-      } catch (e) {
-        console.error('Error parsing request body:', e);
-      }
-    }
-
-    // Check if we have valid cached data
-    const now = Date.now();
-    if (cachedData && (now - cacheTimestamp < CACHE_DURATION)) {
-      console.log('Returning cached data');
-      return {
-        statusCode: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'max-age=300' // 5 minutes browser caching
-        },
-        body: JSON.stringify(cachedData)
-      };
-    }
-
-    // Determine which fields to fetch
-    let selectedFields = ['Title', 'Quote', 'ImagePath', 'Upload', 'Detail', 'Creator', 'Created', 'Theme', 'Font'];
-
-    // If POST request with specific fields requested
-    if (event.httpMethod === 'POST' && event.body) {
-      try {
-        const requestBody = JSON.parse(event.body);
-        if (requestBody.fields && Array.isArray(requestBody.fields)) {
-          selectedFields = requestBody.fields;
+        if (requestBody.tableType === 'weekly') {
+          tableType = 'weekly';
         }
       } catch (e) {
         console.error('Error parsing request body:', e);
       }
     }
-
-    // Determine which table to use
-    let tableType = 'regular';
-    if (event.httpMethod === 'POST' && event.body) {
-      try {
-        const requestBody = JSON.parse(event.body);
-        if (requestBody.tableType === 'weekly') {
-          tableType = 'weekly';
-          selectedFields = ['Episode', 'Name', 'Title', 'Quote', 'Detail', 'Created'];
-        } 
-      } catch (e) {
-        console.error('Error parsing request body:', e);
-      }
+    console.log(`Fetching data for tableType=${tableType}, cacheExists=${!!cachedData[tableType]}`);
+    // If we have cached data and it's fresh, return it
+    if (cachedData[tableType]) {
+      console.log(`Returning fresh cached data for tableType=${tableType}`);
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'max-age=300'
+        },
+        body: JSON.stringify(cachedData[tableType])
+      };
     }
 
-    // Construct fields query and sorting parameters
-    let queryParams = [];
-
-    // Add fields
-    if (selectedFields.length > 0) {
-      queryParams = queryParams.concat(selectedFields.map(f => `fields[]=${encodeURIComponent(f)}`));
-    }
-
-    // Add sorting parameters based on table type
-    if (tableType === 'weekly') {
-      // For weekly table, sort by Episode in descending order, then by Created in ascending order
-      queryParams.push('sort[0][field]=Episode');
-      queryParams.push('sort[0][direction]=desc');
-      queryParams.push('sort[1][field]=Created');
-      queryParams.push('sort[1][direction]=asc');
-    } else {
-      // For regular table, sort by Created in descending order
-      queryParams.push('sort[0][field]=Created');
-      queryParams.push('sort[0][direction]=desc');
-    }
-
-    // Limit to records (more for weekly table)
-    queryParams.push(`maxRecords=${tableType === 'weekly' ? 200 : 100}`);
-
-    // Join all query parameters
-    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-
-    // Fetch data from Airtable
-    const AIRTABLE_BASE_NAME = process.env.AIRTABLE_BASE_NAME;
-    const AIRTABLE_TABLE_NAME = tableType === 'weekly' ? 
-      process.env.AIRTABLE_TABLE_NAME_WEEKLY : 
-      process.env.AIRTABLE_TABLE_NAME;
-    const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
-
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME}${queryString}`;
-
-    console.log("ulr", url);
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    // Process the data to make it more frontend-friendly
-    const processedData = {
-      records: data.records.map(record => ({
-        id: record.id,
-        ...record.fields
-      }))
-    };
-
-    // Update cache
-    cachedData = processedData;
-    cacheTimestamp = now;
+    // If no cache or very old, fetch fresh now
+    console.log(`No valid cache, fetching fresh data for tableType=${tableType}`);
+    const freshData = await fetchFromAirtable(tableType);
+    cachedData[tableType] = freshData;
 
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'max-age=300' // 5 minutes browser caching
+        'Cache-Control': 'max-age=300'
       },
-      body: JSON.stringify(processedData)
+      body: JSON.stringify(freshData)
     };
+
   } catch (error) {
     console.error('Function error:', error);
     return {
@@ -159,8 +83,51 @@ exports.handler = async (event, context) => {
   }
 };
 
-// ADD this function to allow clearing cache
-exports.clearAirtableCache = function () {
-  airtableCache = null;
-  cacheTimestamp = null;
+// Helper to fetch fresh data
+async function fetchFromAirtable(tableType) {
+  let selectedFields = ['Title', 'Quote', 'ImagePath', 'Upload', 'Detail', 'Creator', 'Created', 'Theme', 'Font'];
+  if (tableType === 'weekly') {
+    selectedFields = ['Episode', 'Name', 'Title', 'Quote', 'Detail', 'Created'];
+  }
+
+  const AIRTABLE_BASE_NAME = process.env.AIRTABLE_BASE_NAME;
+  const AIRTABLE_TABLE_NAME = tableType === 'weekly' ?
+    process.env.AIRTABLE_TABLE_NAME_WEEKLY :
+    process.env.AIRTABLE_TABLE_NAME;
+  const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
+
+  let queryParams = selectedFields.map(f => `fields[]=${encodeURIComponent(f)}`);
+  if (tableType === 'weekly') {
+    queryParams.push('sort[0][field]=Episode');
+    queryParams.push('sort[0][direction]=desc');
+    queryParams.push('sort[1][field]=Created');
+    queryParams.push('sort[1][direction]=asc');
+  } else {
+    queryParams.push('sort[0][field]=Created');
+    queryParams.push('sort[0][direction]=desc');
+  }
+  queryParams.push(`maxRecords=${tableType === 'weekly' ? 200 : 100}`);
+
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME}?${queryParams.join('&')}`;
+
+  const response = await require('node-fetch')(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Airtable API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  return {
+    records: data.records.map(record => ({
+      id: record.id,
+      ...record.fields
+    }))
+  };
 }
