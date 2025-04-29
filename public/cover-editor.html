@@ -231,7 +231,7 @@
       const bgUpload = document.getElementById('bgUpload');
       if (bgUpload) {
         bgUpload.addEventListener('change', (event) => {
-          onUploadBg(event, updateCardPreview);
+          onUploadBg(event, renderCover);
         });
       }
 
@@ -240,7 +240,7 @@
         inputId: 'bgUpload',
         buttonId: 'uploadBtn',
         statusId: 'fileStatus',
-        onLoad: updateCardPreview
+        onLoad: renderCover
       });
     }
   </script>
