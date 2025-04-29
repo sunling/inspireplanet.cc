@@ -294,6 +294,31 @@
       color: #4a6fa5;
     }
 
+    .view-all-button-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .view-all-button {
+      display: inline-block;
+      background-color: #FF7F50;
+      /* 橙色，和提交按钮统一 */
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      text-decoration: none;
+      transition: transform 0.2s, background-color 0.2s;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .view-all-button:hover {
+      background-color: #ff9966;
+      /* hover时更亮一点 */
+      transform: scale(1.05);
+    }
+
+
     /* View all button */
     .view-all-btn {
       display: inline-block;
@@ -386,7 +411,8 @@
       <a href="/cover-editor-mobile.html" class="view-all-btn">制作竖版封面</a>
       <a href="/cover-editor.html" class="view-all-btn" style="right: 150px;">制作横版封面</a>
       <a href="weekly-cards.html" class="view-all-btn" style="right: 300px;">查看每周会议卡片</a>
-      <a href="cards.html" class="view-all-btn" style="right: 470px;">查看全部卡片</a>
+      <a href="cards.html" class="view-all-btn"
+        style="right: 470px; background-color: #e64a19; color: white;">查看全部提交的卡片</a>
     </div>
 
   </header>
@@ -466,7 +492,7 @@
         </div>
 
         <div class="buttons">
-          <button onclick="submitCard()" class="primary-btn">📩 提交并加入展示队列</button>
+          <button onclick="submitCard()" class="primary-btn">📩 提交到展示区</button>
           <button onclick="downloadCardImage()">💾 下载卡片</button>
         </div>
       </div>
@@ -478,7 +504,7 @@
 
     <!-- Latest Submitted Cards Section -->
     <div class="latest-cards-section">
-      <h2>最新提交的卡片</h2>
+      <h2>展示区</h2>
       <div class="carousel-container">
         <div class="swiper" id="latest-cards-swiper">
           <div class="swiper-wrapper" id="latest-cards">
@@ -488,6 +514,9 @@
           <div class="swiper-button-next"></div>
           <div class="swiper-button-prev"></div>
         </div>
+      </div>
+      <div class="view-all-button-container">
+        <a href="cards.html" class="view-all-button">浏览更多灵感</a>
       </div>
     </div>
   </div>
