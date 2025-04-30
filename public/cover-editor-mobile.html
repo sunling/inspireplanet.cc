@@ -45,6 +45,24 @@
       gap: 12px;
     }
 
+    .form-row {
+      display: flex;
+      gap: 15px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .form label {
+      font-weight: bold;
+      color: #4a6fa5;
+      font-size: 14px;
+    }
+
     .form input,
     .form select {
       width: 100%;
@@ -154,18 +172,29 @@
           <option value="'KaiTi', serif">楷体</option>
         </select>
       </label>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="image-select">选择背景图</label>
+          <select id="image-select" onchange="onSelectImage()"></select>
+        </div>
+
+        <div class="form-group">
+          <label for="bgUpload">自定义背景图</label>
+          <div class="file-upload-wrapper">
+            <button type="button" id="uploadBtn" class="upload-btn">📷 上传图片</button><br>
+            <small id="fileStatus" style="color: #888; font-size: 12px; margin-left: 10px;">No file chosen</small>
+            <input type="file" id="bgUpload" accept="image/*" style="display: none;">
+          </div>
+        </div>
+      </div>
       <label>主标题:<input id="main-title" placeholder="我想放空" oninput="renderCover()"></label>
       <label>副标题:<input id="sub-title" placeholder="可连放空也需要练习" oninput="renderCover()"></label>
       <label>关键词(空格分隔):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
-      <label>选择背景图：
-        <select id="image-select" onchange="onSelectImage()"></select>
-      </label>
-      <label>自定义背景图:
-        <div class="file-upload-wrapper">
-          <button type="button" id="uploadBtn" class="upload-btn">上传图片</button>
-          <span id="fileStatus" style="color: #888; font-size: 12px;">未选择文件</span>
-          <input type="file" id="bgUpload" accept="image/*" style="display: none;">
-        </div>
+      
+      <label>下载到本地:
+        <!-- <div class="buttons"> -->
+          <button onclick="downloadCoverImage()">下载</button>
+        <!-- </div> -->
       </label>
     </div>
 
@@ -179,10 +208,8 @@
           <div class="keywords" id="keywords">tag1 / tag2 / tag3</div>
         </div>
       </div>
-      <div class="buttons">
-        <button onclick="downloadCoverImage()">下载</button>
-      </div>
     </div>
+    
   </div>
   <script type="module">
     // Import functions from cardUtils.js
