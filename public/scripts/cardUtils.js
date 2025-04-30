@@ -1010,7 +1010,7 @@ export function loadImages(onLoadedFunc, selectId = "image-select", jsonPath = "
       // Clear existing options
       select.innerHTML = '';
 
-      // Add all image options
+      // Add all image options (have't used the tags yet)
       Object.values(imageGroups).flat().forEach(img => {
         const option = new Option(img.desc, `images/${img.file}`);
         select.add(option);
