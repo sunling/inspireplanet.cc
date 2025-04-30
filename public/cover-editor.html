@@ -111,6 +111,15 @@
       font-weight: 600;
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
     }
+    /* View all button */
+    .view-all-btn {
+      padding: 8px 16px;
+      background: #323449;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -147,9 +156,9 @@
         <input type="file" id="bgUpload" accept="image/*" style="display: none;">
       </div>
     </label>
-    <div class="buttons">
+    <!-- <div class="buttons">
       <button onclick="downloadCoverImage()">下载</button>
-    </div>
+    </div> -->
   </div>
 
   <div id="preview">
@@ -161,6 +170,10 @@
         <div class="sub-title" id="subtitle">可连放空也需要练习</div>
         <div class="keywords" id="keywords">自燃 / 火种 / 迷茫</div>
       </div>
+    </div>
+    <div class="buttons">
+      <button onclick="downloadCoverImage()">下载</button>
+      <div style="margin-top: 10px;"><a href="/cover-editor-mobile.html" >前往制作竖版封面</a></div>
     </div>
   </div>
 
