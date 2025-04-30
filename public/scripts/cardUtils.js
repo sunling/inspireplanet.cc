@@ -458,7 +458,7 @@ export async function loadAndRenderLatestCards(containerId = 'latest-cards', lim
  * @param {Array} array - Array to get random item from
  * @returns {*} - Random item from array
  */
-function getRandomItem(array) {
+export function getRandomItem(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
 
