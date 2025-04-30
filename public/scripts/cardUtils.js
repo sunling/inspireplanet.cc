@@ -1122,13 +1122,15 @@ export function hashCard(card) {
  * @returns {boolean} - True if valid, false otherwise
  */
 export function validateCard({ title, quote, detail }) {
+  const containsHTML = str => /<[^>]+>/.test(str); // 检测是否包含 HTML 标签
+
   const isMeaningful = str => {
     if (!str) return false;
     const trimmed = str.trim();
     return (
       trimmed.length >= 5 &&
-      !/^([\\d\\W_\\s])+$/.test(trimmed) && // Not just digits/punctuation/spaces
-      !/(.)\\1{4,}/.test(trimmed) // No excessive repeated characters
+      !/^([\d\W_\s])+$/.test(trimmed) && // 不仅是数字/符号/空格
+      !/(.)\1{4,}/.test(trimmed) // 没有连续重复字符
     );
   };
 
@@ -1136,14 +1138,26 @@ export function validateCard({ title, quote, detail }) {
     alert("❗️请填写有效的标题（至少2个字吧）");
     return false;
   }
+  if (containsHTML(title)) {
+    alert("❗️标题中不能包含HTML标签");
+    return false;
+  }
 
   if (!quote || quote.trim().length < 5) {
     alert("❗️请填写`被触动的观点`（至少5个字吧）");
     return false;
   }
+  if (containsHTML(quote)) {
+    alert("❗️观点中不能包含HTML标签");
+    return false;
+  }
 
   if (!detail || detail.length < 10 || !isMeaningful(detail)) {
     alert("❗️请填写启发内容（至少10个字吧，不能全是标点或无效字符）");
+    return false;
+  }
+  if (containsHTML(detail)) {
+    alert("❗️启发内容中不能包含HTML标签");
     return false;
   }
 
