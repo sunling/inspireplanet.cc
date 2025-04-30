@@ -426,13 +426,13 @@
               <option value="morning">晨光米杏</option>
               <option value="creamMatcha">奶油抹茶</option>
               <option value="lavenderMist">云雾紫灰</option>
+              <option value="roseclay">豆沙玫瑰</option>
+              <option value="mistyblue">浅雾蓝灰</option>
               <option value="darkblue">深蓝经典</option>
               <option value="green">深绿米白</option>
               <option value="brown">深棕温暖</option>
               <option value="purple">深紫柔粉</option>
               <option value="grayblue">灰蓝极简</option>
-              <option value="mistyblue">浅雾蓝灰</option>
-              <option value="roseclay">豆沙玫瑰</option>
             </select>
           </div>
 
@@ -538,6 +538,7 @@
       loadImages,
       onUploadBg,
       bindCustomFileUpload,
+      getRandomItem,
       themes
     } from './scripts/cardUtils.js';
 
@@ -595,6 +596,7 @@
       if (uploadImg) {
         customImage = uploadImg;
       }
+      const randomThemeValue = getRandomItem(document.getElementById('theme-select').options).value;
       const options = {
         title: document.getElementById('title').value || '这一刻，我想说...',
         quote: document.getElementById('quote').value || '原话：“创作不是输出，而是通过输出重新理解自己。”',
@@ -602,7 +604,7 @@
         imagePath: document.getElementById('image-select').value,
         creator: document.getElementById('creator').value || '匿名',
         font: document.getElementById('choose-font').value || `'Noto Sans SC', sans-serif`,
-        theme: themes[document.getElementById('theme-select').value],
+        theme: themes[randomThemeValue] || 'roseclay',
         customImage: customImage
       };
 
