@@ -562,6 +562,10 @@
 
       // Load latest cards
       loadLatestCardsCarousel();
+
+      // Randomly init the theme
+      const randomThemeValue = getRandomItem(document.getElementById('theme-select').options).value;
+      document.getElementById('theme-select').value = randomThemeValue;
     });
 
     // Function to handle image selection
@@ -596,7 +600,6 @@
       if (uploadImg) {
         customImage = uploadImg;
       }
-      const randomThemeValue = getRandomItem(document.getElementById('theme-select').options).value;
       const options = {
         title: document.getElementById('title').value || '这一刻，我想说...',
         quote: document.getElementById('quote').value || '原话：“创作不是输出，而是通过输出重新理解自己。”',
@@ -604,7 +607,7 @@
         imagePath: document.getElementById('image-select').value,
         creator: document.getElementById('creator').value || '匿名',
         font: document.getElementById('choose-font').value || `'Noto Sans SC', sans-serif`,
-        theme: themes[randomThemeValue] || 'roseclay',
+        theme: document.getElementById('theme-select').value || 'roseclay',
         customImage: customImage
       };
 
