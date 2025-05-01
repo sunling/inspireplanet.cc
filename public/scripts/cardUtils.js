@@ -408,24 +408,7 @@ export async function fetchAndRenderAllCards(containerId) {
 
       // Render cards for this date, with validation
       groupedCards[date].forEach(card => {
-        if (
-          card &&
-          isSafeString(card.title) &&
-          isSafeString(card.quote) &&
-          isSafeString(card.detail)
-        ) {
-          // Sanitize each field before rendering
-          const safeCard = {
-            ...card,
-            title: DOMPurify.sanitize(card.title),
-            quote: DOMPurify.sanitize(card.quote),
-            detail: DOMPurify.sanitize(card.detail),
-          };
-
-          appendCardToContainer(safeCard, dateContainer.id, { imgPrefix: '../' });
-        } else {
-          console.warn('跳过无效卡片:', card);
-        }
+        appendCardToContainer(card, dateContainer.id, { imgPrefix: '../' });
       });
     });
   } catch (error) {
