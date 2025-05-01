@@ -1,5 +1,5 @@
 // cardUtils.js - Combined utility module for card rendering, API interactions, and helper functions
-
+import DOMPurify from 'dompurify';
 /**
  * ===========================
  * 1. CARD RENDERING FUNCTIONS
@@ -367,7 +367,7 @@ export async function fetchAndRenderAllCards(containerId) {
     // Get cards from Airtable
     const cards = await fetchAirtableCards();
 
-    if (!cards || cards.length === 0) {
+    if (!Array.isArray(cards) || cards.length === 0) {
       container.innerHTML = '<div class="loading-indicator">暂无卡片数据</div>';
       return;
     }
@@ -385,21 +385,41 @@ export async function fetchAndRenderAllCards(containerId) {
 
     // Render cards by date groups
     sortedDates.forEach(date => {
+      // Safely process date label
+      const safeDate = isSafeString(date) ? DOMPurify.sanitize(date) : '未知日期';
+
       // Create date heading
       const dateHeading = document.createElement('h2');
       dateHeading.className = 'date-heading';
-      dateHeading.textContent = date;
+      dateHeading.textContent = safeDate;
       container.appendChild(dateHeading);
 
       // Create cards container for this date
       const dateContainer = document.createElement('div');
       dateContainer.className = 'date-cards-container';
-      dateContainer.id = `date-container-${date.replace(/[年月日]/g, '-')}`;
+      dateContainer.id = `date-container-${safeDate.replace(/[年月日]/g, '-')}`;
       container.appendChild(dateContainer);
 
-      // Render cards for this date
+      // Render cards for this date, with validation
       groupedCards[date].forEach(card => {
-        appendCardToContainer(card, dateContainer.id, { imgPrefix: '../' });
+        if (
+          card &&
+          isSafeString(card.title) &&
+          isSafeString(card.quote) &&
+          isSafeString(card.detail)
+        ) {
+          // Sanitize each field before rendering
+          const safeCard = {
+            ...card,
+            title: DOMPurify.sanitize(card.title),
+            quote: DOMPurify.sanitize(card.quote),
+            detail: DOMPurify.sanitize(card.detail),
+          };
+
+          appendCardToContainer(safeCard, dateContainer.id, { imgPrefix: '../' });
+        } else {
+          console.warn('跳过无效卡片:', card);
+        }
       });
     });
   } catch (error) {
@@ -1174,6 +1194,15 @@ export function getCurrentDate() {
   const mm = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-based
   const dd = String(now.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
+}
+
+/**
+ * Safely checks if a value is a non-empty string
+ * @param {any} value
+ * @returns {boolean}
+ */
+function isSafeString(value) {
+  return typeof value === 'string' && value.trim().length > 0 && value.trim().length < 1000;
 }
 
 // Export themes for external use
