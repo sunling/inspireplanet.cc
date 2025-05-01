@@ -371,7 +371,10 @@ export async function fetchAndRenderAllCards(containerId) {
       return;
     }
 
-    const safeCards = cards.map((card) => sanitizeCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']));
+    const safeCards = cards
+      .map(card => sanitizeCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
+      .filter(result => result.isValid)
+      .map(result => result.sanitizedCard);
 
     // Clear container
     container.innerHTML = '';
@@ -457,7 +460,11 @@ export async function loadAndRenderLatestCards(containerId = 'latest-cards', lim
     container.innerHTML = '';
 
     // Filter valid cards and limit to the specified number
-    const validCards = cards.filter(card => card && card.Title && card.Quote).map((card) => sanitizeCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']));
+    const validCards = cards.filter(card => card && card.Title && card.Quote)
+      .map(card => sanitizeCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
+      .filter(result => result.isValid)
+      .map(result => result.sanitizedCard);
+
     const recentCards = validCards.slice(0, limit);
 
     // Render each card
@@ -1226,30 +1233,46 @@ export function sanitizeField(input, maxLength = 1000) {
     trimmed = trimmed.slice(0, maxLength) + '...';
   }
 
-  return DOMPurify.sanitize(trimmed);
+  const safe = DOMPurify.sanitize(trimmed, {
+    FORBID_ATTR: ['onerror', 'onclick', 'onload'],
+    FORBID_TAGS: ['svg', 'iframe']
+  });
+
+  return safe;
 }
 
 /**
- * 清理整个 card 对象的主要字段
- * @param {object} card - 卡片对象
- * @param {string[]} fields - 要清理的字段名列表（默认 ['title', 'quote', 'detail']）
- * @returns {object} 清理后的新对象
+ * 清理并检测 card
+ * @param {object} card
+ * @param {string[]} fields
+ * @returns {object} { sanitizedCard, isValid }
  */
-export function sanitizeCard(card, fields = ['Title', 'Quote', 'Detail']) {
+export function sanitizeAndValidateCard(card, fields = ['Title', 'Quote', 'Detail']) {
   if (typeof card !== 'object' || card === null) {
     console.warn('sanitizeCard received non-object:', card);
-    return {};
+    return { sanitizedCard: {}, isValid: false };
   }
 
-  const sanitized = { ...card };
+  const sanitizedCard = { ...card };
+  let isValid = true;
 
   fields.forEach(field => {
     if (field in card) {
-      sanitized[field] = sanitizeField(card[field]);
+      const raw = String(card[field] ?? '');
+      // 检测是否包含被禁止的标签或属性
+      const hasForbiddenTag = /<(img|iframe|svg)[^>]*>/i.test(raw);
+      const hasForbiddenAttr = /onerror=|onclick=|onload=/i.test(raw);
+
+      if (hasForbiddenTag || hasForbiddenAttr) {
+        console.warn(`Blocked card due to forbidden content in ${field}:`, raw);
+        isValid = false;
+      }
+
+      sanitizedCard[field] = sanitizeField(raw);
     }
   });
 
-  return sanitized;
+  return { sanitizedCard, isValid };
 }
 
 
