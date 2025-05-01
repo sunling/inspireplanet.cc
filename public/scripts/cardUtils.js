@@ -387,12 +387,10 @@ export async function fetchAndRenderAllCards(containerId) {
       return new Date(b.replace(/年|月|日/g, '/')) - new Date(a.replace(/年|月|日/g, '/'));
     });
 
-    const DOMPurify = window.DOMPurify;
-
     // Render cards by date groups
     sortedDates.forEach(date => {
       // Safely process date label
-      const safeDate = isSafeString(date) ? DOMPurify.sanitize(date) : '未知日期';
+      const safeDate = isSafeString(date) ? date : '未知日期';
 
       // Create date heading
       const dateHeading = document.createElement('h2');
@@ -414,15 +412,7 @@ export async function fetchAndRenderAllCards(containerId) {
           isSafeString(card.quote) &&
           isSafeString(card.detail)
         ) {
-          // Sanitize each field before rendering
-          const safeCard = {
-            ...card,
-            title: DOMPurify.sanitize(card.title),
-            quote: DOMPurify.sanitize(card.quote),
-            detail: DOMPurify.sanitize(card.detail),
-          };
-
-          appendCardToContainer(safeCard, dateContainer.id, { imgPrefix: '../' });
+          appendCardToContainer(card, dateContainer.id, { imgPrefix: '../' });
         } else {
           console.warn('跳过无效卡片:', card);
         }
@@ -1233,7 +1223,7 @@ export function sanitizeField(input, maxLength = 1000) {
     trimmed = trimmed.slice(0, maxLength) + '...';
   }
 
-  const safe = DOMPurify.sanitize(trimmed, {
+  const safe = window.DOMPurify.sanitize(trimmed, {
     FORBID_ATTR: ['onerror', 'onclick', 'onload'],
     FORBID_TAGS: ['svg', 'iframe']
   });
