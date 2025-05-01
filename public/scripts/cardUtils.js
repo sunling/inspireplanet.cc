@@ -1148,12 +1148,13 @@ export function validateCard({ title, quote, detail }) {
   const isMeaningful = str => {
     if (!str) return false;
     const trimmed = str.trim();
+    const hasLetters = /[A-Za-z\u4e00-\u9fff]/.test(trimmed); // 检测至少有字母或汉字
     return (
       trimmed.length >= 5 &&
-      !/^([\d\W_\s])+$/.test(trimmed) && // 不仅是数字/符号/空格
-      !/(.)\1{4,}/.test(trimmed) // 没有连续重复字符
+      hasLetters &&
+      !/(.)\1{4,}/.test(trimmed)
     );
-  };
+  };  
 
   if (!title || title.trim().length < 2) {
     alert("请填写有效的标题（至少2个字吧）");
