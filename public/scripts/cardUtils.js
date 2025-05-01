@@ -371,11 +371,13 @@ export async function fetchAndRenderAllCards(containerId) {
       return;
     }
 
+    const safeCards = cards.map((card) => sanitizeCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']));
+
     // Clear container
     container.innerHTML = '';
 
     // Group cards by date
-    const groupedCards = groupCardsByDate(cards);
+    const groupedCards = groupCardsByDate(safeCards);
 
     // Sort dates in descending order (newest first)
     const sortedDates = Object.keys(groupedCards).sort((a, b) => {
@@ -455,7 +457,7 @@ export async function loadAndRenderLatestCards(containerId = 'latest-cards', lim
     container.innerHTML = '';
 
     // Filter valid cards and limit to the specified number
-    const validCards = cards.filter(card => card && card.Title && card.Quote);
+    const validCards = cards.filter(card => card && card.Title && card.Quote).map((card) => sanitizeCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']));
     const recentCards = validCards.slice(0, limit);
 
     // Render each card
@@ -747,7 +749,7 @@ export async function fetchAirtableCards() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ tableType: 'cards' }) 
+      body: JSON.stringify({ tableType: 'cards' })
     });
 
     if (!response.ok) {
@@ -1154,7 +1156,7 @@ export function validateCard({ title, quote, detail }) {
       hasLetters &&
       !/(.)\1{4,}/.test(trimmed)
     );
-  };  
+  };
 
   if (!title || title.trim().length < 2) {
     alert("请填写有效的标题（至少2个字吧）");
@@ -1206,6 +1208,50 @@ export function getCurrentDate() {
 function isSafeString(value) {
   return typeof value === 'string' && value.trim().length > 0 && value.trim().length < 1000;
 }
+
+/**
+ * 通用字段清理
+ * @param {any} input - 输入值
+ * @param {number} maxLength - 最大允许长度（默认 1000）
+ * @returns {string} 清理后的安全字符串
+ */
+export function sanitizeField(input, maxLength = 1000) {
+  if (typeof input !== 'string') {
+    input = String(input ?? '');
+  }
+
+  let trimmed = input.trim();
+
+  if (trimmed.length > maxLength) {
+    trimmed = trimmed.slice(0, maxLength) + '...';
+  }
+
+  return DOMPurify.sanitize(trimmed);
+}
+
+/**
+ * 清理整个 card 对象的主要字段
+ * @param {object} card - 卡片对象
+ * @param {string[]} fields - 要清理的字段名列表（默认 ['title', 'quote', 'detail']）
+ * @returns {object} 清理后的新对象
+ */
+export function sanitizeCard(card, fields = ['Title', 'Quote', 'Detail']) {
+  if (typeof card !== 'object' || card === null) {
+    console.warn('sanitizeCard received non-object:', card);
+    return {};
+  }
+
+  const sanitized = { ...card };
+
+  fields.forEach(field => {
+    if (field in card) {
+      sanitized[field] = sanitizeField(card[field]);
+    }
+  });
+
+  return sanitized;
+}
+
 
 // Export themes for external use
 export { themes };
