@@ -1,5 +1,4 @@
 // cardUtils.js - Combined utility module for card rendering, API interactions, and helper functions
-import DOMPurify from 'dompurify';
 /**
  * ===========================
  * 1. CARD RENDERING FUNCTIONS
@@ -382,6 +381,8 @@ export async function fetchAndRenderAllCards(containerId) {
     const sortedDates = Object.keys(groupedCards).sort((a, b) => {
       return new Date(b.replace(/年|月|日/g, '/')) - new Date(a.replace(/年|月|日/g, '/'));
     });
+
+    const DOMPurify = window.DOMPurify;
 
     // Render cards by date groups
     sortedDates.forEach(date => {
