@@ -1135,29 +1135,29 @@ export function validateCard({ title, quote, detail }) {
   };
 
   if (!title || title.trim().length < 2) {
-    alert("❗️请填写有效的标题（至少2个字吧）");
+    alert("请填写有效的标题（至少2个字吧）");
     return false;
   }
   if (containsHTML(title)) {
-    alert("❗️标题中不能包含HTML标签");
+    alert("标题中不能包含HTML标签");
     return false;
   }
 
   if (!quote || quote.trim().length < 5) {
-    alert("❗️请填写`被触动的观点`（至少5个字吧）");
+    alert("请填写`被触动的观点`（至少5个字吧）");
     return false;
   }
   if (containsHTML(quote)) {
-    alert("❗️观点中不能包含HTML标签");
+    alert("观点中不能包含HTML标签");
     return false;
   }
 
   if (!detail || detail.length < 10 || !isMeaningful(detail)) {
-    alert("❗️请填写启发内容（至少10个字吧，不能全是标点或无效字符）");
+    alert("请填写启发内容（至少10个字吧，不能全是标点或无效字符）");
     return false;
   }
   if (containsHTML(detail)) {
-    alert("❗️启发内容中不能包含HTML标签");
+    alert("启发内容中不能包含HTML标签");
     return false;
   }
 
