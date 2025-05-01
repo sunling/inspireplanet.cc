@@ -372,7 +372,7 @@ export async function fetchAndRenderAllCards(containerId) {
     }
 
     const safeCards = cards
-      .map(card => sanitizeCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
+      .map(card => sanitizeAndValidateCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
       .filter(result => result.isValid)
       .map(result => result.sanitizedCard);
 
@@ -461,7 +461,7 @@ export async function loadAndRenderLatestCards(containerId = 'latest-cards', lim
 
     // Filter valid cards and limit to the specified number
     const validCards = cards.filter(card => card && card.Title && card.Quote)
-      .map(card => sanitizeCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
+      .map(card => sanitizeAndValidateCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
       .filter(result => result.isValid)
       .map(result => result.sanitizedCard);
 
@@ -1215,12 +1215,54 @@ export function getCurrentDate() {
 function isSafeString(value) {
   return typeof value === 'string' && value.trim().length > 0 && value.trim().length < 1000;
 }
+/**
+ * 检查输入是否包含被净化掉的内容（前后不同 = 有危险）
+ * @param {string} raw
+ * @returns {boolean}
+ */
+function hasDangerousContent(raw) {
+  const DOMPurify = window.DOMPurify;
+  const clean = DOMPurify.sanitize(raw);
+  return clean !== raw;
+}
 
 /**
- * 通用字段清理
- * @param {any} input - 输入值
- * @param {number} maxLength - 最大允许长度（默认 1000）
- * @returns {string} 清理后的安全字符串
+ * 清理并检测 card
+ * @param {object} card
+ * @param {string[]} fields
+ * @returns {object} { sanitizedCard, isValid }
+ */
+export function sanitizeAndValidateCard(card, fields = ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']) {
+  if (typeof card !== 'object' || card === null) {
+    console.warn('sanitizeAndValidateCard received non-object:', card);
+    return { sanitizedCard: {}, isValid: false };
+  }
+
+  const sanitizedCard = { ...card };
+  let isValid = true;
+
+  fields.forEach(field => {
+    if (field in card) {
+      const raw = String(card[field] ?? '');
+
+      // 检测：如果 sanitize 后和原始不同，说明原始有危险
+      if (hasDangerousContent(raw)) {
+        console.warn(`⚠️ Blocked card due to dangerous content in ${field}:`, raw);
+        isValid = false;
+      }
+
+      sanitizedCard[field] = sanitizeField(raw);
+    }
+  });
+
+  return { sanitizedCard, isValid };
+}
+
+/**
+ * 字段清理函数
+ * @param {any} input
+ * @param {number} maxLength
+ * @returns {string}
  */
 export function sanitizeField(input, maxLength = 1000) {
   if (typeof input !== 'string') {
@@ -1232,51 +1274,13 @@ export function sanitizeField(input, maxLength = 1000) {
   if (trimmed.length > maxLength) {
     trimmed = trimmed.slice(0, maxLength) + '...';
   }
+
   const DOMPurify = window.DOMPurify;
-  const safe = DOMPurify.sanitize(trimmed, {
+  return DOMPurify.sanitize(trimmed, {
     FORBID_ATTR: ['onerror', 'onclick', 'onload'],
     FORBID_TAGS: ['svg', 'iframe']
   });
-
-  return safe;
 }
-
-/**
- * 清理并检测 card
- * @param {object} card
- * @param {string[]} fields
- * @returns {object} { sanitizedCard, isValid }
- */
-export function sanitizeCard(card, fields = ['Title', 'Quote', 'Detail']) {
-  if (typeof card !== 'object' || card === null) {
-    console.warn('sanitizeCard received non-object:', card);
-    return { sanitizedCard: {}, isValid: false };
-  }
-
-  const sanitizedCard = { ...card };
-  let isValid = true;
-
-  fields.forEach(field => {
-    if (field in card) {
-      const raw = String(card[field] ?? '');
-
-      // 检测原始内容中是否有危险标签或属性
-      const hasForbiddenTag = /<(script|img|iframe|svg)[^>]*>/i.test(raw);
-      const hasForbiddenAttr = /onerror=|onclick=|onload=/i.test(raw);
-
-      if (hasForbiddenTag || hasForbiddenAttr) {
-        console.warn(`Blocked card due to forbidden content in ${field}:`, raw);
-        isValid = false;
-      }
-
-      // 无论是否有效，都用 DOMPurify 清理（防止直接暴露原始内容）
-      sanitizedCard[field] = sanitizeField(raw);
-    }
-  });
-
-  return { sanitizedCard, isValid };
-}
-
 
 // Export themes for external use
 export { themes };
