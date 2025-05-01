@@ -1247,7 +1247,7 @@ export function sanitizeField(input, maxLength = 1000) {
  * @param {string[]} fields
  * @returns {object} { sanitizedCard, isValid }
  */
-export function sanitizeAndValidateCard(card, fields = ['Title', 'Quote', 'Detail']) {
+export function sanitizeCard(card, fields = ['Title', 'Quote', 'Detail']) {
   if (typeof card !== 'object' || card === null) {
     console.warn('sanitizeCard received non-object:', card);
     return { sanitizedCard: {}, isValid: false };
