@@ -1221,9 +1221,10 @@ function isSafeString(value) {
  * @returns {boolean}
  */
 function hasDangerousContent(raw) {
-  const DOMPurify = window.DOMPurify;
-  const clean = DOMPurify.sanitize(raw);
-  return clean !== raw;
+  const forbiddenTagRegex = /<(script|iframe|svg|img)[^>]*>/i;
+  const forbiddenAttrRegex = /onerror\s*=|onclick\s*=|onload\s*=/i;
+
+  return forbiddenTagRegex.test(raw) || forbiddenAttrRegex.test(raw);
 }
 
 /**
@@ -1234,7 +1235,7 @@ function hasDangerousContent(raw) {
  */
 export function sanitizeAndValidateCard(card, fields = ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']) {
   if (typeof card !== 'object' || card === null) {
-    console.warn('sanitizeAndValidateCard received non-object:', card);
+    console.warn('sanitizeCard received non-object:', card);
     return { sanitizedCard: {}, isValid: false };
   }
 
@@ -1245,7 +1246,6 @@ export function sanitizeAndValidateCard(card, fields = ['Theme', 'Font', 'Title'
     if (field in card) {
       const raw = String(card[field] ?? '');
 
-      // 检测：如果 sanitize 后和原始不同，说明原始有危险
       if (hasDangerousContent(raw)) {
         console.warn(`⚠️ Blocked card due to dangerous content in ${field}:`, raw);
         isValid = false;
