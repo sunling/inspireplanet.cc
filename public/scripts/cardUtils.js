@@ -1259,8 +1259,9 @@ export function sanitizeCard(card, fields = ['Title', 'Quote', 'Detail']) {
   fields.forEach(field => {
     if (field in card) {
       const raw = String(card[field] ?? '');
-      // 检测是否包含被禁止的标签或属性
-      const hasForbiddenTag = /<(img|iframe|svg)[^>]*>/i.test(raw);
+
+      // 检测原始内容中是否有危险标签或属性
+      const hasForbiddenTag = /<(script|img|iframe|svg)[^>]*>/i.test(raw);
       const hasForbiddenAttr = /onerror=|onclick=|onload=/i.test(raw);
 
       if (hasForbiddenTag || hasForbiddenAttr) {
@@ -1268,6 +1269,7 @@ export function sanitizeCard(card, fields = ['Title', 'Quote', 'Detail']) {
         isValid = false;
       }
 
+      // 无论是否有效，都用 DOMPurify 清理（防止直接暴露原始内容）
       sanitizedCard[field] = sanitizeField(raw);
     }
   });
