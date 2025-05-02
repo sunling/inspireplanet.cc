@@ -540,6 +540,7 @@
       onUploadBg,
       bindCustomFileUpload,
       getRandomItem,
+      sanitizeAndValidateCard,
       themes
     } from './scripts/cardUtils.js';
 
@@ -663,7 +664,9 @@
         container.innerHTML = '';
 
         // Filter valid cards and limit to 20
-        const validCards = cards.filter(card => card && card.Title && card.Quote);
+        const validCards = cards.filter(card => card && card.Title && card.Quote).map(card => sanitizeAndValidateCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
+          .filter(result => result.isValid)
+          .map(result => result.sanitizedCard);
         const recentCards = validCards.slice(0, 20);
 
         // Render each card

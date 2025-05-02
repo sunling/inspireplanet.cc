@@ -418,55 +418,6 @@ export async function fetchAndRenderAllCards(containerId) {
 }
 
 /**
- * Load and render latest cards to a carousel
- * @param {string} containerId - ID of the container element
- * @param {number} limit - Maximum number of cards to display
- * @returns {Promise<void>}
- */
-export async function loadAndRenderLatestCards(containerId = 'latest-cards', limit = 8) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  // Show loading indicator
-  container.innerHTML = '<div class="loading-indicator">加载中...</div>';
-
-  try {
-    // Get cards from Airtable
-    const cards = await fetchAirtableCards();
-
-    if (!cards || cards.length === 0) {
-      container.innerHTML = '<div class="loading-indicator">暂无卡片数据</div>';
-      return;
-    }
-
-    // Clear loading indicator
-    container.innerHTML = '';
-
-    // Filter valid cards and limit to the specified number
-    const validCards = cards.filter(card => card && card.Title && card.Quote)
-      .map(card => sanitizeAndValidateCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
-      .filter(result => result.isValid)
-      .map(result => result.sanitizedCard);
-
-    const recentCards = validCards.slice(0, limit);
-
-    // Render each card
-    recentCards.forEach((card, index) => {
-      const cardElement = renderCarouselCard(card, index);
-      container.appendChild(cardElement);
-    });
-
-    // Initialize or update Swiper if it exists in the global scope
-    if (typeof initOrUpdateSwiper === 'function') {
-      initOrUpdateSwiper();
-    }
-  } catch (error) {
-    console.error('加载最新卡片失败:', error);
-    container.innerHTML = '<div class="loading-indicator">加载失败，请稍后再试</div>';
-  }
-}
-
-/**
  * Get a random item from an array
  * @param {Array} array - Array to get random item from
  * @returns {*} - Random item from array
