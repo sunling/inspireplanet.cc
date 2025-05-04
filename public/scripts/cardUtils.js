@@ -299,7 +299,7 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
     // Add View Details button
     const viewDetailsBtn = document.createElement('button');
     viewDetailsBtn.className = 'view-details-btn';
-    viewDetailsBtn.textContent = '查看详情';
+    viewDetailsBtn.textContent = '查看卡片详情';
     viewDetailsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       window.location.href = `card-detail.html?id=${cardData.id}`;
