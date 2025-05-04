@@ -162,6 +162,41 @@
       max-width: 600px;
       margin: 0 auto;
     }
+    
+    .search-container {
+      margin: 20px auto 10px;
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 12px 20px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 30px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+      outline: none;
+    }
+    
+    .search-input:focus {
+      border-color: #4a6fa5;
+      box-shadow: 0 2px 15px rgba(74, 111, 165, 0.2);
+    }
+    
+    .no-results {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-size: 18px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script type="module">
@@ -176,12 +211,111 @@
       onUploadBg,
       bindCustomFileUpload,
       fetchAndRenderAllCards,
+      filterCardsBySearchTerm,
+      appendCardToContainer,
       themes
     } from './scripts/cardUtils.js';
+    
+    // 存储所有卡片数据
+    let allCards = [];
+    
     // 页面加载完成后执行
     document.addEventListener('DOMContentLoaded', function () {
-      fetchAndRenderAllCards('cards');
+      // 初始化搜索功能
+      initSearch();
+      
+      // 使用自定义渲染函数，添加点击跳转到详情页的功能
+      fetchAndRenderAllCards('cards', true);
     });
+    
+    // 初始化搜索功能
+    async function initSearch() {
+      const searchInput = document.getElementById('search-input');
+      if (!searchInput) return;
+      
+      // 获取所有卡片数据
+      try {
+        const cards = await fetchAirtableCards();
+        if (Array.isArray(cards) && cards.length > 0) {
+          allCards = cards;
+        }
+      } catch (error) {
+        console.error('获取卡片数据失败:', error);
+      }
+      
+      // 添加搜索事件监听器
+      searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.trim();
+        handleSearch(searchTerm);
+      });
+    }
+    
+    // 处理搜索
+    function handleSearch(searchTerm) {
+      const container = document.getElementById('cards');
+      if (!container) return;
+      
+      // 如果搜索词为空，显示所有卡片
+      if (!searchTerm) {
+        fetchAndRenderAllCards('cards', true);
+        return;
+      }
+      
+      // 过滤卡片
+      const filteredCards = filterCardsBySearchTerm(allCards, searchTerm);
+      
+      // 清空容器
+      container.innerHTML = '';
+      
+      // 如果没有匹配结果，显示提示信息
+      if (filteredCards.length === 0) {
+        container.innerHTML = '<div class="no-results">没有找到匹配的卡片</div>';
+        return;
+      }
+      
+      // 按日期分组
+      const groupedCards = {};
+      filteredCards.forEach(card => {
+        if (!card.Created) return;
+        
+        const date = new Date(card.Created);
+        const dateKey = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+        
+        if (!groupedCards[dateKey]) {
+          groupedCards[dateKey] = [];
+        }
+        
+        groupedCards[dateKey].push(card);
+      });
+      
+      // 按日期排序（降序）
+      const sortedDates = Object.keys(groupedCards).sort((a, b) => {
+        return new Date(b.replace(/年|月|日/g, '/')) - new Date(a.replace(/年|月|日/g, '/'));
+      });
+      
+      // 渲染卡片
+      sortedDates.forEach(date => {
+        // 创建日期标题
+        const dateHeading = document.createElement('h2');
+        dateHeading.className = 'date-heading';
+        dateHeading.textContent = date;
+        container.appendChild(dateHeading);
+        
+        // 创建卡片容器
+        const dateContainer = document.createElement('div');
+        dateContainer.className = 'date-cards-container';
+        dateContainer.id = `date-container-${date.replace(/[年月日]/g, '-')}`;
+        container.appendChild(dateContainer);
+        
+        // 渲染卡片
+        groupedCards[date].forEach(card => {
+          appendCardToContainer(card, dateContainer.id, {
+            imgPrefix: '../',
+            makeClickable: true
+          });
+        });
+      });
+    }
   </script>
 </head>
 
@@ -189,6 +323,9 @@
   <div class="header">
     <h1>灵感长河 ✨ 我们的卡片</h1>
     <p><a href="weekly-cards.html" style="color: #4a6fa5; text-decoration: none; font-weight: bold;">查看每周会议卡片 →</a></p>
+    <div class="search-container">
+      <input type="text" id="search-input" placeholder="搜索卡片..." class="search-input">
+    </div>
   </div>
 
   <div class="cards-container" id="cards">

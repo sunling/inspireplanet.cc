@@ -203,9 +203,9 @@
         <div class="bg" id="bg"></div>
         <div class="overlay"></div>
         <div class="content" id="content">
-          <div class="main-title" id="title">我想放空</div>
-          <div class="sub-title" id="subtitle">可连放空也需要练习</div>
-          <div class="keywords" id="keywords">tag1 / tag2 / tag3</div>
+          <div class="main-title" id="title">标题</div>
+          <!-- <div class="sub-title" id="subtitle">可连放空也需要练习</div> -->
+          <div class="keywords" id="keywords">关键词1 / 关键词2 / 关键词3</div>
         </div>
       </div>
     </div>
@@ -244,13 +244,13 @@
         customBgImage = uploadImg;
       }
       const main = document.getElementById("main-title").value || "主标题";
-      const sub = document.getElementById("sub-title").value || "副标题";
+      // const sub = document.getElementById("sub-title").value || "副标题";
       const tags = document.getElementById("tags").value || 'tag1 tag2 tag3';
       const selectedBg = document.getElementById("image-select").value;
       const selectedFont = document.getElementById("choose-font").value;
 
       document.getElementById("title").innerText = main;
-      document.getElementById("subtitle").innerText = sub;
+      // document.getElementById("subtitle").innerText = sub;
       document.getElementById("keywords").innerText = tags.split(" ").join(" / ");
       const bgImage = customBgImage || selectedBg;
       document.getElementById("bg").style.backgroundImage = `url('${bgImage}')`;

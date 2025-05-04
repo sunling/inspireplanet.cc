@@ -239,6 +239,7 @@ export function renderCarouselCard(cardData, index) {
  * @param {string} options.imgPrefix - Prefix for image paths
  * @param {boolean} options.addDownloadBtn - Whether to add a download button
  * @param {string} options.cardIdPrefix - Prefix for card ID
+ * @param {boolean} options.makeClickable - Whether to make the card clickable to detail page
  * @returns {HTMLElement|null} - The appended card element or null if container not found
  */
 export function appendCardToContainer(cardData, containerId, options = {}) {
@@ -247,7 +248,8 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
   const {
     imgPrefix = '',
     addDownloadBtn = false,
-    cardIdPrefix = ''
+    cardIdPrefix = '',
+    makeClickable = false
   } = options;
 
   // Generate a unique card ID
@@ -286,6 +288,14 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
       downloadCard(`#${uniqueCardId}`);
     };
     cardWrapper.appendChild(downloadBtn);
+  }
+
+  // Make card clickable to detail page if requested
+  if (makeClickable && cardData.id) {
+    cardElement.style.cursor = 'pointer';
+    cardElement.addEventListener('click', () => {
+      window.location.href = `card-detail.html?id=${cardData.id}`;
+    });
   }
 
   // Append to container
@@ -353,9 +363,10 @@ export function groupCardsByEpisode(cards) {
 /**
  * Load and render all cards to a container, grouped by date
  * @param {string} containerId - ID of the container element
+ * @param {boolean} makeClickable - Whether to make cards clickable to detail page
  * @returns {Promise<void>}
  */
-export async function fetchAndRenderAllCards(containerId) {
+export async function fetchAndRenderAllCards(containerId, makeClickable = false) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -408,7 +419,10 @@ export async function fetchAndRenderAllCards(containerId) {
 
       // Render cards for this date, with validation
       groupedCards[date].forEach(card => {
-        appendCardToContainer(card, dateContainer.id, { imgPrefix: '../' });
+        appendCardToContainer(card, dateContainer.id, { 
+          imgPrefix: '../',
+          makeClickable: makeClickable 
+        });
       });
     });
   } catch (error) {
@@ -1213,6 +1227,28 @@ export function sanitizeField(input, maxLength = 1000) {
   return DOMPurify.sanitize(trimmed, {
     FORBID_ATTR: ['onerror', 'onclick', 'onload'],
     FORBID_TAGS: ['svg', 'iframe']
+  });
+}
+
+/**
+ * Filter cards based on search term
+ * @param {Array} cards - Array of card data
+ * @param {string} searchTerm - Search term to filter by
+ * @returns {Array} - Filtered array of cards
+ */
+export function filterCardsBySearchTerm(cards, searchTerm) {
+  if (!searchTerm || searchTerm.trim() === '') {
+    return cards;
+  }
+
+  const term = searchTerm.trim().toLowerCase();
+  
+  return cards.filter(card => {
+    const title = (card.Title || '').toLowerCase();
+    const quote = (card.Quote || '').toLowerCase();
+    const detail = (card.Detail || '').toLowerCase();
+    
+    return title.includes(term) || quote.includes(term) || detail.includes(term);
   });
 }
 
