@@ -3,7 +3,8 @@
 import {
   fetchAirtableCards,
   renderCard,
-  themes
+  themes,
+  getBaseUrl
 } from './cardUtils.js';
 
 // Get the card ID from the URL parameter
@@ -197,39 +198,167 @@ function downloadCard() {
     });
 }
 
-// Handle comment form submission (placeholder functionality)
+// Format date for comments
+function formatCommentDate(dateString) {
+  const date = new Date(dateString);
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+// Fetch comments for the current card
+async function fetchComments(cardId) {
+  try {
+    const response = await fetch(`${getBaseUrl()}/.netlify/functions/commentsHandler?cardId=${encodeURIComponent(cardId)}`);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.comments || [];
+  } catch (error) {
+    console.error('获取评论失败:', error);
+    return [];
+  }
+}
+
+// Render comments in the comments section
+function renderComments(comments) {
+  const commentsSection = document.querySelector('.comments-section');
+  const noCommentsElement = document.querySelector('.no-comments');
+  
+  if (!commentsSection) return;
+  
+  // Remove the "no comments" message if there are comments
+  if (comments.length > 0 && noCommentsElement) {
+    noCommentsElement.remove();
+  }
+  
+  // Create a container for comments if it doesn't exist
+  let commentsContainer = document.querySelector('.comments-container');
+  if (!commentsContainer) {
+    commentsContainer = document.createElement('div');
+    commentsContainer.className = 'comments-container';
+    
+    // Insert before the comment form
+    const commentForm = document.querySelector('.comment-form');
+    if (commentForm) {
+      commentsSection.insertBefore(commentsContainer, commentForm);
+    } else {
+      commentsSection.appendChild(commentsContainer);
+    }
+  }
+  
+  // Clear existing comments
+  commentsContainer.innerHTML = '';
+  
+  // Add each comment
+  comments.forEach(comment => {
+    const commentElement = document.createElement('div');
+    commentElement.className = 'comment';
+    commentElement.innerHTML = `
+      <div class="comment-header">
+        <span class="comment-author">${sanitizeContent(comment.name)}</span>
+        <span class="comment-date">${formatCommentDate(comment.created)}</span>
+      </div>
+      <div class="comment-body">
+        ${sanitizeContent(comment.comment).replace(/\n/g, '<br>')}
+      </div>
+    `;
+    commentsContainer.appendChild(commentElement);
+  });
+  
+  // Show "no comments" message if there are no comments
+  if (comments.length === 0 && !noCommentsElement) {
+    const noComments = document.createElement('div');
+    noComments.className = 'no-comments';
+    noComments.textContent = '暂无评论';
+    commentsSection.insertBefore(noComments, commentsContainer);
+  }
+}
+
+// Handle comment form submission
 function setupCommentForm() {
   const submitBtn = document.querySelector('.submit-btn');
   const nameInput = document.getElementById('commenter-name');
   const contentInput = document.getElementById('comment-content');
   
   if (submitBtn && nameInput && contentInput) {
-    submitBtn.addEventListener('click', () => {
+    submitBtn.addEventListener('click', async () => {
       const name = nameInput.value.trim();
-      const content = contentInput.value.trim();
+      const comment = contentInput.value.trim();
+      const cardId = getCardIdFromUrl();
+      
+      if (!cardId) {
+        alert('无法获取卡片ID，请刷新页面重试');
+        return;
+      }
       
       if (!name) {
         alert('请输入您的名字');
         return;
       }
       
-      if (!content) {
+      if (!comment) {
         alert('请输入评论内容');
         return;
       }
       
-      // For now, just show an alert since we don't have backend storage
-      alert('评论功能即将上线，敬请期待！');
+      // Disable button and show loading state
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = '提交中...';
+      submitBtn.disabled = true;
       
-      // Clear the form
-      nameInput.value = '';
-      contentInput.value = '';
+      try {
+        // Submit the comment
+        const response = await fetch(`${getBaseUrl()}/.netlify/functions/commentsHandler`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            cardId,
+            name,
+            comment
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          // Clear the form
+          nameInput.value = '';
+          contentInput.value = '';
+          
+          // Refresh comments
+          const comments = await fetchComments(cardId);
+          renderComments(comments);
+          
+          // Show success message
+          alert('评论提交成功！');
+        } else {
+          alert(`评论提交失败: ${result.error || '未知错误'}`);
+        }
+      } catch (error) {
+        console.error('提交评论失败:', error);
+        alert('评论提交失败，请稍后再试');
+      } finally {
+        // Restore button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
     });
   }
 }
 
 // Initialize the page
-document.addEventListener('DOMContentLoaded', () => {
-  renderCardDetail();
+document.addEventListener('DOMContentLoaded', async () => {
+  await renderCardDetail();
   setupCommentForm();
+  
+  // Fetch and render comments for the current card
+  const cardId = getCardIdFromUrl();
+  if (cardId) {
+    const comments = await fetchComments(cardId);
+    renderComments(comments);
+  }
 });
