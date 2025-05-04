@@ -290,11 +290,84 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
     cardWrapper.appendChild(downloadBtn);
   }
 
-  // Make card clickable to detail page if requested
-  if (makeClickable && cardData.id) {
-    cardElement.style.cursor = 'pointer';
-    cardElement.addEventListener('click', () => {
+  // Create hover overlay with View Details button and Comment form
+  if (cardData.id) {
+    const hoverOverlay = document.createElement('div');
+    hoverOverlay.className = 'card-hover-overlay';
+    hoverOverlay.id = `overlay-${uniqueCardId}`;
+    
+    // Add View Details button
+    const viewDetailsBtn = document.createElement('button');
+    viewDetailsBtn.className = 'view-details-btn';
+    viewDetailsBtn.textContent = '查看详情';
+    viewDetailsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       window.location.href = `card-detail.html?id=${cardData.id}`;
+    });
+    hoverOverlay.appendChild(viewDetailsBtn);
+    
+    // Add Comment form
+    const commentFormContainer = document.createElement('div');
+    commentFormContainer.className = 'comment-form-container';
+    
+    const commentFormTitle = document.createElement('div');
+    commentFormTitle.className = 'comment-form-title';
+    commentFormTitle.textContent = '添加评论';
+    commentFormContainer.appendChild(commentFormTitle);
+    
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'comment-input';
+    nameInput.placeholder = '您的名字';
+    nameInput.id = `name-${uniqueCardId}`;
+    commentFormContainer.appendChild(nameInput);
+    
+    const commentTextarea = document.createElement('textarea');
+    commentTextarea.className = 'comment-textarea';
+    commentTextarea.placeholder = '您的评论';
+    commentTextarea.id = `comment-${uniqueCardId}`;
+    commentFormContainer.appendChild(commentTextarea);
+    
+    const submitBtn = document.createElement('button');
+    submitBtn.className = 'submit-comment-btn';
+    submitBtn.textContent = '提交评论';
+    submitBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      submitComment(cardData.id, uniqueCardId);
+    });
+    commentFormContainer.appendChild(submitBtn);
+    
+    // Add success message container
+    const successMsg = document.createElement('div');
+    successMsg.className = 'comment-success';
+    successMsg.id = `success-${uniqueCardId}`;
+    successMsg.textContent = '评论提交成功！';
+    commentFormContainer.appendChild(successMsg);
+    
+    hoverOverlay.appendChild(commentFormContainer);
+    
+    // For mobile: add close button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'mobile-close-btn';
+    closeBtn.innerHTML = '×';
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hoverOverlay.classList.remove('card-mobile-expand');
+    });
+    hoverOverlay.appendChild(closeBtn);
+    
+    cardWrapper.appendChild(hoverOverlay);
+    
+    // For mobile: make card tap-to-expand instead of hover
+    cardElement.addEventListener('click', (e) => {
+      // Check if we're on mobile
+      if (window.innerWidth <= 768) {
+        e.preventDefault();
+        e.stopPropagation();
+        hoverOverlay.classList.add('card-mobile-expand');
+      } else if (makeClickable) {
+        window.location.href = `card-detail.html?id=${cardData.id}`;
+      }
     });
   }
 
@@ -302,6 +375,133 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
   container.appendChild(cardWrapper);
 
   return cardElement;
+}
+
+/**
+ * Submit a comment for a card
+ * @param {string} cardId - The ID of the card
+ * @param {string} uniqueCardId - The unique ID of the card element
+ */
+async function submitComment(cardId, uniqueCardId) {
+  const nameInput = document.getElementById(`name-${uniqueCardId}`);
+  const commentTextarea = document.getElementById(`comment-${uniqueCardId}`);
+  const successMsg = document.getElementById(`success-${uniqueCardId}`);
+  const submitBtn = nameInput.nextElementSibling.nextElementSibling;
+  const hoverOverlay = document.getElementById(`overlay-${uniqueCardId}`);
+  
+  if (!nameInput || !commentTextarea || !successMsg) return;
+  
+  const name = nameInput.value.trim();
+  const comment = commentTextarea.value.trim();
+  
+  // Validate inputs
+  if (!name) {
+    alert('请输入您的名字');
+    return;
+  }
+  
+  if (!comment) {
+    alert('请输入评论内容');
+    return;
+  }
+  
+  // Sanitize inputs
+  const sanitizedName = sanitizeInput(name, 100);
+  const sanitizedComment = sanitizeInput(comment, 500);
+  
+  // Show loading state
+  const originalBtnText = submitBtn.textContent;
+  submitBtn.textContent = '提交中...';
+  submitBtn.disabled = true;
+  
+  try {
+    // Submit the comment
+    const response = await fetch(`${getBaseUrl()}/.netlify/functions/commentsHandler`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        cardId,
+        name: sanitizedName,
+        comment: sanitizedComment
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok && result.success) {
+      // Clear the form
+      nameInput.value = '';
+      commentTextarea.value = '';
+      
+      // Show success message
+      successMsg.style.display = 'block';
+      
+      // Create and display the temporary comment preview
+      const commentPreview = document.createElement('div');
+      commentPreview.className = 'comment-preview';
+      commentPreview.innerHTML = `
+        <div class="comment-preview-content">
+          <strong>${sanitizedName}</strong>: ${sanitizedComment}
+        </div>
+      `;
+      
+      // Add the comment preview to the card container
+      const cardContainer = hoverOverlay.parentElement;
+      cardContainer.appendChild(commentPreview);
+      
+      // Hide the hover overlay
+      if (window.innerWidth <= 768) {
+        hoverOverlay.classList.remove('card-mobile-expand');
+      }
+      
+      // Remove the comment preview and success message after a delay
+      setTimeout(() => {
+        successMsg.style.display = 'none';
+        if (cardContainer.contains(commentPreview)) {
+          cardContainer.removeChild(commentPreview);
+        }
+      }, 5000);
+    } else {
+      alert(`评论提交失败: ${result.error || '未知错误'}`);
+    }
+  } catch (error) {
+    console.error('提交评论失败:', error);
+    alert('评论提交失败，请稍后再试');
+  } finally {
+    // Restore button state
+    submitBtn.textContent = originalBtnText;
+    submitBtn.disabled = false;
+  }
+}
+
+/**
+ * Sanitize user input to prevent XSS attacks
+ * @param {string} input - The input string to sanitize
+ * @param {number} maxLength - Maximum allowed length
+ * @returns {string} - Sanitized string
+ */
+function sanitizeInput(input, maxLength) {
+  if (!input) return '';
+  
+  // Trim leading/trailing spaces
+  let sanitized = input.trim();
+  
+  // Limit length
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength);
+  }
+  
+  // Escape HTML special characters
+  sanitized = sanitized
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+  
+  return sanitized;
 }
 
 /**
