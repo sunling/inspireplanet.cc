@@ -163,13 +163,30 @@
       margin: 0 auto;
     }
     
-    .search-container {
+    .filters-container {
       margin: 20px auto 10px;
       width: 100%;
-      max-width: 500px;
+      max-width: 1000px;
+      display: flex;
+      flex-direction: row;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
     
-    .search-input {
+    @media (max-width: 768px) {
+      .filters-container {
+        flex-direction: column;
+      }
+    }
+    
+    .filter-item {
+      flex: 1;
+      min-width: 200px;
+      margin-right: 5px;
+    }
+    
+    .search-input, .filter-select {
       width: 100%;
       padding: 12px 20px;
       font-size: 16px;
@@ -178,11 +195,21 @@
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
       transition: all 0.3s ease;
       outline: none;
+      background-color: white;
     }
     
-    .search-input:focus {
+    .search-input:focus, .filter-select:focus {
       border-color: #4a6fa5;
       box-shadow: 0 2px 15px rgba(74, 111, 165, 0.2);
+    }
+    
+    .filter-label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #666;
+      text-align: left;
+      padding-left: 10px;
     }
     
     .no-results {
@@ -213,6 +240,7 @@
       fetchAndRenderAllCards,
       filterCardsBySearchTerm,
       appendCardToContainer,
+      formatDateShort,
       themes
     } from './scripts/cardUtils.js';
     
@@ -228,41 +256,130 @@
       fetchAndRenderAllCards('cards', true);
     });
     
-    // 初始化搜索功能
+    // 初始化搜索和过滤功能
     async function initSearch() {
       const searchInput = document.getElementById('search-input');
-      if (!searchInput) return;
+      const dateFilter = document.getElementById('date-filter');
+      const creatorFilter = document.getElementById('creator-filter');
+      
+      if (!searchInput || !dateFilter || !creatorFilter) return;
       
       // 获取所有卡片数据
       try {
         const cards = await fetchAirtableCards();
         if (Array.isArray(cards) && cards.length > 0) {
           allCards = cards;
+          
+          // 填充日期过滤器
+          populateDateFilter(cards, dateFilter);
+          
+          // 填充创建者过滤器
+          populateCreatorFilter(cards, creatorFilter);
         }
       } catch (error) {
         console.error('获取卡片数据失败:', error);
       }
       
       // 添加搜索事件监听器
-      searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.trim();
-        handleSearch(searchTerm);
+      searchInput.addEventListener('input', applyFilters);
+      
+      // 添加过滤器事件监听器
+      dateFilter.addEventListener('change', applyFilters);
+      creatorFilter.addEventListener('change', applyFilters);
+    }
+    
+    // 填充日期过滤器
+    function populateDateFilter(cards, selectElement) {
+      // 获取所有唯一的日期
+      const dates = new Set();
+      
+      cards.forEach(card => {
+        if (card.Created) {
+          const date = formatDateShort(card.Created);
+          dates.add(date);
+        }
+      });
+      
+      // 清空选择器
+      selectElement.innerHTML = '<option value="">所有日期</option>';
+      
+      // 按日期降序排序
+      const sortedDates = Array.from(dates).sort((a, b) => {
+        return new Date(b.replace(/年|月|日/g, '/')) - new Date(a.replace(/年|月|日/g, '/'));
+      });
+      
+      // 添加选项
+      sortedDates.forEach(date => {
+        const option = document.createElement('option');
+        option.value = date;
+        option.textContent = date;
+        selectElement.appendChild(option);
       });
     }
     
-    // 处理搜索
-    function handleSearch(searchTerm) {
+    // 填充创建者过滤器
+    function populateCreatorFilter(cards, selectElement) {
+      // 获取所有唯一的创建者
+      const creators = new Set();
+      
+      cards.forEach(card => {
+        if (card.Creator) {
+          creators.add(card.Creator);
+        }
+      });
+      
+      // 清空选择器
+      selectElement.innerHTML = '<option value="">所有创建者</option>';
+      
+      // 按字母顺序排序
+      const sortedCreators = Array.from(creators).sort();
+      
+      // 添加选项
+      sortedCreators.forEach(creator => {
+        const option = document.createElement('option');
+        option.value = creator;
+        option.textContent = creator;
+        selectElement.appendChild(option);
+      });
+    }
+    
+    // 应用所有过滤器
+    function applyFilters() {
+      const searchTerm = document.getElementById('search-input').value.trim();
+      const selectedDate = document.getElementById('date-filter').value;
+      const selectedCreator = document.getElementById('creator-filter').value;
+      
       const container = document.getElementById('cards');
       if (!container) return;
       
-      // 如果搜索词为空，显示所有卡片
-      if (!searchTerm) {
+      // 如果所有过滤器都为空，显示所有卡片
+      if (!searchTerm && !selectedDate && !selectedCreator) {
         fetchAndRenderAllCards('cards', true);
         return;
       }
       
-      // 过滤卡片
-      const filteredCards = filterCardsBySearchTerm(allCards, searchTerm);
+      // 应用所有过滤器
+      let filteredCards = [...allCards];
+      
+      // 应用搜索过滤
+      if (searchTerm) {
+        filteredCards = filterCardsBySearchTerm(filteredCards, searchTerm);
+      }
+      
+      // 应用日期过滤
+      if (selectedDate) {
+        filteredCards = filteredCards.filter(card => {
+          if (!card.Created) return false;
+          return formatDateShort(card.Created) === selectedDate;
+        });
+      }
+      
+      // 应用创建者过滤
+      if (selectedCreator) {
+        filteredCards = filteredCards.filter(card => {
+          return card.Creator && card.Creator.trim() === selectedCreator.trim()
+        });
+      }
       
       // 清空容器
       container.innerHTML = '';
@@ -323,8 +440,23 @@
   <div class="header">
     <h1>灵感长河 ✨ 我们的卡片</h1>
     <p><a href="weekly-cards.html" style="color: #4a6fa5; text-decoration: none; font-weight: bold;">查看每周会议卡片 →</a></p>
-    <div class="search-container">
-      <input type="text" id="search-input" placeholder="搜索卡片..." class="search-input">
+    <div class="filters-container">
+      <div class="filter-item">
+        <label for="creator-filter" class="filter-label">按创建者筛选</label>
+        <select id="creator-filter" class="filter-select">
+          <option value="">所有创建者</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label for="date-filter" class="filter-label">按日期筛选</label>
+        <select id="date-filter" class="filter-select">
+          <option value="">所有日期</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label for="search-input" class="filter-label">搜索</label>
+        <input type="text" id="search-input" placeholder="搜索标题、金句、内容..." class="search-input">
+      </div>
     </div>
   </div>
 
