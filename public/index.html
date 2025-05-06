@@ -672,6 +672,10 @@
         // Render each card
         recentCards.forEach((card, index) => {
           const cardElement = renderCarouselCard(card, index);
+          cardElement.style.cursor = 'pointer';
+          cardElement.addEventListener('click', () => {
+            window.location.href = `card-detail.html?id=${card.id}`;
+          });
           container.appendChild(cardElement);
         });
 
