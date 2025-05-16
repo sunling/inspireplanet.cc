@@ -339,7 +339,7 @@ function setupCommentForm() {
 }
 
 function fetchCardById(cardId) {
-  return fetch(`${getBaseUrl()}/.netlify/functions/fetchCards?id=${cardId}`)
+  return fetch(`${getBaseUrl()}/.netlify/functions/cardsHandler?id=${cardId}`)
     .then(response => response.json())
     .then(data => data.records[0]);
 }
