@@ -124,7 +124,7 @@ export function renderCard(cardData, options = {}) {
   }
 
   let theme = cardData.theme;
-  if(options.mode === 'editor') {
+  if(typeof theme === 'string') {
     theme = themes[cardData.theme];
   }
 
@@ -585,7 +585,7 @@ export async function fetchAndRenderWeeklyCards(containerId) {
     container.innerHTML = '';
 
     // 
-    const weeklyCards = cards.map((card) => { return { ...card, Creator: `启发星球${card.Episode}+AI总结` }; });
+    const weeklyCards = cards.map((card) => { return { ...card, Creator: `启发星球${card.Episode}` }; });
     // Group cards by episode
     const groupedCards = groupCardsByEpisode(weeklyCards);
 
