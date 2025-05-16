@@ -1,7 +1,6 @@
 // cardDetail.js - Handles dynamic loading and functionality for the card detail page
 
 import {
-  fetchAirtableCards,
   renderCard,
   themes,
   getBaseUrl
@@ -16,7 +15,7 @@ function getCardIdFromUrl() {
 // Sanitize and validate data
 function sanitizeContent(content) {
   if (!content) return '';
-  
+
   // Use DOMPurify to sanitize content
   const sanitized = DOMPurify.sanitize(content);
   return sanitized;
@@ -26,39 +25,28 @@ function sanitizeContent(content) {
 async function renderCardDetail() {
   const cardContainer = document.getElementById('card-container');
   const downloadBtn = document.getElementById('download-btn');
-  
+
   if (!cardContainer) return;
-  
+
   try {
     const cardId = getCardIdFromUrl();
-    
+
     if (!cardId) {
       cardContainer.innerHTML = '<div class="error-message">未找到卡片ID，请返回卡片列表页面重试。</div>';
       downloadBtn.style.display = 'none';
       return;
     }
-    
+
     // Show loading indicator
     cardContainer.innerHTML = '<div class="loading">加载中...</div>';
-    
-    // Fetch all cards from Airtable
-    const cards = await fetchAirtableCards();
-    
-    if (!Array.isArray(cards) || cards.length === 0) {
-      cardContainer.innerHTML = '<div class="error-message">加载卡片数据失败，请稍后再试。</div>';
-      downloadBtn.style.display = 'none';
-      return;
-    }
-    
-    // Find the card with the matching ID
-    const card = cards.find(c => c.id === cardId);
-    
+
+    const card = await fetchCardById(cardId);
     if (!card) {
       cardContainer.innerHTML = '<div class="error-message">未找到该卡片，可能已被删除或ID无效。</div>';
       downloadBtn.style.display = 'none';
       return;
     }
-    
+
     // Prepare card data for rendering
     const normalizedCardData = {
       title: sanitizeContent(card.Title) || "默认标题",
@@ -71,24 +59,24 @@ async function renderCardDetail() {
       customImage: card.Upload || "",
       created: card.Created
     };
-    
+
     // Clear container
     cardContainer.innerHTML = '';
-    
+
     // Create card element with a specific ID for downloading
-    const cardElement = renderCard(normalizedCardData, { 
-      mode: 'list', 
-      cardId: 'detail-card' 
+    const cardElement = renderCard(normalizedCardData, {
+      mode: 'list',
+      cardId: 'detail-card'
     });
-    
+
     // Append the card to the container
     cardContainer.appendChild(cardElement);
-    
+
     // Setup download button
     downloadBtn.addEventListener('click', () => {
       downloadCard();
     });
-    
+
   } catch (error) {
     console.error('加载卡片详情失败:', error);
     cardContainer.innerHTML = '<div class="error-message">加载失败，请稍后再试。</div>';
@@ -99,18 +87,18 @@ async function renderCardDetail() {
 // Download the card as an image using html2canvas
 function downloadCard() {
   const cardElement = document.getElementById('detail-card');
-  
+
   if (!cardElement) {
     console.warn('找不到卡片元素');
     return;
   }
-  
+
   // Change button text to indicate download in progress
   const downloadBtn = document.getElementById('download-btn');
   const originalText = downloadBtn.textContent;
   downloadBtn.textContent = '下载中...';
   downloadBtn.disabled = true;
-  
+
   // Create a sandbox container for clean capture
   const sandbox = document.createElement("div");
   sandbox.style.position = "fixed";
@@ -118,7 +106,7 @@ function downloadCard() {
   sandbox.style.top = "0";
   sandbox.style.zIndex = "-1";
   sandbox.style.background = "white";
-  
+
   // Clone the card for capturing
   const clone = cardElement.cloneNode(true);
   clone.style.margin = "0";
@@ -126,7 +114,7 @@ function downloadCard() {
   clone.style.boxSizing = "border-box";
   sandbox.appendChild(clone);
   document.body.appendChild(sandbox);
-  
+
   // Make sure all images are loaded
   const images = clone.querySelectorAll('img');
   const imagePromises = Array.from(images).map(img => {
@@ -135,22 +123,22 @@ function downloadCard() {
         resolve();
         return;
       }
-      
+
       const src = img.src;
       img.onload = () => resolve();
       img.onerror = () => {
         console.warn("图片加载失败:", src);
         resolve();
       };
-      
+
       // Force reload the src
       img.src = src;
-      
+
       // Timeout fallback
       setTimeout(resolve, 5000);
     });
   });
-  
+
   // When all images are loaded, capture the card
   Promise.all(imagePromises)
     .then(() => new Promise(resolve => setTimeout(resolve, 200))) // Small delay
@@ -172,7 +160,7 @@ function downloadCard() {
           link.click();
           document.body.removeChild(link);
           document.body.removeChild(sandbox);
-          
+
           // Restore button state
           downloadBtn.textContent = originalText;
           downloadBtn.disabled = false;
@@ -180,7 +168,7 @@ function downloadCard() {
       }).catch(err => {
         console.error("截图失败", err);
         document.body.removeChild(sandbox);
-        
+
         // Restore button state
         downloadBtn.textContent = originalText;
         downloadBtn.disabled = false;
@@ -190,7 +178,7 @@ function downloadCard() {
     .catch(error => {
       console.error("加载图片失败", error);
       document.body.removeChild(sandbox);
-      
+
       // Restore button state
       downloadBtn.textContent = originalText;
       downloadBtn.disabled = false;
@@ -208,11 +196,11 @@ function formatCommentDate(dateString) {
 async function fetchComments(cardId) {
   try {
     const response = await fetch(`${getBaseUrl()}/.netlify/functions/commentsHandler?cardId=${encodeURIComponent(cardId)}`);
-    
+
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return data.comments || [];
   } catch (error) {
@@ -225,20 +213,20 @@ async function fetchComments(cardId) {
 function renderComments(comments) {
   const commentsSection = document.querySelector('.comments-section');
   const noCommentsElement = document.querySelector('.no-comments');
-  
+
   if (!commentsSection) return;
-  
+
   // Remove the "no comments" message if there are comments
   if (comments.length > 0 && noCommentsElement) {
     noCommentsElement.remove();
   }
-  
+
   // Create a container for comments if it doesn't exist
   let commentsContainer = document.querySelector('.comments-container');
   if (!commentsContainer) {
     commentsContainer = document.createElement('div');
     commentsContainer.className = 'comments-container';
-    
+
     // Insert before the comment form
     const commentForm = document.querySelector('.comment-form');
     if (commentForm) {
@@ -247,10 +235,10 @@ function renderComments(comments) {
       commentsSection.appendChild(commentsContainer);
     }
   }
-  
+
   // Clear existing comments
   commentsContainer.innerHTML = '';
-  
+
   // Add each comment
   comments.forEach(comment => {
     const commentElement = document.createElement('div');
@@ -266,7 +254,7 @@ function renderComments(comments) {
     `;
     commentsContainer.appendChild(commentElement);
   });
-  
+
   // Show "no comments" message if there are no comments
   if (comments.length === 0 && !noCommentsElement) {
     const noComments = document.createElement('div');
@@ -281,33 +269,33 @@ function setupCommentForm() {
   const submitBtn = document.querySelector('.submit-btn');
   const nameInput = document.getElementById('commenter-name');
   const contentInput = document.getElementById('comment-content');
-  
+
   if (submitBtn && nameInput && contentInput) {
     submitBtn.addEventListener('click', async () => {
       const name = nameInput.value.trim();
       const comment = contentInput.value.trim();
       const cardId = getCardIdFromUrl();
-      
+
       if (!cardId) {
         alert('无法获取卡片ID，请刷新页面重试');
         return;
       }
-      
+
       if (!name) {
         alert('请输入您的名字');
         return;
       }
-      
+
       if (!comment) {
         alert('请输入评论内容');
         return;
       }
-      
+
       // Disable button and show loading state
       const originalText = submitBtn.textContent;
       submitBtn.textContent = '提交中...';
       submitBtn.disabled = true;
-      
+
       try {
         // Submit the comment
         const response = await fetch(`${getBaseUrl()}/.netlify/functions/commentsHandler`, {
@@ -321,18 +309,18 @@ function setupCommentForm() {
             comment
           })
         });
-        
+
         const result = await response.json();
-        
+
         if (response.ok && result.success) {
           // Clear the form
           nameInput.value = '';
           contentInput.value = '';
-          
+
           // Refresh comments
           const comments = await fetchComments(cardId);
           renderComments(comments);
-          
+
           // Show success message
           alert('评论提交成功！');
         } else {
@@ -350,11 +338,17 @@ function setupCommentForm() {
   }
 }
 
+function fetchCardById(cardId) {
+  return fetch(`${getBaseUrl()}/.netlify/functions/fetchCards?id=${cardId}`)
+    .then(response => response.json())
+    .then(data => data.records[0]);
+}
+
 // Initialize the page
 document.addEventListener('DOMContentLoaded', async () => {
   await renderCardDetail();
   setupCommentForm();
-  
+
   // Fetch and render comments for the current card
   const cardId = getCardIdFromUrl();
   if (cardId) {

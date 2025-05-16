@@ -1,13 +1,15 @@
 // netlify/functions/commentsHandler.js
-const fetch = require('node-fetch');
+import { createClient } from '@supabase/supabase-js'
+import dotenv from 'dotenv'
+dotenv.config()
 
-exports.handler = async (event, context) => {
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+)
+
+export async function handler(event, context) {
   try {
-    // Get Airtable credentials from environment variables
-    const AIRTABLE_BASE_NAME = process.env.AIRTABLE_BASE_NAME;
-    const AIRTABLE_TABLE_NAME_COMMENTS = process.env.AIRTABLE_TABLE_NAME_COMMENTS || 'Comments';
-    const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
-    
     // Handle GET requests - fetch comments for a specific card
     if (event.httpMethod === 'GET') {
       const params = event.queryStringParameters;
@@ -20,31 +22,33 @@ exports.handler = async (event, context) => {
         };
       }
       
-      // Construct the Airtable API URL with filter for the specific card ID
-      const formula = `{CardId} = "${cardId}"`;
-      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME_COMMENTS}?filterByFormula=${encodeURIComponent(formula)}&sort[0][field]=Created&sort[0][direction]=desc`;
+      // Query comments from Supabase
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('CardId', cardId)
+        .order('Created', { ascending: false });
       
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_TOKEN}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Airtable API error: ${response.status}`);
+      if (error) {
+        console.error('Error fetching comments:', error);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ 
+            error: 'Database query error', 
+            details: error.message 
+          })
+        };
       }
-      
-      const data = await response.json();
       
       return {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
-          comments: data.records.map(record => ({
-            id: record.id,
-            name: record.fields.Name || '',
-            comment: record.fields.Comment || '',
-            created: record.fields.Created || new Date().toISOString()
+          comments: data.map(row => ({
+            id: row.id,
+            name: row.Name || '',
+            comment: row.Comment || '',
+            created: row.Created
           }))
         })
       };
@@ -88,48 +92,40 @@ exports.handler = async (event, context) => {
         };
       }
       
-      // Prepare the record for Airtable
+      // Prepare the comment record for Supabase
       const record = {
-        fields: {
-          CardId: commentData.cardId,
-          Name: sanitizedName,
-          Comment: sanitizedComment
-        }
+        CardId: commentData.cardId,
+        Name: sanitizedName,
+        Comment: sanitizedComment,
+        Created: new Date().toISOString()
       };
       
-      // Submit to Airtable
-      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_NAME}/${AIRTABLE_TABLE_NAME_COMMENTS}`;
+      // Insert into Supabase
+      const { data, error } = await supabase
+        .from('comments')
+        .insert([record])
+        .select();
       
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(record)
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
+      if (error) {
+        console.error('Error inserting comment:', error);
         return {
-          statusCode: 200,
-          body: JSON.stringify({
-            success: true,
-            message: 'Comment submitted successfully',
-            id: data.id
-          })
-        };
-      } else {
-        return {
-          statusCode: response.status,
+          statusCode: 500,
           body: JSON.stringify({
             success: false,
             error: 'Failed to submit comment',
-            details: data
+            details: error.message
           })
         };
       }
+      
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          success: true,
+          message: 'Comment submitted successfully',
+          id: data[0].id
+        })
+      };
     }
     
     // Handle unsupported HTTP methods
@@ -148,7 +144,7 @@ exports.handler = async (event, context) => {
       })
     };
   }
-};
+}
 
 /**
  * Sanitize user input to prevent XSS attacks

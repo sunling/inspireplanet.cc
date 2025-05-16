@@ -93,25 +93,9 @@ export function renderCard(cardData, options = {}) {
     imagePath = "",
     creator = "你的名字",
     font = "'Noto Sans SC', sans-serif",
-    theme: rawTheme = themes.morning,
     customImage = "",
     created = null
   } = cardData;
-
-  // Parse theme if it's a string
-  let theme = rawTheme;
-  try {
-    if (typeof rawTheme === 'string') {
-      if (themes[rawTheme]) {
-        theme = themes[rawTheme];
-      } else {
-        theme = JSON.parse(rawTheme);
-      }
-    }
-  } catch (e) {
-    console.warn('解析主题失败:', e);
-    theme = themes.morning;
-  }
 
   // Format the quote and detail text (replace newlines with <br>)
   const formattedQuote = typeof quote === 'string' ? quote.replace(/\n/g, '<br>') : quote;
@@ -137,6 +121,11 @@ export function renderCard(cardData, options = {}) {
     modeStyles = ''; // Any specific styles for list mode
   } else {
     modeStyles = ''; // Default for editor mode
+  }
+
+  let theme = cardData.theme;
+  if(options.mode === 'editor') {
+    theme = themes[cardData.theme];
   }
 
   // Create card HTML
@@ -184,7 +173,7 @@ export function renderEditorCard(options, cardId = "preview-card") {
 
 /**
  * Render a card for the carousel
- * @param {Object} cardData - Card data from Airtable
+ * @param {Object} cardData - Card data from Supabase
  * @param {number} index - Card index in the carousel
  * @returns {HTMLElement} - The rendered card wrapper element for Swiper
  */
@@ -506,8 +495,7 @@ export async function fetchAndRenderAllCards(containerId, makeClickable = false)
     // Show loading indicator
     container.innerHTML = '<div class="loading-indicator">加载中...</div>';
 
-    // Get cards from Airtable
-    const cards = await fetchAirtableCards();
+    const cards = await fetchCards();
 
     if (!Array.isArray(cards) || cards.length === 0) {
       container.innerHTML = '<div class="loading-indicator">暂无卡片数据</div>';
@@ -515,7 +503,7 @@ export async function fetchAndRenderAllCards(containerId, makeClickable = false)
     }
 
     const safeCards = cards
-      .map(card => sanitizeAndValidateCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
+      .map(card => sanitizeAndValidateCard(card, ['Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
       .filter(result => result.isValid)
       .map(result => result.sanitizedCard);
 
@@ -586,7 +574,6 @@ export async function fetchAndRenderWeeklyCards(containerId) {
     // Show loading indicator
     container.innerHTML = '<div class="loading-indicator">加载中...</div>';
 
-    // Get cards from Airtable
     const cards = await fetchWeeklyCards();
 
     if (!cards || cards.length === 0) {
@@ -619,14 +606,6 @@ export async function fetchAndRenderWeeklyCards(containerId) {
       console.error('加载图片列表失败:', error);
       availableImages = [{ file: 'biking.png' }]; // Fallback
     }
-
-    // Available fonts
-    const availableFonts = [
-      "'Noto Sans SC', sans-serif",
-      "'Noto Serif SC', serif",
-      // "'Ma Shan Zheng', cursive",
-      // "'PingFang SC', 'Helvetica Neue', sans-serif"
-    ];
 
     // Available themes (keys from the themes object)
     const availableThemes = Object.keys(themes);
@@ -699,9 +678,10 @@ export function getBaseUrl() {
 const BASE_URL = window.location.origin;
 // API endpoints for Netlify functions
 export const API_ENDPOINTS = {
-  UPLOAD_CARD: `.netlify/functions/uploadCardToAirtable`,
+  UPLOAD_CARD: `.netlify/functions/uploadCard`,
   UPLOAD_IMAGE: `.netlify/functions/uploadImageToGitHub`,
-  FETCH_CARDS: `.netlify/functions/fetchAirtableData`,
+  CARDS_HANDLER: `.netlify/functions/cardsHandler`,
+  FETCH_WEEKLY_CARDS: `.netlify/functions/fetchWeeklyCards`,
 };
 
 /**
@@ -717,7 +697,7 @@ export const API_ENDPOINTS = {
  * @param {string} cardData.upload - Optional custom image (base64)
  * @returns {Promise<Object|null>} - Response data or null if failed
  */
-export async function uploadCardToAirtable(cardData) {
+export async function uploadCard(cardData) {
   if (!validateCard({
     title: cardData.title,
     quote: cardData.quote,
@@ -768,7 +748,7 @@ export async function uploadCardToAirtable(cardData) {
 
   try {
     // Call Netlify function to upload card
-    const response = await fetch(`${getBaseUrl()}/${API_ENDPOINTS.UPLOAD_CARD}`, {
+    const response = await fetch(`${getBaseUrl()}/${API_ENDPOINTS.CARDS_HANDLER}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -795,12 +775,11 @@ export async function uploadCardToAirtable(cardData) {
 
     if (response.ok && result.success) {
       // Refresh the card list after successful submission
-      await fetch(`${getBaseUrl()}/${API_ENDPOINTS.FETCH_CARDS}`, {
-        method: 'POST',
+      await fetch(`${getBaseUrl()}/${API_ENDPOINTS.CARDS_HANDLER}`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ invalidateCache: true, tableType: 'cards' })
+        }
       });
       alert("🎉 提交成功!");
       return result;
@@ -826,18 +805,17 @@ export async function uploadCardToAirtable(cardData) {
 }
 
 /**
- * Fetch cards from Airtable
+ * Fetch cards from Supabase
  * @returns {Promise<Array>} - Array of card data
  */
-export async function fetchAirtableCards() {
+export async function fetchCards() {
   try {
     // Call Netlify function to get cards
-    const response = await fetch(`${getBaseUrl()}/${API_ENDPOINTS.FETCH_CARDS}`, {
-      method: 'POST',
+    const response = await fetch(`${getBaseUrl()}/${API_ENDPOINTS.CARDS_HANDLER}`, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ tableType: 'cards' })
+      }
     });
 
     if (!response.ok) {
@@ -845,7 +823,6 @@ export async function fetchAirtableCards() {
     }
 
     const data = await response.json();
-    console.log("✅ 成功获取记录:", data);
     return data.records;
   } catch (error) {
     console.error("❌ 读取失败:", error);
@@ -854,20 +831,17 @@ export async function fetchAirtableCards() {
 }
 
 /**
- * Fetch weekly cards from Airtable
+ * Fetch weekly cards from Supabase
  * @returns {Promise<Array>} - Array of card data
  */
 export async function fetchWeeklyCards() {
   try {
     // Call Netlify function to get cards with weekly table name
-    const response = await fetch(`${BASE_URL}/${API_ENDPOINTS.FETCH_CARDS}`, {
+    const response = await fetch(`${BASE_URL}/${API_ENDPOINTS.FETCH_WEEKLY_CARDS}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        tableType: 'weekly'
-      })
+      }
     });
 
     if (!response.ok) {
@@ -1314,7 +1288,7 @@ function hasDangerousContent(raw) {
  * @param {string[]} fields
  * @returns {object} { sanitizedCard, isValid }
  */
-export function sanitizeAndValidateCard(card, fields = ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']) {
+export function sanitizeAndValidateCard(card, fields = ['Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']) {
   if (typeof card !== 'object' || card === null) {
     console.warn('sanitizeCard received non-object:', card);
     return { sanitizedCard: {}, isValid: false };

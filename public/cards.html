@@ -397,14 +397,8 @@
   <script type="module">
     // Import functions from cardUtils.js
     import {
-      renderEditorCard,
-      renderCarouselCard,
       downloadCard,
-      uploadCardToAirtable,
-      fetchAirtableCards,
-      loadImages,
-      onUploadBg,
-      bindCustomFileUpload,
+      fetchCards,
       fetchAndRenderAllCards,
       filterCardsBySearchTerm,
       appendCardToContainer,
@@ -434,7 +428,7 @@
       
       // 获取所有卡片数据
       try {
-        const cards = await fetchAirtableCards();
+        const cards = await fetchCards();
         if (Array.isArray(cards) && cards.length > 0) {
           allCards = cards;
           

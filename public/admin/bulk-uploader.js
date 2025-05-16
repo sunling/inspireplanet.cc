@@ -49,22 +49,6 @@ document.getElementById('uploadBtn').addEventListener('click', async () => {
     uploadBtn.disabled = false;
     document.getElementById('jsonInput').value = '';
     
-    // 刷新缓存
-    try {
-        await fetch('/.netlify/functions/fetchAirtableData', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                invalidateCache: true,
-                tableType: 'weekly'
-            })
-        });
-        console.log('Weekly cards cache invalidation request sent');
-    } catch (cacheError) {
-        console.error('Failed to invalidate cache:', cacheError);
-    }
     // 显示上传结果摘要
     const summary = document.createElement('div');
     summary.className = 'summary';

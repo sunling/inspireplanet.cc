@@ -534,8 +534,8 @@
       renderEditorCard,
       renderCarouselCard,
       downloadCard,
-      uploadCardToAirtable,
-      fetchAirtableCards,
+      uploadCard,
+      fetchCards,
       loadImages,
       onUploadBg,
       bindCustomFileUpload,
@@ -579,7 +579,7 @@
 
     // Function to submit a card
     window.submitCard = function () {
-      uploadCardToAirtable({
+      uploadCard({
         theme: themes[document.getElementById('theme-select').value],
         font: document.getElementById("choose-font").value,
         title: document.getElementById('title').value,
@@ -652,8 +652,7 @@
       container.innerHTML = '<div class="swiper-slide"><div class="loading-indicator">加载中...</div></div>';
 
       try {
-        // Get cards from Airtable
-        const cards = await fetchAirtableCards();
+        const cards = await fetchCards();
 
         if (!cards || cards.length === 0) {
           container.innerHTML = '<div class="swiper-slide"><div class="loading-indicator">暂无卡片数据</div></div>';
@@ -664,7 +663,7 @@
         container.innerHTML = '';
 
         // Filter valid cards and limit to 20
-        const validCards = cards.filter(card => card && card.Title && card.Quote).map(card => sanitizeAndValidateCard(card, ['Theme', 'Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
+        const validCards = cards.filter(card => card && card.Title && card.Quote).map(card => sanitizeAndValidateCard(card, ['Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
           .filter(result => result.isValid)
           .map(result => result.sanitizedCard);
         const recentCards = validCards.slice(0, 20);
