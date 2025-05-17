@@ -66,7 +66,8 @@ async function renderCardDetail() {
     // Create card element with a specific ID for downloading
     const cardElement = renderCard(normalizedCardData, {
       mode: 'list',
-      cardId: 'detail-card'
+      cardId: 'detail-card',
+      isMarkdown: true
     });
 
     // Append the card to the container

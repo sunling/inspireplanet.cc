@@ -7,6 +7,8 @@
   <title>创造你的启发时刻卡片</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://unpkg.com/dompurify@3.0.6/dist/purify.min.js"></script>
+  <!-- Add Markdown parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <!-- Import the new combined utility file as a module -->
   <script type="module" src="scripts/cardUtils.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
@@ -201,7 +203,7 @@
       flex-grow: 1;
       font-size: 15px;
       line-height: 1.6;
-      padding: 0 20px 20px;
+      padding: 15px 20px;
     }
 
     .card-footer {
@@ -395,6 +397,34 @@
         max-width: 90%;
       }
     }
+
+    /* Markdown 样式 */
+    .detail-text p {
+      margin: 0 0 0.8em 0;
+      /* padding: 20px 20px; */
+    }
+    
+    .detail-text p:last-child {
+      margin-bottom: 0;
+    }
+    
+    .detail-text strong {
+      font-weight: bold;
+      color: inherit;
+    }
+    
+    .detail-text em {
+      font-style: italic;
+    }
+    
+    .detail-text del {
+      text-decoration: line-through;
+    }
+    
+    .detail-text ul, .detail-text ol {
+      padding-left: 1.5em;
+      margin-bottom: 0.8em;
+    }
   </style>
 
 </head>
@@ -479,7 +509,7 @@
         </div>
 
         <div class="form-group">
-          <label for="detail">你的启发<small style="color: #888; font-size: 9px;">按回车↩︎换行</small></label>
+          <label for="detail">你的启发<small style="color: #888; font-size: 9px;">支持 Markdown 语法: **粗体** *斜体* ~~删除线~~ 按回车↩︎换行</small></label>
           <textarea id="detail" oninput="updateCardPreview()" style="min-height: 80px; resize: vertical;"
             placeholder="写下你的启发和行动吧..."></textarea>
         </div>
@@ -601,15 +631,28 @@
       if (uploadImg) {
         customImage = uploadImg;
       }
+      
+      // 获取详情内容并转换Markdown为HTML
+      const detailText = document.getElementById('detail').value || '请填写你的启发和行动';
+      
+      // 配置marked，启用换行选项
+      marked.setOptions({
+        breaks: true  // 将单个换行符解析为<br>
+      });
+      
+      // 使用marked.js解析Markdown
+      const parsedDetail = detailText ? marked.parse(detailText) : '';
+      
       const options = {
         title: document.getElementById('title').value || '这一刻，我想说...',
-        quote: document.getElementById('quote').value || '原话：“创作不是输出，而是通过输出重新理解自己。”',
-        detail: document.getElementById('detail').value || '启发：我一直纠结笔记是否要“有用”，现在明白记录本身就是梳理内心的过程。\n 行动：开始写“废稿日记”——即使零碎、矛盾的想法也随手记下，一周后回看竟发现隐藏的灵感线索。',
+        quote: document.getElementById('quote').value || '请写下触动到你的观点"',
+        detail: parsedDetail, // 使用解析后的HTML
         imagePath: document.getElementById('image-select').value,
         creator: document.getElementById('creator').value || '匿名',
         font: document.getElementById('choose-font').value || `'Noto Sans SC', sans-serif`,
         theme: document.getElementById('theme-select').value || 'roseclay',
-        customImage: customImage
+        customImage: customImage,
+        isMarkdown: true // 标记使用了Markdown
       };
 
       // Render the card

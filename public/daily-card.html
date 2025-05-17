@@ -309,8 +309,11 @@
     }
 
     $('font-selector').addEventListener('change', e => {
+      $('preview-image').style.fontFamily = e.target.value;
       $('preview-quote').style.fontFamily = e.target.value;
       $('preview-author').style.fontFamily = e.target.value;
+      $('preview-footer-name').style.fontFamily = e.target.value;
+      $('preview-footer-slogan').style.fontFamily = e.target.value;
     });
 
     $('main-image-input').addEventListener('change', e => {

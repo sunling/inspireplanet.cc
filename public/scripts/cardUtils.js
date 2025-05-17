@@ -88,18 +88,28 @@ const themes = {
 export function renderCard(cardData, options = {}) {
   const {
     title = "这一刻，我想说...",
-    quote = "《原则》：人避免不了痛苦，尤其是在追求雄心勃勃的目标时。信不信由你，如果以正确的态度对待痛苦，感到痛苦就是你的幸运，因为这将提示你寻找解决方案以便继续前进。",
+    quote = "请写下触动到你的观点或者你的启发",
     detail = "你怎么看呢？",
     imagePath = "",
     creator = "你的名字",
     font = "'Noto Sans SC', sans-serif",
     customImage = "",
-    created = null
+    created = null,
+    isMarkdown = false
   } = cardData;
 
   // Format the quote and detail text (replace newlines with <br>)
   const formattedQuote = typeof quote === 'string' ? quote.replace(/\n/g, '<br>') : quote;
-  const formattedDetail = typeof detail === 'string' ? detail.replace(/\n/g, '<br>') : detail;
+  let formattedDetail = '';
+
+  // Handle detail text - check if it's already parsed Markdown HTML
+  if (isMarkdown) {
+    // 直接使用Markdown解析后的HTML内容
+    formattedDetail = detail;
+  } else {
+    // 非Markdown内容，简单替换换行符为<br>
+    formattedDetail = typeof detail === 'string' ? detail.replace(/\n/g, '<br>') : detail;
+  }
 
   // Use custom image if provided, otherwise use the image path
   const finalImage = customImage || imagePath;
@@ -140,7 +150,7 @@ export function renderCard(cardData, options = {}) {
             color: ${theme.quoteColor};
           ">${formattedQuote}</div>
           <img id="quote-image-${cardId}" src="${finalImage}" alt="金句插图" crossorigin="anonymous" />
-          <p class="detail-text">${formattedDetail}</p>
+          <div class="detail-text">${formattedDetail}</div>
         </div>
         <div class="card-footer">
             <div class="footer" style="color: ${theme.color}">——作者：${creator} · ${dateStr}</div>
@@ -540,6 +550,7 @@ export async function fetchAndRenderAllCards(containerId, makeClickable = false)
           imgPrefix: '../',
           makeClickable: makeClickable,
           showCommentForm: true,
+          isMarkdown: true
         });
       });
     });
