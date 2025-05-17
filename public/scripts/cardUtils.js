@@ -105,10 +105,7 @@ export function renderCard(cardData, options = {}) {
   const finalImage = customImage || imagePath;
 
   // Create date string
-  const dateStr = created ? formatDate(created) : (() => {
-    const nowObj = new Date();
-    return `${nowObj.getFullYear()}年${nowObj.getMonth() + 1}月${nowObj.getDate()}日 ${nowObj.getHours()}:${String(nowObj.getMinutes()).padStart(2, '0')}`;
-  })();
+  const dateStr = formatToLocal(created);
 
   // Set card ID
   const cardId = options.cardId || `card-${Date.now()}`;
@@ -124,7 +121,7 @@ export function renderCard(cardData, options = {}) {
   }
 
   let theme = cardData.theme;
-  if(typeof theme === 'string') {
+  if (typeof theme === 'string') {
     theme = themes[cardData.theme];
   }
 
@@ -1250,17 +1247,32 @@ export function validateCard({ title, quote, detail }) {
   return true;
 }
 
-/**
- * Get current date in YYYY-MM-DD format
- * @returns {string} - Formatted date string
- */
-export function getCurrentDate() {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-based
-  const dd = String(now.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+function formatToLocal(datetimeStr) {
+  if (!datetimeStr) return formatToLocal(new Date().toISOString());
+
+  let date;
+  if (typeof datetimeStr === 'string') {
+    // Normalize: replace space with 'T' and append 'Z' to ensure UTC
+    const normalizedStr = datetimeStr.includes('T')
+      ? datetimeStr.endsWith('Z') ? datetimeStr : datetimeStr + 'Z'
+      : datetimeStr.replace(' ', 'T') + 'Z';
+
+    date = new Date(normalizedStr);
+  } else {
+    date = new Date(datetimeStr);
+  }
+
+  const pad = (n) => n.toString().padStart(2, '0');
+
+  const yyyy = date.getFullYear();
+  const mm = pad(date.getMonth() + 1);
+  const dd = pad(date.getDate());
+  const HH = pad(date.getHours());
+  const min = pad(date.getMinutes());
+
+  return `${yyyy}-${mm}-${dd} ${HH}:${min}`;
 }
+
 
 /**
  * Safely checks if a value is a non-empty string

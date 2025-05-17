@@ -187,14 +187,12 @@
           </div>
         </div>
       </div>
-      <label>主标题:<input id="main-title" placeholder="我想放空" oninput="renderCover()"></label>
-      <label>副标题:<input id="sub-title" placeholder="可连放空也需要练习" oninput="renderCover()"></label>
+      <label for="main-title">标题:<small style="color: #888; font-size: 9px;">按回车↩︎换行</small></label>
+      <textarea id="main-title" oninput="renderCover()" style="min-height: 80px; resize: vertical;"></textarea>
       <label>关键词(空格分隔):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
-      
+
       <label>下载到本地:
-        <!-- <div class="buttons"> -->
-          <button onclick="downloadCoverImage()">下载</button>
-        <!-- </div> -->
+        <button onclick="downloadCoverImage()">下载</button>
       </label>
     </div>
 
@@ -204,12 +202,11 @@
         <div class="overlay"></div>
         <div class="content" id="content">
           <div class="main-title" id="title">标题</div>
-          <!-- <div class="sub-title" id="subtitle">可连放空也需要练习</div> -->
           <div class="keywords" id="keywords">关键词1 / 关键词2 / 关键词3</div>
         </div>
       </div>
     </div>
-    
+
   </div>
   <script type="module">
     // Import functions from cardUtils.js
@@ -240,17 +237,15 @@
     }
 
     window.renderCover = function (uploadImg = "") {
-      if(uploadImg){
+      if (uploadImg) {
         customBgImage = uploadImg;
       }
       const main = document.getElementById("main-title").value || "主标题";
-      // const sub = document.getElementById("sub-title").value || "副标题";
       const tags = document.getElementById("tags").value || 'tag1 tag2 tag3';
       const selectedBg = document.getElementById("image-select").value;
       const selectedFont = document.getElementById("choose-font").value;
-
-      document.getElementById("title").innerText = main;
-      // document.getElementById("subtitle").innerText = sub;
+      const formattedTitle = typeof main === 'string' ? main.replace(/\n/g, '<br>') : main;
+      document.getElementById("title").innerHTML = formattedTitle;
       document.getElementById("keywords").innerText = tags.split(" ").join(" / ");
       const bgImage = customBgImage || selectedBg;
       document.getElementById("bg").style.backgroundImage = `url('${bgImage}')`;

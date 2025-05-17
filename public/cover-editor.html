@@ -106,7 +106,7 @@
     }
 
     .keywords {
-      color: snow;
+      color: yellow;
       font-size: 24px;
       margin-top: 24px;
       font-weight: 600;
@@ -138,8 +138,8 @@
         <option value="'KaiTi', serif">楷体</option>
       </select>
     </label>
-    <label>标题:<input id="main-title" placeholder="" oninput="renderCover()"></label>
-    <!-- <label>副标题:<input id="sub-title" placeholder="可连放空也需要练习" oninput="renderCover()"></label> -->
+    <label for="main-title">标题:<small style="color: #888; font-size: 9px;">按回车↩︎换行</small></label>
+    <textarea id="main-title" oninput="renderCover()" style="min-height: 80px; resize: vertical;"></textarea>
     <label>关键词(空格分割):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
     <label>文字布局风格：
       <select id="layout-select" onchange="renderCover()">
@@ -211,14 +211,13 @@
         customBgImage = uploadImage;
       }
       const main = document.getElementById("main-title").value || "主标题";
-      // const sub = document.getElementById("sub-title").value || "副标题";
       const tags = document.getElementById("tags").value || "tag1 tag2 tag3";
       const layout = document.getElementById("layout-select").value;
       const selectedFont = document.getElementById("choose-font").value;
       const selectedBg = document.getElementById("image-select").value;
+      const formattedTitle = typeof main === 'string' ? main.replace(/\n/g, '<br>') : main;
 
-      document.getElementById("title").innerText = main;
-      // document.getElementById("subtitle").innerText = sub;
+      document.getElementById("title").innerHTML = formattedTitle;
       document.getElementById("keywords").innerText = tags.split(" ").join(" / ");
       const content = document.getElementById("content");
       content.style.fontFamily = selectedFont;
