@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>日签卡片编辑器</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script type="module" src="scripts/cardUtils.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500&family=ZCOOL+XiaoWei&display=swap"
+    rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Noto Serif SC', serif;
+      background: #f5f5f5;
+      padding: 1.5rem;
+      margin: 0;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+    }
+
+    .form-section {
+      width: 32%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .form-section label {
+      font-weight: bold;
+      color: #4a6fa5;
+      font-size: 14px;
+    }
+
+    .form-section input,
+    .form-section textarea {
+      padding: 8px 12px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .form-section textarea {
+      resize: vertical;
+    }
+
+    .preview-section {
+      width: 64%;
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    #preview-card {
+      position: relative;
+      width: 100%;
+      max-width: 360px;
+      aspect-ratio: 9 / 16;
+      background: white;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-size: 16px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      text-align: right;
+      color: white;
+      font-weight: 300;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .card-header .date-column {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .card-header .day-column {
+      display: flex;
+      align-items: center;
+    }
+
+    .card-header .divider {
+      height: 4rem;
+      width: 1px;
+      background-color: white;
+      margin: 0 0.5rem;
+    }
+
+    .card-header .date {
+      font-size: 1.5rem;
+      font-weight: 300;
+      line-height: 1.4;
+    }
+
+    .card-header .day-number {
+      font-size: 5rem;
+      font-weight: 300;
+      line-height: 1;
+    }
+
+    .card-header .weekday {
+      font-size: 1.2rem;
+      font-weight: 300;
+      line-height: 1.2;
+    }
+
+    .main-image {
+      height: 55%;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .quote {
+      padding: 1.5rem 1.5rem 0.5rem;
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: #333;
+      letter-spacing: 0.5px;
+      font-weight: 400;
+      font-family: 'Noto Serif SC', serif;
+    }
+
+    .author {
+      padding: 0.5rem 1.5rem 1.5rem;
+      text-align: right;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: #666;
+      border-top: 1px solid #eee;
+      padding: 0.8rem 1.5rem;
+      margin-top: auto;
+    }
+
+    .footer-text {
+      text-align: center;
+      width: 100%;
+    }
+
+    .footer img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+    }
+
+    .download-btn {
+      background: #4a6fa5;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .download-btn:hover {
+      background: #3a5d8f;
+    }
+
+    .font-selector {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="form-section">
+      <label>日期：<input type="date" id="card-date" /></label>
+      <label class="font-selector">字体选择：
+        <select id="font-selector">
+          <option value="'ZCOOL XiaoWei', 'Noto Serif SC', serif">ZCOOL XiaoWei</option>
+          <option value="'Noto Serif SC', serif" selected >Noto Serif SC</option>
+          <option value="'Ma Shan Zheng', cursive">Ma Shan Zheng</option>
+          <option value="'Zhi Mang Xing', cursive">Zhi Mang Xing</option>
+        </select>
+      </label>
+      <label>日签内容：<textarea id="card-quote" rows="6" placeholder="请填写日签内容"></textarea></label>
+      <label>内容出处：<input type="text" id="card-author" placeholder="内容出处" /></label>
+      <label>主图：<input type="file" id="main-image-input" accept="image/*" /></label>
+      <label>公众号名：<input type="text" id="wechat-account-name" placeholder="公众号名" /></label>
+      <label>口号：<input type="text" id="footer-slogan" placeholder="口号" /></label>
+      <label>二维码图片：<input type="file" id="qrcode-input" accept="image/*" /></label>
+      <button class="download-btn" onclick="downloadCardImage('#preview-card', 'daily-card-')">下载卡片</button>
+    </div>
+
+    <div class="preview-section">
+      <div id="preview-card">
+        <div id="preview-image" class="main-image" style="background-image: url(images/DewsideWhispers.png)">
+          <div class="card-header">
+            <div class="date-column">
+              <div class="date" id="preview-date">2025.05</div>
+              <div class="weekday" id="preview-weekday">星期五</div>
+            </div>
+            <div class="divider"></div>
+            <div class="day-column">
+              <div class="day-number" id="preview-day">16</div>
+            </div>
+          </div>
+        </div>
+        <div class="quote" id="preview-quote">请填写日签内容</div>
+        <div class="author" id="preview-author">内容出处</div>
+        <div class="footer">
+          <div class="footer-text" id="preview-footer-name">「公众号名」<br /><span id="preview-footer-slogan" aria-placeholder="请输入口号">口号</span></div>
+          <img id="preview-qrcode" src="images/qrcode.jpg" alt="二维码" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { downloadCard } from './scripts/cardUtils.js';
+
+    const $ = id => document.getElementById(id);
+
+    // Set today's date by default
+    function setTodayDate() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = (today.getMonth() + 1).toString().padStart(2, '0');
+      const day = today.getDate().toString().padStart(2, '0');
+
+      $('card-date').value = `${year}-${month}-${day}`;
+
+      // Update the preview with today's date
+      $('preview-date').textContent = `${year}.${month}`;
+      $('preview-weekday').textContent = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][today.getDay()];
+      $('preview-day').textContent = today.getDate();
+    }
+
+    // Call it when the page loads
+    window.addEventListener('DOMContentLoaded', setTodayDate);
+
+    $('card-date').addEventListener('change', e => {
+      // Fix timezone issues by parsing the date string as local time
+      const dateString = e.target.value;
+      const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
+
+      // Create date using local components (months are 0-indexed in JavaScript Date)
+      const date = new Date(year, month - 1, day);
+
+      $('preview-date').textContent = `${date.getFullYear()}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      $('preview-weekday').textContent = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][date.getDay()];
+      $('preview-day').textContent = date.getDate();
+    });
+
+    $('card-quote').addEventListener('input', e => {
+      $('preview-quote').textContent = e.target.value;
+    });
+
+    $('card-author').addEventListener('input', e => {
+      if (e.target.value.trim() === '') {
+        $('preview-author').style.display = 'none';
+      } else {
+        $('preview-author').style.display = 'block';
+        $('preview-author').textContent = `—— ${e.target.value}`;
+      }
+    });
+
+    // Check initial author state
+    if ($('card-author').value.trim() === '') {
+      $('preview-author').style.display = 'none';
+    }
+
+    $('wechat-account-name').addEventListener('input', e => {
+      $('preview-footer-name').childNodes[0].nodeValue = `「${e.target.value}」`;
+    });
+
+    $('footer-slogan').addEventListener('input', e => {
+      if (e.target.value.trim() === '') {
+        $('preview-footer-slogan').style.display = 'none';
+      } else {
+        $('preview-footer-slogan').style.display = 'inline';
+        $('preview-footer-slogan').textContent = e.target.value;
+      }
+    });
+
+    // Check initial slogan state
+    if ($('footer-slogan').value.trim() === '') {
+      $('preview-footer-slogan').style.display = 'none';
+    }
+
+    $('font-selector').addEventListener('change', e => {
+      $('preview-quote').style.fontFamily = e.target.value;
+      $('preview-author').style.fontFamily = e.target.value;
+    });
+
+    $('main-image-input').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          $('preview-image').style.backgroundImage = `url('${e.target.result}')`;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    $('qrcode-input').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          $('preview-qrcode').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Function to download the current card
+    window.downloadCardImage = function () {
+      downloadCard('#preview-card', 'daily-card-');
+    };
+  </script>
+</body>
+
+</html>

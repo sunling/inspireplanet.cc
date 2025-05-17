@@ -717,6 +717,14 @@ export async function uploadCard(cardData) {
 
       customImageUrl = await uploadImageToGitHub(cardData.upload);
 
+      const res = await fetch('/.netlify/functions/analyzeImage', {
+        method: 'POST',
+        body: JSON.stringify({ imageUrl: customImageUrl }),
+      });
+      const result = await res.json();
+      console.log('Suggested tags:', result.tags);
+
+
       // Restore button state
       if (submitBtn) {
         submitBtn.innerHTML = originalText;
