@@ -38,14 +38,27 @@
       gap: 12px;
     }
 
+    .form-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .form-row > label {
+      flex: 1;
+      min-width: 0;
+    }
+
     .form-section label {
       font-weight: bold;
       color: #4a6fa5;
       font-size: 14px;
+      display: flex;
+      flex-direction: column;
     }
 
     .form-section input,
-    .form-section textarea {
+    .form-section textarea,
+    .form-section select {
       padding: 8px 12px;
       font-size: 16px;
       border: 1px solid #ddd;
@@ -77,36 +90,62 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
+    /* 不同位置的卡片头部样式 */
+    .header-position-top-right {
+      top: 1rem;
+      right: 1rem;
+      left: auto;
+      bottom: auto;
+      text-align: right;
+    }
+
+    .header-position-top-left {
+      top: 1rem;
+      left: 1rem;
+      right: auto;
+      bottom: auto;
+      text-align: left;
+    }
+
+    .header-position-center {
+      top: 3rem;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
     .card-header {
       position: absolute;
-      top: 2rem;
-      right: 2rem;
-      text-align: right;
       color: white;
       font-weight: 300;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
       display: flex;
       flex-direction: row;
       align-items: center;
-      gap: 1rem;
+      gap: 0.5rem;
     }
 
     .card-header .date-column {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
+      justify-content: center;
+      height: 5rem;
     }
 
     .card-header .day-column {
       display: flex;
       align-items: center;
+      justify-content: center;
+      height: 5rem;
     }
 
     .card-header .divider {
-      height: 4rem;
-      width: 1px;
+      height: 2.8rem;
+      width: 2px;
       background-color: white;
-      margin: 0 0.5rem;
+      margin: 0 0.2rem;
+      align-self: center;
     }
 
     .card-header .date {
@@ -131,6 +170,7 @@
       height: 55%;
       background-size: cover;
       background-position: center;
+      opacity: 0.8;
     }
 
     .quote {
@@ -195,32 +235,50 @@
 <body>
   <div class="container">
     <div class="form-section">
-      <label>日期：<input type="date" id="card-date" /></label>
-      <label class="font-selector">字体选择：
-        <select id="font-selector">
-          <option value="'ZCOOL XiaoWei', 'Noto Serif SC', serif">ZCOOL XiaoWei</option>
-          <option value="'Noto Serif SC', serif" selected >Noto Serif SC</option>
-          <option value="'Ma Shan Zheng', cursive">Ma Shan Zheng</option>
-        </select>
-      </label>
-      <label>日签内容：<textarea id="card-quote" rows="6" placeholder="请填写日签内容"></textarea></label>
-      <label>内容出处：<input type="text" id="card-author" placeholder="内容出处" /></label>
-      <label>主图：<input type="file" id="main-image-input" accept="image/*" /></label>
-      <label>公众号名：<input type="text" id="wechat-account-name" placeholder="公众号名" /></label>
-      <label>口号：<input type="text" id="footer-slogan" placeholder="口号" /></label>
-      <label>二维码图片：<input type="file" id="qrcode-input" accept="image/*" /></label>
+      <div class="form-row">
+        <label>日期<input type="date" id="card-date" /></label>
+        <label>日期位置
+          <select id="header-position">
+            <option value="header-position-top-right" selected>右上角</option>
+            <option value="header-position-top-left">左上角</option>
+            <option value="header-position-center">居中</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label class="font-selector">字体选择
+          <select id="font-selector">
+            <option value="'ZCOOL XiaoWei', 'Noto Serif SC', serif">ZCOOL XiaoWei</option>
+            <option value="'Noto Serif SC', serif" selected >Noto Serif SC</option>
+            <option value="'Ma Shan Zheng', cursive">Ma Shan Zheng</option>
+          </select>
+        </label>
+        <label>日期颜色
+          <input type="color" id="header-color" value="#ffffff" />
+        </label>
+      </div>
+      <label>主图<input type="file" id="main-image-input" accept="image/*" /></label>
+      <label>日签内容<textarea id="card-quote" rows="6" placeholder="请填写日签内容"></textarea></label>
+      <label>内容出处<input type="text" id="card-author" placeholder="内容出处" /></label>
+      <div class="form-row">
+        <label>公众号名字<input type="text" id="wechat-account-name" placeholder="公众号名字" /></label>
+        <label>口号<input type="text" id="footer-slogan" placeholder="口号" /></label>
+      </div>
+      <label>二维码图片<input type="file" id="qrcode-input" accept="image/*" /></label>
+      
       <button class="download-btn" onclick="downloadCardImage('#preview-card', 'daily-card-')">下载卡片</button>
     </div>
 
     <div class="preview-section">
       <div id="preview-card">
         <div id="preview-image" class="main-image" style="background-image: url(images/DewsideWhispers.png)">
-          <div class="card-header">
+          <div class="card-header header-position-top-right">
             <div class="date-column">
               <div class="date" id="preview-date">2025.05</div>
               <div class="weekday" id="preview-weekday">星期五</div>
             </div>
-            <div class="divider"></div>
+            <!-- <div class="divider" id="preview-divider"></div> -->
             <div class="day-column">
               <div class="day-number" id="preview-day">16</div>
             </div>
@@ -314,6 +372,39 @@
       $('preview-author').style.fontFamily = e.target.value;
       $('preview-footer-name').style.fontFamily = e.target.value;
       $('preview-footer-slogan').style.fontFamily = e.target.value;
+    });
+
+    $('header-color').addEventListener('input', e => {
+      const headerElements = document.querySelectorAll('.card-header, .card-header *');
+      headerElements.forEach(el => {
+        el.style.color = e.target.value;
+      });
+      // $('preview-divider').style.backgroundColor = e.target.value;
+      $('preview-quote').style.color = e.target.value;
+    });
+
+    $('header-position').addEventListener('change', e => {
+      const header = $('preview-card').querySelector('.card-header');
+      // 移除所有位置类
+      header.classList.remove(
+        'header-position-top-right',
+        'header-position-top-left',
+        'header-position-bottom-right',
+        'header-position-bottom-left',
+        'header-position-center'
+      );
+      // 添加选中的位置类
+      header.classList.add(e.target.value);
+
+      // 调整文本对齐方向
+      const dateColumn = header.querySelector('.date-column');
+      if (e.target.value.includes('left')) {
+        dateColumn.style.alignItems = 'flex-start';
+      } else if (e.target.value.includes('right')) {
+        dateColumn.style.alignItems = 'flex-end';
+      } else {
+        dateColumn.style.alignItems = 'center';
+      }
     });
 
     $('main-image-input').addEventListener('change', e => {
