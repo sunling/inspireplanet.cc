@@ -9,9 +9,10 @@
   <script type="module" src="scripts/cardUtils.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500&family=ZCOOL+XiaoWei&display=swap"
     rel="stylesheet" />
+  <link href="https://fonts.cdnfonts.com/css/athena" rel="stylesheet">
   <style>
     body {
-      font-family: 'Noto Serif SC', serif;
+      font-family: 'Athena', sans-serif;
       background: #f5f5f5;
       padding: 1.5rem;
       margin: 0;
@@ -43,7 +44,7 @@
       gap: 10px;
     }
 
-    .form-row > label {
+    .form-row>label {
       flex: 1;
       min-width: 0;
     }
@@ -80,7 +81,7 @@
     #preview-card {
       position: relative;
       width: 100%;
-      max-width: 360px;
+      max-width: 400px;
       aspect-ratio: 9 / 16;
       background: white;
       overflow: hidden;
@@ -149,19 +150,19 @@
     }
 
     .card-header .date {
-      font-size: 1.5rem;
+      font-size: 40px;
       font-weight: 300;
-      line-height: 1.4;
+      line-height: 1.2;
     }
 
     .card-header .day-number {
-      font-size: 5rem;
+      font-size: 113px;
       font-weight: 300;
       line-height: 1;
     }
 
     .card-header .weekday {
-      font-size: 1.2rem;
+      font-size: 35px;
       font-weight: 300;
       line-height: 1.2;
     }
@@ -249,8 +250,9 @@
       <div class="form-row">
         <label class="font-selector">字体选择
           <select id="font-selector">
+            <option value="'Athena', sans-serif" selected>Athena</option>
             <option value="'ZCOOL XiaoWei', 'Noto Serif SC', serif">ZCOOL XiaoWei</option>
-            <option value="'Noto Serif SC', serif" selected >Noto Serif SC</option>
+            <option value="'Noto Serif SC', serif">Noto Serif SC</option>
             <option value="'Ma Shan Zheng', cursive">Ma Shan Zheng</option>
           </select>
         </label>
@@ -266,7 +268,7 @@
         <label>口号<input type="text" id="footer-slogan" placeholder="口号" /></label>
       </div>
       <label>二维码图片<input type="file" id="qrcode-input" accept="image/*" /></label>
-      
+
       <button class="download-btn" onclick="downloadCardImage('#preview-card', 'daily-card-')">下载卡片</button>
     </div>
 
@@ -287,7 +289,8 @@
         <div class="quote" id="preview-quote">请填写日签内容</div>
         <div class="author" id="preview-author">内容出处</div>
         <div class="footer">
-          <div class="footer-text" id="preview-footer-name">「公众号名」<br /><span id="preview-footer-slogan" aria-placeholder="请输入口号">口号</span></div>
+          <div class="footer-text" id="preview-footer-name">「公众号名」<br /><span id="preview-footer-slogan"
+              aria-placeholder="请输入口号">口号</span></div>
           <img id="preview-qrcode" src="images/qrcode.jpg" alt="二维码" />
         </div>
       </div>
@@ -367,11 +370,16 @@
     }
 
     $('font-selector').addEventListener('change', e => {
-      $('preview-image').style.fontFamily = e.target.value;
-      $('preview-quote').style.fontFamily = e.target.value;
-      $('preview-author').style.fontFamily = e.target.value;
-      $('preview-footer-name').style.fontFamily = e.target.value;
-      $('preview-footer-slogan').style.fontFamily = e.target.value;
+      console.log(e.target.value);
+      const selectedFont = e.target.value;
+      $('preview-quote').style.fontFamily = selectedFont;
+      $('preview-author').style.fontFamily = selectedFont;
+      $('preview-footer-name').style.fontFamily = selectedFont;
+      $('preview-footer-slogan').style.fontFamily = selectedFont;
+      // 设置所选字体
+      $('preview-date').style.fontFamily = selectedFont;
+      $('preview-weekday').style.fontFamily = selectedFont;
+      $('preview-day').style.fontFamily = selectedFont;
     });
 
     $('header-color').addEventListener('input', e => {
