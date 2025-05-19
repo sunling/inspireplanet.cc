@@ -150,19 +150,19 @@
     }
 
     .card-header .date {
-      font-size: 40px;
+      font-size: 35px;
       font-weight: 300;
       line-height: 1.2;
     }
 
     .card-header .day-number {
-      font-size: 113px;
+      font-size: 98px;
       font-weight: 300;
       line-height: 1;
     }
 
     .card-header .weekday {
-      font-size: 35px;
+      font-size: 30px;
       font-weight: 300;
       line-height: 1.2;
     }
@@ -258,6 +258,17 @@
         </label>
         <label>日期颜色
           <input type="color" id="header-color" value="#ffffff" />
+        </label>
+      </div>
+      <div class="form-row">
+        <label>日期字号
+          <input type="number" id="date-font-size" value="35" min="20" max="60" />
+        </label>
+        <label>星期字号
+          <input type="number" id="weekday-font-size" value="30" min="20" max="50" />
+        </label>
+        <label>日期数字字号
+          <input type="number" id="day-number-font-size" value="98" min="60" max="150" />
         </label>
       </div>
       <label>主图<input type="file" id="main-image-input" accept="image/*" /></label>
@@ -387,8 +398,19 @@
       headerElements.forEach(el => {
         el.style.color = e.target.value;
       });
-      // $('preview-divider').style.backgroundColor = e.target.value;
-      // $('preview-quote').style.color = e.target.value;
+    });
+
+    // 添加字号控制事件监听器
+    $('date-font-size').addEventListener('input', e => {
+      $('preview-date').style.fontSize = `${e.target.value}px`;
+    });
+
+    $('weekday-font-size').addEventListener('input', e => {
+      $('preview-weekday').style.fontSize = `${e.target.value}px`;
+    });
+
+    $('day-number-font-size').addEventListener('input', e => {
+      $('preview-day').style.fontSize = `${e.target.value}px`;
     });
 
     $('header-position').addEventListener('change', e => {

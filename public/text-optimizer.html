@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文本优化器</title>
+  <style>
+    body {
+      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      color: #4a6fa5;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #4a6fa5;
+    }
+    select, textarea, button {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    button {
+      background-color: #4a6fa5;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #3a5d8f;
+    }
+    button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 6px;
+      background-color: #f5f9ff;
+      display: none;
+    }
+    .result-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #4a6fa5;
+    }
+    .loading {
+      text-align: center;
+      display: none;
+      margin: 20px 0;
+    }
+    .loading::after {
+      content: "";
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #ddd;
+      border-radius: 50%;
+      border-top-color: #4a6fa5;
+      animation: spin 1s ease-in-out infinite;
+      vertical-align: middle;
+      margin-left: 10px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <h1>文本优化器</h1>
+  <div class="container">
+    <label for="text-type">文本类型</label>
+    <select id="text-type">
+      <option value="general">一般文本</option>
+      <option value="quote">引用语句</option>
+      <option value="daily">日签文案</option>
+    </select>
+
+    <label for="input-text">输入文本</label>
+    <textarea id="input-text" placeholder="请输入需要优化的中文文本..."></textarea>
+
+    <button id="optimize-btn">优化文本</button>
+
+    <div class="loading" id="loading">优化中，请稍候...</div>
+
+    <div class="result" id="result">
+      <div class="result-title">优化结果：</div>
+      <div id="optimized-text"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const typeSelect = document.getElementById('text-type');
+      const inputText = document.getElementById('input-text');
+      const optimizeBtn = document.getElementById('optimize-btn');
+      const loadingEl = document.getElementById('loading');
+      const resultEl = document.getElementById('result');
+      const optimizedTextEl = document.getElementById('optimized-text');
+
+      optimizeBtn.addEventListener('click', async function() {
+        // 验证输入
+        const text = inputText.value.trim();
+        if (!text) {
+          alert('请输入需要优化的文本');
+          return;
+        }
+
+        // 显示加载状态
+        optimizeBtn.disabled = true;
+        loadingEl.style.display = 'block';
+        resultEl.style.display = 'none';
+
+        try {
+          // 调用API
+          const response = await fetch('/.netlify/functions/optimizeText', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              text: text,
+              type: typeSelect.value
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            // 显示结果
+            optimizedTextEl.textContent = data.optimized;
+            resultEl.style.display = 'block';
+          } else {
+            // 显示错误
+            alert(`优化失败：${data.error || '未知错误'}`);
+          }
+        } catch (error) {
+          alert(`请求失败：${error.message}`);
+        } finally {
+          // 恢复UI状态
+          optimizeBtn.disabled = false;
+          loadingEl.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+</html> 
