@@ -91,28 +91,41 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
-    /* 不同位置的卡片头部样式 */
+    /* Header position styles */
     .header-position-top-right {
-      top: 1rem;
-      right: 1rem;
+      top: 0.5rem;
+      right: 0.5rem;
       left: auto;
       bottom: auto;
-      text-align: right;
     }
 
     .header-position-top-left {
-      top: 1rem;
-      left: 1rem;
+      top: 0.5rem;
+      left: 0.5rem;
       right: auto;
       bottom: auto;
-      text-align: left;
     }
 
     .header-position-center {
       top: 3rem;
       left: 50%;
       transform: translate(-50%, -50%);
-      text-align: center;
+    }
+
+    .header-position-bottom-right {
+      top: 55%;  /* Align exactly with the main-image height */
+      right: 0.5rem;
+      left: auto;
+      bottom: auto;
+      transform: translateY(-100%);  /* Move up by its own height */
+    }
+
+    .header-position-bottom-left {
+      top: 55%;  /* Align exactly with the main-image height */
+      left: 0.5rem;
+      right: auto;
+      bottom: auto;
+      transform: translateY(-100%);  /* Move up by its own height */
     }
 
     .card-header {
@@ -123,48 +136,39 @@
       display: flex;
       flex-direction: row;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center;
+      gap: 1rem;
+      padding: 0.5rem 1rem;
     }
 
     .card-header .date-column {
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
-      justify-content: center;
-      height: 5rem;
+      align-items: center;
+      gap: 0.2rem;
     }
 
     .card-header .day-column {
       display: flex;
       align-items: center;
-      justify-content: center;
-      height: 5rem;
-    }
-
-    .card-header .divider {
-      height: 2.8rem;
-      width: 2px;
-      background-color: white;
-      margin: 0 0.2rem;
-      align-self: center;
     }
 
     .card-header .date {
-      font-size: 35px;
-      font-weight: 300;
-      line-height: 1.2;
-    }
-
-    .card-header .day-number {
-      font-size: 98px;
+      font-size: 30px;
       font-weight: 300;
       line-height: 1;
     }
 
     .card-header .weekday {
-      font-size: 30px;
+      font-size: 24px;
       font-weight: 300;
-      line-height: 1.2;
+      line-height: 1;
+    }
+
+    .card-header .day-number {
+      font-size: 70px;
+      font-weight: 300;
+      line-height: 1;
     }
 
     .main-image {
@@ -243,6 +247,8 @@
             <option value="header-position-top-right" selected>右上角</option>
             <option value="header-position-top-left">左上角</option>
             <option value="header-position-center">居中</option>
+            <option value="header-position-bottom-right">右下角</option>
+            <option value="header-position-bottom-left">左下角</option>
           </select>
         </label>
       </div>
@@ -262,13 +268,13 @@
       </div>
       <div class="form-row">
         <label>日期字号
-          <input type="number" id="date-font-size" value="35" min="20" max="60" />
+          <input type="number" id="date-font-size" value="30" min="20" max="60" />
         </label>
         <label>星期字号
-          <input type="number" id="weekday-font-size" value="30" min="20" max="50" />
+          <input type="number" id="weekday-font-size" value="24" min="20" max="50" />
         </label>
         <label>日期数字字号
-          <input type="number" id="day-number-font-size" value="98" min="60" max="150" />
+          <input type="number" id="day-number-font-size" value="70" min="60" max="150" />
         </label>
       </div>
       <label>主图<input type="file" id="main-image-input" accept="image/*" /></label>
@@ -289,11 +295,10 @@
           <div class="card-header header-position-top-right">
             <div class="date-column">
               <div class="date" id="preview-date">2025.05</div>
-              <div class="weekday" id="preview-weekday">星期五</div>
+              <div class="weekday" id="preview-weekday">星期三</div>
             </div>
-            <!-- <div class="divider" id="preview-divider"></div> -->
             <div class="day-column">
-              <div class="day-number" id="preview-day">16</div>
+              <div class="day-number" id="preview-day">21</div>
             </div>
           </div>
         </div>
@@ -427,14 +432,14 @@
       header.classList.add(e.target.value);
 
       // 调整文本对齐方向
-      const dateColumn = header.querySelector('.date-column');
-      if (e.target.value.includes('left')) {
-        dateColumn.style.alignItems = 'flex-start';
-      } else if (e.target.value.includes('right')) {
-        dateColumn.style.alignItems = 'flex-end';
-      } else {
-        dateColumn.style.alignItems = 'center';
-      }
+      // const dateColumn = header.querySelector('.date-column');
+      // if (e.target.value.includes('left')) {
+      //   dateColumn.style.alignItems = 'flex-start';
+      // } else if (e.target.value.includes('right')) {
+      //   dateColumn.style.alignItems = 'flex-end';
+      // } else {
+      //   dateColumn.style.alignItems = 'center';
+      // }
     });
 
     $('main-image-input').addEventListener('change', e => {
