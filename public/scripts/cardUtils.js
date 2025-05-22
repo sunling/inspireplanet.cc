@@ -94,22 +94,21 @@ export function renderCard(cardData, options = {}) {
     creator = "你的名字",
     font = "'Noto Sans SC', sans-serif",
     customImage = "",
-    created = null,
-    isMarkdown = false
+    created = null
   } = cardData;
 
   // Format the quote and detail text (replace newlines with <br>)
   const formattedQuote = typeof quote === 'string' ? quote.replace(/\n/g, '<br>') : quote;
-  let formattedDetail = '';
+  const formattedDetail = typeof detail === 'string' ? detail.replace(/\n/g, '<br>') : detail;
 
   // Handle detail text - check if it's already parsed Markdown HTML
-  if (isMarkdown) {
-    // 直接使用Markdown解析后的HTML内容
-    formattedDetail = detail;
-  } else {
-    // 非Markdown内容，简单替换换行符为<br>
-    formattedDetail = typeof detail === 'string' ? detail.replace(/\n/g, '<br>') : detail;
-  }
+  // if (options.isMarkdown) {
+  //   // 直接使用Markdown解析后的HTML内容
+  //   formattedDetail = detail;
+  // } else {
+  //   // 非Markdown内容，简单替换换行符为<br>
+  //   formattedDetail = typeof detail === 'string' ? detail.replace(/\n/g, '<br>') : detail;
+  // }
 
   // Use custom image if provided, otherwise use the image path
   const finalImage = customImage || imagePath;
@@ -194,16 +193,18 @@ export function renderCarouselCard(cardData, index) {
   cardWrapper.className = 'card-wrapper';
 
   // Prepare card data for rendering
+  const markedText = cardData.Detail ? marked.parse(cardData.Detail) : '';
   const normalizedCardData = {
     title: cardData.Title || "默认标题",
     quote: cardData.Quote || "默认金句",
-    detail: cardData.Detail || "",
+    detail: markedText || "",
     imagePath: cardData.ImagePath || "",
     creator: cardData.Creator || "匿名",
     font: cardData.Font || "'Noto Sans SC', sans-serif",
     theme: cardData.Theme || themes.mistyblue,
     customImage: cardData.Upload || "",
-    created: cardData.Created
+    created: cardData.Created,
+    isMarkdown: true
   };
 
   // Create card element using universal renderCard function
@@ -248,16 +249,18 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
     : cardData.id || `card-${Date.now()}`;
 
   // Prepare card data for rendering
+  const markedText = cardData.Detail ? marked.parse(cardData.Detail) : '';
   const normalizedCardData = {
     title: cardData.Title || "这一刻，我想说",
     quote: cardData.Quote || "",
-    detail: cardData.Detail || "",
+    detail: markedText || "",
     imagePath: `${imgPrefix}${cardData.ImagePath}`,
     creator: cardData.Creator || "匿名",
     font: cardData.Font || "'Noto Sans SC', sans-serif",
     theme: cardData.Theme || themes.mistyblue,
     customImage: cardData.Upload || "",
-    created: cardData.Created
+    created: cardData.Created,
+    isMarkdown: true
   };
 
   // Create card element using universal renderCard function
@@ -1271,10 +1274,16 @@ function formatToLocal(datetimeStr) {
 
   let date;
   if (typeof datetimeStr === 'string') {
-    // Normalize: replace space with 'T' and append 'Z' to ensure UTC
-    const normalizedStr = datetimeStr.includes('T')
-      ? datetimeStr.endsWith('Z') ? datetimeStr : datetimeStr + 'Z'
-      : datetimeStr.replace(' ', 'T') + 'Z';
+    // Remove Z if it comes after a timezone offset
+    const cleanedStr = datetimeStr.replace(/\+\d{2}:\d{2}Z$/, '+00:00')
+      .replace(/-\d{2}:\d{2}Z$/, '-00:00');
+
+    // Normalize: replace space with 'T' and append 'Z' to ensure UTC if no timezone
+    const normalizedStr = cleanedStr.includes('T')
+      ? cleanedStr.includes('+') || cleanedStr.includes('-') || cleanedStr.endsWith('Z')
+        ? cleanedStr
+        : cleanedStr + 'Z'
+      : cleanedStr.replace(' ', 'T') + 'Z';
 
     date = new Date(normalizedStr);
   } else {

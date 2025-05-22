@@ -48,10 +48,12 @@ async function renderCardDetail() {
     }
 
     // Prepare card data for rendering
+    const detailText = sanitizeContent(card.Detail);
+    const markedText = detailText ? marked.parse(detailText) : '';
     const normalizedCardData = {
       title: sanitizeContent(card.Title) || "默认标题",
       quote: sanitizeContent(card.Quote) || "默认金句",
-      detail: sanitizeContent(card.Detail) || "",
+      detail: markedText || "",
       imagePath: card.ImagePath || "",
       creator: sanitizeContent(card.Creator) || "匿名",
       font: card.Font || "'Noto Sans SC', sans-serif",
