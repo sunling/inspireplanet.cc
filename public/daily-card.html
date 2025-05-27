@@ -91,7 +91,20 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
-    /* Header position styles */
+    .main-image {
+      min-height: 55%;
+      position: relative;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .main-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.9;
+    }
+
     .header-position-top-right {
       top: 0.5rem;
       right: 0.5rem;
@@ -106,26 +119,44 @@
       bottom: auto;
     }
 
-    .header-position-center {
-      top: 3rem;
+    .header-position-center-top {
+      top: 0.5rem;
       left: 50%;
+      right: auto;
+      bottom: auto;
+      transform: translateX(-50%);
+    }
+
+    .header-position-center {
+      top: 50%;
+      left: 50%;
+      right: auto;
+      bottom: auto;
       transform: translate(-50%, -50%);
     }
 
+    .header-position-center-bottom {
+      bottom: 0.5rem;
+      left: 50%;
+      top: auto;
+      right: auto;
+      transform: translateX(-50%);
+    }
+
     .header-position-bottom-right {
-      top: 55%;  /* Align exactly with the main-image height */
+      bottom: 0.5rem;
       right: 0.5rem;
+      top: auto;
       left: auto;
-      bottom: auto;
-      transform: translateY(-100%);  /* Move up by its own height */
+      transform: none;
     }
 
     .header-position-bottom-left {
-      top: 55%;  /* Align exactly with the main-image height */
+      bottom: 0.5rem;
       left: 0.5rem;
+      top: auto;
       right: auto;
-      bottom: auto;
-      transform: translateY(-100%);  /* Move up by its own height */
+      transform: none;
     }
 
     .card-header {
@@ -155,27 +186,20 @@
 
     .card-header .date {
       font-size: 30px;
-      font-weight: 300;
+      font-weight: 500;
       line-height: 1;
     }
 
     .card-header .weekday {
       font-size: 24px;
-      font-weight: 300;
+      font-weight: 500;
       line-height: 1;
     }
 
     .card-header .day-number {
       font-size: 70px;
-      font-weight: 300;
+      font-weight: 500;
       line-height: 1;
-    }
-
-    .main-image {
-      height: 55%;
-      background-size: cover;
-      background-position: center;
-      opacity: 0.8;
     }
 
     .quote {
@@ -246,7 +270,9 @@
           <select id="header-position">
             <option value="header-position-top-right" selected>右上角</option>
             <option value="header-position-top-left">左上角</option>
+            <option value="header-position-center-top">居中顶部</option>
             <option value="header-position-center">居中</option>
+            <option value="header-position-center-bottom">居中底部</option>
             <option value="header-position-bottom-right">右下角</option>
             <option value="header-position-bottom-left">左下角</option>
           </select>
@@ -268,13 +294,13 @@
       </div>
       <div class="form-row">
         <label>日期字号
-          <input type="number" id="date-font-size" value="30"/>
+          <input type="number" id="date-font-size" value="30" />
         </label>
         <label>星期字号
-          <input type="number" id="weekday-font-size" value="24"/>
+          <input type="number" id="weekday-font-size" value="24" />
         </label>
         <label>日期数字字号
-          <input type="number" id="day-number-font-size" value="70"/>
+          <input type="number" id="day-number-font-size" value="70" />
         </label>
       </div>
       <label>主图<input type="file" id="main-image-input" accept="image/*" /></label>
@@ -291,7 +317,8 @@
 
     <div class="preview-section">
       <div id="preview-card">
-        <div id="preview-image" class="main-image" style="background-image: url(images/DewsideWhispers.png)">
+        <div class="main-image">
+          <img id="preview-image" src="images/DewsideWhispers.png" alt="主图" />
           <div class="card-header header-position-top-right">
             <div class="date-column">
               <div class="date" id="preview-date">2025.05</div>
@@ -426,20 +453,12 @@
         'header-position-top-left',
         'header-position-bottom-right',
         'header-position-bottom-left',
-        'header-position-center'
+        'header-position-center',
+        'header-position-center-top',
+        'header-position-center-bottom'
       );
       // 添加选中的位置类
       header.classList.add(e.target.value);
-
-      // 调整文本对齐方向
-      // const dateColumn = header.querySelector('.date-column');
-      // if (e.target.value.includes('left')) {
-      //   dateColumn.style.alignItems = 'flex-start';
-      // } else if (e.target.value.includes('right')) {
-      //   dateColumn.style.alignItems = 'flex-end';
-      // } else {
-      //   dateColumn.style.alignItems = 'center';
-      // }
     });
 
     $('main-image-input').addEventListener('change', e => {
@@ -447,7 +466,7 @@
       if (file) {
         const reader = new FileReader();
         reader.onload = e => {
-          $('preview-image').style.backgroundImage = `url('${e.target.result}')`;
+          $('preview-image').src = e.target.result;
         };
         reader.readAsDataURL(file);
       }
