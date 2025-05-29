@@ -654,7 +654,7 @@ export async function fetchAndRenderWeeklyCards(containerId) {
           ...card,
           Theme: randomTheme,
           Font: randomFont,
-          ImagePath: `images/${randomImage.file}`
+          ImagePath: card.ImagePath || `images/${randomImage.file}`
         };
 
         // Append card to container with download button and unique ID

@@ -29,6 +29,7 @@ export async function handler(event, context) {
     Quote: row.Quote,
     Detail: row.Detail,
     Created: row.Created,
+    ImagePath: row.ImagePath
   }));
 
   return {
