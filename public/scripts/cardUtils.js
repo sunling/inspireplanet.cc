@@ -148,7 +148,7 @@ export function renderCard(cardData, options = {}) {
             background-color: ${theme.quoteBg}; 
             color: ${theme.quoteColor};
           ">${formattedQuote}</div>
-          <img id="quote-image-${cardId}" src="${finalImage}" alt="金句插图" crossorigin="anonymous" />
+          <img id="quote-image-${cardId}" src="${finalImage}" alt="金句插图" />
           <div class="detail-text">${formattedDetail}</div>
         </div>
         <div class="card-footer">
