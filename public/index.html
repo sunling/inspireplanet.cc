@@ -524,7 +524,6 @@
         </div>
 
         <div class="form-group">
-          <label for="searchImages">根据启发内容找图</label>
           <button type="button" id="searchImagesBtn" class="upload-btn" style="width: 100%;">
             根据启发内容找图🔍 
           </button>
@@ -872,7 +871,7 @@
 
             // Show the results
             resultsDiv.style.display = 'block';
-            statusDiv.textContent = '搜索完成！点击图片可选择使用。';
+            statusDiv.textContent = ''; // Clear status message
           } else {
             statusDiv.textContent = '未找到相关图片，请尝试修改启发内容。';
           }
