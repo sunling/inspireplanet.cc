@@ -717,9 +717,8 @@ export async function uploadCard(cardData) {
     return null;
   }
 
-  // If there's a custom image, upload it to GitHub first
-  let customImageUrl = null;
-  if (cardData.upload) {
+  let customImageUrl = cardData.searchImageSelected;
+  if (!customImageUrl && cardData.upload) {
     try {
       // Show uploading indicator
       const submitBtn = document.querySelector('.primary-btn');
@@ -730,14 +729,6 @@ export async function uploadCard(cardData) {
       }
 
       customImageUrl = await uploadImageToGitHub(cardData.upload);
-
-      const res = await fetch('/.netlify/functions/analyzeImage', {
-        method: 'POST',
-        body: JSON.stringify({ imageUrl: customImageUrl }),
-      });
-      const result = await res.json();
-      console.log('Suggested tags:', result.tags);
-
 
       // Restore button state
       if (submitBtn) {

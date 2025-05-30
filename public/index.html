@@ -403,25 +403,26 @@
       margin: 0 0 0.8em 0;
       /* padding: 20px 20px; */
     }
-    
+
     .detail-text p:last-child {
       margin-bottom: 0;
     }
-    
+
     .detail-text strong {
       font-weight: bold;
       color: inherit;
     }
-    
+
     .detail-text em {
       font-style: italic;
     }
-    
+
     .detail-text del {
       text-decoration: line-through;
     }
-    
-    .detail-text ul, .detail-text ol {
+
+    .detail-text ul,
+    .detail-text ol {
       padding-left: 1.5em;
       margin-bottom: 0.8em;
     }
@@ -482,9 +483,15 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="title">标题</label>
-          <input id="title" placeholder="这一刻，我想说..." oninput="updateCardPreview()">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="creator">创作者</label>
+            <input id="creator" placeholder="匿名" oninput="updateCardPreview()">
+          </div>
+          <div class="form-group">
+            <label for="title">标题</label>
+            <input id="title" placeholder="这一刻，我想说..." oninput="updateCardPreview()">
+          </div>
         </div>
 
         <div class="form-group">
@@ -509,18 +516,25 @@
         </div>
 
         <div class="form-group">
-          <label for="detail">你的启发<small style="color: #888; font-size: 9px;">支持 Markdown 语法: **粗体** *斜体* ~~删除线~~ 按回车↩︎换行</small></label>
+          <label for="detail">你的启发<small style="color: #888; font-size: 9px;">支持 Markdown 语法: **粗体** *斜体* ~~删除线~~
+              按回车↩︎换行</small></label>
           <textarea id="detail" oninput="updateCardPreview()" style="min-height: 80px; resize: vertical;"
             placeholder="写下你的启发和行动吧..."></textarea>
-          <!-- <button type="button" id="generateImageBtn" class="upload-btn" style="margin-top: 10px; width: 100%;">
-            🎨 根据内容生成插图
-          </button> -->
           <div id="imageGenerationStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
         </div>
 
         <div class="form-group">
-          <label for="creator">创作者</label>
-          <input id="creator" placeholder="匿名" oninput="updateCardPreview()">
+          <label for="searchImages">根据启发内容找图</label>
+          <button type="button" id="searchImagesBtn" class="upload-btn" style="width: 100%;">
+            🔍 根据启发内容找图
+          </button>
+          <div id="searchImagesStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
+
+          <!-- 搜索结果图片展示区 -->
+          <div id="searchImagesResults" style="display: none; margin-top: -26px;">
+            <h5 style="margin-bottom: 10px; font-size: 14px;">搜索结果：<span id="searchQuery"></span></h5>
+            <div id="imageResults" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+          </div>
         </div>
 
         <div class="buttons">
@@ -621,7 +635,8 @@
         imagePath: document.getElementById('image-select').value,
         detail: document.getElementById('detail').value,
         creator: document.getElementById('creator').value,
-        upload: customImage
+        upload: customImage,
+        searchImageSelected: document.getElementById('quote-image-preview-card').src || '',
       }).then((result) => {
         if (result) {
           // Refresh latest cards carousel
@@ -635,18 +650,18 @@
       if (uploadImg) {
         customImage = uploadImg;
       }
-      
+
       // 获取详情内容并转换Markdown为HTML
       const detailText = document.getElementById('detail').value || '请填写你的启发和行动';
-      
+
       // 配置marked，启用换行选项
       marked.setOptions({
         breaks: true  // 将单个换行符解析为<br>
       });
-      
+
       // 使用marked.js解析Markdown
       const parsedDetail = detailText ? marked.parse(detailText) : '';
-      
+
       const options = {
         title: document.getElementById('title').value || '这一刻，我想说...',
         quote: document.getElementById('quote').value || '请写下触动到你的观点"',
@@ -769,51 +784,111 @@
         });
       }
     }
+    // Function to search for images based on inspiration content
+    async function searchImagesFromDetail() {
+      const detailText = document.getElementById('detail').value;
+      if (!detailText) {
+        alert('请先输入启发内容');
+        return;
+      }
 
-    // Function to handle image generation
-    async function generateImageFromDetail() {
-        const detailText = document.getElementById('detail').value;
-        if (!detailText) {
-            alert('请先输入启发内容');
-            return;
-        }
+      const searchBtn = document.getElementById('searchImagesBtn');
+      const statusDiv = document.getElementById('searchImagesStatus');
+      const resultsDiv = document.getElementById('searchImagesResults');
+      const querySpan = document.getElementById('searchQuery');
+      const imageResultsDiv = document.getElementById('imageResults');
 
-        const generateBtn = document.getElementById('generateImageBtn');
-        const statusDiv = document.getElementById('imageGenerationStatus');
-        
-        try {
-            generateBtn.disabled = true;
-            statusDiv.textContent = '正在生成图片，请稍候...';
-            
-            const response = await fetch('/.netlify/functions/generateImage', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ text: detailText }),
-            });
+      try {
+        // Update UI to show loading state
+        searchBtn.disabled = true;
+        statusDiv.textContent = '正在搜索相关图片，请稍候...';
+        resultsDiv.style.display = 'none';
 
-            const data = await response.json();
-            
-            if (response.ok) {
+        // Call the Netlify function
+        const response = await fetch('/.netlify/functions/searchImage', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text: detailText }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Display the search query
+          querySpan.textContent = data.query;
+
+          // Clear previous results
+          imageResultsDiv.innerHTML = '';
+
+          // Display the images
+          if (data.images && data.images.length > 0) {
+            data.images.forEach(image => {
+              const imgContainer = document.createElement('div');
+              imgContainer.style.width = 'calc(33.33% - 10px)';
+              imgContainer.style.position = 'relative';
+              imgContainer.style.cursor = 'pointer';
+              imgContainer.style.borderRadius = '8px';
+              imgContainer.style.overflow = 'hidden';
+              imgContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+
+              const img = document.createElement('img');
+              img.src = image.thumb;
+              img.alt = image.title;
+              img.style.width = '100%';
+              img.style.height = '100px';
+              img.style.objectFit = 'cover';
+
+              const overlay = document.createElement('div');
+              overlay.style.position = 'absolute';
+              overlay.style.bottom = '0';
+              overlay.style.left = '0';
+              overlay.style.right = '0';
+              overlay.style.backgroundColor = 'rgba(0,0,0,0.6)';
+              overlay.style.color = 'white';
+              overlay.style.padding = '4px';
+              overlay.style.fontSize = '10px';
+              overlay.textContent = image.description;
+
+              imgContainer.appendChild(img);
+              imgContainer.appendChild(overlay);
+
+              // Add click event to select this image
+              imgContainer.addEventListener('click', () => {
                 // Update the custom image
-                customImage = data.imageUrl;
+                customImage = image.url;
                 // Update the card preview
                 updateCardPreview();
-                statusDiv.textContent = '图片生成成功！';
-            } else {
-                throw new Error(data.error || '生成图片失败');
-            }
-        } catch (error) {
-            console.error('Error generating image:', error);
-            statusDiv.textContent = `生成失败: ${error.message}`;
-        } finally {
-            generateBtn.disabled = false;
+                // Add a highlight to the selected image
+                document.querySelectorAll('#imageResults > div').forEach(div => {
+                  div.style.border = 'none';
+                });
+                imgContainer.style.border = '3px solid #4a6fa5';
+              });
+
+              imageResultsDiv.appendChild(imgContainer);
+            });
+
+            // Show the results
+            resultsDiv.style.display = 'block';
+            statusDiv.textContent = '搜索完成！点击图片可选择使用。';
+          } else {
+            statusDiv.textContent = '未找到相关图片，请尝试修改启发内容。';
+          }
+        } else {
+          throw new Error(data.error || '搜索图片失败');
         }
+      } catch (error) {
+        console.error('Error searching images:', error);
+        statusDiv.textContent = `搜索失败: ${error.message}`;
+      } finally {
+        searchBtn.disabled = false;
+      }
     }
 
-    // Add event listener for the generate image button
-    // document.getElementById('generateImageBtn').addEventListener('click', generateImageFromDetail);
+    // Add event listener for the search images button
+    document.getElementById('searchImagesBtn').addEventListener('click', searchImagesFromDetail);
   </script>
 </body>
 
