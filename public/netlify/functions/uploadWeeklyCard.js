@@ -1,6 +1,7 @@
 // netlify/functions/uploadWeeklyCard.js
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
+import fetch from 'node-fetch'
 dotenv.config()
 
 const supabase = createClient(
@@ -34,6 +35,29 @@ export async function handler(event, context) {
       };
     }
 
+    // Call searchImage function to get images based on the detail content
+    const searchResponse = await fetch(`${getBaseUrl()}/.netlify/functions/searchImage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ text: record.detail })
+    });
+    
+    let imagePath = null;
+    
+    if (searchResponse.ok) {
+      const searchData = await searchResponse.json();
+      
+      if (searchData.images && searchData.images.length > 0) {
+        // Randomly select one of the returned images
+        const randomIndex = Math.floor(Math.random() * searchData.images.length);
+        imagePath = searchData.images[randomIndex].url;
+      }
+    } else {
+      console.warn('Failed to fetch image, continuing without image');
+    }
+
     // Prepare the record for Supabase
     const weeklyCardRecord = {
       Episode: record.episode,
@@ -41,6 +65,7 @@ export async function handler(event, context) {
       Title: record.title,
       Quote: record.quote,
       Detail: record.detail,
+      ImagePath: imagePath, // Add the selected image URL
       Created: new Date().toISOString()
     };
 
@@ -88,3 +113,13 @@ function getMissingFields(record) {
   const requiredFields = ['episode', 'name', 'title', 'quote', 'detail'];
   return requiredFields.filter(field => !record[field]);
 }
+
+function getBaseUrl() {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  } else if (process && process.env && process.env.URL) {
+    return process.env.URL;
+  } else {
+    return 'http://localhost:8888'; // fallback for local dev
+  }
+} 
