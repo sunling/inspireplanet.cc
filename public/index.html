@@ -785,9 +785,14 @@
     }
     // Function to search for images based on inspiration content
     async function searchImagesFromDetail() {
-      const detailText = document.getElementById('detail').value;
-      if (!detailText) {
-        alert('请先输入启发内容');
+      // Get content from all three fields
+      const titleText = document.getElementById('title').value || '';
+      const quoteText = document.getElementById('quote').value || '';
+      const detailText = document.getElementById('detail').value || '';
+      
+      // Check if at least one field has content
+      if (!titleText && !quoteText && !detailText) {
+        alert('请先输入标题、引用或启发内容');
         return;
       }
 
@@ -803,6 +808,9 @@
         statusDiv.textContent = '正在搜索相关图片，请稍候...';
         resultsDiv.style.display = 'none';
 
+        // Combine all three fields for searching
+        const combinedText = [titleText, quoteText, detailText].filter(text => text.trim()).join(' ');
+
         // Call the Netlify function
         const response = await fetch('/.netlify/functions/searchImage', {
           method: 'POST',
@@ -810,8 +818,8 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ 
-            text: detailText,
-            orientation: 'landscape' // 卡片插图适合竖版图片
+            text: combinedText,
+            orientation: 'landscape'
           }),
         });
 
