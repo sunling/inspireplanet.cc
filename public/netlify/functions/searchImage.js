@@ -21,7 +21,7 @@ exports.handler = async function (event) {
     }
 
     // Check if text parameter is provided
-    const { text } = requestBody;
+    const { text, orientation = 'landscape' } = requestBody;
     if (!text) {
         return {
             statusCode: 400,
@@ -72,7 +72,7 @@ exports.handler = async function (event) {
         const finalQuery = query.length > 100 ? query.substring(0, 100) : query;
 
         // Step 2: Search for images on Unsplash API
-        const unsplashResponse = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(finalQuery)}&per_page=6&orientation=landscape`, {
+        const unsplashResponse = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(finalQuery)}&per_page=6&orientation=${orientation}`, {
             headers: {
                 'Authorization': `Client-ID ${process.env.UNSPLASH_ACCESS_KEY || ''}`
             }

@@ -157,6 +157,21 @@
         <input type="file" id="bgUpload" accept="image/*" style="display: none;">
       </div>
     </label>
+    
+    <label>图片搜索:
+      <div>
+        <button type="button" id="searchImagesBtn" class="upload-btn" style="width: 100%;">
+          根据标题和关键词搜索封面图🔍
+        </button>
+        <div id="searchImagesStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
+      </div>
+    </label>
+    
+    <!-- 搜索结果图片展示区 -->
+    <div id="searchImagesResults" style="display: none; margin-top: 10px;">
+      <h5 style="margin-bottom: 10px; font-size: 14px;">搜索结果：<span id="searchQuery"></span></h5>
+      <div id="imageResults" style="display: flex; flex-wrap: wrap; gap: 10px; max-height: 300px; overflow-y: auto;"></div>
+    </div>
     <!-- <div class="buttons">
       <button onclick="downloadCoverImage()">下载</button>
     </div> -->
@@ -198,6 +213,9 @@
 
       // Setup file upload
       setupFileUpload();
+      
+      // Add event listener for the search images button
+      document.getElementById('searchImagesBtn').addEventListener('click', searchImagesFromTitleAndTags);
     });
 
     window.onSelectImage = function () {
@@ -261,6 +279,118 @@
         statusId: 'fileStatus',
         onLoad: renderCover
       });
+    }
+    
+    // Function to search for images based on title and tags
+    async function searchImagesFromTitleAndTags() {
+      console.log('Searching images based on title and tags...');
+      const titleText = document.getElementById('main-title').value;
+      const tagsText = document.getElementById('tags').value;
+      
+      if (!titleText && !tagsText) {
+        alert('请先输入标题或关键词');
+        return;
+      }
+      
+      // Combine title and tags for search
+      const searchText = `${titleText} ${tagsText}`;
+      
+      const searchBtn = document.getElementById('searchImagesBtn');
+      const statusDiv = document.getElementById('searchImagesStatus');
+      const resultsDiv = document.getElementById('searchImagesResults');
+      const querySpan = document.getElementById('searchQuery');
+      const imageResultsDiv = document.getElementById('imageResults');
+      
+      try {
+        // Update UI to show loading state
+        searchBtn.disabled = true;
+        statusDiv.textContent = '正在搜索相关图片，请稍候...';
+        resultsDiv.style.display = 'none';
+        
+        // Call the Netlify function
+        const response = await fetch('/.netlify/functions/searchImage', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            text: searchText,
+            orientation: 'landscape' // 封面图需要横版图片
+          }),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Display the search query
+          querySpan.textContent = data.query;
+          
+          // Clear previous results
+          imageResultsDiv.innerHTML = '';
+          
+          // Display the images
+          if (data.images && data.images.length > 0) {
+            data.images.forEach(image => {
+              const imgContainer = document.createElement('div');
+              imgContainer.style.width = 'calc(33.33% - 10px)';
+              imgContainer.style.position = 'relative';
+              imgContainer.style.cursor = 'pointer';
+              imgContainer.style.borderRadius = '8px';
+              imgContainer.style.overflow = 'hidden';
+              imgContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+              
+              const img = document.createElement('img');
+              img.src = image.thumb;
+              img.alt = image.title;
+              img.style.width = '100%';
+              img.style.height = '100px';
+              img.style.objectFit = 'cover';
+              
+              const overlay = document.createElement('div');
+              overlay.style.position = 'absolute';
+              overlay.style.bottom = '0';
+              overlay.style.left = '0';
+              overlay.style.right = '0';
+              overlay.style.backgroundColor = 'rgba(0,0,0,0.6)';
+              overlay.style.color = 'white';
+              overlay.style.padding = '4px';
+              overlay.style.fontSize = '10px';
+              overlay.textContent = image.description;
+              
+              imgContainer.appendChild(img);
+              imgContainer.appendChild(overlay);
+              
+              // Add click event to select this image
+              imgContainer.addEventListener('click', () => {
+                // Update the custom image
+                customBgImage = image.url;
+                // Update the card preview
+                renderCover();
+                // Add a highlight to the selected image
+                document.querySelectorAll('#imageResults > div').forEach(div => {
+                  div.style.border = 'none';
+                });
+                imgContainer.style.border = '3px solid #323449';
+              });
+              
+              imageResultsDiv.appendChild(imgContainer);
+            });
+            
+            // Show the results
+            resultsDiv.style.display = 'block';
+            statusDiv.textContent = ''; // Clear status message
+          } else {
+            statusDiv.textContent = '未找到相关图片，请尝试修改标题或关键词。';
+          }
+        } else {
+          throw new Error(data.error || '搜索图片失败');
+        }
+      } catch (error) {
+        console.error('Error searching images:', error);
+        statusDiv.textContent = `搜索失败: ${error.message}`;
+      } finally {
+        searchBtn.disabled = false;
+      }
     }
   </script>
 </body>

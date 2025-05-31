@@ -809,7 +809,10 @@
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ text: detailText }),
+          body: JSON.stringify({ 
+            text: detailText,
+            orientation: 'landscape' // 卡片插图适合竖版图片
+          }),
         });
 
         const data = await response.json();
