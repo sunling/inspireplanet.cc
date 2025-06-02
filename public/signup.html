@@ -54,37 +54,37 @@
             border-left: 4px solid #007acc;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        
+
         /* 适配移动设备 */
         @media (max-width: 768px) {
             .weeks-container {
                 flex-wrap: wrap;
                 gap: 10px;
             }
-            
+
             .week {
                 flex: 1 1 calc(50% - 10px);
             }
-            
+
             .container {
                 padding: 1.5rem;
             }
-            
+
             h3 {
                 font-size: 1.1rem;
             }
-            
+
             .week p {
                 font-size: 0.9rem;
             }
         }
-        
+
         /* 适配超小屏幕 */
         @media (max-width: 480px) {
             .week {
                 flex: 1 1 100%;
             }
-            
+
             body {
                 padding: 1rem;
             }
@@ -190,8 +190,17 @@
 
     <div class="container">
         <h1>Page One Workshop 报名页</h1>
-        <p>我是孙玲，Page One Workshop 的发起人。
-            2025年6月8日（北京时间）开始，12人小班，带你从零开始，做出你的第一张网页。</p>
+        <p>
+            我是孙玲，Page One Workshop 的发起人。<br>
+            2025 年 6 月 8 日（北京时间）开始，12 人小班，带你从零开始，做出你的第一张网页。
+        </p>
+        <p>
+            最近我结合 AI，开发了一个启发卡片的网站。过程中我发现：AI 很强大。虽然我的本业是编程，但在做这个网站时，我几乎没有写太多代码。只要知道怎么提出问题，怎么分解问题，加上一点点引导，AI 就能帮我完成很多工作。
+        </p>
+        <p>
+            这让我更确信：哪怕是完全零基础，只要你愿意尝试，就能用 AI 来培养一点编程思维，做点有意思的东西出来。Page One Workshop
+            就是我想和你一起验证的——从拿到一个最基础的网页模板，到上线、改成自己的，再到把它变成一个能被别人看见的小作品。
+        </p>
         <p>🕒 <strong>时间：</strong> 每周日中午12点（北京时间），每次1小时（腾讯会议参与）<br>
             💰 <strong>费用：</strong> 199 元/月（首次尝试价）</p>
 
@@ -235,7 +244,8 @@
             <label for="expectation">对这个 Workshop 的期待</label>
             <textarea id="expectation" name="expectation" rows="3" required></textarea>
 
-            <label>是否已支付？<small style="color: #888; font-size: 9px;">如果费用上有问题并真的很想报名，可以发邮件给我sunling621@gmail.com</small></label>
+            <label>是否已支付？<small
+                    style="color: #888; font-size: 9px;">如果费用上有问题并真的很想报名，可以发邮件给我sunling621@gmail.com</small></label>
             <div class="radio-group">
                 <label><input type="radio" name="paid" value="true" required> 是</label>
                 <label><input type="radio" name="paid" value="false"> 否</label>
