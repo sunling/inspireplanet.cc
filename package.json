@@ -7,7 +7,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
+    "bcryptjs": "^3.0.2",
     "dotenv": "^16.5.0",
+    "jsonwebtoken": "^9.0.2",
     "luxon": "^3.6.1",
     "node-fetch": "^2.6.7",
     "puppeteer": "^24.7.2",
