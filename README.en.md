@@ -4,7 +4,7 @@ A web application to create, upload, and showcase inspirational flashcards from 
 
 ## Project Overview
 
-This web app enables users to create beautiful inspiration cards with customizable themes, fonts, and background images. Cards can be created individually through the web interface or uploaded in bulk through the admin panel. All cards are stored in Airtable and displayed on the website grouped by date or episode.
+This web app enables users to create beautiful inspiration cards with customizable themes, fonts, and background images. Cards can be created individually through the web interface or uploaded in bulk through the admin panel. All cards are stored in Supabase and displayed on the website grouped by date or episode.
 
 ## Project Structure
 
@@ -14,43 +14,62 @@ This web app enables users to create beautiful inspiration cards with customizab
   ├── /admin   # Bulk upload tools (bulk-uploader.html)
   ├── /images  # Card background images
   ├── /scripts # JavaScript files (cardUtils.js, bulk-uploader.js, etc.)
-  ├── cards.html         # Page to view all cards (grouped by dates)
-  ├── index.html         # Home page (create cards + latest cards carousel)
-  ├── weekly-cards.html  # Page to view weekly meeting cards (grouped by episode)
-/netlify/functions # Netlify serverless functions
-  ├── clearCache.js
-  ├── fetchAirtableData.js
-  ├── uploadCardToAirtable.js
+  ├── auth.html          # Login page
+  ├── signup.html        # Sign-up page
+  ├── card-detail.html   # View single card
+  ├── cards.html         # View all cards
+  ├── daily-card.html    # Daily card editor
+  ├── index.html         # Home page (create cards + latest carousel)
+  ├── text-optimizer.html # Text optimizer
+  ├── weekly-cards.html  # Weekly meeting cards page
+  ├── cover-editor.html  # Landscape cover maker
+  ├── cover-editor-mobile.html  # Portrait cover maker
+  images.json    # Defined list of images for cards
+/public/netlify/functions # Netlify serverless functions
+  ├── authHandler.js
+  ├── cardsHandler.js
+  ├── commentsHandler.js
+  ├── fetchWeeklyCards.js
+  ├── optimizeText.js
+  ├── searchImage.js
   ├── uploadImageToGitHub.js
   ├── uploadWeeklyCard.js
+  ├── workshopHandler.js
+  ├── utils.js
 /user_uploads  # Uploaded images
-images.json    # Defined list of images for cards
 ```
 
 ## Netlify Functions
 
 The project uses Netlify serverless functions to handle API requests securely:
 
-- **fetchAirtableData.js** – Fetch cached latest 100 cards ordered by created date
-- **clearCache.js** – Clear the Airtable cache after upload
-- **uploadCardToAirtable.js** – Upload a single user-created card
-- **uploadImageToGitHub.js** – Upload user-uploaded images to a GitHub repo
-- **uploadWeeklyCard.js** – Upload weekly meeting cards in bulk
 
+- **authHandler.js** – Handles login, signup and sessions
+- **cardsHandler.js** – Fetch cards from Supabase
+- **commentsHandler.js** – Manage comments data
+- **fetchWeeklyCards.js** – Get weekly meeting cards
+- **optimizeText.js** – Optimize text using AI
+- **searchImage.js** – Search suitable images
+- **uploadImageToGitHub.js** – Save images to GitHub
+- **uploadWeeklyCard.js** – Upload weekly cards in bulk
+- **workshopHandler.js** – Workshop related API
 ## Main Features
 
-- **Create Personalized Cards**: Design inspiration cards with customizable themes, fonts, and images
-- **Secure Uploads**: All cards are uploaded to Airtable via serverless functions
-- **Organized Display**: View cards grouped by dates (all cards) or by episodes (weekly cards)
-- **Download Functionality**: Download cards directly from the site as high-quality images
-- **Latest Cards Carousel**: Browse through the most recent 10 cards on the homepage
-- **Admin Panel**: Bulk upload weekly meeting cards through a dedicated admin interface
 
+- **Create Personalized Cards**: Design inspiration cards with customizable themes, fonts, and images
+- **Text Optimizer**: Refine card text using AI
+- **Daily Card Editor**: Quickly create daily cards
+- **User Authentication**: Login and signup via Supabase
+- **Secure Uploads**: All cards are stored in Supabase via serverless functions
+- **Organized Display**: View cards grouped by dates (all cards) or by episodes (weekly cards)
+- **Download Functionality**: Download cards as high-quality images
+- **Latest Cards Carousel**: Browse the most recent 10 cards on the homepage
+- **Admin Panel**: Bulk upload weekly meeting cards through a dedicated admin interface
 ## Deployment Information
 
 - **Hosting**: Netlify
 - **Production URL**: https://inspiration-planet.netlify.app
-- **Configuration**: Use `.env` file to configure Airtable API keys and table names
+- **Configuration**: Use `.env` file to configure Supabase credentials and other API keys
 
 ## Local Development
 
@@ -69,16 +88,18 @@ To set up the project locally:
 
 3. Create a `.env` file with the following variables:
    ```
-   AIRTABLE_TOKEN=your_airtable_api_key
-   AIRTABLE_BASE_NAME=your_base_id
-   AIRTABLE_TABLE_NAME=your_table_id
-   AIRTABLE_TABLE_NAME_WEEKLY=your_weekly_table_id
+
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_ANON_KEY=your_supabase_anon_key
+   JWT_SECRET=your_jwt_secret
+   OPENROUTER_API_KEY=your_openrouter_key
+   UNSPLASH_ACCESS_KEY=your_unsplash_key
+   REPLICATE_API_TOKEN=your_replicate_token
    GITHUB_TOKEN=your_github_token
    GITHUB_REPO_OWNER=your_github_username
    GITHUB_REPO_NAME=your_repo_name
    GITHUB_BRANCH=main
    ```
-
 4. Start the Netlify Dev server
    ```
    npx netlify dev
