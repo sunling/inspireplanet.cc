@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发起新的 Meetup 活动</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+            background-color: #f9f9f9;
+        }
+
+        h1 {
+            margin-bottom: 0.5em;
+        }
+
+        form {
+            background: white;
+            padding: 1.5em;
+            border-radius: 8px;
+            max-width: 600px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-top: 1em;
+            font-weight: bold;
+        }
+
+        input,
+        textarea,
+        button {
+            width: 100%;
+            padding: 0.5em;
+            font-size: 1em;
+            margin-top: 0.25em;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            margin-top: 1.5em;
+            cursor: pointer;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        small {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📍 发起新的 Meetup 活动</h1>
+    <form id="meetup-form">
+        <label for="title">活动标题</label>
+        <input type="text" id="title" name="title" required>
+
+        <label for="datetime">活动时间</label>
+        <input type="datetime-local" id="datetime" name="datetime" required>
+
+        <label for="location">活动地点</label>
+        <input type="text" id="location" name="location" required>
+
+        <label for="description">活动介绍</label>
+        <textarea id="description" name="description" rows="5" required></textarea>
+
+        <label for="wechat">你的微信号 <small>（仅组织者可见）</small></label>
+        <input type="text" id="wechat" name="wechat" required>
+
+        <button type="submit">✨ 发起活动</button>
+    </form>
+
+    <script>
+        document.getElementById("meetup-form").addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const data = {
+                title: this.title.value,
+                datetime: this.datetime.value,
+                location: this.location.value,
+                description: this.description.value,
+                wechat: this.wechat.value,
+            };
+
+            const response = await fetch('/.netlify/functions/createMeetup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                window.location.href = `/meetup/manage/${result.manage_token}`;
+            } else {
+                alert('提交失败：' + result.error);
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管理 Meetup 活动</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2em;
+      background-color: #f7f7f7;
+    }
+    h1 {
+      margin-bottom: 0.5em;
+    }
+    .section {
+      background: white;
+      padding: 1.5em;
+      border-radius: 8px;
+      max-width: 700px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2em;
+    }
+    .rsvp-list {
+      margin-top: 1em;
+      padding-left: 1em;
+    }
+    .rsvp-list li {
+      margin-bottom: 0.3em;
+    }
+  </style>
+</head>
+<body>
+  <h1>📋 Meetup 活动管理页</h1>
+  <div class="section" id="meetup-info">
+    <p>正在加载活动信息...</p>
+  </div>
+
+  <div class="section" id="rsvp-info">
+    <h2>🎉 参与者列表</h2>
+    <p>加载中...</p>
+  </div>
+
+  <script>
+    async function loadMeetupData() {
+      const token = new URLSearchParams(window.location.search).get("token");
+      if (!token) {
+        document.getElementById("meetup-info").innerHTML = "❌ 缺少 token 参数。";
+        return;
+      }
+
+      try {
+        const res = await fetch(`/.netlify/functions/getMeetupDetails?token=${token}`);
+        const result = await res.json();
+
+        if (!res.ok || result.error) {
+          document.getElementById("meetup-info").innerHTML = `❌ 读取活动失败：${result.error}`;
+          return;
+        }
+
+        const { meetup, rsvps } = result;
+
+        document.getElementById("meetup-info").innerHTML = `
+          <h2>${meetup.title}</h2>
+          <p><strong>时间：</strong> ${new Date(meetup.datetime).toLocaleString()}</p>
+          <p><strong>地点：</strong> ${meetup.location}</p>
+          <p><strong>介绍：</strong><br>${meetup.description}</p>
+          <p><strong>发起人微信号：</strong> ${meetup.wechat_id}</p>
+        `;
+
+        if (!Array.isArray(rsvps) || rsvps.length === 0) {
+          document.getElementById("rsvp-info").innerHTML += `<p>目前还没有人报名。</p>`;
+          return;
+        }
+
+        const list = rsvps.map(item => `
+          <li>${item.name}（微信号：${item.wechat_id}） - ${item.status === 'going' ? '✅ 参加' : '🤔 感兴趣'}</li>
+        `).join('');
+
+        document.getElementById("rsvp-info").innerHTML += `<ul class="rsvp-list">${list}</ul>`;
+      } catch (err) {
+        document.getElementById("meetup-info").innerHTML = `❌ 加载失败：${err.message}`;
+      }
+    }
+
+    loadMeetupData();
+  </script>
+</body>
+</html>
