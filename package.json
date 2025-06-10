@@ -13,7 +13,8 @@
     "luxon": "^3.6.1",
     "node-fetch": "^2.6.7",
     "puppeteer": "^24.7.2",
-    "replicate": "^1.0.1"
+    "replicate": "^1.0.1",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "netlify-cli": "^17.10.1"
