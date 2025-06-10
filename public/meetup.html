@@ -6,95 +6,111 @@
   <title>Meetup 活动详情</title>
   <style>
     body {
-      font-family: sans-serif;
-      padding: 2em;
-      background-color: #f7f7f7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f2f2f2;
+      color: #333;
+    }
+    .container {
+      max-width: 720px;
+      margin: 2em auto;
+      padding: 1.5em;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
     }
     h1 {
-      margin-bottom: 0.5em;
-    }
-    .section {
-      background: white;
-      padding: 1.5em;
-      border-radius: 8px;
-      max-width: 700px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      margin-bottom: 2em;
-    }
-    .rsvp-list {
-      margin-top: 1em;
-      padding-left: 1em;
-    }
-    .rsvp-list li {
+      font-size: 1.8em;
       margin-bottom: 0.3em;
     }
-    .rsvp-form {
+    h2 {
+      font-size: 1.2em;
       margin-top: 1.5em;
     }
+    .info-line {
+      margin: 0.4em 0;
+      display: flex;
+      align-items: center;
+    }
+    .info-line span {
+      margin-left: 0.5em;
+    }
+    .description {
+      margin-top: 1em;
+      line-height: 1.6em;
+      white-space: pre-line;
+    }
+    .button {
+      display: inline-block;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 0.6em 1.2em;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 1em;
+    }
+    .rsvp-form, .rsvp-list {
+      margin-top: 1em;
+    }
     .rsvp-form input, .rsvp-form select, .rsvp-form button {
-      display: block;
       margin-top: 0.5em;
       padding: 0.5em;
-      width: 100%;
       font-size: 1em;
+      width: 100%;
     }
-    .success {
-      color: green;
+    ul {
+      list-style: none;
+      padding-left: 0;
     }
-    .error {
-      color: red;
+    li {
+      margin-bottom: 0.4em;
     }
     .cancel-btn {
-      margin-left: 10px;
+      margin-left: 8px;
       color: red;
       cursor: pointer;
       font-size: 0.9em;
     }
-    .share-button {
-      margin-top: 1em;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 0.6em 1em;
-      border-radius: 4px;
-      cursor: pointer;
-    }
+    .success { color: green; }
+    .error { color: red; }
   </style>
 </head>
 <body>
-  <h1>📌 Meetup 活动详情</h1>
-  <div class="section" id="meetup-info">
-    <p>正在加载活动信息...</p>
-  </div>
+  <div class="container">
+    <h1 id="meetup-title">📌 Meetup 活动详情</h1>
+    <div id="meetup-info">
+      <p>正在加载活动信息...</p>
+    </div>
 
-  <div class="section">
-    <button id="share-button" class="share-button">📤 复制活动链接</button>
-    <p id="share-message"></p>
-  </div>
+    <div>
+      <button id="share-button" class="button">📤 复制活动链接</button>
+      <p id="share-message"></p>
+    </div>
 
-  <div class="section" id="rsvp-form-section" style="display: none;">
-    <h2>📝 报名参加</h2>
-    <form id="rsvp-form" class="rsvp-form">
-      <label for="name">你的昵称</label>
-      <input type="text" id="name" name="name" required />
+    <div class="rsvp-form" id="rsvp-form-section" style="display:none">
+      <h2>📝 报名参加</h2>
+      <form id="rsvp-form">
+        <label for="name">你的昵称</label>
+        <input type="text" id="name" required />
+        <label for="wechat">你的微信号</label>
+        <input type="text" id="wechat" required />
+        <label for="status">报名状态</label>
+        <select id="status">
+          <option value="going">✅ 确定参加</option>
+          <option value="maybe">🤔 感兴趣</option>
+        </select>
+        <button type="submit" class="button">提交报名</button>
+        <p id="rsvp-message"></p>
+      </form>
+    </div>
 
-      <label for="wechat">你的微信号</label>
-      <input type="text" id="wechat" name="wechat" required />
-
-      <label for="status">报名状态</label>
-      <select id="status" name="status">
-        <option value="going">✅ 确定参加</option>
-        <option value="maybe">🤔 感兴趣</option>
-      </select>
-
-      <button type="submit">提交报名</button>
-      <p id="rsvp-message"></p>
-    </form>
-  </div>
-
-  <div class="section" id="rsvp-info">
-    <h2>👥 报名者</h2>
-    <ul class="rsvp-list" id="rsvp-list"></ul>
+    <div class="rsvp-list">
+      <h2>👥 报名者</h2>
+      <ul id="rsvp-list"></ul>
+    </div>
   </div>
 
   <script>
@@ -107,26 +123,19 @@
         document.getElementById("meetup-info").innerHTML = "❌ 缺少 meetup_id 参数。";
         return;
       }
-
       try {
         const res = await fetch(`/.netlify/functions/getMeetupDetails?meetup_id=${meetup_id}`);
         const result = await res.json();
-
-        if (!res.ok || result.error) {
-          document.getElementById("meetup-info").innerHTML = `❌ 读取活动失败：${result.error}`;
-          return;
-        }
+        if (!res.ok && result.error) throw new Error(result.error);
 
         const { meetup, rsvps } = result;
         allRsvps = rsvps || [];
-
+        document.getElementById("meetup-title").textContent = meetup.title;
         document.getElementById("meetup-info").innerHTML = `
-          <h2>${meetup.title}</h2>
-          <p><strong>时间：</strong> ${new Date(meetup.datetime).toLocaleString()}</p>
-          <p><strong>地点：</strong> ${meetup.location}</p>
-          <p><strong>介绍：</strong><br>${meetup.description}</p>
+          <div class="info-line">📅<span>${new Date(meetup.datetime).toLocaleString()}</span></div>
+          <div class="info-line">📍<span>${meetup.location}</span></div>
+          <div class="info-line description">📝<span>${meetup.description}</span></div>
         `;
-
         document.getElementById("rsvp-form-section").style.display = 'block';
         renderRsvpList();
       } catch (err) {
@@ -143,11 +152,10 @@
       }
       for (const item of allRsvps) {
         const li = document.createElement('li');
-        li.textContent = `${item.name} - ${item.status === 'going' ? '✅ 参加' : '🤔 感兴趣'}`;
+        li.textContent = `${item.status === 'going' ? '✅' : '🤔'} ${item.name}`;
         const cancel = document.createElement('span');
         cancel.className = 'cancel-btn';
-        cancel.textContent = '❌';
-        cancel.title = '取消报名';
+        cancel.textContent = '取消';
         cancel.onclick = async () => {
           const res = await fetch('/.netlify/functions/deleteRsvp', {
             method: 'POST',
@@ -158,7 +166,7 @@
             allRsvps = allRsvps.filter(x => x.name !== item.name || x.wechat_id !== item.wechat_id);
             renderRsvpList();
           } else {
-            alert('取消报名失败');
+            alert('取消失败');
           }
         };
         li.appendChild(cancel);
@@ -168,11 +176,9 @@
 
     document.getElementById("rsvp-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-
       const name = document.getElementById("name").value.trim();
       const wechat = document.getElementById("wechat").value.trim();
       const status = document.getElementById("status").value;
-
       if (!name || !wechat || !status || !meetup_id) return;
 
       const response = await fetch("/.netlify/functions/submitRsvp", {
@@ -180,12 +186,10 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ meetup_id, name, wechat_id: wechat, status }),
       });
-
       const result = await response.json();
       const message = document.getElementById("rsvp-message");
-
       if (response.ok) {
-        message.textContent = "✅ 报名成功！你现在出现在列表里啦。";
+        message.textContent = "✅ 报名成功！";
         message.className = "success";
         document.getElementById("rsvp-form").reset();
         allRsvps.push({ name, wechat_id: wechat, status });
@@ -197,12 +201,11 @@
     });
 
     document.getElementById("share-button").addEventListener("click", async () => {
-      const url = window.location.href;
       try {
-        await navigator.clipboard.writeText(url);
-        document.getElementById("share-message").textContent = "✅ 链接已复制到剪贴板！快分享给朋友吧～";
-      } catch (err) {
-        document.getElementById("share-message").textContent = "❌ 无法复制链接，请手动复制地址栏～";
+        await navigator.clipboard.writeText(window.location.href);
+        document.getElementById("share-message").textContent = "✅ 链接已复制！";
+      } catch {
+        document.getElementById("share-message").textContent = "❌ 复制失败，请手动复制地址栏。";
       }
     });
 
