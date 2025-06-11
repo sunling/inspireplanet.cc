@@ -7,6 +7,7 @@
   <title>日签卡片编辑器</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script type="module" src="scripts/cardUtils.js"></script>
+  <link rel="stylesheet" href="styles/common.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500&family=ZCOOL+XiaoWei&display=swap"
     rel="stylesheet" />
   <link href="https://fonts.cdnfonts.com/css/athena" rel="stylesheet">
@@ -242,17 +243,18 @@
     }
 
     .download-btn {
-      background: #4a6fa5;
+      background: var(--primary-gradient);
       color: white;
       border: none;
       border-radius: 4px;
       padding: 10px 15px;
       cursor: pointer;
       font-weight: 600;
+      transition: background 0.3s;
     }
 
     .download-btn:hover {
-      background: #3a5d8f;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
     }
 
     .font-selector {
@@ -312,7 +314,7 @@
       </div>
       <label>二维码图片<input type="file" id="qrcode-input" accept="image/*" /></label>
 
-      <button class="download-btn" onclick="downloadCardImage('#preview-card', 'daily-card-')">下载卡片</button>
+      <button class="btn download-btn" onclick="downloadCardImage('#preview-card', 'daily-card-')">下载卡片</button>
     </div>
 
     <div class="preview-section">
@@ -342,8 +344,7 @@
 
   <script type="module">
     import { downloadCard } from './scripts/cardUtils.js';
-
-    const $ = id => document.getElementById(id);
+    import { $, downloadCardImage } from './scripts/common.js';
 
     // Set today's date by default
     function setTodayDate() {
@@ -483,10 +484,6 @@
       }
     });
 
-    // Function to download the current card
-    window.downloadCardImage = function () {
-      downloadCard('#preview-card', 'daily-card-');
-    };
   </script>
 </body>
 
