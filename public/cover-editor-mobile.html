@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>封面图编辑器 - 移动适配</title>
+  <link rel="stylesheet" href="styles/common.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script type="module" src="scripts/cardUtils.js"></script>
   <link
@@ -181,7 +182,7 @@
         <div class="form-group">
           <label for="bgUpload">自定义背景图</label>
           <div class="file-upload-wrapper">
-            <button type="button" id="uploadBtn" class="upload-btn">📷 上传图片</button><br>
+            <button type="button" id="uploadBtn" class="btn upload-btn">📷 上传图片</button><br>
             <small id="fileStatus" style="color: #888; font-size: 12px; margin-left: 10px;">No file chosen</small>
             <input type="file" id="bgUpload" accept="image/*" style="display: none;">
           </div>
@@ -190,7 +191,7 @@
       
       <label>图片搜索:
         <div>
-          <button type="button" id="searchImagesBtn" class="upload-btn" style="width: 100%;">
+          <button type="button" id="searchImagesBtn" class="btn upload-btn" style="width: 100%;">
             根据标题和关键词搜索封面图🔍
           </button>
           <div id="searchImagesStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
@@ -207,7 +208,7 @@
       <label>关键词(空格分隔):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
 
       <label>下载到本地:
-        <button onclick="downloadCoverImage()">下载</button>
+        <button class="btn" onclick="downloadCoverImage()">下载</button>
       </label>
     </div>
 

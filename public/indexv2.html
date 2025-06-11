@@ -18,23 +18,9 @@
     rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/common.css">
 
   <style>
-    * {
-      -webkit-font-smoothing: antialiased;
-      box-sizing: border-box;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      margin: 0;
-      padding: 0;
-      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-      background: linear-gradient(135deg, #f9f9f9, #e0eafc);
-      min-height: 100vh;
-      color: #333;
-    }
     
     /* Dopamine Gradients */
     .card-gradient-1 { background-image: linear-gradient(to right top, #d16ba5, #c777b9, #ba83ca, #aa8fd8, #9a9ae1, #8aa7ec, #79b3f4, #69bff8, #52cffe, #41dfff, #46eefa, #5ffbf1); }
@@ -46,50 +32,6 @@
     .card-gradient-7 { background-image: linear-gradient(to right top, #ff8a00, #ff7a1a, #ff692a, #ff5637, #ff3f43, #ff364c, #ff2c55, #ff215e, #ff1a6a, #ff1776, #ff1a83, #f92590); }
 
 
-    /* Header */
-    .header {
-      background: linear-gradient(135deg, #4a6fa5, #6b8cbb);
-      color: white;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      position: relative;
-      overflow: hidden;
-      padding-top: 22px;
-      text-align: left;
-      margin-bottom: -8px;
-    }
-
-    .header::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: url('images/mistyblue.png') center/cover no-repeat;
-      opacity: 0.1;
-      z-index: 0;
-    }
-
-    .header h1 {
-      font-size: 32px;
-      margin-bottom: 15px;
-      font-weight: bold;
-      animation: fadeInDown 1s ease;
-    }
-
-    .header p {
-      font-size: 18px;
-      line-height: 1.6;
-      margin: 0 auto;
-      animation: fadeIn 1.5s ease;
-    }
-
-    /* Container */
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 30px 20px;
-      gap: 40px;
-      align-items: flex-start;
-    }
 
     .main-content {
       display: flex;
@@ -244,34 +186,18 @@
       margin-top: 15px;
     }
 
-    button {
-      padding: 10px 16px;
-      background: #4a6fa5;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 13px;
-      transition: all 0.3s ease;
-    }
-
-    button:hover {
-      background: #3a5a8c;
-    }
-
     .primary-btn {
-      background: #ff5722;
+      background: linear-gradient(135deg, #ff7e3f, #ff5722);
     }
 
     .primary-btn:hover {
-      background: #e64a19;
+      background: linear-gradient(135deg, #e86430, #e64a19);
     }
 
     .upload-btn {
-      background: #f0f0f0;
-      color: #333;
-      border: 1px solid #ccc;
+      background: var(--primary-gradient);
+      color: #fff;
+      border: none;
     }
     
     #randomize-bg-btn {
@@ -442,7 +368,7 @@
             <img id="user-avatar" class="user-avatar" src="" alt="用户头像">
             <span id="user-name" class="user-name"></span>
             <div class="user-dropdown">
-              <button onclick="logout()" class="dropdown-item">退出登录</button>
+              <button onclick="logout()" class="btn dropdown-item">退出登录</button>
             </div>
           </div>
         </div>
@@ -481,7 +407,7 @@
         </div>
         
         <div class="form-group">
-          <button type="button" id="randomize-bg-btn" style="width: 100%; margin-top: -5px;">🎨 随机更换背景</button>
+          <button type="button" id="randomize-bg-btn" class="btn" style="width: 100%; margin-top: -5px;">🎨 随机更换背景</button>
         </div>
 
         <div class="form-row">
@@ -506,7 +432,7 @@
           <div class="form-group">
             <label for="bgUpload">自定义插图</label>
             <div class="file-upload-wrapper">
-              <button type="button" id="uploadBtn" class="upload-btn">📷 上传图片</button><br>
+              <button type="button" id="uploadBtn" class="btn upload-btn">📷 上传图片</button><br>
               <small id="fileStatus" style="color: #888; font-size: 12px; margin-left: 10px;">No file chosen</small>
               <input type="file" id="bgUpload" accept="image/*" style="display: none;">
             </div>
@@ -518,7 +444,7 @@
           <div id="imageGenerationStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
         </div>
         <div class="form-group">
-          <button type="button" id="searchImagesBtn" class="upload-btn" style="width: 100%;">根据启发内容找图🔍</button>
+          <button type="button" id="searchImagesBtn" class="btn upload-btn" style="width: 100%;">根据启发内容找图🔍</button>
           <div id="searchImagesStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
           <div id="searchImagesResults" style="display: none; margin-top: -26px;">
             <h5 style="margin-bottom: 10px; font-size: 14px;">搜索结果：<span id="searchQuery"></span></h5>
@@ -526,8 +452,8 @@
           </div>
         </div>
         <div class="buttons">
-          <button onclick="submitCard()" class="primary-btn">📩 提交到展示区</button>
-          <button onclick="downloadCardImage()">💾 下载卡片</button>
+          <button onclick="submitCard()" class="btn primary-btn">📩 提交到展示区</button>
+          <button onclick="downloadCardImage('.card','inspiration-card-')" class="btn">💾 下载卡片</button>
         </div>
       </div>
       <div id="preview" class="animate__animated animate__fadeIn"></div>
@@ -565,6 +491,7 @@
       bindCustomFileUpload,
       sanitizeAndValidateCard
     } from './scripts/cardUtils.js';
+    import { downloadCardImage } from './scripts/common.js';
 
     // Globals for new dopamine theme system
     const gradientClasses = [
@@ -683,9 +610,6 @@
       }
     };
 
-    window.downloadCardImage = function () {
-      downloadCard(".card", "inspiration-card-");
-    };
 
     function setupFileUpload() {
       const bgUpload = document.getElementById('bgUpload');

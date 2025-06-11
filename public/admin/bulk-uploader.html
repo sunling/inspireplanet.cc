@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>启发星球 - 批量上传</title>
+  <link rel="stylesheet" href="../styles/common.css">
   <script src="bulk-uploader.js" defer></script>
   <style>
     body {
@@ -34,15 +35,16 @@
       font-size: 14px;
       border: none;
       border-radius: 6px;
-      background-color: #4CAF50;
+      background: var(--primary-gradient);
       color: white;
       cursor: pointer;
+      transition: background 0.3s;
     }
     button:hover {
-      background-color: #45a049;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
     }
     button:disabled {
-      background-color: #cccccc;
+      background: #cccccc;
       cursor: not-allowed;
     }
     #result {
@@ -124,8 +126,8 @@
 <textarea id="jsonInput" placeholder="请在这里粘贴 JSON 数据"></textarea>
 
 <div class="buttons">
-  <button id="parseBtn">解析数据</button>
-  <button id="uploadBtn" disabled>批量上传</button>
+  <button id="parseBtn" class="btn">解析数据</button>
+  <button id="uploadBtn" class="btn" disabled>批量上传</button>
 </div>
 
 <div id="result"></div>

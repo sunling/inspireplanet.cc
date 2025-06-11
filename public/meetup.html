@@ -4,10 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meetup 活动详情</title>
+  <link rel="stylesheet" href="styles/common.css">
   <style>
     :root {
-      --primary-color: #5f9b65;
-      --primary-light: #7ab17f;
       --secondary-color: #f0b660;
       --text-color: #333333;
       --light-text: #666666;
@@ -15,7 +14,7 @@
       --card-bg: #ffffff;
       --border-color: #e6e6e6;
       --maybe-color: #f0b660;
-      --going-color: #5f9b65;
+      --going-color: var(--primary-color);
       --cant-go-color: #aaaaaa;
     }
     
@@ -133,7 +132,7 @@
     
     .action-button {
       display: inline-block;
-      background-color: var(--primary-color);
+      background: var(--primary-gradient);
       color: white;
       border: none;
       padding: 0.6em 1.2em;
@@ -141,11 +140,12 @@
       cursor: pointer;
       text-align: center;
       margin-top: 1em;
-      transition: background-color 0.2s ease;
+      transition: background 0.2s ease, transform 0.2s ease;
     }
-    
+
     .action-button:hover {
-      background-color: var(--primary-light);
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+      transform: translateY(-2px);
     }
     
     .rsvp-list {
@@ -306,12 +306,12 @@
     }
     
     .submit-button {
-      background-color: var(--primary-color);
+      background: var(--primary-gradient);
       color: white;
     }
-    
+
     .submit-button:hover {
-      background-color: var(--primary-light);
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
     }
     
     .rsvp-status {
@@ -400,7 +400,7 @@
     </div>
     
     <div class="share-section">
-      <button id="share-button" class="action-button">📤 复制活动链接</button>
+      <button id="share-button" class="btn action-button">📤 复制活动链接</button>
       <p id="share-message"></p>
     </div>
     
@@ -430,8 +430,8 @@
         </form>
       </div>
       <div class="dialog-footer">
-        <button class="action-button cancel-button" id="dialog-cancel">取消</button>
-        <button class="action-button submit-button" id="dialog-submit">提交</button>
+        <button class="btn action-button cancel-button" id="dialog-cancel">取消</button>
+        <button class="btn action-button submit-button" id="dialog-submit">提交</button>
       </div>
     </div>
   </div>
@@ -446,8 +446,8 @@
         <p>你确定要取消你的报名吗？</p>
       </div>
       <div class="dialog-footer">
-        <button class="action-button cancel-button" id="confirm-cancel">返回</button>
-        <button class="action-button submit-button" id="confirm-ok">确定取消</button>
+        <button class="btn action-button cancel-button" id="confirm-cancel">返回</button>
+        <button class="btn action-button submit-button" id="confirm-ok">确定取消</button>
       </div>
     </div>
   </div>

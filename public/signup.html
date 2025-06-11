@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Page One Workshop 报名页</title>
+    <link rel="stylesheet" href="styles/common.css">
     <style>
         body {
             font-family: 'Segoe UI', 'PingFang SC', sans-serif;
@@ -154,7 +155,7 @@
 
         button {
             margin-top: 1.5rem;
-            background: #007acc;
+            background: var(--primary-gradient);
             color: #fff;
             border: none;
             padding: 0.9rem;
@@ -167,7 +168,7 @@
         }
 
         button:hover {
-            background: #0069b3;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
             transform: translateY(-2px);
         }
 
@@ -250,7 +251,7 @@
                 <label><input type="radio" name="paid" value="true" required> 是</label>
                 <label><input type="radio" name="paid" value="false"> 否</label>
             </div>
-            <button type="submit">提交报名信息</button>
+            <button type="submit" class="btn">提交报名信息</button>
         </form>
 
         <footer>
