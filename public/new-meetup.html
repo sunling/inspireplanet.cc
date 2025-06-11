@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>发起新的 Meetup 活动</title>
+    <link rel="stylesheet" href="styles/common.css">
     <style>
         :root {
-            --primary-color: #5f9b65;
-            --primary-light: #7ab17f;
             --secondary-color: #f0b660;
             --text-color: #333333;
             --light-text: #666666;
@@ -108,21 +107,21 @@
         button {
             width: 100%;
             padding: 1rem;
-            background-color: var(--primary-color);
+            background: var(--primary-gradient);
             color: white;
             border: none;
             border-radius: 4px;
             font-size: 1.1rem;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: background 0.3s ease;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
         button:hover {
-            background-color: var(--primary-light);
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
         }
 
         button:disabled {
@@ -205,7 +204,7 @@
                 <span class="hint">仅组织者可见，用于活动联系</span>
             </div>
 
-            <button type="submit" id="submit-button">✨ 发起活动</button>
+            <button type="submit" id="submit-button" class="btn">✨ 发起活动</button>
         </form>
     </div>
 

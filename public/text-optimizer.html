@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>文本优化器</title>
+  <link rel="stylesheet" href="styles/common.css">
   <style>
     body {
       font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -43,15 +44,15 @@
       resize: vertical;
     }
     button {
-      background-color: #4a6fa5;
+      background: var(--primary-gradient);
       color: white;
       font-weight: bold;
       cursor: pointer;
       border: none;
-      transition: background-color 0.3s;
+      transition: background 0.3s;
     }
     button:hover {
-      background-color: #3a5d8f;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
     }
     button:disabled {
       background-color: #999;
@@ -104,7 +105,7 @@
     <label for="input-text">输入文本</label>
     <textarea id="input-text" placeholder="请输入需要优化的中文文本..."></textarea>
 
-    <button id="optimize-btn">优化文本</button>
+    <button id="optimize-btn" class="btn">优化文本</button>
 
     <div class="loading" id="loading">优化中，请稍候...</div>
 

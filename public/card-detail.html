@@ -13,21 +13,8 @@
   <script src="https://unpkg.com/dompurify@3.0.6/dist/purify.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="styles/common.css">
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #f9f9f9, #e0eafc);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 30px;
-      padding: 30px 20px;
-      animation: fadeIn 1s ease forwards;
-    }
 
     @keyframes fadeIn {
       from {
@@ -141,18 +128,18 @@
       display: inline-block;
       margin: 20px 0;
       padding: 12px 25px;
-      background: #4a6fa5;
+      background: var(--primary-gradient);
       color: white;
       text-decoration: none;
       border-radius: 8px;
       font-weight: bold;
       border: none;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: background 0.3s, transform 0.3s;
     }
 
     .download-btn:hover {
-      background: #3a5a8c;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
       transform: translateY(-2px);
     }
 
@@ -350,7 +337,7 @@
     <div class="loading">加载中...</div>
   </div>
 
-  <button id="download-btn" class="download-btn">下载卡片</button>
+  <button id="download-btn" class="btn download-btn">下载卡片</button>
 
   <div class="comments-section">
     <h2>评论区</h2>
@@ -365,7 +352,7 @@
         <label for="comment-content">评论内容</label>
         <textarea id="comment-content" placeholder="请输入您的评论"></textarea>
       </div>
-      <button class="submit-btn">提交评论</button>
+      <button class="btn submit-btn">提交评论</button>
     </div>
   </div>
 

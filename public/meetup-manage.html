@@ -4,10 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>管理 Meetup 活动</title>
+  <link rel="stylesheet" href="styles/common.css">
   <style>
     :root {
-      --primary-color: #5f9b65;
-      --primary-light: #7ab17f;
       --secondary-color: #f0b660;
       --text-color: #333333;
       --light-text: #666666;
@@ -138,18 +137,19 @@
     
     .action-button {
       display: inline-block;
-      background-color: var(--primary-color);
+      background: var(--primary-gradient);
       color: white;
       border: none;
       padding: 0.6em 1.2em;
       border-radius: 4px;
       cursor: pointer;
       text-align: center;
-      transition: background-color 0.2s ease;
+      transition: background 0.2s ease, transform 0.2s ease;
     }
-    
+
     .action-button:hover {
-      background-color: var(--primary-light);
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+      transform: translateY(-2px);
     }
     
     @media (max-width: 768px) {
@@ -239,7 +239,7 @@
           
           <div class="share-box">
             <input type="text" value="${publicUrl}" readonly onclick="this.select()">
-            <button class="action-button" id="copy-button">复制链接</button>
+            <button class="btn action-button" id="copy-button">复制链接</button>
           </div>
         `;
 

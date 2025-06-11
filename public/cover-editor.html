@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <title>封面图编辑器</title>
+  <link rel="stylesheet" href="styles/common.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script type="module" src="scripts/cardUtils.js"></script>
   <link
@@ -152,7 +153,7 @@
     </label>
     <label>自定义背景图:
       <div class="file-upload-wrapper">
-        <button type="button" id="uploadBtn" class="upload-btn">上传图片</button>
+        <button type="button" id="uploadBtn" class="btn upload-btn">上传图片</button>
         <span id="fileStatus" style="color: #888; font-size: 12px;">未选择文件</span>
         <input type="file" id="bgUpload" accept="image/*" style="display: none;">
       </div>
@@ -160,7 +161,7 @@
     
     <label>图片搜索:
       <div>
-        <button type="button" id="searchImagesBtn" class="upload-btn" style="width: 100%;">
+        <button type="button" id="searchImagesBtn" class="btn upload-btn" style="width: 100%;">
           根据标题和关键词搜索封面图🔍
         </button>
         <div id="searchImagesStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
@@ -173,7 +174,7 @@
       <div id="imageResults" style="display: flex; flex-wrap: wrap; gap: 10px; max-height: 300px; overflow-y: auto;"></div>
     </div>
     <!-- <div class="buttons">
-      <button onclick="downloadCoverImage()">下载</button>
+      <button class="btn" onclick="downloadCoverImage()">下载</button>
     </div> -->
   </div>
 
@@ -188,7 +189,7 @@
       </div>
     </div>
     <div class="buttons">
-      <button onclick="downloadCoverImage()">下载</button>
+      <button class="btn" onclick="downloadCoverImage()">下载</button>
       <div style="margin-top: 10px;"><a href="/cover-editor-mobile.html" >前往制作竖版封面</a></div>
     </div>
   </div>
