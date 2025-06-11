@@ -5,40 +5,192 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>管理 Meetup 活动</title>
   <style>
+    :root {
+      --primary-color: #5f9b65;
+      --primary-light: #7ab17f;
+      --secondary-color: #f0b660;
+      --text-color: #333333;
+      --light-text: #666666;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --border-color: #e6e6e6;
+    }
+    
     body {
-      font-family: sans-serif;
-      padding: 2em;
-      background-color: #f7f7f7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
     }
-    h1 {
-      margin-bottom: 0.5em;
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2em 1.5em;
     }
-    .section {
-      background: white;
-      padding: 1.5em;
-      border-radius: 8px;
-      max-width: 700px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    
+    .page-header {
       margin-bottom: 2em;
     }
-    .rsvp-list {
-      margin-top: 1em;
-      padding-left: 1em;
+    
+    h1 {
+      font-size: 2.2em;
+      margin-bottom: 0.5em;
+      font-weight: 600;
+      color: var(--text-color);
     }
+    
+    h2 {
+      font-size: 1.3em;
+      margin-bottom: 1em;
+      margin-top: 0;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+    }
+    
+    h2::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 24px;
+      background: var(--primary-light);
+      margin-right: 10px;
+      border-radius: 4px;
+    }
+    
+    .section {
+      background: var(--card-bg);
+      padding: 1.8em;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      margin-bottom: 2em;
+    }
+    
+    .meetup-meta {
+      margin-bottom: 1.5em;
+    }
+    
+    .meetup-meta p {
+      margin: 0.8em 0;
+    }
+    
+    .meetup-meta strong {
+      font-weight: 500;
+      color: var(--light-text);
+    }
+    
+    .meetup-description {
+      white-space: pre-line;
+      background: rgba(0, 0, 0, 0.02);
+      padding: 1.2em;
+      border-radius: 8px;
+      border-left: 4px solid var(--primary-light);
+      margin-top: 1.5em;
+    }
+    
+    .rsvp-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+    
     .rsvp-list li {
-      margin-bottom: 0.3em;
+      margin-bottom: 0.8em;
+      padding: 0.8em 1em;
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 6px;
+    }
+    
+    .rsvp-list .status-going {
+      border-left: 3px solid var(--primary-color);
+    }
+    
+    .rsvp-list .status-maybe {
+      border-left: 3px solid var(--secondary-color);
+    }
+    
+    .rsvp-header {
+      font-weight: 600;
+      margin: 1.5em 0 0.8em 0;
+      color: var(--light-text);
+    }
+    
+    .share-box {
+      display: flex;
+      align-items: center;
+      background-color: rgba(95, 155, 101, 0.1);
+      padding: 1em;
+      border-radius: 8px;
+      margin-top: 1.5em;
+    }
+    
+    .share-box input {
+      flex: 1;
+      padding: 0.6em;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-right: 1em;
+      font-size: 0.9em;
+    }
+    
+    .action-button {
+      display: inline-block;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 0.6em 1.2em;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: background-color 0.2s ease;
+    }
+    
+    .action-button:hover {
+      background-color: var(--primary-light);
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 1em;
+      }
+      
+      h1 {
+        font-size: 1.8em;
+      }
+      
+      .section {
+        padding: 1.2em;
+      }
+      
+      .share-box {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .share-box input {
+        margin-right: 0;
+        margin-bottom: 0.8em;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>📋 Meetup 活动管理页</h1>
-  <div class="section" id="meetup-info">
-    <p>正在加载活动信息...</p>
-  </div>
+  <div class="container">
+    <div class="page-header">
+      <h1>📋 Meetup 活动管理页</h1>
+    </div>
+    
+    <div class="section" id="meetup-info">
+      <p>正在加载活动信息...</p>
+    </div>
 
-  <div class="section" id="rsvp-info">
-    <h2>🎉 参与者列表</h2>
-    <p>加载中...</p>
+    <div class="section" id="rsvp-info">
+      <h2>参与者列表</h2>
+      <p>加载中...</p>
+    </div>
   </div>
 
   <script>
@@ -60,24 +212,93 @@
 
         const { meetup, rsvps } = result;
 
+        // Get public URL for sharing
+        const publicUrl = `${window.location.origin}/meetup?meetup_id=${meetup.id}`;
+
+        // Format datetime with timezone information
+        const formatDateTime = (datetimeStr) => {
+          const date = new Date(datetimeStr);
+          
+          // Format in user's local timezone
+          const localTimeStr = date.toLocaleString();
+          
+          // Since we know the time was stored in Pacific Time (GMT-7)
+          const originalTzInfo = `（原始时区：GMT-07:00）`;
+          
+          return `${localTimeStr} ${originalTzInfo}`;
+        };
+
         document.getElementById("meetup-info").innerHTML = `
           <h2>${meetup.title}</h2>
-          <p><strong>时间：</strong> ${new Date(meetup.datetime).toLocaleString()}</p>
-          <p><strong>地点：</strong> ${meetup.location}</p>
-          <p><strong>介绍：</strong><br>${meetup.description}</p>
-          <p><strong>发起人微信号：</strong> ${meetup.wechat_id}</p>
+          <div class="meetup-meta">
+            <p><strong>时间：</strong> ${formatDateTime(meetup.datetime)}</p>
+            <p><strong>地点：</strong> ${meetup.location}</p>
+            <p><strong>发起人微信号：</strong> ${meetup.wechat_id}</p>
+          </div>
+          <div class="meetup-description">${meetup.description}</div>
+          
+          <div class="share-box">
+            <input type="text" value="${publicUrl}" readonly onclick="this.select()">
+            <button class="action-button" id="copy-button">复制链接</button>
+          </div>
         `;
 
+        // Add copy link functionality
+        document.getElementById("copy-button").addEventListener("click", async () => {
+          const input = document.querySelector('.share-box input');
+          input.select();
+          try {
+            await navigator.clipboard.writeText(input.value);
+            const button = document.getElementById("copy-button");
+            button.textContent = "✅ 已复制";
+            setTimeout(() => {
+              button.textContent = "复制链接";
+            }, 2000);
+          } catch (err) {
+            alert("复制失败，请手动复制");
+          }
+        });
+
         if (!Array.isArray(rsvps) || rsvps.length === 0) {
-          document.getElementById("rsvp-info").innerHTML += `<p>目前还没有人报名。</p>`;
+          document.getElementById("rsvp-info").innerHTML = `<h2>参与者列表</h2><p>目前还没有人报名。</p>`;
           return;
         }
 
-        const list = rsvps.map(item => `
-          <li>${item.name}（微信号：${item.wechat_id}） - ${item.status === 'going' ? '✅ 参加' : '🤔 感兴趣'}</li>
-        `).join('');
+        // Group RSVPs by status
+        const going = rsvps.filter(item => item.status === 'going');
+        const maybe = rsvps.filter(item => item.status === 'maybe');
+        
+        let rsvpContent = `<h2>参与者列表</h2>`;
+        
+        // Add going RSVPs
+        if (going.length > 0) {
+          rsvpContent += `<div class="rsvp-header">确定参加 (${going.length})</div>`;
+          rsvpContent += `<ul class="rsvp-list">`;
+          
+          for (const item of going) {
+            rsvpContent += `
+              <li class="status-going">${item.name}（微信号：${item.wechat_id}）</li>
+            `;
+          }
+          
+          rsvpContent += `</ul>`;
+        }
+        
+        // Add maybe RSVPs
+        if (maybe.length > 0) {
+          rsvpContent += `<div class="rsvp-header">感兴趣 (${maybe.length})</div>`;
+          rsvpContent += `<ul class="rsvp-list">`;
+          
+          for (const item of maybe) {
+            rsvpContent += `
+              <li class="status-maybe">${item.name}（微信号：${item.wechat_id}）</li>
+            `;
+          }
+          
+          rsvpContent += `</ul>`;
+        }
 
-        document.getElementById("rsvp-info").innerHTML += `<ul class="rsvp-list">${list}</ul>`;
+        document.getElementById("rsvp-info").innerHTML = rsvpContent;
       } catch (err) {
         document.getElementById("meetup-info").innerHTML = `❌ 加载失败：${err.message}`;
       }

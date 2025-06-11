@@ -322,32 +322,40 @@
     }
 
 
-    /* View all button */
-    .view-all-btn {
+    /* 统一按钮基础样式 */
+    .header-btn {
       display: inline-block;
-      position: absolute;
-      top: 0;
-      right: 0;
-      margin: 15px;
-      padding: 12px 20px;
-      background: white;
-      color: #3a5a8c;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: bold;
-      text-align: center;
-      transition: all 0.3s ease;
+      padding: 10px 18px;
       font-size: 14px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.95);
+      color: #3a5a8c;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .header-btn:hover {
+      background: rgba(255, 255, 255, 1);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+      color: #2c4a7a;
+    }
+
+    /* View all button - 继承统一样式 */
+    .view-all-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      margin: 0;
       z-index: 10;
     }
-
-    .view-all-btn:hover {
-      background: #9cbdf1;
-      transform: translateY(-2px);
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
-    }
-
 
     /* Footer */
     .page-footer {
@@ -381,6 +389,132 @@
       }
     }
 
+    /* 认证相关样式 */
+    .auth-section {
+      position: absolute;
+      top: 15px;
+      right: 450px;
+      z-index: 20;
+    }
+
+    .login-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .auth-btn {
+      /* 移除原有样式，继承统一样式 */
+    }
+
+    /* 注册按钮特殊样式 */
+    .auth-btn.register-btn {
+      background: linear-gradient(135deg, #28a745, #20c997) !important;
+      color: white !important;
+      border: 1px solid rgba(40, 167, 69, 0.3) !important;
+    }
+
+    .auth-btn.register-btn:hover {
+      background: linear-gradient(135deg, #218838, #1ea085) !important;
+      color: white !important;
+    }
+
+    /* 特殊按钮样式 */
+    .view-all-btn[style*="background-color: #e64a19"] {
+      background: linear-gradient(135deg, #e64a19, #ff5722) !important;
+      color: white !important;
+      border: 1px solid rgba(230, 74, 25, 0.3) !important;
+    }
+
+    .view-all-btn[style*="background-color: #e64a19"]:hover {
+      background: linear-gradient(135deg, #d84315, #e64a19) !important;
+      color: white !important;
+    }
+
+    .user-profile {
+      position: relative;
+    }
+
+    .user-avatar-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    .user-avatar-container:hover {
+      background: rgba(255, 255, 255, 1);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .user-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #3a5a8c;
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      padding: 8px 0;
+      min-width: 140px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.3s ease;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .user-avatar-container:hover .user-dropdown {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .dropdown-item {
+      width: 100%;
+      padding: 10px 16px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #3a5a8c;
+      transition: all 0.2s ease;
+    }
+
+    .dropdown-item:hover {
+      background: rgba(58, 90, 140, 0.1);
+      color: #2c4a7a;
+    }
+
     /* Responsive Styles */
     @media (max-width: 768px) {
       .main-content {
@@ -395,6 +529,22 @@
 
       .carousel-card-wrapper {
         max-width: 90%;
+      }
+
+      .auth-section {
+        position: static;
+        margin-bottom: 10px;
+        right: auto;
+        display: flex;
+        justify-content: center;
+      }
+      
+      .login-buttons {
+        justify-content: center;
+      }
+      
+      .user-avatar-container {
+        justify-content: center;
       }
     }
 
@@ -439,10 +589,30 @@
       <p>▸ 书里某句让你猛划线的话？▸ 播客里那个让你突然按下暂停键的观点？▸ 电影里久久忘不掉的镜头？</p>
     </div>
     <div>
-      <a href="/cover-editor.html" class="view-all-btn">制作封面</a>
-      <a href="weekly-cards.html" class="view-all-btn" style="right: 110px;">查看每周会议卡片</a>
-      <a href="cards.html" class="view-all-btn"
-        style="right: 280px; background-color: #e64a19; color: white;">查看全部提交的卡片</a>
+      <!-- 用户认证区域 -->
+      <div id="auth-section" class="auth-section">
+        <!-- 未登录状态 -->
+        <div id="login-buttons" class="login-buttons">
+          <a href="auth.html" class="header-btn auth-btn">登录</a>
+          <a href="auth.html?tab=register" class="header-btn auth-btn register-btn">注册</a>
+        </div>
+        
+        <!-- 已登录状态 -->
+        <div id="user-profile" class="user-profile" style="display: none;">
+          <div class="user-avatar-container">
+            <img id="user-avatar" class="user-avatar" src="" alt="用户头像">
+            <span id="user-name" class="user-name"></span>
+            <div class="user-dropdown">
+              <button onclick="logout()" class="dropdown-item">退出登录</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <a href="cover-editor.html" class="header-btn view-all-btn">制作封面</a>
+      <a href="weekly-cards.html" class="header-btn view-all-btn" style="right: 115px;">查看每周会议卡片</a>
+      <a href="cards.html" class="header-btn view-all-btn"
+        style="right: 270px;">查看全部提交的卡片</a>
     </div>
   </header>
 
@@ -615,6 +785,16 @@
       // Randomly init the theme
       const randomThemeValue = getRandomItem(document.getElementById('theme-select').options).value;
       document.getElementById('theme-select').value = randomThemeValue;
+      
+      // 初始化认证UI
+      updateAuthUI();
+      
+      // 监听storage变化（用于多标签页同步）
+      window.addEventListener('storage', function(e) {
+        if (e.key === 'authToken' || e.key === 'user') {
+          updateAuthUI();
+        }
+      });
     });
 
     // Function to handle image selection
@@ -899,6 +1079,83 @@
 
     // Add event listener for the search images button
     document.getElementById('searchImagesBtn').addEventListener('click', searchImagesFromDetail);
+
+    // Authentication functions
+    function checkAuthStatus() {
+      const token = localStorage.getItem('authToken');
+      const user = localStorage.getItem('user');
+      
+      if (token && user) {
+        try {
+          return JSON.parse(user);
+        } catch (e) {
+          console.error('解析用户信息失败:', e);
+          return null;
+        }
+      }
+      return null;
+    }
+
+    window.logout = function() {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      updateAuthUI();
+      // 可选：刷新页面或重定向
+      window.location.reload();
+    };
+
+    function updateAuthUI() {
+      const user = checkAuthStatus();
+      const loginButtons = document.getElementById('login-buttons');
+      const userProfile = document.getElementById('user-profile');
+      
+      if (user) {
+        // 已登录状态
+        if (loginButtons) loginButtons.style.display = 'none';
+        if (userProfile) userProfile.style.display = 'block';
+        
+        // 更新用户信息
+        const userAvatar = document.getElementById('user-avatar');
+        const userName = document.getElementById('user-name');
+        
+        if (userAvatar && userName) {
+          // 设置头像（如果用户有头像URL，否则使用默认头像）
+          if (user.avatar_url) {
+            userAvatar.src = user.avatar_url;
+          } else {
+            // 使用用户名首字母生成头像
+            userAvatar.src = generateAvatarUrl(user.email || user.username || '用户');
+          }
+          
+          // 设置用户名
+          userName.textContent = user.username || user.email || '用户';
+        }
+        
+        // 自动填充创作者字段
+        const creatorInput = document.getElementById('creator');
+        if (creatorInput && !creatorInput.value) {
+          creatorInput.value = user.username || user.email || '';
+          // 更新卡片预览
+          updateCardPreview();
+        }
+      } else {
+        // 未登录状态
+        if (loginButtons) {
+          loginButtons.style.display = 'flex';
+        }
+        if (userProfile) userProfile.style.display = 'none';
+      }
+    }
+
+    // 生成默认头像URL（使用用户名首字母）
+    function generateAvatarUrl(name) {
+      const firstChar = name.charAt(0).toUpperCase();
+      const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
+      const colorIndex = name.charCodeAt(0) % colors.length;
+      const bgColor = colors[colorIndex].substring(1);
+      
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(firstChar)}&background=${bgColor}&color=fff&size=64&font-size=0.6`;
+    }
   </script>
 </body>
 

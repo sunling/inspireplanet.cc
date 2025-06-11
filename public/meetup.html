@@ -5,118 +5,560 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meetup 活动详情</title>
   <style>
+    :root {
+      --primary-color: #5f9b65;
+      --primary-light: #7ab17f;
+      --secondary-color: #f0b660;
+      --text-color: #333333;
+      --light-text: #666666;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --border-color: #e6e6e6;
+      --maybe-color: #f0b660;
+      --going-color: #5f9b65;
+      --cant-go-color: #aaaaaa;
+    }
+    
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #f2f2f2;
-      color: #333;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
     }
+    
     .container {
-      max-width: 720px;
-      margin: 2em auto;
-      padding: 1.5em;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2em 1.5em;
     }
+    
+    .event-header {
+      margin-bottom: 2em;
+    }
+    
     h1 {
-      font-size: 1.8em;
-      margin-bottom: 0.3em;
+      font-size: 2.2em;
+      margin-bottom: 0.5em;
+      font-weight: 600;
+      color: var(--text-color);
     }
-    h2 {
-      font-size: 1.2em;
-      margin-top: 1.5em;
+    
+    .event-meta {
+      margin-bottom: 2em;
     }
-    .info-line {
-      margin: 0.4em 0;
+    
+    .event-meta-item {
       display: flex;
       align-items: center;
+      margin-bottom: 0.8em;
+      color: var(--light-text);
     }
-    .info-line span {
-      margin-left: 0.5em;
+    
+    .event-meta-item svg, .event-meta-item i {
+      margin-right: 0.8em;
+      width: 20px;
+      text-align: center;
     }
-    .description {
-      margin-top: 1em;
-      line-height: 1.6em;
+    
+    .event-description {
+      margin-bottom: 2em;
+      line-height: 1.8;
       white-space: pre-line;
     }
-    .button {
+    
+    .rsvp-section {
+      margin-top: 2em;
+      margin-bottom: 2em;
+    }
+    
+    .rsvp-message {
+      font-style: italic;
+      margin-bottom: 1em;
+      color: var(--light-text);
+    }
+    
+    .rsvp-buttons {
+      display: flex;
+      gap: 1em;
+      flex-wrap: wrap;
+    }
+    
+    .rsvp-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.6em 1.5em;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid;
+      transition: all 0.2s ease;
+    }
+    
+    .going-button {
+      color: var(--going-color);
+      border-color: var(--going-color);
+      background-color: rgba(95, 155, 101, 0.1);
+    }
+    
+    .going-button:hover {
+      background-color: rgba(95, 155, 101, 0.2);
+    }
+    
+    .maybe-button {
+      color: var(--maybe-color);
+      border-color: var(--maybe-color);
+      background-color: rgba(240, 182, 96, 0.1);
+    }
+    
+    .maybe-button:hover {
+      background-color: rgba(240, 182, 96, 0.2);
+    }
+    
+    .cant-go-button {
+      color: var(--cant-go-color);
+      border-color: var(--cant-go-color);
+      background-color: rgba(170, 170, 170, 0.1);
+    }
+    
+    .cant-go-button:hover {
+      background-color: rgba(170, 170, 170, 0.2);
+    }
+    
+    .rsvp-button svg, .rsvp-button i {
+      margin-right: 0.5em;
+    }
+    
+    .action-button {
       display: inline-block;
-      background-color: #007bff;
+      background-color: var(--primary-color);
       color: white;
       border: none;
       padding: 0.6em 1.2em;
-      border-radius: 6px;
+      border-radius: 4px;
       cursor: pointer;
       text-align: center;
       margin-top: 1em;
+      transition: background-color 0.2s ease;
     }
-    .rsvp-form, .rsvp-list {
-      margin-top: 1em;
+    
+    .action-button:hover {
+      background-color: var(--primary-light);
     }
-    .rsvp-form input, .rsvp-form select, .rsvp-form button {
-      margin-top: 0.5em;
-      padding: 0.5em;
-      font-size: 1em;
-      width: 100%;
+    
+    .rsvp-list {
+      margin-top: 2em;
+      border-top: 1px solid var(--border-color);
+      padding-top: 1.5em;
     }
+    
+    .rsvp-list h2 {
+      font-size: 1.3em;
+      margin-bottom: 1em;
+      color: var(--text-color);
+    }
+    
     ul {
       list-style: none;
       padding-left: 0;
+      margin: 0;
     }
+    
     li {
-      margin-bottom: 0.4em;
+      margin-bottom: 0.8em;
+      padding: 0.6em 1em;
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
+    
+    li.is-yours {
+      background: rgba(95, 155, 101, 0.05);
+      border-left: 3px solid var(--primary-color);
+    }
+    
     .cancel-btn {
-      margin-left: 8px;
-      color: red;
+      color: #e74c3c;
       cursor: pointer;
       font-size: 0.9em;
+      opacity: 0.7;
+      transition: opacity 0.2s ease;
     }
-    .success { color: green; }
-    .error { color: red; }
+    
+    .cancel-btn:hover {
+      opacity: 1;
+    }
+    
+    .success { 
+      color: var(--going-color); 
+    }
+    
+    .error { 
+      color: #e74c3c; 
+    }
+    
+    /* Dialog Styles */
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: visibility 0s linear 0.25s, opacity 0.25s;
+    }
+    
+    .dialog-overlay.visible {
+      visibility: visible;
+      opacity: 1;
+      transition-delay: 0s;
+    }
+    
+    .dialog {
+      background-color: white;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .dialog-header {
+      background-color: #f5f5f5;
+      padding: 1em 1.5em;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .dialog-title {
+      margin: 0;
+      font-size: 1.2em;
+      color: var(--text-color);
+    }
+    
+    .dialog-body {
+      padding: 1.5em;
+    }
+    
+    .dialog-footer {
+      padding: 1em 1.5em;
+      display: flex;
+      justify-content: flex-end;
+      gap: 1em;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .dialog-form label {
+      display: block;
+      margin-bottom: 0.5em;
+      font-weight: 500;
+      color: var(--light-text);
+    }
+    
+    .dialog-form input {
+      margin-bottom: 1.2em;
+      padding: 0.8em;
+      font-size: 1em;
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    
+    .dialog-form input:focus {
+      outline: none;
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 2px rgba(95, 155, 101, 0.2);
+    }
+    
+    .dialog-message {
+      margin-top: 1em;
+      padding: 0.5em 0;
+    }
+    
+    .share-section {
+      margin-top: 2em;
+    }
+    
+    #share-message {
+      margin-top: 0.5em;
+      height: 1.5em;
+      font-size: 0.9em;
+    }
+    
+    .cancel-button {
+      background-color: #f5f5f5;
+      color: var(--light-text);
+      border: 1px solid #ddd;
+    }
+    
+    .cancel-button:hover {
+      background-color: #eeeeee;
+    }
+    
+    .submit-button {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .submit-button:hover {
+      background-color: var(--primary-light);
+    }
+    
+    .rsvp-status {
+      margin-top: 1em;
+      padding: 0.8em;
+      border-radius: 4px;
+      font-weight: 500;
+      display: none;
+    }
+    
+    .rsvp-status.success {
+      background-color: rgba(95, 155, 101, 0.1);
+      color: var(--going-color);
+      display: block;
+    }
+    
+    .badge {
+      display: inline-block;
+      font-size: 0.8em;
+      padding: 0.2em 0.5em;
+      border-radius: 3px;
+      margin-left: 0.5em;
+    }
+    
+    .badge-you {
+      background-color: rgba(95, 155, 101, 0.1);
+      color: var(--going-color);
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 1em;
+      }
+      
+      h1 {
+        font-size: 1.8em;
+      }
+      
+      .rsvp-buttons {
+        flex-direction: column;
+      }
+      
+      .rsvp-button {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1 id="meetup-title">📌 Meetup 活动详情</h1>
+    <div class="event-header">
+      <h1 id="meetup-title">Meetup 活动详情</h1>
+    </div>
+    
     <div id="meetup-info">
       <p>正在加载活动信息...</p>
     </div>
-
-    <div>
-      <button id="share-button" class="button">📤 复制活动链接</button>
+    
+    <div class="rsvp-section" id="rsvp-section" style="display:none">
+      <p class="rsvp-message">主办方需要报名参与这次活动</p>
+      
+      <div id="rsvp-status" class="rsvp-status"></div>
+      
+      <div class="rsvp-buttons" id="rsvp-buttons">
+        <div class="rsvp-button going-button" id="going-button">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          确定参加
+        </div>
+        
+        <div class="rsvp-button maybe-button" id="maybe-button">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          感兴趣
+        </div>
+      </div>
+      
+      <div class="action-button" id="cancel-rsvp-button" style="display:none; background-color: #f5f5f5; color: #666; border: 1px solid #ddd;">
+        取消我的报名
+      </div>
+    </div>
+    
+    <div class="share-section">
+      <button id="share-button" class="action-button">📤 复制活动链接</button>
       <p id="share-message"></p>
     </div>
-
-    <div class="rsvp-form" id="rsvp-form-section" style="display:none">
-      <h2>📝 报名参加</h2>
-      <form id="rsvp-form">
-        <label for="name">你的昵称</label>
-        <input type="text" id="name" required />
-        <label for="wechat">你的微信号</label>
-        <input type="text" id="wechat" required />
-        <label for="status">报名状态</label>
-        <select id="status">
-          <option value="going">✅ 确定参加</option>
-          <option value="maybe">🤔 感兴趣</option>
-        </select>
-        <button type="submit" class="button">提交报名</button>
-        <p id="rsvp-message"></p>
-      </form>
-    </div>
-
+    
     <div class="rsvp-list">
-      <h2>👥 报名者</h2>
+      <h2>参加者</h2>
       <ul id="rsvp-list"></ul>
+    </div>
+  </div>
+  
+  <!-- RSVP Dialog -->
+  <div class="dialog-overlay" id="rsvp-dialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title" id="dialog-title">报名参加</h3>
+      </div>
+      <div class="dialog-body">
+        <form class="dialog-form" id="rsvp-form">
+          <input type="hidden" id="status" value="going">
+          
+          <label for="name">你的昵称</label>
+          <input type="text" id="name" required placeholder="请输入你的昵称" />
+          
+          <label for="wechat">你的微信号</label>
+          <input type="text" id="wechat" required placeholder="请输入你的微信号" />
+          
+          <div class="dialog-message" id="rsvp-message"></div>
+        </form>
+      </div>
+      <div class="dialog-footer">
+        <button class="action-button cancel-button" id="dialog-cancel">取消</button>
+        <button class="action-button submit-button" id="dialog-submit">提交</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Confirm Dialog -->
+  <div class="dialog-overlay" id="confirm-dialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">确认取消报名</h3>
+      </div>
+      <div class="dialog-body">
+        <p>你确定要取消你的报名吗？</p>
+      </div>
+      <div class="dialog-footer">
+        <button class="action-button cancel-button" id="confirm-cancel">返回</button>
+        <button class="action-button submit-button" id="confirm-ok">确定取消</button>
+      </div>
     </div>
   </div>
 
   <script>
     let meetup_id = null;
     let allRsvps = [];
-
+    const dialog = document.getElementById('rsvp-dialog');
+    const confirmDialog = document.getElementById('confirm-dialog');
+    const statusInput = document.getElementById('status');
+    const dialogTitle = document.getElementById('dialog-title');
+    
+    // User data storage key format: `meetup-{meetup_id}-user`
+    function getUserStorageKey() {
+      return `meetup-${meetup_id}-user`;
+    }
+    
+    // Save user data to localStorage
+    function saveUserData(name, wechat) {
+      const userData = { name, wechat };
+      localStorage.setItem(getUserStorageKey(), JSON.stringify(userData));
+    }
+    
+    // Get user data from localStorage
+    function getUserData() {
+      const data = localStorage.getItem(getUserStorageKey());
+      return data ? JSON.parse(data) : null;
+    }
+    
+    // Remove user data from localStorage
+    function removeUserData() {
+      localStorage.removeItem(getUserStorageKey());
+    }
+    
+    // Check if an RSVP belongs to the current user
+    function isCurrentUserRsvp(item) {
+      const userData = getUserData();
+      if (!userData) return false;
+      
+      return item.name === userData.name && item.wechat_id === userData.wechat;
+    }
+    
+    // Get current user's RSVP if exists
+    function getCurrentUserRsvp() {
+      const userData = getUserData();
+      if (!userData) return null;
+      
+      return allRsvps.find(item => 
+        item.name === userData.name && item.wechat_id === userData.wechat
+      );
+    }
+    
+    // Open dialog with specified status
+    function openRsvpDialog(status) {
+      statusInput.value = status;
+      dialogTitle.textContent = status === 'going' ? '确定参加' : '感兴趣';
+      document.getElementById('rsvp-message').textContent = '';
+      
+      // Pre-fill with user data if available
+      const userData = getUserData();
+      if (userData) {
+        document.getElementById('name').value = userData.name;
+        document.getElementById('wechat').value = userData.wechat;
+      } else {
+        document.getElementById('rsvp-form').reset();
+      }
+      
+      dialog.classList.add('visible');
+    }
+    
+    // Close dialog
+    function closeRsvpDialog() {
+      dialog.classList.remove('visible');
+    }
+    
+    // Open confirm dialog
+    function openConfirmDialog() {
+      confirmDialog.classList.add('visible');
+    }
+    
+    // Close confirm dialog
+    function closeConfirmDialog() {
+      confirmDialog.classList.remove('visible');
+    }
+    
+    // Update the RSVP UI based on user's status
+    function updateRsvpUI() {
+      const userRsvp = getCurrentUserRsvp();
+      const rsvpStatus = document.getElementById('rsvp-status');
+      const cancelButton = document.getElementById('cancel-rsvp-button');
+      const rsvpButtons = document.getElementById('rsvp-buttons');
+      
+      if (userRsvp) {
+        // User has an RSVP
+        rsvpStatus.textContent = userRsvp.status === 'going' ? 
+          '✅ 你已确定参加此活动' : 
+          '🤔 你已表示对此活动感兴趣';
+        rsvpStatus.className = 'rsvp-status success';
+        
+        cancelButton.style.display = 'inline-block';
+        rsvpButtons.style.display = 'none';
+      } else {
+        // User has no RSVP
+        rsvpStatus.textContent = '';
+        rsvpStatus.className = 'rsvp-status';
+        
+        cancelButton.style.display = 'none';
+        rsvpButtons.style.display = 'flex';
+      }
+    }
+    
     async function loadMeetupData() {
       meetup_id = new URLSearchParams(window.location.search).get("meetup_id");
       if (!meetup_id) {
@@ -130,13 +572,51 @@
 
         const { meetup, rsvps } = result;
         allRsvps = rsvps || [];
+        
         document.getElementById("meetup-title").textContent = meetup.title;
+        // Format datetime with timezone information
+        const formatDateTime = (datetimeStr) => {
+          const date = new Date(datetimeStr);
+          
+          // Format in user's local timezone
+          const localTimeStr = date.toLocaleString();
+          
+          // Get the original timezone from the string if available
+          let originalTzInfo = '';
+          if (typeof datetimeStr === 'string' && datetimeStr.includes('+')) {
+            // Extract timezone part (e.g., "+08:00")
+            originalTzInfo = datetimeStr.split('+')[1];
+            if (originalTzInfo) {
+              originalTzInfo = `（原始时区：GMT+${originalTzInfo}）`;
+            }
+          } else if (typeof datetimeStr === 'string' && datetimeStr.includes('-') && datetimeStr.split('-').length > 3) {
+            // Extract timezone part for negative offset (e.g., "-08:00")
+            const parts = datetimeStr.split('-');
+            originalTzInfo = parts[parts.length - 1];
+            if (originalTzInfo) {
+              originalTzInfo = `（原始时区：GMT-${originalTzInfo}）`;
+            }
+          }
+          
+          return `${localTimeStr} ${originalTzInfo}`;
+        };
+        
         document.getElementById("meetup-info").innerHTML = `
-          <div class="info-line">📅<span>${new Date(meetup.datetime).toLocaleString()}</span></div>
-          <div class="info-line">📍<span>${meetup.location}</span></div>
-          <div class="info-line description">📝<span>${meetup.description}</span></div>
+          <div class="event-meta">
+            <div class="event-meta-item">
+              <i>📅</i>
+              <span>${formatDateTime(meetup.datetime)}</span>
+            </div>
+            <div class="event-meta-item">
+              <i>📍</i>
+              <span>${meetup.location}</span>
+            </div>
+          </div>
+          <div class="event-description">${meetup.description}</div>
         `;
-        document.getElementById("rsvp-form-section").style.display = 'block';
+        
+        document.getElementById("rsvp-section").style.display = 'block';
+        updateRsvpUI();
         renderRsvpList();
       } catch (err) {
         document.getElementById("meetup-info").innerHTML = `❌ 加载失败：${err.message}`;
@@ -146,69 +626,214 @@
     function renderRsvpList() {
       const container = document.getElementById("rsvp-list");
       container.innerHTML = '';
+      
       if (allRsvps.length === 0) {
         container.innerHTML = '<p>目前还没有人报名。</p>';
         return;
       }
-      for (const item of allRsvps) {
-        const li = document.createElement('li');
-        li.textContent = `${item.status === 'going' ? '✅' : '🤔'} ${item.name}`;
-        const cancel = document.createElement('span');
-        cancel.className = 'cancel-btn';
-        cancel.textContent = '取消';
-        cancel.onclick = async () => {
-          const res = await fetch('/.netlify/functions/deleteRsvp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ meetup_id, name: item.name, wechat_id: item.wechat_id })
-          });
-          if (res.ok) {
-            allRsvps = allRsvps.filter(x => x.name !== item.name || x.wechat_id !== item.wechat_id);
-            renderRsvpList();
-          } else {
-            alert('取消失败');
-          }
-        };
-        li.appendChild(cancel);
-        container.appendChild(li);
+      
+      // Group RSVPs by status
+      const going = allRsvps.filter(item => item.status === 'going');
+      const maybe = allRsvps.filter(item => item.status === 'maybe');
+      
+      // Add going RSVPs
+      if (going.length > 0) {
+        const header = document.createElement('li');
+        header.style.fontWeight = 'bold';
+        header.style.backgroundColor = 'transparent';
+        header.textContent = `确定参加 (${going.length})`;
+        container.appendChild(header);
+        
+        for (const item of going) {
+          addRsvpListItem(container, item);
+        }
+      }
+      
+      // Add maybe RSVPs
+      if (maybe.length > 0) {
+        const header = document.createElement('li');
+        header.style.fontWeight = 'bold';
+        header.style.backgroundColor = 'transparent';
+        header.style.marginTop = '1em';
+        header.textContent = `感兴趣 (${maybe.length})`;
+        container.appendChild(header);
+        
+        for (const item of maybe) {
+          addRsvpListItem(container, item);
+        }
+      }
+    }
+    
+    function addRsvpListItem(container, item) {
+      const li = document.createElement('li');
+      
+      // Check if this is the current user's RSVP
+      const isYours = isCurrentUserRsvp(item);
+      if (isYours) {
+        li.className = 'is-yours';
+        li.textContent = item.name + ' ';
+        
+        // Add a badge for current user
+        const badge = document.createElement('span');
+        badge.className = 'badge badge-you';
+        badge.textContent = '你';
+        li.appendChild(badge);
+      } else {
+        li.textContent = item.name;
+      }
+      
+      // Only add cancel button for the current user's RSVP
+      // We don't add cancel buttons here - we use a dedicated button in the RSVP section
+      
+      container.appendChild(li);
+    }
+    
+    async function cancelRsvp() {
+      const userData = getUserData();
+      if (!userData) return;
+      
+      try {
+        const res = await fetch('/.netlify/functions/deleteRsvp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            meetup_id, 
+            name: userData.name, 
+            wechat_id: userData.wechat 
+          })
+        });
+        
+        if (res.ok) {
+          // Remove user data from localStorage
+          removeUserData();
+          
+          // Remove user from RSVP list
+          allRsvps = allRsvps.filter(x => 
+            x.name !== userData.name || x.wechat_id !== userData.wechat
+          );
+          
+          // Update UI
+          updateRsvpUI();
+          renderRsvpList();
+          
+          // Close dialog
+          closeConfirmDialog();
+        } else {
+          alert('取消失败');
+          closeConfirmDialog();
+        }
+      } catch (err) {
+        alert(`取消失败: ${err.message}`);
+        closeConfirmDialog();
       }
     }
 
-    document.getElementById("rsvp-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
+    async function submitRsvp() {
       const name = document.getElementById("name").value.trim();
       const wechat = document.getElementById("wechat").value.trim();
       const status = document.getElementById("status").value;
-      if (!name || !wechat || !status || !meetup_id) return;
-
-      const response = await fetch("/.netlify/functions/submitRsvp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ meetup_id, name, wechat_id: wechat, status }),
-      });
-      const result = await response.json();
       const message = document.getElementById("rsvp-message");
-      if (response.ok) {
-        message.textContent = "✅ 报名成功！";
-        message.className = "success";
-        document.getElementById("rsvp-form").reset();
-        allRsvps.push({ name, wechat_id: wechat, status });
-        renderRsvpList();
-      } else {
-        message.textContent = `❌ 报名失败：${result.error || '未知错误'}`;
+      
+      if (!name || !wechat || !status || !meetup_id) {
+        message.textContent = "❌ 请填写所有必填字段";
+        message.className = "error";
+        return;
+      }
+
+      try {
+        const response = await fetch("/.netlify/functions/submitRsvp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ meetup_id, name, wechat_id: wechat, status }),
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          // Save user data to localStorage
+          saveUserData(name, wechat);
+          
+          message.textContent = "✅ 报名成功！";
+          message.className = "success";
+          
+          // Add user to RSVP list if not already there
+          const existingIndex = allRsvps.findIndex(x => 
+            x.name === name && x.wechat_id === wechat
+          );
+          
+          if (existingIndex >= 0) {
+            // Update existing RSVP
+            allRsvps[existingIndex].status = status;
+          } else {
+            // Add new RSVP
+            allRsvps.push({ name, wechat_id: wechat, status });
+          }
+          
+          // Update UI
+          updateRsvpUI();
+          renderRsvpList();
+          
+          // Close dialog after a short delay
+          setTimeout(closeRsvpDialog, 1500);
+        } else {
+          message.textContent = `❌ 报名失败：${result.error || '未知错误'}`;
+          message.className = "error";
+        }
+      } catch (err) {
+        message.textContent = `❌ 提交失败：${err.message}`;
         message.className = "error";
       }
-    });
+    }
 
+    // Event listeners
+    document.getElementById("going-button").addEventListener("click", () => {
+      openRsvpDialog('going');
+    });
+    
+    document.getElementById("maybe-button").addEventListener("click", () => {
+      openRsvpDialog('maybe');
+    });
+    
+    document.getElementById("cancel-rsvp-button").addEventListener("click", () => {
+      openConfirmDialog();
+    });
+    
+    document.getElementById("dialog-cancel").addEventListener("click", closeRsvpDialog);
+    
+    document.getElementById("dialog-submit").addEventListener("click", submitRsvp);
+    
+    document.getElementById("confirm-cancel").addEventListener("click", closeConfirmDialog);
+    
+    document.getElementById("confirm-ok").addEventListener("click", cancelRsvp);
+    
     document.getElementById("share-button").addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(window.location.href);
         document.getElementById("share-message").textContent = "✅ 链接已复制！";
+        
+        // Clear message after a delay
+        setTimeout(() => {
+          document.getElementById("share-message").textContent = "";
+        }, 3000);
       } catch {
         document.getElementById("share-message").textContent = "❌ 复制失败，请手动复制地址栏。";
       }
     });
 
+    // Close dialogs when clicking outside
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) {
+        closeRsvpDialog();
+      }
+    });
+    
+    confirmDialog.addEventListener("click", (e) => {
+      if (e.target === confirmDialog) {
+        closeConfirmDialog();
+      }
+    });
+
+    // Initialize
     loadMeetupData();
   </script>
 </body>
