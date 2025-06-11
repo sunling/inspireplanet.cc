@@ -574,11 +574,38 @@
         allRsvps = rsvps || [];
         
         document.getElementById("meetup-title").textContent = meetup.title;
+        // Format datetime with timezone information
+        const formatDateTime = (datetimeStr) => {
+          const date = new Date(datetimeStr);
+          
+          // Format in user's local timezone
+          const localTimeStr = date.toLocaleString();
+          
+          // Get the original timezone from the string if available
+          let originalTzInfo = '';
+          if (typeof datetimeStr === 'string' && datetimeStr.includes('+')) {
+            // Extract timezone part (e.g., "+08:00")
+            originalTzInfo = datetimeStr.split('+')[1];
+            if (originalTzInfo) {
+              originalTzInfo = `（原始时区：GMT+${originalTzInfo}）`;
+            }
+          } else if (typeof datetimeStr === 'string' && datetimeStr.includes('-') && datetimeStr.split('-').length > 3) {
+            // Extract timezone part for negative offset (e.g., "-08:00")
+            const parts = datetimeStr.split('-');
+            originalTzInfo = parts[parts.length - 1];
+            if (originalTzInfo) {
+              originalTzInfo = `（原始时区：GMT-${originalTzInfo}）`;
+            }
+          }
+          
+          return `${localTimeStr} ${originalTzInfo}`;
+        };
+        
         document.getElementById("meetup-info").innerHTML = `
           <div class="event-meta">
             <div class="event-meta-item">
               <i>📅</i>
-              <span>${new Date(meetup.datetime).toLocaleString()}</span>
+              <span>${formatDateTime(meetup.datetime)}</span>
             </div>
             <div class="event-meta-item">
               <i>📍</i>

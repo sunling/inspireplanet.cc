@@ -230,9 +230,24 @@
             submitButton.disabled = true;
             submitButton.classList.add('loading');
 
+            // Get the datetime value and add timezone information
+            const datetimeValue = this.datetime.value;
+            const dateObj = new Date(datetimeValue);
+            
+            // Format with timezone offset
+            // This ensures we store the user's local timezone with the datetime
+            const tzOffset = -dateObj.getTimezoneOffset();
+            const tzOffsetHours = Math.floor(Math.abs(tzOffset) / 60);
+            const tzOffsetMinutes = Math.abs(tzOffset) % 60;
+            const tzSign = tzOffset >= 0 ? '+' : '-';
+            const tzString = `${tzSign}${tzOffsetHours.toString().padStart(2, '0')}:${tzOffsetMinutes.toString().padStart(2, '0')}`;
+            
+            // Format the datetime with timezone
+            const datetimeWithTz = `${datetimeValue}${tzString}`;
+            
             const data = {
                 title: this.title.value,
-                datetime: this.datetime.value,
+                datetime: datetimeWithTz,
                 location: this.location.value,
                 description: this.description.value,
                 wechat: this.wechat.value,

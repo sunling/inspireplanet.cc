@@ -215,10 +215,23 @@
         // Get public URL for sharing
         const publicUrl = `${window.location.origin}/meetup?meetup_id=${meetup.id}`;
 
+        // Format datetime with timezone information
+        const formatDateTime = (datetimeStr) => {
+          const date = new Date(datetimeStr);
+          
+          // Format in user's local timezone
+          const localTimeStr = date.toLocaleString();
+          
+          // Since we know the time was stored in Pacific Time (GMT-7)
+          const originalTzInfo = `（原始时区：GMT-07:00）`;
+          
+          return `${localTimeStr} ${originalTzInfo}`;
+        };
+
         document.getElementById("meetup-info").innerHTML = `
           <h2>${meetup.title}</h2>
           <div class="meetup-meta">
-            <p><strong>时间：</strong> ${new Date(meetup.datetime).toLocaleString()}</p>
+            <p><strong>时间：</strong> ${formatDateTime(meetup.datetime)}</p>
             <p><strong>地点：</strong> ${meetup.location}</p>
             <p><strong>发起人微信号：</strong> ${meetup.wechat_id}</p>
           </div>
