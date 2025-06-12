@@ -125,19 +125,21 @@
     }
     
     .view-details-btn {
-      background-color: #4a6fa5;
-      color: white;
+      background: linear-gradient(135deg, #FFB6C1, #FFE4E1, #F0E68C);
+      color: #666;
       border: none;
       padding: 10px 20px;
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
       margin-bottom: 15px;
-      transition: background-color 0.3s ease;
+      transition: all 0.3s ease;
     }
     
     .view-details-btn:hover {
-      background-color: #3a5a8c;
+      background: linear-gradient(135deg, #FF91A4, #FFD1D4, #EDE066);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
     }
     
     .comment-form-container {
@@ -181,18 +183,20 @@
     
     .submit-comment-btn {
       width: 100%;
-      background-color: #4a6fa5;
-      color: white;
+      background: linear-gradient(135deg, #FFB6C1, #FFE4E1, #F0E68C);
+      color: #666;
       border: none;
       padding: 8px;
       border-radius: 4px;
       font-weight: bold;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: all 0.3s ease;
     }
     
     .submit-comment-btn:hover {
-      background-color: #3a5a8c;
+      background: linear-gradient(135deg, #FF91A4, #FFD1D4, #EDE066);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
     }
     
     .comment-success {
@@ -394,17 +398,16 @@
       margin: 20px auto;
     }
   </style>
+  <link rel="stylesheet" href="/styles/card-gradients.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script type="module">
-    // Import functions from cardUtils.js
     import {
       downloadCard,
       fetchCards,
       fetchAndRenderAllCards,
       filterCardsBySearchTerm,
       appendCardToContainer,
-      formatDateShort,
-      themes
+      formatDateShort
     } from './scripts/cardUtils.js';
     
     // 存储所有卡片数据

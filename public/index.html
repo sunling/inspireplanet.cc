@@ -38,8 +38,8 @@
 
     /* Header */
     .header {
-      background: linear-gradient(135deg, #4a6fa5, #6b8cbb);
-      color: white;
+      background: linear-gradient(135deg, #FFB6C1, #FFE4E1, #F0E68C, #E0FFFF, #DDA0DD);
+      color: #333;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       position: relative;
       overflow: hidden;
@@ -150,8 +150,7 @@
       align-items: flex-start;    /* Center card vertically */
       padding: 24px;
       border-radius: 16px;
-      background-image: linear-gradient(145deg, #f3f7fb, #e8eef6);
-      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.07);
+      background: transparent;
       transition: all 0.3s ease;
     }
 
@@ -168,7 +167,7 @@
       transition: transform 0.3s ease, box-shadow 0.3s ease;
       position: relative;
     }
-
+    
     .card:hover {
       transform: translateY(-5px);
       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
@@ -227,38 +226,74 @@
     .buttons {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 15px;
+      gap: 12px;
+      margin-top: 20px;
+      align-items: center;
     }
 
     button {
-      padding: 10px 16px;
-      background: #4a6fa5;
-      color: white;
+      padding: 12px 20px;
+      /* background: linear-gradient(135deg, #FFE4E1, #F0E68C, #E0FFFF); */
+      color: #666;
       border: none;
-      border-radius: 8px;
-      font-weight: bold;
+      border-radius: 12px;
+      font-weight: 600;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 14px;
       transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
     }
 
     button:hover {
-      background: #3a5a8c;
+      background: linear-gradient(135deg, #FFD1DC, #F5DEB3, #B0E0E6);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 182, 193, 0.4);
     }
 
     .primary-btn {
-      background: #ff5722;
+      background: linear-gradient(135deg, #FF91A4, #FFB6C1, #FFE4B5, #98FB98) !important;
+      color: #fff !important;
+      /* font-size: 16px; */
+      /* padding: 14px 24px; */
+      font-weight: 700;
+      box-shadow: 0 6px 20px rgba(255, 145, 164, 0.4);
+      /* border: 2px solid rgba(255, 255, 255, 0.3); */
+      position: relative;
+      overflow: hidden;
+    }
+
+    .primary-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s;
+    }
+
+    .primary-btn:hover::before {
+      left: 100%;
     }
 
     .primary-btn:hover {
-      background: #e64a19;
+      background: linear-gradient(135deg, #FF69B4, #FF91A4, #FFD700, #90EE90) !important;
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 8px 25px rgba(255, 105, 180, 0.5);
     }
 
     .upload-btn {
-      background: #f0f0f0;
-      color: #333;
-      border: 1px solid #ccc;
+      background: linear-gradient(135deg, #F5F5F5, #E6E6FA, #F0F8FF);
+      color: #666;
+      border: 1px solid rgba(221, 160, 221, 0.3);
+      box-shadow: 0 3px 8px rgba(221, 160, 221, 0.2);
+    }
+
+    .upload-btn:hover {
+      background: linear-gradient(135deg, #E6E6FA, #D8BFD8, #E0E6FF);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(221, 160, 221, 0.3);
     }
 
     /* Carousel */
@@ -336,10 +371,10 @@
       border-radius: 8px;
       text-decoration: none;
       transition: all 0.3s ease;
-      background: rgba(255, 255, 255, 0.95);
-      color: #3a5a8c;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.9);
+      color: #666;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.5);
       cursor: pointer;
       backdrop-filter: blur(10px);
       text-align: center;
@@ -349,8 +384,8 @@
     .header-btn:hover {
       background: rgba(255, 255, 255, 1);
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-      color: #2c4a7a;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      color: #444;
     }
 
     /* View all button - 继承统一样式 */
@@ -444,19 +479,19 @@
       align-items: center;
       gap: 8px;
       padding: 8px 14px;
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.9);
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.5);
       backdrop-filter: blur(10px);
     }
 
     .user-avatar-container:hover {
       background: rgba(255, 255, 255, 1);
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
     }
 
     .user-avatar {
@@ -471,7 +506,7 @@
     .user-name {
       font-size: 14px;
       font-weight: 600;
-      color: #3a5a8c;
+      color: #666;
       max-width: 100px;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -511,13 +546,13 @@
       cursor: pointer;
       font-size: 14px;
       font-weight: 500;
-      color: #3a5a8c;
+      color: #666;
       transition: all 0.2s ease;
     }
 
     .dropdown-item:hover {
-      background: rgba(58, 90, 140, 0.1);
-      color: #2c4a7a;
+      background: rgba(102, 102, 102, 0.1);
+      color: #444;
     }
 
     /* Responsive Styles */
@@ -582,6 +617,7 @@
       margin-bottom: 0.8em;
     }
   </style>
+  <link rel="stylesheet" href="/styles/card-gradients.css">
 
 </head>
 
@@ -596,11 +632,11 @@
     <div>
       <!-- 用户认证区域 -->
       <div id="auth-section" class="auth-section">
-        <!-- 未登录状态
+        <!-- 未登录状态 -->
         <div id="login-buttons" class="login-buttons">
           <a href="auth.html" class="header-btn auth-btn">登录</a>
-          <a href="auth.html?tab=register" class="header-btn auth-btn register-btn">注册</a>
-        </div> -->
+          <!-- <a href="auth.html?tab=register" class="header-btn auth-btn register-btn">注册</a> -->
+        </div>
         
         <!-- 已登录状态 -->
         <div id="user-profile" class="user-profile" style="display: none;">
@@ -628,22 +664,6 @@
       <div class="form">
         <div class="form-row">
           <div class="form-group">
-            <label for="theme-select">选择主题配色</label>
-            <select id="theme-select" onchange="updateCardPreview()">
-              <option value="morning">晨光米杏</option>
-              <option value="creamMatcha">奶油抹茶</option>
-              <option value="lavenderMist">云雾紫灰</option>
-              <option value="roseclay">豆沙玫瑰</option>
-              <option value="mistyblue">浅雾蓝灰</option>
-              <option value="darkblue">深蓝经典</option>
-              <option value="green">深绿米白</option>
-              <option value="brown">深棕温暖</option>
-              <option value="purple">深紫柔粉</option>
-              <option value="grayblue">灰蓝极简</option>
-            </select>
-          </div>
-
-          <div class="form-group">
             <label for="choose-font">选择字体</label>
             <select id="choose-font" onchange="updateCardPreview()">
               <option value="'Noto Sans SC', sans-serif">思源黑体</option>
@@ -654,6 +674,25 @@
               <option value="'Noto Serif SC', serif">思源宋体</option>
               <option value="'PingFang SC', sans-serif">苹方</option>
               <option value="'KaiTi', serif">楷体</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="choose-gradient">选择背景</label>
+            <select id="choose-gradient" onchange="updateGradientSelection()">
+              <option value="card-gradient-1">🌈 彩虹梦境</option>
+              <option value="card-gradient-2">🌅 日出暖阳</option>
+              <option value="card-gradient-3">💜 紫色幻想</option>
+              <option value="card-gradient-4">🌊 海洋蓝调</option>
+              <option value="card-gradient-5">🔥 火焰橙黄</option>
+              <option value="card-gradient-6">🌿 清新绿意</option>
+              <option value="card-gradient-7">❤️ 热情红橙</option>
+              <option value="card-gradient-8">☁️ 天空蓝白</option>
+              <option value="card-gradient-9">🌫️ 雾霭灰蓝</option>
+              <option value="card-gradient-10">🍯 蜂蜜暖黄</option>
+              <option value="card-gradient-11">🌱 薄荷清绿</option>
+              <option value="card-gradient-12">🌸 淡雅紫粉</option>
+              <option value="card-gradient-13">🌾 麦田金黄</option>
+              <option value="card-gradient-14">🌙 月光银灰</option>
             </select>
           </div>
         </div>
@@ -719,7 +758,7 @@
 
       <div id="preview" class="animate__animated animate__fadeIn">
         <!-- 卡片内容将在这里生成 -->
-      </div>
+              </div>
     </div>
 
     <!-- Latest Submitted Cards Section -->
@@ -762,19 +801,74 @@
       onUploadBg,
       bindCustomFileUpload,
       getRandomItem,
-      sanitizeAndValidateCard,
-      themes
+      sanitizeAndValidateCard
     } from './scripts/cardUtils.js';
 
-    // Make necessary functions available globally
-    window.themes = themes;
     // Global variables
     window.customImage = "";
+    window.currentGradientClass = "";
 
     let swiper;
 
+    // 渐变样式数组
+  const gradientClasses = [
+    'card-gradient-1',
+    'card-gradient-2',
+    'card-gradient-3',
+    'card-gradient-4',
+    'card-gradient-5',
+    'card-gradient-6',
+    'card-gradient-7',
+    'card-gradient-8',
+    'card-gradient-9',
+    'card-gradient-10',
+    'card-gradient-11',
+    'card-gradient-12',
+    'card-gradient-13',
+    'card-gradient-14'
+  ];
+
+  // 为每个渐变背景配置合适的字体颜色
+  const gradientFontColors = {
+    'card-gradient-1': '#2c3e50',    // 彩虹梦境 - 深蓝灰
+    'card-gradient-2': '#8b4513',    // 日出暖阳 - 深棕色
+    'card-gradient-3': '#ffffff',    // 紫色幻想 - 白色
+    'card-gradient-4': '#ffffff',    // 海洋蓝调 - 白色
+    'card-gradient-5': '#2c3e50',    // 火焰橙黄 - 深蓝灰
+    'card-gradient-6': '#2d5016',    // 清新绿意 - 深绿色
+    'card-gradient-7': '#ffffff',    // 热情红橙 - 白色
+    'card-gradient-8': '#2c3e50',    // 天空蓝白 - 深蓝灰
+    'card-gradient-9': '#2c3e50',    // 雾霭灰蓝 - 深蓝灰
+    'card-gradient-10': '#8b4513',   // 蜂蜜暖黄 - 深棕色
+    'card-gradient-11': '#1a5d1a',   // 薄荷清绿 - 深绿色
+    'card-gradient-12': '#4a148c',   // 淡雅紫粉 - 深紫色
+    'card-gradient-13': '#8b4513',   // 麦田金黄 - 深棕色
+    'card-gradient-14': '#2c3e50'    // 月光银灰 - 深蓝灰
+  };
+
+  // 获取当前渐变对应的字体颜色
+  function getFontColorForGradient(gradientClass) {
+    return gradientFontColors[gradientClass] || '#2c3e50';
+  }
+
+    // 随机选择渐变背景
+    function randomizeGradient() {
+      const randomIndex = Math.floor(Math.random() * gradientClasses.length);
+      window.currentGradientClass = gradientClasses[randomIndex];
+      return window.currentGradientClass;
+    }
+
     // Initialize the page
     document.addEventListener('DOMContentLoaded', function () {
+      // 初始化随机渐变
+      randomizeGradient();
+      
+      // 设置渐变选择器的默认值
+      const gradientSelect = document.getElementById('choose-gradient');
+      if (gradientSelect) {
+        gradientSelect.value = window.currentGradientClass;
+      }
+      
       // Load images for the select dropdown
       loadImages(() => {
         // Initial card render after images are loaded
@@ -786,10 +880,6 @@
 
       // Load latest cards
       loadLatestCardsCarousel();
-
-      // Randomly init the theme
-      const randomThemeValue = getRandomItem(document.getElementById('theme-select').options).value;
-      document.getElementById('theme-select').value = randomThemeValue;
       
       // 初始化认证UI
       updateAuthUI();
@@ -802,6 +892,13 @@
       });
     });
 
+    // Function to handle gradient selection
+    window.updateGradientSelection = function () {
+      const selectedGradient = document.getElementById('choose-gradient').value;
+      window.currentGradientClass = selectedGradient;
+      updateCardPreview();
+    };
+
     // Function to handle image selection
     window.onSelectImage = function () {
       customImage = "";
@@ -811,8 +908,12 @@
 
     // Function to submit a card
     window.submitCard = function () {
+      // 确保使用当前选择的渐变背景
+      const selectedGradient = document.getElementById('choose-gradient').value;
+      window.currentGradientClass = selectedGradient;
+      
       uploadCard({
-        theme: themes[document.getElementById('theme-select').value],
+        gradientClass: window.currentGradientClass,
         font: document.getElementById("choose-font").value,
         title: document.getElementById('title').value,
         quote: document.getElementById('quote').value,
@@ -853,17 +954,52 @@
         imagePath: document.getElementById('image-select').value,
         creator: document.getElementById('creator').value || '匿名',
         font: document.getElementById('choose-font').value || `'Noto Sans SC', sans-serif`,
-        theme: document.getElementById('theme-select').value || 'roseclay',
+        gradientClass: window.currentGradientClass,
         customImage: customImage,
+        created: new Date().toISOString(), // 添加当前时间
         isMarkdown: true // 标记使用了Markdown
       };
 
-      // Render the card
-      const cardElement = renderEditorCard(options);
+      // 优先级：搜索选中的图片 > 自定义上传的图片 > 预设图片
+      const searchSelectedImage = (function() {
+        const previewCard = document.getElementById('quote-image-preview-card');
+        return previewCard && previewCard.src && previewCard.src !== window.location.href ? previewCard.src : '';
+      })();
+      const finalImage = searchSelectedImage || customImage || document.getElementById('image-select').value;
+      // 格式化当前时间
+      const now = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      const currentTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      
+      // 获取当前渐变对应的字体颜色
+      const fontColor = getFontColorForGradient(window.currentGradientClass);
+      const isLightFont = fontColor === '#ffffff';
+      const quoteBoxBg = isLightFont ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.9)';
+      const quoteBoxColor = isLightFont ? '#ffffff' : '#333';
+      
+      const cardHTML = `
+        <div class="card ${window.currentGradientClass}" style="
+              font-family: ${options.font};
+              color: ${fontColor};
+            ">
+           <div class="card-body">
+            <div class="title">${options.title}</div>
+            <div class="quote-box" style="
+              background-color: ${quoteBoxBg}; 
+              color: ${quoteBoxColor};
+            ">${options.quote}</div>
+            ${finalImage ? `<img id="quote-image-preview-card" src="${finalImage}" alt="Card Image" />` : ''}
+            <div class="detail-text">${options.detail}</div>
+          </div>
+          <div class="card-footer">
+            <div class="footer" style="color: ${fontColor}">——作者：${options.creator} · ${currentTime}</div>
+          </div>
+        </div>
+      `;
 
       // Clear the preview container and append the new card
       const previewContainer = document.getElementById('preview');
-      previewContainer.innerHTML = cardElement;
+      previewContainer.innerHTML = cardHTML;
     };
 
     // Function to download the current card
@@ -1053,6 +1189,13 @@
               imgContainer.addEventListener('click', () => {
                 // Update the custom image
                 customImage = image.url;
+                // Update the hidden preview card element for submitCard function
+                const previewCard = document.getElementById('quote-image-preview-card');
+                if (previewCard) {
+                  previewCard.src = image.url;
+                } else {
+                  console.warn('quote-image-preview-card element not found');
+                }
                 // Update the card preview
                 updateCardPreview();
                 // Add a highlight to the selected image

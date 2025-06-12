@@ -4,69 +4,22 @@
  * 1. CARD RENDERING FUNCTIONS
  * ===========================
  */
-
-// Theme definitions
-const themes = {
-  darkblue: {
-    background: "#2f2f46",
-    color: "#ffffff",
-    quoteBg: "#fef6ec",
-    quoteColor: "#ff7f2a",
-  },
-  green: {
-    background: "#2e4a3f",
-    color: "#f5f5dc",
-    quoteBg: "#edf5ef",
-    quoteColor: "#45715a",
-  },
-  brown: {
-    background: "#4b3832",
-    color: "#f5f5dc",
-    quoteBg: "#f5e9dc",
-    quoteColor: "#a0522d",
-  },
-  purple: {
-    background: "#3e2f5b",
-    color: "#f8e1f4",
-    quoteBg: "#f9e7fd",
-    quoteColor: "#9147b6",
-  },
-  grayblue: {
-    background: "#2f3e46",
-    color: "#ffffff",
-    quoteBg: "#e0e0e0",
-    quoteColor: "#1f2937",
-  },
-  morning: {
-    background: "#fefaf3",
-    color: "#5e4b2b",
-    quoteBg: "#fff2da",
-    quoteColor: "#d26a00",
-  },
-  mistyblue: {
-    background: "#eef2f3",
-    color: "#3c4a54",
-    quoteBg: "#dceaf3",
-    quoteColor: "#336699",
-  },
-  roseclay: {
-    background: "#f8e8e0",
-    color: "#5f3d42",
-    quoteBg: "#ffece7",
-    quoteColor: "#c06060",
-  },
-  creamMatcha: {
-    background: "#f3f6ef",
-    color: "#4a5a3c",
-    quoteBg: "#e8f4df",
-    quoteColor: "#5d7b4c",
-  },
-  lavenderMist: {
-    background: "#f4f0f8",
-    color: "#5a4c68",
-    quoteBg: "#f2e8ff",
-    quoteColor: "#9b5fb8",
-  },
+// 为每个渐变背景配置合适的字体颜色
+const gradientFontColors = {
+  'card-gradient-1': '#2c3e50',    // 彩虹梦境 - 深蓝灰
+  'card-gradient-2': '#8b4513',    // 日出暖阳 - 深棕色
+  'card-gradient-3': '#ffffff',    // 紫色幻想 - 白色
+  'card-gradient-4': '#ffffff',    // 海洋蓝调 - 白色
+  'card-gradient-5': '#2c3e50',    // 火焰橙黄 - 深蓝灰
+  'card-gradient-6': '#2d5016',    // 清新绿意 - 深绿色
+  'card-gradient-7': '#ffffff',    // 热情红橙 - 白色
+  'card-gradient-8': '#2c3e50',    // 天空蓝白 - 深蓝灰
+  'card-gradient-9': '#2c3e50',    // 雾霭灰蓝 - 深蓝灰
+  'card-gradient-10': '#8b4513',   // 蜂蜜暖黄 - 深棕色
+  'card-gradient-11': '#1a5d1a',   // 薄荷清绿 - 深绿色
+  'card-gradient-12': '#4a148c',   // 淡雅紫粉 - 深紫色
+  'card-gradient-13': '#8b4513',   // 麦田金黄 - 深棕色
+  'card-gradient-14': '#2c3e50'    // 月光银灰 - 深蓝灰
 };
 
 /**
@@ -129,30 +82,32 @@ export function renderCard(cardData, options = {}) {
     modeStyles = ''; // Default for editor mode
   }
 
-  let theme = cardData.theme;
-  if (typeof theme === 'string') {
-    theme = themes[cardData.theme];
-  }
+  const gradientClass = cardData.gradientClass || 'card-gradient-9';
+
+  // 获取当前渐变对应的字体颜色
+  const fontColor = gradientFontColors[gradientClass] || '#2c3e50';
+  const isLightFont = fontColor === '#ffffff';
+  const quoteBoxBg = isLightFont ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.9)';
+  const quoteBoxColor = isLightFont ? '#ffffff' : '#333';
 
   // Create card HTML
   const cardHTML = `
-    <div class="card" id="${cardId}" style="
+    <div class="card ${gradientClass}" id="${cardId}" style="
           font-family: ${font};
-          background-color: ${theme.background};
-          color: ${theme.color};
+          color: ${fontColor};
           ${modeStyles}
         ">
          <div class="card-body">
           <div class="title">${title}</div>
           <div class="quote-box" style="
-            background-color: ${theme.quoteBg}; 
-            color: ${theme.quoteColor};
+            background-color: ${quoteBoxBg}; 
+            color: ${quoteBoxColor};
           ">${formattedQuote}</div>
           <img id="quote-image-${cardId}" src="${finalImage}" alt="金句插图" />
           <div class="detail-text">${formattedDetail}</div>
         </div>
         <div class="card-footer">
-            <div class="footer" style="color: ${theme.color}">——作者：${creator} · ${dateStr}</div>
+            <div class="footer" style="color: ${fontColor}">——作者：${creator} · ${dateStr}</div>
         </div>
     </div>`;
 
@@ -201,15 +156,62 @@ export function renderCarouselCard(cardData, index) {
     imagePath: cardData.ImagePath || "",
     creator: cardData.Creator || "匿名",
     font: cardData.Font || "'Noto Sans SC', sans-serif",
-    theme: cardData.Theme || themes.mistyblue,
+    gradientClass: cardData.GradientClass || 'card-gradient-1',
     customImage: cardData.Upload || "",
     created: cardData.Created,
     isMarkdown: true
   };
 
-  // Create card element using universal renderCard function
+  // Create card element using renderCard function with gradient support
   const cardId = `carousel-card-${index}`;
-  const cardElement = renderCard(normalizedCardData, { mode: 'carousel', cardId });
+  const finalImage = normalizedCardData.customImage || normalizedCardData.imagePath;
+
+  // 为每个渐变背景配置合适的字体颜色
+  const gradientFontColors = {
+    'card-gradient-1': '#2c3e50',    // 彩虹梦境 - 深蓝灰
+    'card-gradient-2': '#8b4513',    // 日出暖阳 - 深棕色
+    'card-gradient-3': '#ffffff',    // 紫色幻想 - 白色
+    'card-gradient-4': '#ffffff',    // 海洋蓝调 - 白色
+    'card-gradient-5': '#2c3e50',    // 火焰橙黄 - 深蓝灰
+    'card-gradient-6': '#2d5016',    // 清新绿意 - 深绿色
+    'card-gradient-7': '#ffffff',    // 热情红橙 - 白色
+    'card-gradient-8': '#2c3e50',    // 天空蓝白 - 深蓝灰
+    'card-gradient-9': '#2c3e50',    // 雾霭灰蓝 - 深蓝灰
+    'card-gradient-10': '#8b4513',   // 蜂蜜暖黄 - 深棕色
+    'card-gradient-11': '#1a5d1a',   // 薄荷清绿 - 深绿色
+    'card-gradient-12': '#4a148c',   // 淡雅紫粉 - 深紫色
+    'card-gradient-13': '#8b4513',   // 麦田金黄 - 深棕色
+    'card-gradient-14': '#2c3e50'    // 月光银灰 - 深蓝灰
+  };
+
+  // 获取当前渐变对应的字体颜色
+  const fontColor = gradientFontColors[normalizedCardData.gradientClass] || '#2c3e50';
+  const isLightFont = fontColor === '#ffffff';
+  const quoteBoxBg = isLightFont ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.9)';
+  const quoteBoxColor = isLightFont ? '#ffffff' : '#333';
+
+  const cardHTML = `
+    <div class="card ${normalizedCardData.gradientClass}" id="${cardId}" style="
+          font-family: ${normalizedCardData.font};
+          color: ${fontColor};
+        ">
+         <div class="card-body">
+          <div class="title">${normalizedCardData.title}</div>
+          <div class="quote-box" style="
+            background-color: ${quoteBoxBg}; 
+            color: ${quoteBoxColor};
+          ">${normalizedCardData.quote}</div>
+          ${finalImage ? `<img src="${finalImage}" alt="Card Image" />` : ''}
+          <div class="detail-text">${normalizedCardData.detail}</div>
+        </div>
+        <div class="card-footer">
+            <div class="footer" style="color: ${fontColor}">——作者：${normalizedCardData.creator} · ${formatToLocal(normalizedCardData.created)}</div>
+        </div>
+    </div>`;
+
+  const tempContainer = document.createElement('div');
+  tempContainer.innerHTML = cardHTML.trim();
+  const cardElement = tempContainer.firstChild;
 
   // make it clickable
 
@@ -257,7 +259,7 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
     imagePath: `${imgPrefix}${cardData.ImagePath}`,
     creator: cardData.Creator || "匿名",
     font: cardData.Font || "'Noto Sans SC', sans-serif",
-    theme: cardData.Theme || themes.mistyblue,
+    gradientClass: cardData.GradientClass || 'card-gradient-1',
     customImage: cardData.Upload || "",
     created: cardData.Created,
     isMarkdown: true
@@ -619,7 +621,7 @@ export async function fetchAndRenderWeeklyCards(containerId) {
     }
 
     // Available themes (keys from the themes object)
-    const availableThemes = Object.keys(themes);
+    // const availableThemes = Object.keys(themes);
 
     // Render cards by episode groups
     sortedEpisodes.forEach(episode => {
@@ -644,7 +646,7 @@ export async function fetchAndRenderWeeklyCards(containerId) {
       // Render cards for this episode with random styling
       sortedCards.forEach((card, index) => {
         // Randomly assign theme, font, and image for each card
-        const randomTheme = getRandomItem(availableThemes);
+        const randomTheme = 'card-gradient-10';//getRandomItem(gradientFontColors.keys);
         // const randomFont = getRandomItem(availableFonts);
         const randomFont = "'Noto Sans SC', sans-serif";
         const randomImage = getRandomItem(availableImages);
@@ -764,7 +766,7 @@ export async function uploadCard(cardData) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        theme: cardData.theme,
+        gradientClass: cardData.gradientClass,
         font: cardData.font,
         title: cardData.title,
         quote: cardData.quote,
@@ -1389,6 +1391,3 @@ export function filterCardsBySearchTerm(cards, searchTerm) {
     return title.includes(term) || quote.includes(term) || detail.includes(term);
   });
 }
-
-// Export themes for external use
-export { themes };

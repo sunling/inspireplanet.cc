@@ -43,15 +43,17 @@
       resize: vertical;
     }
     button {
-      background-color: #4a6fa5;
-      color: white;
+      background: linear-gradient(135deg, #FFB6C1, #FFE4E1, #F0E68C);
+      color: #666;
       font-weight: bold;
       cursor: pointer;
       border: none;
-      transition: background-color 0.3s;
+      transition: all 0.3s ease;
     }
     button:hover {
-      background-color: #3a5d8f;
+      background: linear-gradient(135deg, #FF91A4, #FFD1D4, #EDE066);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
     }
     button:disabled {
       background-color: #999;
@@ -170,4 +172,4 @@
     });
   </script>
 </body>
-</html> 
+</html>

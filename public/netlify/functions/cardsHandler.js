@@ -31,16 +31,6 @@ export async function handler(event, context) {
   }
 }
 
-function safeParseTheme(value) {
-  try {
-    const first = typeof value === "string" ? JSON.parse(value) : value;
-    return typeof first === "string" ? JSON.parse(first) : first;
-  } catch (e) {
-    console.error("Failed to parse theme", e);
-    return {};
-  }
-}
-
 async function save(event, context) {
   try {
     // Only allow POST requests
@@ -96,7 +86,6 @@ async function save(event, context) {
 
     // Prepare the record for Supabase
     const record = {
-      Theme: JSON.stringify(cardData.theme),
       Font: cardData.font,
       Title: cardData.title,
       Quote: cardData.quote,
@@ -105,7 +94,8 @@ async function save(event, context) {
       Upload: cardData.upload || '',
       Creator: cardData.creator,
       Hash: hash,
-      Created: new Date().toISOString()
+      Created: new Date().toISOString(),
+      GradientClass:cardData.gradientClass
     };
 
     // Insert into Supabase
@@ -217,13 +207,13 @@ async function fetch(event, context) {
     Title: row.Title,
     Quote: row.Quote,
     Detail: row.Detail,
-    Theme: safeParseTheme(row.Theme),
     Font: row.Font,
     ImagePath: row.ImagePath,
     Upload: row.Upload,
     Creator: row.Creator,
     Created: row.Created,
     Hash: row.Hash,
+    GradientClass: row.GradientClass
   }));
 
   // Update cache

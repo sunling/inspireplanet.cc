@@ -98,33 +98,39 @@
     }
     
     .going-button {
-      color: var(--going-color);
-      border-color: var(--going-color);
-      background-color: rgba(95, 155, 101, 0.1);
+      color: #666;
+      border-color: #FFB6C1;
+      background: linear-gradient(135deg, rgba(255, 182, 193, 0.2), rgba(255, 228, 225, 0.2));
     }
     
     .going-button:hover {
-      background-color: rgba(95, 155, 101, 0.2);
+      background: linear-gradient(135deg, rgba(255, 182, 193, 0.3), rgba(255, 228, 225, 0.3));
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
     }
     
     .maybe-button {
-      color: var(--maybe-color);
-      border-color: var(--maybe-color);
-      background-color: rgba(240, 182, 96, 0.1);
+      color: #666;
+      border-color: #F0E68C;
+      background: linear-gradient(135deg, rgba(240, 230, 140, 0.2), rgba(255, 228, 225, 0.2));
     }
     
     .maybe-button:hover {
-      background-color: rgba(240, 182, 96, 0.2);
+      background: linear-gradient(135deg, rgba(240, 230, 140, 0.3), rgba(255, 228, 225, 0.3));
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(240, 230, 140, 0.3);
     }
     
     .cant-go-button {
-      color: var(--cant-go-color);
-      border-color: var(--cant-go-color);
-      background-color: rgba(170, 170, 170, 0.1);
+      color: #666;
+      border-color: #DDA0DD;
+      background: linear-gradient(135deg, rgba(221, 160, 221, 0.2), rgba(224, 255, 255, 0.2));
     }
     
     .cant-go-button:hover {
-      background-color: rgba(170, 170, 170, 0.2);
+      background: linear-gradient(135deg, rgba(221, 160, 221, 0.3), rgba(224, 255, 255, 0.3));
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(221, 160, 221, 0.3);
     }
     
     .rsvp-button svg, .rsvp-button i {
@@ -133,19 +139,21 @@
     
     .action-button {
       display: inline-block;
-      background-color: var(--primary-color);
-      color: white;
+      background: linear-gradient(135deg, #FFB6C1, #FFE4E1, #F0E68C);
+      color: #666;
       border: none;
       padding: 0.6em 1.2em;
       border-radius: 4px;
       cursor: pointer;
       text-align: center;
       margin-top: 1em;
-      transition: background-color 0.2s ease;
+      transition: all 0.3s ease;
     }
     
     .action-button:hover {
-      background-color: var(--primary-light);
+      background: linear-gradient(135deg, #FF91A4, #FFD1D4, #EDE066);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
     }
     
     .rsvp-list {

@@ -2,7 +2,6 @@
 
 import {
   renderCard,
-  themes,
   getBaseUrl
 } from './cardUtils.js';
 
@@ -57,7 +56,7 @@ async function renderCardDetail() {
       imagePath: card.ImagePath || "",
       creator: sanitizeContent(card.Creator) || "匿名",
       font: card.Font || "'Noto Sans SC', sans-serif",
-      theme: card.Theme || themes.mistyblue,
+      gradientClass: card.GradientClass || 'card-gradient-1',
       customImage: card.Upload || "",
       created: card.Created
     };

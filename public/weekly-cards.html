@@ -195,22 +195,29 @@
       position: absolute;
       bottom: 15px;
       right: 15px;
-      background-color: rgba(0, 0, 0, 0.6);
-      color: white;
+      background: linear-gradient(135deg, rgba(255, 182, 193, 0.9), rgba(255, 228, 225, 0.9), rgba(240, 230, 140, 0.9));
+      color: #666;
       padding: 6px 12px;
       border-radius: 6px;
       font-size: 12px;
       cursor: pointer;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: all 0.3s ease;
       z-index: 10;
       border: none;
+    }
+    
+    .download-btn:hover {
+      background: linear-gradient(135deg, rgba(255, 145, 164, 0.95), rgba(255, 209, 212, 0.95), rgba(237, 224, 102, 0.95));
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.4);
     }
     
     .card-container:hover .download-btn {
       opacity: 1;
     }
   </style>
+  <link rel="stylesheet" href="../public/styles/card-gradients.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script type="module">
     // Import functions from cardUtils.js
