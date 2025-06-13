@@ -277,8 +277,6 @@
                 paid: this.querySelector('input[name="paid"]:checked').value
             };
 
-            console.log('报名信息：', data);
-
             try {
                 // 提交到 Netlify Function
                 const response = await fetch('/.netlify/functions/workshopHandler', {

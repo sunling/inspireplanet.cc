@@ -416,7 +416,6 @@
     }
 
     $('font-selector').addEventListener('change', e => {
-      console.log(e.target.value);
       const selectedFont = e.target.value;
       $('preview-quote').style.fontFamily = selectedFont;
       $('preview-author').style.fontFamily = selectedFont;

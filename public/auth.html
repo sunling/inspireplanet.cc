@@ -619,7 +619,6 @@
             const email = prompt('请输入您的邮箱地址，我们将发送重置密码的链接：');
             if (email) {
                 // 这里应该调用实际的重置密码API
-                console.log('重置密码邮箱:', email);
                 alert('重置密码的邮件已发送到您的邮箱，请查收。');
             }
         }
@@ -627,7 +626,6 @@
         // 社交登录
         function socialLogin(platform) {
             // 这里应该调用实际的社交登录API
-            console.log('社交登录平台:', platform);
             alert(`${platform === 'wechat' ? '微信' : 'QQ'}登录功能开发中...`);
         }
 

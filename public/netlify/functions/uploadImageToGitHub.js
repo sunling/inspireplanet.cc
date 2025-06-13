@@ -84,7 +84,6 @@ exports.handler = async (event, context) => {
     const data = await response.json();
 
     if (response.ok && data.content && data.content.path) {
-      console.log('✅ Image uploaded successfully:', data.content.path);
       
       // Construct the raw.githubusercontent.com link
       const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/${GITHUB_BRANCH}/${data.content.path}`;
