@@ -197,7 +197,7 @@ async function fetch(event, context) {
   }
 
   // Apply ordering
-  query = query.order('Created', { ascending: false }).limit(100);
+  query = query.order('Created', { ascending: false }).limit(50);
 
   // Execute the query
   const { data, error } = await query;
