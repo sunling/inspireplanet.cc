@@ -236,6 +236,9 @@ async function fetch(event, context) {
     cache.allCards = records;
   }
 
+  const responseBody = JSON.stringify({ records });
+  console.log("Response payload size: ", Buffer.byteLength(responseBody, 'utf8'));
+
   return {
     statusCode: 200,
     body: JSON.stringify({ records }),
@@ -327,8 +330,8 @@ async function update(event, context) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ 
-        success: true, 
+      body: JSON.stringify({
+        success: true,
         message: 'Card updated successfully',
         card: data[0]
       })
