@@ -665,8 +665,11 @@ export async function uploadCard(cardData) {
     return null;
   }
 
-  let customImageUrl = cardData.searchImageSelected;
-  if (!customImageUrl && cardData.upload) {
+  let customImageUrl = '';
+
+  if (cardData.searchImageSelected?.startsWith("http")) {
+    customImageUrl = cardData.searchImageSelected;
+  } else if (cardData.upload) {
     try {
       const submitBtn = document.querySelector('.primary-btn');
       const originalText = submitBtn.innerHTML;
@@ -693,6 +696,8 @@ export async function uploadCard(cardData) {
       alert('图片上传失败，请重试或选择内置图片');
       return null;
     }
+  } else {
+    customImageUrl = ''; // 内置图片场景下，不用 Upload 字段
   }
 
   // Show submitting indicator
@@ -1340,18 +1345,18 @@ export function filterCardsBySearchTerm(cards, searchTerm) {
  */
 export function processLongUrls(html) {
   if (!html) return html;
-  
+
   // 创建一个临时DOM元素来解析HTML
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
-  
+
   // 查找所有的<a>标签
   const links = tempDiv.querySelectorAll('a');
-  
+
   links.forEach(link => {
     const url = link.href;
     const linkText = link.textContent;
-    
+
     // 如果链接文本就是URL且长度超过50个字符，则应用特殊样式
     if (linkText === url && url.length > 50) {
       // 截取显示文本：显示前30个字符 + ... + 后15个字符
@@ -1361,6 +1366,6 @@ export function processLongUrls(html) {
       link.title = url;
     }
   });
-  
+
   return tempDiv.innerHTML;
 }
