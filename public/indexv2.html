@@ -560,11 +560,10 @@
       sanitizeAndValidateCard
     } from './scripts/cardUtils.js';
 
+    // 导入共享的渐变配置
+    import { gradientClasses, gradientFontColors, getFontColorForGradient } from './scripts/gradientConfig.js';
+    
     // Globals for new dopamine theme system
-    const gradientClasses = [
-        'card-gradient-1', 'card-gradient-2', 'card-gradient-3', 'card-gradient-4', 
-        'card-gradient-5', 'card-gradient-6', 'card-gradient-7'
-    ];
     let currentGradientClass = '';
     window.customImage = "";
     let swiper;
