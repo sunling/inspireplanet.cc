@@ -1152,24 +1152,6 @@ export function bindCustomFileUpload({ inputId, buttonId, statusId, onLoad }) {
 }
 
 /**
- * Create a hash for a card
- * @param {Object} card - Card data
- * @returns {string|null} - Hash string or null if invalid card
- */
-export function hashCard(card) {
-  if (!card.title || !card.quote || !card.detail) return null;
-
-  const normalized = [
-    card.title.trim().replace(/\s+/g, ' '),
-    card.quote.trim().replace(/\s+/g, ' '),
-    card.detail.trim().replace(/\s+/g, ' ')
-  ].join('|');
-
-  const encoded = new TextEncoder().encode(normalized);
-  return btoa(String.fromCharCode(...encoded));
-}
-
-/**
  * Validate card data
  * @param {Object} cardData - Card data to validate
  * @param {string} cardData.title - Card title

@@ -58,36 +58,36 @@ async function save(event, context) {
     }
 
     // Generate a hash for the card (to prevent duplicates)
-    const hash = generateHash(cardData);
+    // const hash = generateHash(cardData);
 
-    // Check if the card already exists
-    const { data: existingCards, error: checkError } = await supabase
-      .from('cards')
-      .select('id')
-      .eq('Hash', hash)
-      .limit(1);
+    // // Check if the card already exists
+    // const { data: existingCards, error: checkError } = await supabase
+    //   .from('cards')
+    //   .select('id')
+    //   .eq('Hash', hash)
+    //   .limit(1);
 
-    if (checkError) {
-      console.error('Error checking for existing card:', checkError);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: 'Database query error',
-          details: checkError.message,
-          success: false
-        })
-      };
-    }
+    // if (checkError) {
+    //   console.error('Error checking for existing card:', checkError);
+    //   return {
+    //     statusCode: 500,
+    //     body: JSON.stringify({
+    //       error: 'Database query error',
+    //       details: checkError.message,
+    //       success: false
+    //     })
+    //   };
+    // }
 
-    if (existingCards && existingCards.length > 0) {
-      return {
-        statusCode: 409,
-        body: JSON.stringify({
-          message: "This card already exists",
-          success: false
-        })
-      };
-    }
+    // if (existingCards && existingCards.length > 0) {
+    //   return {
+    //     statusCode: 409,
+    //     body: JSON.stringify({
+    //       message: "This card already exists",
+    //       success: false
+    //     })
+    //   };
+    // }
 
     // Prepare the record for Supabase
     const record = {
@@ -98,7 +98,7 @@ async function save(event, context) {
       Detail: cardData.detail,
       Upload: cardData.upload || '',
       Creator: cardData.creator,
-      Hash: hash,
+      // Hash: hash,
       Created: new Date().toISOString(),
       GradientClass: cardData.gradientClass,
       Username: cardData.username || null
@@ -218,7 +218,7 @@ async function fetch(event, context) {
     Upload: row.Upload,
     Creator: row.Creator,
     Created: row.Created,
-    Hash: row.Hash,
+    // Hash: row.Hash,
     GradientClass: row.GradientClass,
     Username: row.Username
   }));
@@ -301,15 +301,15 @@ async function update(event, context) {
     };
 
     // Generate new hash for the updated card
-    const newHash = generateHash({
-      title: updateData.Title,
-      quote: updateData.Quote,
-      detail: updateData.Detail
-    });
+    // const newHash = generateHash({
+    //   title: updateData.Title,
+    //   quote: updateData.Quote,
+    //   detail: updateData.Detail
+    // });
 
-    if (newHash) {
-      updateData.Hash = newHash;
-    }
+    // if (newHash) {
+    //   updateData.Hash = newHash;
+    // }
 
     // Update the card in Supabase
     const { data, error } = await supabase
