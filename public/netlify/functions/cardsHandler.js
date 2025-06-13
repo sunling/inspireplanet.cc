@@ -57,7 +57,7 @@ async function save(event, context) {
       };
     }
 
-    // Generate a hash for the card (to prevent duplicates)
+    // Generate a hash for the card (to prevent duplicates) TODO
     // const hash = generateHash(cardData);
 
     // // Check if the card already exists
