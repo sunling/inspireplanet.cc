@@ -298,8 +298,8 @@
         </div>
 
         <div class="auth-tabs">
-            <button class="auth-tab active" onclick="switchTab('login')">登录</button>
-            <button class="auth-tab" onclick="switchTab('register')">注册</button>
+            <button class="auth-tab active" onclick="switchTab('login', event)">登录</button>
+            <button class="auth-tab" onclick="switchTab('register', event)">注册</button>
         </div>
 
         <div class="auth-form">
@@ -338,6 +338,12 @@
             <!-- 注册表单 -->
             <div id="register-form" class="form-content">
                 <form onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label for="register-name">姓名/昵称</label>
+                        <input type="text" id="register-name" name="name" placeholder="请输入您的姓名或昵称" required>
+                        <div class="error-message" id="register-name-error"></div>
+                    </div>
+
                     <div class="form-group">
                         <label for="register-username">用户名</label>
                         <input type="text" id="register-username" name="username" placeholder="请输入用户名" required>
@@ -383,10 +389,22 @@
 
     <script>
         // 切换登录/注册标签
-        function switchTab(tab) {
+        function switchTab(tab, event) {
             // 更新标签状态
             document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+            
+            // 如果有event对象，使用event.target，否则根据tab参数找到对应的标签
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // 根据tab参数找到对应的标签按钮
+                const tabButtons = document.querySelectorAll('.auth-tab');
+                if (tab === 'login') {
+                    tabButtons[0].classList.add('active');
+                } else if (tab === 'register') {
+                    tabButtons[1].classList.add('active');
+                }
+            }
 
             // 更新表单显示
             document.querySelectorAll('.form-content').forEach(f => f.classList.remove('active'));
@@ -479,12 +497,23 @@
             clearErrors();
         
             const formData = new FormData(event.target);
+            const name = formData.get('name');
             const username = formData.get('username');
             const email = formData.get('email');
             const password = formData.get('password');
             const confirmPassword = formData.get('confirmPassword');
         
             // 基本验证
+            if (!name) {
+                showError('register-name', '请输入姓名或昵称');
+                return;
+            }
+        
+            if (name.length < 1) {
+                showError('register-name', '姓名或昵称不能为空');
+                return;
+            }
+        
             if (!username) {
                 showError('register-username', '请输入用户名');
                 return;
@@ -528,6 +557,7 @@
                     },
                     body: JSON.stringify({
                         action: 'register',
+                        name,
                         username,
                         email,
                         password
@@ -544,7 +574,9 @@
                     event.target.reset();
                 } else {
                     // 根据错误类型显示在相应字段
-                    if (data.error.includes('邮箱')) {
+                    if (data.error.includes('姓名') || data.error.includes('昵称')) {
+                        showError('register-name', data.error);
+                    } else if (data.error.includes('邮箱')) {
                         showError('register-email', data.error);
                     } else if (data.error.includes('用户名')) {
                         showError('register-username', data.error);

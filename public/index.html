@@ -616,6 +616,35 @@
       padding-left: 1.5em;
       margin-bottom: 0.8em;
     }
+
+    /* 长链接处理样式 */
+    .detail-text a {
+      color: #007bff;
+      text-decoration: underline;
+      word-break: break-all;
+      overflow-wrap: break-word;
+      hyphens: auto;
+    }
+
+    .detail-text a:hover {
+      color: #0056b3;
+      text-decoration: none;
+    }
+
+    /* 处理长URL的显示 */
+    .detail-text .long-url {
+      display: inline-block;
+      max-width: 100%;
+      word-break: break-all;
+      overflow-wrap: break-word;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 0.9em;
+      background-color: rgba(0, 0, 0, 0.05);
+      padding: 2px 4px;
+      border-radius: 3px;
+      margin: 2px 0;
+    }
   </style>
   <link rel="stylesheet" href="/styles/card-gradients.css">
 
@@ -751,8 +780,8 @@
         </div>
 
         <div class="buttons">
-          <button onclick="submitCard()" class="primary-btn">📩 提交到展示区</button>
-          <button onclick="downloadCardImage()">💾 下载卡片</button>
+          <button onclick="submitCard()" class="primary-btn">提交到展示区</button>
+          <button onclick="downloadCardImage()">下载卡片</button>
         </div>
       </div>
 
@@ -801,7 +830,8 @@
       onUploadBg,
       bindCustomFileUpload,
       getRandomItem,
-      sanitizeAndValidateCard
+      sanitizeAndValidateCard,
+      processLongUrls
     } from './scripts/cardUtils.js';
 
     // Global variables
@@ -951,7 +981,7 @@
               color: ${fontColor};
             ">${options.quote}</div>
             ${finalImage ? `<img id="quote-image-preview-card" src="${finalImage}" alt="Card Image" />` : ''}
-            <div class="detail-text">${options.detail}</div>
+            <div class="detail-text">${processLongUrls(options.detail)}</div>
           </div>
           <div class="card-footer">
             <div class="footer" style="color: ${fontColor}">——作者：${options.creator} · ${currentTime}</div>
@@ -1274,7 +1304,7 @@
         // 自动填充创作者字段
         const creatorInput = document.getElementById('creator');
         if (creatorInput && !creatorInput.value) {
-          creatorInput.value = user.username || user.email || '';
+          creatorInput.value = user.name || user.username || user.email || '';
           // 更新卡片预览
           updateCardPreview();
         }

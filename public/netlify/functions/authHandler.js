@@ -60,14 +60,14 @@ export async function handler(event, context) {
 // 处理用户注册
 async function handleRegister(event, headers) {
   try {
-    const { username, email, password } = JSON.parse(event.body)
+    const { username, email, password, name } = JSON.parse(event.body)
 
     // 验证输入
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !name) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: '用户名、邮箱和密码都是必填项' })
+        body: JSON.stringify({ error: '姓名、用户名、邮箱和密码都是必填项' })
       }
     }
 
@@ -139,7 +139,8 @@ async function handleRegister(event, headers) {
       .insert({
         username,
         email,
-        password: hashedPassword
+        password: hashedPassword,
+        name
       })
       .select('id, username, email')
       .single()
@@ -155,10 +156,11 @@ async function handleRegister(event, headers) {
 
     // 生成JWT token
     const token = jwt.sign(
-      { 
-        userId: newUser.id, 
-        username: newUser.username, 
-        email: newUser.email 
+      {
+        userId: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        name: name
       },
       JWT_SECRET,
       { expiresIn: '7d' }
@@ -172,7 +174,8 @@ async function handleRegister(event, headers) {
         user: {
           id: newUser.id,
           username: newUser.username,
-          email: newUser.email
+          email: newUser.email,
+          name: name
         },
         token
       })
@@ -204,7 +207,7 @@ async function handleLogin(event, headers) {
     // 查找用户
     const { data: user, error: fetchError } = await supabase
       .from('users')
-      .select('id, username, email, password')
+      .select('id, username, email, password,name')
       .eq('email', email)
       .single()
 
@@ -228,10 +231,11 @@ async function handleLogin(event, headers) {
 
     // 生成JWT token
     const token = jwt.sign(
-      { 
-        userId: user.id, 
-        username: user.username, 
-        email: user.email 
+      {
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name
       },
       JWT_SECRET,
       { expiresIn: '7d' }
@@ -245,7 +249,8 @@ async function handleLogin(event, headers) {
         user: {
           id: user.id,
           username: user.username,
-          email: user.email
+          email: user.email,
+          name: user.name
         },
         token
       })
@@ -276,11 +281,11 @@ async function handleVerifyToken(event, headers) {
 
     try {
       const decoded = jwt.verify(token, JWT_SECRET)
-      
+
       // 可选：从数据库验证用户是否仍然存在
       const { data: user, error: fetchError } = await supabase
         .from('users')
-        .select('id, username, email')
+        .select('id, username, email,name')
         .eq('id', decoded.userId)
         .single()
 
@@ -300,7 +305,8 @@ async function handleVerifyToken(event, headers) {
           user: {
             id: user.id,
             username: user.username,
-            email: user.email
+            email: user.email,
+            name: user.name
           }
         })
       }

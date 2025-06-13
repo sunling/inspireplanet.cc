@@ -16,7 +16,6 @@ import { gradientFontColors, getFontColorForGradient, getRandomGradientClass } f
  * @param {string} cardData.imagePath - Path to the image
  * @param {string} cardData.creator - Card creator name
  * @param {string} cardData.font - Font family
- * @param {Object|string} cardData.theme - Theme colors
  * @param {string} cardData.customImage - Optional custom image (base64 or URL)
  * @param {Object} options - Rendering options
  * @param {string} options.mode - Rendering mode: 'editor', 'carousel', or 'list'
@@ -35,18 +34,6 @@ export function renderCard(cardData, options = {}) {
     created = null
   } = cardData;
 
-  // Format the quote and detail text (replace newlines with <br>)
-  const formattedQuote = typeof quote === 'string' ? quote.replace(/\n/g, '<br>') : quote;
-  const formattedDetail = typeof detail === 'string' ? detail.replace(/\n/g, '<br>') : detail;
-
-  // Handle detail text - check if it's already parsed Markdown HTML
-  // if (options.isMarkdown) {
-  //   // 直接使用Markdown解析后的HTML内容
-  //   formattedDetail = detail;
-  // } else {
-  //   // 非Markdown内容，简单替换换行符为<br>
-  //   formattedDetail = typeof detail === 'string' ? detail.replace(/\n/g, '<br>') : detail;
-  // }
 
   // Use custom image if provided, otherwise use the image path
   const finalImage = customImage || imagePath;
@@ -85,9 +72,9 @@ export function renderCard(cardData, options = {}) {
           <div class="quote-box" style="
             background-color: ${quoteBoxBg}; 
             color: ${fontColor};
-          ">${formattedQuote}</div>
+          ">${quote}</div>
           <img id="quote-image-${cardId}" src="${finalImage}" alt="金句插图" />
-          <div class="detail-text">${formattedDetail}</div>
+          <div class="detail-text">${detail}</div>
         </div>
         <div class="card-footer">
             <div class="footer" style="color: ${fontColor}">——作者：${creator} · ${dateStr}</div>
@@ -132,10 +119,11 @@ export function renderCarouselCard(cardData, index) {
 
   // Prepare card data for rendering
   const markedText = cardData.Detail ? marked.parse(cardData.Detail) : '';
+  const processedDetail = processLongUrls(markedText);
   const normalizedCardData = {
     title: cardData.Title || "默认标题",
     quote: cardData.Quote || "默认金句",
-    detail: markedText || "",
+    detail: processedDetail || "",
     imagePath: cardData.ImagePath || "",
     creator: cardData.Creator || "匿名",
     font: cardData.Font || "'Noto Sans SC', sans-serif",
@@ -153,9 +141,7 @@ export function renderCarouselCard(cardData, index) {
 
   // 获取当前渐变对应的字体颜色
   const fontColor = gradientFontColors[normalizedCardData.gradientClass] || '#2c3e50';
-  const isLightFont = fontColor === '#ffffff';
-  const quoteBoxBg = isLightFont ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.9)';
-  // const quoteBoxColor = isLightFont ? '#ffffff' : '#333';
+  const quoteBoxBg = 'rgba(255, 255, 255, 0.9)';
 
   const cardHTML = `
     <div class="card ${normalizedCardData.gradientClass}" id="${cardId}" style="
@@ -219,10 +205,11 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
 
   // Prepare card data for rendering
   const markedText = cardData.Detail ? marked.parse(cardData.Detail) : '';
+  const processedDetail = processLongUrls(markedText);
   const normalizedCardData = {
     title: cardData.Title || "这一刻，我想说",
     quote: cardData.Quote || "",
-    detail: markedText || "",
+    detail: processedDetail || "",
     imagePath: `${imgPrefix}${cardData.ImagePath}`,
     creator: cardData.Creator || "匿名",
     font: cardData.Font || "'Noto Sans SC', sans-serif",
@@ -277,104 +264,104 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
   return cardElement;
 }
 
-/**
- * Submit a comment for a card
- * @param {string} cardId - The ID of the card
- * @param {string} uniqueCardId - The unique ID of the card element
- */
-async function submitComment(cardId, uniqueCardId) {
-  const nameInput = document.getElementById(`name-${uniqueCardId}`);
-  const commentTextarea = document.getElementById(`comment-${uniqueCardId}`);
-  const successMsg = document.getElementById(`success-${uniqueCardId}`);
-  const submitBtn = nameInput.nextElementSibling.nextElementSibling;
-  const hoverOverlay = document.getElementById(`overlay-${uniqueCardId}`);
+// /**
+//  * Submit a comment for a card
+//  * @param {string} cardId - The ID of the card
+//  * @param {string} uniqueCardId - The unique ID of the card element
+//  */
+// async function submitComment(cardId, uniqueCardId) {
+//   const nameInput = document.getElementById(`name-${uniqueCardId}`);
+//   const commentTextarea = document.getElementById(`comment-${uniqueCardId}`);
+//   const successMsg = document.getElementById(`success-${uniqueCardId}`);
+//   const submitBtn = nameInput.nextElementSibling.nextElementSibling;
+//   const hoverOverlay = document.getElementById(`overlay-${uniqueCardId}`);
 
-  if (!nameInput || !commentTextarea || !successMsg) return;
+//   if (!nameInput || !commentTextarea || !successMsg) return;
 
-  const name = nameInput.value.trim();
-  const comment = commentTextarea.value.trim();
+//   const name = nameInput.value.trim();
+//   const comment = commentTextarea.value.trim();
 
-  // Validate inputs
-  if (!name) {
-    alert('请输入您的名字');
-    return;
-  }
+//   // Validate inputs
+//   if (!name) {
+//     alert('请输入您的名字');
+//     return;
+//   }
 
-  if (!comment) {
-    alert('请输入评论内容');
-    return;
-  }
+//   if (!comment) {
+//     alert('请输入评论内容');
+//     return;
+//   }
 
-  // Sanitize inputs
-  const sanitizedName = sanitizeInput(name, 100);
-  const sanitizedComment = sanitizeInput(comment, 500);
+//   // Sanitize inputs
+//   const sanitizedName = sanitizeInput(name, 100);
+//   const sanitizedComment = sanitizeInput(comment, 500);
 
-  // Show loading state
-  const originalBtnText = submitBtn.textContent;
-  submitBtn.textContent = '提交中...';
-  submitBtn.disabled = true;
+//   // Show loading state
+//   const originalBtnText = submitBtn.textContent;
+//   submitBtn.textContent = '提交中...';
+//   submitBtn.disabled = true;
 
-  try {
-    // Submit the comment
-    const response = await fetch(`${getBaseUrl()}/.netlify/functions/commentsHandler`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        cardId,
-        name: sanitizedName,
-        comment: sanitizedComment
-      })
-    });
+//   try {
+//     // Submit the comment
+//     const response = await fetch(`${getBaseUrl()}/.netlify/functions/commentsHandler`, {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json'
+//       },
+//       body: JSON.stringify({
+//         cardId,
+//         name: sanitizedName,
+//         comment: sanitizedComment
+//       })
+//     });
 
-    const result = await response.json();
+//     const result = await response.json();
 
-    if (response.ok && result.success) {
-      // Clear the form
-      nameInput.value = '';
-      commentTextarea.value = '';
+//     if (response.ok && result.success) {
+//       // Clear the form
+//       nameInput.value = '';
+//       commentTextarea.value = '';
 
-      // Show success message
-      successMsg.style.display = 'block';
+//       // Show success message
+//       successMsg.style.display = 'block';
 
-      // Create and display the temporary comment preview
-      const commentPreview = document.createElement('div');
-      commentPreview.className = 'comment-preview';
-      commentPreview.innerHTML = `
-        <div class="comment-preview-content">
-          <strong>${sanitizedName}</strong>: ${sanitizedComment}
-        </div>
-      `;
+//       // Create and display the temporary comment preview
+//       const commentPreview = document.createElement('div');
+//       commentPreview.className = 'comment-preview';
+//       commentPreview.innerHTML = `
+//         <div class="comment-preview-content">
+//           <strong>${sanitizedName}</strong>: ${sanitizedComment}
+//         </div>
+//       `;
 
-      // Add the comment preview to the card container
-      const cardContainer = hoverOverlay.parentElement;
-      cardContainer.appendChild(commentPreview);
+//       // Add the comment preview to the card container
+//       const cardContainer = hoverOverlay.parentElement;
+//       cardContainer.appendChild(commentPreview);
 
-      // Hide the hover overlay
-      if (window.innerWidth <= 768) {
-        hoverOverlay.classList.remove('card-mobile-expand');
-      }
+//       // Hide the hover overlay
+//       if (window.innerWidth <= 768) {
+//         hoverOverlay.classList.remove('card-mobile-expand');
+//       }
 
-      // Remove the comment preview and success message after a delay
-      setTimeout(() => {
-        successMsg.style.display = 'none';
-        if (cardContainer.contains(commentPreview)) {
-          cardContainer.removeChild(commentPreview);
-        }
-      }, 5000);
-    } else {
-      alert(`评论提交失败: ${result.error || '未知错误'}`);
-    }
-  } catch (error) {
-    console.error('提交评论失败:', error);
-    alert('评论提交失败，请稍后再试');
-  } finally {
-    // Restore button state
-    submitBtn.textContent = originalBtnText;
-    submitBtn.disabled = false;
-  }
-}
+//       // Remove the comment preview and success message after a delay
+//       setTimeout(() => {
+//         successMsg.style.display = 'none';
+//         if (cardContainer.contains(commentPreview)) {
+//           cardContainer.removeChild(commentPreview);
+//         }
+//       }, 5000);
+//     } else {
+//       alert(`评论提交失败: ${result.error || '未知错误'}`);
+//     }
+//   } catch (error) {
+//     console.error('提交评论失败:', error);
+//     alert('评论提交失败，请稍后再试');
+//   } finally {
+//     // Restore button state
+//     submitBtn.textContent = originalBtnText;
+//     submitBtn.disabled = false;
+//   }
+// }
 
 /**
  * Sanitize user input to prevent XSS attacks
@@ -587,9 +574,6 @@ export async function fetchAndRenderWeeklyCards(containerId) {
       availableImages = [{ file: 'biking.png' }]; // Fallback
     }
 
-    // Available themes (keys from the themes object)
-    // const availableThemes = Object.keys(themes);
-
     // Render cards by episode groups
     sortedEpisodes.forEach(episode => {
       // Create episode heading
@@ -618,8 +602,6 @@ export async function fetchAndRenderWeeklyCards(containerId) {
         // Prepare card data with random styling
         const styledCard = {
           ...card,
-          // Theme: randomTheme,
-          // Font: randomFont,
           ImagePath: card.ImagePath || `images/${randomImage.file}`,
           GradientClass: getRandomGradientClass()
         };
@@ -665,7 +647,6 @@ export const API_ENDPOINTS = {
 /**
  * Upload a card to Airtable
  * @param {Object} cardData - Card data to upload
- * @param {Object} cardData.theme - Theme colors
  * @param {string} cardData.font - Font family
  * @param {string} cardData.title - Card title
  * @param {string} cardData.quote - Card quote
@@ -1355,4 +1336,36 @@ export function filterCardsBySearchTerm(cards, searchTerm) {
 
     return title.includes(term) || quote.includes(term) || detail.includes(term);
   });
+}
+
+/**
+ * Process long URLs in HTML content to make them more readable
+ * @param {string} html - HTML content containing URLs
+ * @returns {string} - Processed HTML with shortened long URLs
+ */
+export function processLongUrls(html) {
+  if (!html) return html;
+  
+  // 创建一个临时DOM元素来解析HTML
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  
+  // 查找所有的<a>标签
+  const links = tempDiv.querySelectorAll('a');
+  
+  links.forEach(link => {
+    const url = link.href;
+    const linkText = link.textContent;
+    
+    // 如果链接文本就是URL且长度超过50个字符，则应用特殊样式
+    if (linkText === url && url.length > 50) {
+      // 截取显示文本：显示前30个字符 + ... + 后15个字符
+      const displayText = url.substring(0, 30) + '...' + url.substring(url.length - 15);
+      link.textContent = displayText;
+      link.className = 'long-url';
+      link.title = url;
+    }
+  });
+  
+  return tempDiv.innerHTML;
 }
