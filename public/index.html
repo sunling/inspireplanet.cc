@@ -144,7 +144,7 @@
 
     /* Preview */
     #preview {
-      width: 420px;
+      width: 460px;
       display: flex;
       justify-content: center; /* Center card horizontally */
       align-items: flex-start;    /* Center card vertically */
@@ -832,8 +832,8 @@
   const gradientFontColors = {
     'card-gradient-1': '#2c3e50',    // 彩虹梦境 - 深蓝灰
     'card-gradient-2': '#8b4513',    // 日出暖阳 - 深棕色
-    'card-gradient-3': '#ffffff',    // 紫色幻想 - 白色
-    'card-gradient-4': '#ffffff',    // 海洋蓝调 - 白色
+    'card-gradient-3': '#4a148c',    // 紫色幻想 - 深紫色
+    'card-gradient-4': '#1e3a8a',    // 海洋蓝调 - 深蓝色
     'card-gradient-5': '#2c3e50',    // 火焰橙黄 - 深蓝灰
     'card-gradient-6': '#2d5016',    // 清新绿意 - 深绿色
     'card-gradient-7': '#ffffff',    // 热情红橙 - 白色
@@ -977,7 +977,6 @@
       const quoteBoxBg = isLightFont ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.9)';
       const quoteBoxColor = isLightFont ? '#ffffff' : '#333';
       
-      console.log(finalImage,'====')
       const cardHTML = `
         <div class="card ${window.currentGradientClass}" style="
               font-family: ${options.font};
