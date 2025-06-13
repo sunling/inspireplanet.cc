@@ -705,6 +705,18 @@ export async function uploadCard(cardData) {
   }
 
   try {
+    // Get current user information
+    let username = '';
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        username = userData.name || '';
+      } catch (e) {
+        console.error('解析用户信息失败:', e);
+      }
+    }
+
     // Call Netlify function to upload card
     const response = await fetch(`${getBaseUrl()}/${API_ENDPOINTS.CARDS_HANDLER}`, {
       method: 'POST',
@@ -719,7 +731,8 @@ export async function uploadCard(cardData) {
         imagePath: cardData.imagePath,
         detail: cardData.detail,
         upload: customImageUrl || '',
-        creator: cardData.creator
+        creator: cardData.creator,
+        username: username
       })
     });
 

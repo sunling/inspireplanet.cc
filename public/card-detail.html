@@ -137,24 +137,45 @@
       font-style: italic;
     }
 
-    .download-btn {
-      display: inline-block;
-      margin: 20px 0;
-      padding: 12px 25px;
-      background: linear-gradient(135deg, #FFB6C1, #FFE4E1, #F0E68C);
-      color: #666;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: bold;
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .download-btn, .edit-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
       border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
       cursor: pointer;
       transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .edit-btn {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
+    }
+
+    .download-btn:hover, .edit-btn:hover {
+      transform: translateY(-2px);
     }
 
     .download-btn:hover {
-      background: linear-gradient(135deg, #FF91A4, #FFD1D4, #EDE066);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    .edit-btn:hover {
+      box-shadow: 0 6px 20px rgba(240, 147, 251, 0.6);
+    }
+
+    .download-btn:active, .edit-btn:active {
+      transform: translateY(0);
     }
 
     .comments-section {
@@ -354,7 +375,10 @@
     <div class="loading">加载中...</div>
   </div>
 
-  <button id="download-btn" class="download-btn">下载卡片</button>
+  <div class="action-buttons">
+    <button id="download-btn" class="download-btn">下载卡片</button>
+    <button id="edit-btn" class="edit-btn" style="display: none;">编辑卡片</button>
+  </div>
 
   <div class="comments-section">
     <h2>评论区</h2>

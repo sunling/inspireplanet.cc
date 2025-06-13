@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>启发星球 - 编辑卡片</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter&family=Playfair+Display&family=Montserrat&family=Lato&family=Dancing+Script&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/dompurify@3.0.6/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f9f9f9, #e0eafc);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 30px;
+      padding: 30px 20px;
+      animation: fadeIn 1s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin-bottom: 20px;
+    }
+
+    .back-button {
+      display: flex;
+      align-items: center;
+      color: #4a6fa5;
+      text-decoration: none;
+      font-weight: bold;
+      margin-right: 20px;
+      transition: transform 0.3s ease;
+    }
+
+    .back-button:hover {
+      transform: translateX(-5px);
+    }
+
+    .back-button svg {
+      width: 24px;
+      height: 24px;
+      margin-right: 8px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      color: #333;
+      margin: 0;
+      flex-grow: 1;
+      text-align: center;
+    }
+
+    .main-container {
+      display: flex;
+      width: 100%;
+      max-width: 1200px;
+      gap: 30px;
+      align-items: flex-start;
+    }
+
+    .form-container {
+      flex: 1;
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .preview-container {
+      flex: 1;
+      position: sticky;
+      top: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e1e5e9;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #4a6fa5;
+    }
+
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    .secondary-btn {
+      background: #f8f9fa;
+      color: #6c757d;
+      border: 2px solid #e1e5e9;
+    }
+
+    .secondary-btn:hover {
+      background: #e9ecef;
+      border-color: #adb5bd;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-size: 18px;
+    }
+
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        flex-direction: column;
+      }
+
+      .preview-container {
+        position: static;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+      }
+
+      .primary-btn,
+      .secondary-btn {
+        width: 100%;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="/styles/card-gradients.css">
+</head>
+
+<body>
+  <div class="header">
+    <a href="javascript:history.back()" class="back-button">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7" />
+      </svg>
+      返回
+    </a>
+    <h1>编辑卡片</h1>
+  </div>
+
+  <div class="main-container">
+    <div class="form-container">
+      <div id="loading" class="loading">加载中...</div>
+      <div id="error-message" class="error-message" style="display: none;"></div>
+      
+      <form id="edit-form" style="display: none;">
+        <div class="form-group">
+          <label for="title">标题</label>
+          <input type="text" id="title" name="title" placeholder="请输入卡片标题" required>
+        </div>
+
+        <div class="form-group">
+          <label for="quote">金句</label>
+          <input type="text" id="quote" name="quote" placeholder="请输入触动你的金句" required>
+        </div>
+
+        <div class="form-group">
+          <label for="detail">启发详情</label>
+          <textarea id="detail" name="detail" placeholder="请详细描述这个观点给你带来的启发和你的行动计划" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="creator">创作者</label>
+          <input type="text" id="creator" name="creator" placeholder="请输入创作者名称">
+        </div>
+
+        <div class="form-group">
+          <label for="choose-gradient">背景渐变</label>
+          <select id="choose-gradient" name="gradientClass">
+            <option value="card-gradient-1">渐变1</option>
+            <option value="card-gradient-2">渐变2</option>
+            <option value="card-gradient-3">渐变3</option>
+            <option value="card-gradient-4">渐变4</option>
+            <option value="card-gradient-5">渐变5</option>
+            <option value="card-gradient-6">渐变6</option>
+            <option value="card-gradient-7">渐变7</option>
+            <option value="card-gradient-8">渐变8</option>
+            <option value="card-gradient-9">渐变9</option>
+            <option value="card-gradient-10">渐变10</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="choose-font">字体</label>
+          <select id="choose-font" name="font">
+            <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+            <option value="'Noto Serif SC', serif">思源宋体</option>
+            <option value="'Ma Shan Zheng', cursive">马善政楷体</option>
+            <option value="'Inter', sans-serif">Inter</option>
+            <option value="'Playfair Display', serif">Playfair Display</option>
+            <option value="'Montserrat', sans-serif">Montserrat</option>
+            <option value="'Lato', sans-serif">Lato</option>
+            <option value="'Dancing Script', cursive">Dancing Script</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="image-select">背景图片</label>
+          <select id="image-select" name="imagePath">
+            <option value="">无背景图片</option>
+          </select>
+        </div>
+
+        <div class="action-buttons">
+          <button type="button" class="secondary-btn" onclick="history.back()">取消</button>
+          <button type="submit" class="primary-btn">保存修改</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="preview-container">
+      <div id="card-preview"></div>
+    </div>
+  </div>
+
+  <script type="module" src="scripts/cardEdit.js"></script>
+</body>
+
+</html>

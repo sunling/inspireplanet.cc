@@ -20,6 +20,11 @@ export async function handler(event, context) {
     cache.cardsByIds = {};
     console.log("Saving card");
     return await save(event, context);
+  } else if (event.httpMethod === 'PUT') {
+    cache.allCards = null;
+    cache.cardsByIds = {};
+    console.log("Updating card");
+    return await update(event, context);
   } else if (event.httpMethod === 'GET') {
     console.log("Fetching cards");
     return await fetch(event, context);
@@ -95,7 +100,8 @@ async function save(event, context) {
       Creator: cardData.creator,
       Hash: hash,
       Created: new Date().toISOString(),
-      GradientClass:cardData.gradientClass
+      GradientClass: cardData.gradientClass,
+      Username: cardData.username || null
     };
 
     // Insert into Supabase
@@ -213,7 +219,8 @@ async function fetch(event, context) {
     Creator: row.Creator,
     Created: row.Created,
     Hash: row.Hash,
-    GradientClass: row.GradientClass
+    GradientClass: row.GradientClass,
+    Username: row.Username
   }));
 
   // Update cache
@@ -234,6 +241,108 @@ async function fetch(event, context) {
     body: JSON.stringify({ records }),
   }
 }
+async function update(event, context) {
+  try {
+    // Only allow PUT requests
+    if (event.httpMethod !== 'PUT') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({ error: 'Method Not Allowed' })
+      };
+    }
+
+    // Parse the request body
+    const cardData = JSON.parse(event.body);
+
+    // Validate required fields
+    if (!cardData.id || !cardData.title || !cardData.quote || !cardData.detail) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Missing required fields: id, title, quote, detail' })
+      };
+    }
+
+    // Check if card exists and get current data
+    const { data: existingCard, error: fetchError } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', cardData.id)
+      .single();
+
+    if (fetchError || !existingCard) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: 'Card not found' })
+      };
+    }
+
+    // Verify user permission (check if username matches)
+    if (cardData.username && existingCard.Username && cardData.username !== existingCard.Username) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ error: 'Permission denied: You can only edit your own cards' })
+      };
+    }
+
+    // Prepare the update data
+    const updateData = {
+      Title: cardData.title,
+      Quote: cardData.quote,
+      Detail: cardData.detail,
+      Creator: cardData.creator || existingCard.Creator,
+      Font: cardData.font || existingCard.Font,
+      GradientClass: cardData.gradientClass || existingCard.GradientClass,
+      ImagePath: cardData.imagePath || existingCard.ImagePath,
+      Upload: cardData.upload || existingCard.Upload,
+      Username: cardData.username || existingCard.Username
+    };
+
+    // Generate new hash for the updated card
+    const newHash = generateHash({
+      title: updateData.Title,
+      quote: updateData.Quote,
+      detail: updateData.Detail
+    });
+
+    if (newHash) {
+      updateData.Hash = newHash;
+    }
+
+    // Update the card in Supabase
+    const { data, error } = await supabase
+      .from('cards')
+      .update(updateData)
+      .eq('id', cardData.id)
+      .select();
+
+    if (error) {
+      console.error('Supabase update error:', error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Failed to update card in database' })
+      };
+    }
+
+    console.log('Card updated successfully:', data[0]);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ 
+        success: true, 
+        message: 'Card updated successfully',
+        card: data[0]
+      })
+    };
+
+  } catch (error) {
+    console.error('Update card error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Internal server error' })
+    };
+  }
+}
+
 // Helper function to generate a hash for the card
 function generateHash(card) {
   if (!card.title || !card.quote || !card.detail) return null;

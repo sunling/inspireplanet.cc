@@ -81,6 +81,17 @@ async function renderCardDetail() {
       downloadCard();
     });
 
+    // Check if user can edit this card and show edit button
+    checkEditPermission(card);
+
+    // Setup edit button
+    const editBtn = document.getElementById('edit-btn');
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        window.location.href = `card-edit.html?id=${cardId}`;
+      });
+    }
+
   } catch (error) {
     console.error('加载卡片详情失败:', error);
     cardContainer.innerHTML = '<div class="error-message">加载失败，请稍后再试。</div>';
@@ -348,8 +359,72 @@ function fetchCardById(cardId) {
     .then(data => data.records[0]);
 }
 
+// Check if current user can edit this card
+function checkEditPermission(card) {
+  const editBtn = document.getElementById('edit-btn');
+  if (!editBtn) return;
+
+  // Get current user information
+  const user = localStorage.getItem('user');
+  if (!user) {
+    // User not logged in, hide edit button
+    editBtn.style.display = 'none';
+    return;
+  }
+
+  try {
+    const userData = JSON.parse(user);
+    const currentUsername = userData.username || '';
+    const cardUsername = card.Username || '';
+
+    // Show edit button only if current user is the card creator
+    if (currentUsername && currentUsername === cardUsername) {
+      editBtn.style.display = 'inline-block';
+    } else {
+      editBtn.style.display = 'none';
+    }
+  } catch (e) {
+    console.error('解析用户信息失败:', e);
+    editBtn.style.display = 'none';
+  }
+}
+
+// Check login status and initialize edit button visibility
+function checkLoginAndInitEditButton() {
+  const editBtn = document.getElementById('edit-btn');
+  if (!editBtn) return;
+
+  // Get current user information
+  const user = localStorage.getItem('user');
+  if (!user) {
+    // User not logged in, hide edit button
+    editBtn.style.display = 'none';
+    return false;
+  }
+
+  try {
+    const userData = JSON.parse(user);
+    const currentUsername = userData.name || '';
+    
+    if (!currentUsername) {
+      editBtn.style.display = 'none';
+      return false;
+    }
+    
+    // User is logged in, but we still need to check card ownership later
+    return true;
+  } catch (e) {
+    console.error('解析用户信息失败:', e);
+    editBtn.style.display = 'none';
+    return false;
+  }
+}
+
 // Initialize the page
 document.addEventListener('DOMContentLoaded', async () => {
+  // Check login status first
+  const isLoggedIn = checkLoginAndInitEditButton();
+  
   await renderCardDetail();
   setupCommentForm();
 
