@@ -668,7 +668,6 @@ export async function uploadCard(cardData) {
   let customImageUrl = cardData.searchImageSelected;
   if (!customImageUrl && cardData.upload) {
     try {
-      // Show uploading indicator
       const submitBtn = document.querySelector('.primary-btn');
       const originalText = submitBtn.innerHTML;
       if (submitBtn) {
@@ -676,7 +675,8 @@ export async function uploadCard(cardData) {
         submitBtn.disabled = true;
       }
 
-      customImageUrl = await uploadImageToGitHub(cardData.upload);
+      const cleanedBase64 = cardData.upload.replace(/^data:image\/\w+;base64,/, '');
+      customImageUrl = await uploadImageToGitHub(cleanedBase64);
 
       // Restore button state
       if (submitBtn) {
