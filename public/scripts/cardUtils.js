@@ -678,8 +678,7 @@ export async function uploadCard(cardData) {
         submitBtn.disabled = true;
       }
 
-      const cleanedBase64 = cardData.upload.replace(/^data:image\/\w+;base64,/, '');
-      customImageUrl = await uploadImageToGitHub(cleanedBase64);
+      customImageUrl = await uploadImageToGitHub(cardData.upload);
 
       // Restore button state
       if (submitBtn) {
