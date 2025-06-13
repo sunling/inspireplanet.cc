@@ -902,6 +902,8 @@
     // Function to handle image selection
     window.onSelectImage = function () {
       customImage = "";
+      // 清除搜索选中的图片
+      window.selectedSearchImage = null;
       document.getElementById("fileStatus").innerHTML = "";
       updateCardPreview();
     };
@@ -949,7 +951,7 @@
 
       const options = {
         title: document.getElementById('title').value || '这一刻，我想说...',
-        quote: document.getElementById('quote').value || '请写下触动到你的观点"',
+        quote: document.getElementById('quote').value || '请写下触动到你的观点',
         detail: parsedDetail, // 使用解析后的HTML
         imagePath: document.getElementById('image-select').value,
         creator: document.getElementById('creator').value || '匿名',
@@ -961,10 +963,8 @@
       };
 
       // 优先级：搜索选中的图片 > 自定义上传的图片 > 预设图片
-      const searchSelectedImage = (function() {
-        const previewCard = document.getElementById('quote-image-preview-card');
-        return previewCard && previewCard.src && previewCard.src !== window.location.href ? previewCard.src : '';
-      })();
+      // 检查是否有真正选择的搜索结果图片（通过特定的标识来判断）
+      const searchSelectedImage = window.selectedSearchImage || '';
       const finalImage = searchSelectedImage || customImage || document.getElementById('image-select').value;
       // 格式化当前时间
       const now = new Date();
@@ -977,6 +977,7 @@
       const quoteBoxBg = isLightFont ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.9)';
       const quoteBoxColor = isLightFont ? '#ffffff' : '#333';
       
+      console.log(finalImage,'====')
       const cardHTML = `
         <div class="card ${window.currentGradientClass}" style="
               font-family: ${options.font};
@@ -1010,19 +1011,49 @@
     // Setup file upload functionality
     function setupFileUpload() {
       const bgUpload = document.getElementById('bgUpload');
-      if (bgUpload) {
-        bgUpload.addEventListener('change', (event) => {
-          onUploadBg(event, updateCardPreview);
-        });
+      const uploadBtn = document.getElementById('uploadBtn');
+      const fileStatus = document.getElementById('fileStatus');
+      
+      if (!bgUpload || !uploadBtn || !fileStatus) {
+        console.warn("上传功能初始化失败：元素未找到");
+        return;
       }
-
-      // Bind custom upload button
+      
+      // 直接绑定上传按钮点击事件
+      uploadBtn.addEventListener('click', () => {
+        bgUpload.click();
+      });
+      
+      // 绑定文件选择事件
+      bgUpload.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          customImage = e.target.result;
+          // 清除搜索选中的图片，避免冲突
+          window.selectedSearchImage = null;
+          fileStatus.textContent = '已上传：' + file.name;
+          updateCardPreview(customImage); // 确保传递图片数据
+          event.target.value = ''; // 清空值以支持重复上传
+        };
+        reader.readAsDataURL(file);
+      });
+      
+      // 不再使用bindCustomFileUpload，避免重复绑定
+      // 如果上面的直接绑定方式出现问题，可以取消注释下面的代码作为备份方案
+      /*
       bindCustomFileUpload({
         inputId: 'bgUpload',
         buttonId: 'uploadBtn',
         statusId: 'fileStatus',
-        onLoad: updateCardPreview
+        onLoad: function(imageData) {
+          customImage = imageData;
+          updateCardPreview(imageData);
+        }
       });
+      */
     }
 
     // Load and render latest cards to carousel
@@ -1187,14 +1218,14 @@
 
               // Add click event to select this image
               imgContainer.addEventListener('click', () => {
-                // Update the custom image
-                customImage = image.url;
-                // Update the hidden preview card element for submitCard function
-                const previewCard = document.getElementById('quote-image-preview-card');
-                if (previewCard) {
-                  previewCard.src = image.url;
-                } else {
-                  console.warn('quote-image-preview-card element not found');
+                // 设置选中的搜索图片
+                window.selectedSearchImage = image.url;
+                // 清除自定义上传的图片，避免冲突
+                customImage = null;
+                // 更新文件状态显示
+                const fileStatus = document.getElementById('fileStatus');
+                if (fileStatus) {
+                  fileStatus.textContent = '已选择搜索结果图片';
                 }
                 // Update the card preview
                 updateCardPreview();
