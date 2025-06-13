@@ -25,13 +25,13 @@ export const gradientFontColors = {
   'card-gradient-5': '#2c3e50',    // 火焰橙黄 - 深蓝灰
   'card-gradient-6': '#2d5016',    // 清新绿意 - 深绿色
   'card-gradient-7': '#8b0000',    // 热情红橙 - 深红色
-  'card-gradient-8': '#2c3e50',    // 天空蓝白 - 深蓝灰
-  'card-gradient-9': '#2c3e50',    // 雾霭灰蓝 - 深蓝灰
+  'card-gradient-8': '#1e3a8a',    // 天空蓝白 - 深蓝色
+  'card-gradient-9': '#6b7280',    // 雾霭灰蓝 - 中性灰
   'card-gradient-10': '#8b4513',   // 蜂蜜暖黄 - 深棕色
   'card-gradient-11': '#1a5d1a',   // 薄荷清绿 - 深绿色
   'card-gradient-12': '#4a148c',   // 淡雅紫粉 - 深紫色
   'card-gradient-13': '#8b4513',   // 麦田金黄 - 深棕色
-  'card-gradient-14': '#2c3e50'    // 月光银灰 - 深蓝灰
+  'card-gradient-14': '#374151'    // 月光银灰 - 深灰色
 };
 
 // 获取渐变对应的字体颜色

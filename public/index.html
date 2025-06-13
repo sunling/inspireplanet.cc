@@ -938,10 +938,7 @@
       
       // 获取当前渐变对应的字体颜色
       const fontColor = getFontColorForGradient(window.currentGradientClass);
-      const isLightFont = fontColor === '#ffffff';
-      const quoteBoxBg = isLightFont ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.9)';
-      const quoteBoxColor = isLightFont ? '#ffffff' : '#333';
-      
+      const quoteBoxBg = 'rgba(255, 255, 255, 0.9)';
       const cardHTML = `
         <div class="card ${window.currentGradientClass}" style="
               font-family: ${options.font};
@@ -951,7 +948,7 @@
             <div class="title">${options.title}</div>
             <div class="quote-box" style="
               background-color: ${quoteBoxBg}; 
-              color: ${quoteBoxColor};
+              color: ${fontColor};
             ">${options.quote}</div>
             ${finalImage ? `<img id="quote-image-preview-card" src="${finalImage}" alt="Card Image" />` : ''}
             <div class="detail-text">${options.detail}</div>

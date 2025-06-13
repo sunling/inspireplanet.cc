@@ -5,7 +5,7 @@
  * ===========================
  */
 // 导入共享的渐变配置
-import { gradientClasses, gradientFontColors, getFontColorForGradient } from './gradientConfig.js';
+import { gradientFontColors, getFontColorForGradient, getRandomGradientClass } from './gradientConfig.js';
 
 /**
  * Universal card rendering function
@@ -71,9 +71,7 @@ export function renderCard(cardData, options = {}) {
 
   // 获取当前渐变对应的字体颜色
   const fontColor = getFontColorForGradient(gradientClass);
-  const isLightFont = fontColor === '#ffffff';
-  const quoteBoxBg = isLightFont ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.9)';
-  const quoteBoxColor = isLightFont ? '#ffffff' : '#333';
+  const quoteBoxBg = 'rgba(255, 255, 255, 0.9)';
 
   // Create card HTML
   const cardHTML = `
@@ -86,7 +84,7 @@ export function renderCard(cardData, options = {}) {
           <div class="title">${title}</div>
           <div class="quote-box" style="
             background-color: ${quoteBoxBg}; 
-            color: ${quoteBoxColor};
+            color: ${fontColor};
           ">${formattedQuote}</div>
           <img id="quote-image-${cardId}" src="${finalImage}" alt="金句插图" />
           <div class="detail-text">${formattedDetail}</div>
@@ -157,7 +155,7 @@ export function renderCarouselCard(cardData, index) {
   const fontColor = gradientFontColors[normalizedCardData.gradientClass] || '#2c3e50';
   const isLightFont = fontColor === '#ffffff';
   const quoteBoxBg = isLightFont ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.9)';
-  const quoteBoxColor = isLightFont ? '#ffffff' : '#333';
+  // const quoteBoxColor = isLightFont ? '#ffffff' : '#333';
 
   const cardHTML = `
     <div class="card ${normalizedCardData.gradientClass}" id="${cardId}" style="
@@ -168,7 +166,7 @@ export function renderCarouselCard(cardData, index) {
           <div class="title">${normalizedCardData.title}</div>
           <div class="quote-box" style="
             background-color: ${quoteBoxBg}; 
-            color: ${quoteBoxColor};
+            color: ${fontColor};
           ">${normalizedCardData.quote}</div>
           ${finalImage ? `<img src="${finalImage}" alt="Card Image" />` : ''}
           <div class="detail-text">${normalizedCardData.detail}</div>
@@ -614,18 +612,16 @@ export async function fetchAndRenderWeeklyCards(containerId) {
 
       // Render cards for this episode with random styling
       sortedCards.forEach((card, index) => {
-        // Randomly assign theme, font, and image for each card
-        const randomTheme = 'card-gradient-10';//getRandomItem(gradientFontColors.keys);
-        // const randomFont = getRandomItem(availableFonts);
         const randomFont = "'Noto Sans SC', sans-serif";
         const randomImage = getRandomItem(availableImages);
 
         // Prepare card data with random styling
         const styledCard = {
           ...card,
-          Theme: randomTheme,
-          Font: randomFont,
-          ImagePath: card.ImagePath || `images/${randomImage.file}`
+          // Theme: randomTheme,
+          // Font: randomFont,
+          ImagePath: card.ImagePath || `images/${randomImage.file}`,
+          GradientClass: getRandomGradientClass()
         };
 
         // Append card to container with download button and unique ID
