@@ -65,6 +65,7 @@ async function renderCardDetail() {
       customImage: card.Upload || "",
       created: card.Created
     };
+    console.log(normalizedCardData.gradientClass, '=====')
 
     // Clear container
     cardContainer.innerHTML = '';
@@ -75,6 +76,7 @@ async function renderCardDetail() {
       cardId: 'detail-card'
     });
 
+    console.log(cardElement, '=====')
     // Append the card to the container
     cardContainer.appendChild(cardElement);
 
@@ -122,13 +124,19 @@ function downloadCard() {
   sandbox.style.left = "-9999px";
   sandbox.style.top = "0";
   sandbox.style.zIndex = "-1";
-  sandbox.style.background = "white";
+  sandbox.style.background = "transparent";
 
   // Clone the card for capturing
   const clone = cardElement.cloneNode(true);
   clone.style.margin = "0";
   clone.style.width = "420px";
   clone.style.boxSizing = "border-box";
+  
+  // 确保渐变背景样式被正确应用
+  const computedStyle = window.getComputedStyle(cardElement);
+  clone.style.backgroundImage = computedStyle.backgroundImage;
+  clone.style.backgroundColor = computedStyle.backgroundColor;
+  
   sandbox.appendChild(clone);
   document.body.appendChild(sandbox);
 
@@ -165,7 +173,7 @@ function downloadCard() {
         logging: false,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: null,
+        backgroundColor: '#ffffff',
         imageTimeout: 10000,
         foreignObjectRendering: false,
         removeContainer: true,

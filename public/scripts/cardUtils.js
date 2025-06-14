@@ -921,13 +921,20 @@ export function downloadCard(selector = "#preview-card", filenamePrefix = "inspi
   sandbox.style.left = "-9999px";
   sandbox.style.top = "0";
   sandbox.style.zIndex = "-1";
-  sandbox.style.background = "white";
+  sandbox.style.background = "transparent";
 
 
   const clone = cardElement.cloneNode(true);
   clone.style.margin = "0";
   clone.style.width = "420px";
   clone.style.boxSizing = "border-box";
+  
+  // 确保渐变背景样式被正确应用
+  const originalCard = cardElement;
+  const computedStyle = window.getComputedStyle(originalCard);
+  clone.style.backgroundImage = computedStyle.backgroundImage;
+  clone.style.backgroundColor = computedStyle.backgroundColor;
+  
   sandbox.appendChild(clone);
   document.body.appendChild(sandbox);
 
@@ -965,8 +972,12 @@ export function downloadCard(selector = "#preview-card", filenamePrefix = "inspi
         logging: false,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: null,
-        imageTimeout: 5000,
+        backgroundColor: '#ffffff',
+        imageTimeout: 10000,
+        foreignObjectRendering: false,
+        removeContainer: true,
+        width: clone.offsetWidth,
+        height: clone.offsetHeight
       }).then(canvas => {
         canvas.toBlob(blob => {
           const link = document.createElement('a');
@@ -975,7 +986,7 @@ export function downloadCard(selector = "#preview-card", filenamePrefix = "inspi
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
-          document.body.removeChild(sandbox);
+          // 封面下载完成
 
           if (downloadBtn) {
             downloadBtn.innerHTML = originalText || '下载';
@@ -983,7 +994,7 @@ export function downloadCard(selector = "#preview-card", filenamePrefix = "inspi
         }, "image/png");
       }).catch(err => {
         console.error("截图失败", err);
-        document.body.removeChild(sandbox);
+        // 封面下载完成
 
         if (downloadBtn) {
           downloadBtn.innerHTML = originalText || '下载';
@@ -1003,8 +1014,12 @@ export function downloadCard(selector = "#preview-card", filenamePrefix = "inspi
       logging: false,
       useCORS: true,
       allowTaint: true,
-      backgroundColor: null,
-      imageTimeout: 5000,
+      backgroundColor: '#ffffff',
+      imageTimeout: 10000,
+      foreignObjectRendering: false,
+      removeContainer: true,
+      width: clone.offsetWidth,
+      height: clone.offsetHeight
     }).then(canvas => {
       canvas.toBlob(blob => {
         const link = document.createElement('a');
@@ -1013,7 +1028,7 @@ export function downloadCard(selector = "#preview-card", filenamePrefix = "inspi
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        document.body.removeChild(sandbox);
+        // 封面下载完成
 
         if (downloadBtn) {
           downloadBtn.innerHTML = originalText || '下载';
@@ -1037,9 +1052,15 @@ export function downloadCover(elementId = ".cover", filenamePrefix = "cover") {
   setTimeout(() => {
     html2canvas(cardElement, {
       scale: 3, // 高清导出
-      logging: true,
+      logging: false,
       useCORS: true,
-      backgroundColor: null,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      imageTimeout: 10000,
+      foreignObjectRendering: false,
+      removeContainer: true,
+      width: cardElement.offsetWidth,
+      height: cardElement.offsetHeight
     }).then(canvas => {
       canvas.toBlob(function (blob) {
         const link = document.createElement('a');
@@ -1048,7 +1069,7 @@ export function downloadCover(elementId = ".cover", filenamePrefix = "cover") {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        document.body.removeChild(sandbox);
+        // 封面下载完成
       }, "image/png");
     }).catch(err => {
       console.log("截图失败", err);
