@@ -154,73 +154,7 @@
       transition: all 0.3s ease;
     }
 
-    /* Card */
-    .card {
-      background: transparent;
-      overflow: hidden;
-      color: #f1f1f1;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      border-radius: 12px;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      position: relative;
-    }
-    
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-    }
-
-    .card-body {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .card-body .title {
-      font-size: 28px;
-      text-align: center;
-      padding: 20px 10px 0;
-      font-weight: bold;
-    }
-
-    .quote-box {
-      background: #fff2ec;
-      margin: 16px 20px;
-      border-radius: 8px;
-      padding: 12px;
-      font-style: italic;
-      font-weight: 600;
-      font-size: 20px;
-    }
-
-    .card img {
-      width: 90%;
-      object-fit: contain;
-      border-radius: 12px;
-      margin: 0 20px;
-    }
-
-    .detail-text {
-      flex-grow: 1;
-      font-size: 15px;
-      line-height: 1.6;
-      padding: 15px 20px;
-    }
-
-    .card-footer {
-      padding: 0 20px 16px;
-      text-align: right;
-      margin-bottom: 4px;
-    }
-
-    .footer {
-      font-size: 12px;
-      color: #8faadc;
-      font-style: italic;
-    }
+    /* Card styles moved to card-common.css */
 
     /* Buttons */
     .buttons {
@@ -588,64 +522,9 @@
       }
     }
 
-    /* Markdown 样式 */
-    .detail-text p {
-      margin: 0 0 0.8em 0;
-      /* padding: 20px 20px; */
-    }
-
-    .detail-text p:last-child {
-      margin-bottom: 0;
-    }
-
-    .detail-text strong {
-      font-weight: bold;
-      color: inherit;
-    }
-
-    .detail-text em {
-      font-style: italic;
-    }
-
-    .detail-text del {
-      text-decoration: line-through;
-    }
-
-    .detail-text ul,
-    .detail-text ol {
-      padding-left: 1.5em;
-      margin-bottom: 0.8em;
-    }
-
-    /* 长链接处理样式 */
-    .detail-text a {
-      color: #007bff;
-      text-decoration: underline;
-      word-break: break-all;
-      overflow-wrap: break-word;
-      hyphens: auto;
-    }
-
-    .detail-text a:hover {
-      color: #0056b3;
-      text-decoration: none;
-    }
-
-    /* 处理长URL的显示 */
-    .detail-text .long-url {
-      display: inline-block;
-      max-width: 100%;
-      word-break: break-all;
-      overflow-wrap: break-word;
-      white-space: pre-wrap;
-      font-family: monospace;
-      font-size: 0.9em;
-      background-color: rgba(0, 0, 0, 0.05);
-      padding: 2px 4px;
-      border-radius: 3px;
-      margin: 2px 0;
-    }
+    /* Markdown styles moved to card-common.css */
   </style>
+  <link rel="stylesheet" href="/styles/card-common.css">
   <link rel="stylesheet" href="/styles/card-gradients.css">
 
 </head>
@@ -670,7 +549,7 @@
         <!-- 已登录状态 -->
         <div id="user-profile" class="user-profile" style="display: none;">
           <div class="user-avatar-container">
-            <img id="user-avatar" class="user-avatar" src="" alt="用户头像">
+            <img id="user-avatar" class="user-avatar" src="" alt="用户头像" crossorigin="anonymous">
             <span id="user-name" class="user-name"></span>
             <div class="user-dropdown">
               <button onclick="logout()" class="dropdown-item">退出登录</button>
@@ -787,7 +666,7 @@
 
       <div id="preview" class="animate__animated animate__fadeIn">
         <!-- 卡片内容将在这里生成 -->
-              </div>
+      </div>
     </div>
 
     <!-- Latest Submitted Cards Section -->
@@ -980,7 +859,7 @@
               background-color: ${quoteBoxBg}; 
               color: ${fontColor};
             ">${options.quote}</div>
-            ${finalImage ? `<img id="quote-image-preview-card" src="${finalImage}" alt="Card Image" />` : ''}
+            ${finalImage ? `<img id="quote-image-preview-card" src="${finalImage}" alt="Card Image" crossorigin="anonymous" />` : ''}
             <div class="detail-text">${processLongUrls(options.detail)}</div>
           </div>
           <div class="card-footer">
@@ -1031,20 +910,7 @@
         };
         reader.readAsDataURL(file);
       });
-      
-      // 不再使用bindCustomFileUpload，避免重复绑定
-      // 如果上面的直接绑定方式出现问题，可以取消注释下面的代码作为备份方案
-      /*
-      bindCustomFileUpload({
-        inputId: 'bgUpload',
-        buttonId: 'uploadBtn',
-        statusId: 'fileStatus',
-        onLoad: function(imageData) {
-          customImage = imageData;
-          updateCardPreview(imageData);
-        }
-      });
-      */
+
     }
 
     // Load and render latest cards to carousel

@@ -84,58 +84,19 @@
       align-items: center;
     }
 
+    /* Card styles moved to card-common.css */
     .card {
-      background: #fff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
       width: 100%;
       max-width: 600px;
       margin-bottom: 30px;
     }
 
-    .title {
-      font-size: 24px;
-      text-align: center;
-      padding: 20px 15px 10px;
-      font-weight: bold;
-    }
-
-    .quote-box {
-      margin: 15px 20px;
-      border-radius: 8px;
-      padding: 15px;
-      font-style: italic;
-      font-weight: 600;
-      font-size: 18px;
-    }
-
     .card img {
-      width: 90%;
-      height: auto;
-      object-fit: contain;
-      border-radius: 12px;
       margin: 10px auto;
       display: block;
     }
 
-    .detail-text {
-      font-size: 16px;
-      line-height: 1.6;
-      padding: 10px 25px 25px;
-      margin: 0;
-    }
-
-    .card-footer {
-      padding: 0 25px 20px;
-      text-align: right;
-    }
-
-    .footer {
-      font-size: 14px;
-      font-style: italic;
-    }
+    /* Card content styles moved to card-common.css */
 
     .action-buttons {
       display: flex;
@@ -358,9 +319,10 @@
     }
   </style>
   <link rel="stylesheet" href="/styles/card-gradients.css">
+  <link rel="stylesheet" href="/styles/card-common.css">
 </head>
 
-<body>
+<body class="card-detail-page">
   <div class="header">
     <a href="cards.html" class="back-button">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"

@@ -34,6 +34,15 @@ export function renderCard(cardData, options = {}) {
     created = null
   } = cardData;
 
+  // Process detail text if it's not already processed
+  let processedDetail = detail;
+  // If detail is raw text and not already processed, apply markdown processing
+  marked.setOptions({
+    breaks: true
+  });
+  const markedText = detail ? marked.parse(detail) : '';
+  processedDetail = processLongUrls(markedText);
+
 
   // Use custom image if provided, otherwise use the image path
   const finalImage = customImage || imagePath;
@@ -59,7 +68,6 @@ export function renderCard(cardData, options = {}) {
   // 获取当前渐变对应的字体颜色
   const fontColor = getFontColorForGradient(gradientClass);
   const quoteBoxBg = 'rgba(255, 255, 255, 0.9)';
-
   // Create card HTML
   const cardHTML = `
     <div class="card ${gradientClass}" id="${cardId}" style="
@@ -73,8 +81,8 @@ export function renderCard(cardData, options = {}) {
             background-color: ${quoteBoxBg}; 
             color: ${fontColor};
           ">${quote}</div>
-          <img id="quote-image-${cardId}" src="${finalImage}" alt="金句插图" />
-          <div class="detail-text">${detail}</div>
+          <img id="quote-image-${cardId}" src="${finalImage}" alt="金句插图" crossorigin="anonymous" />
+          <div class="detail-text">${processedDetail}</div>
         </div>
         <div class="card-footer">
             <div class="footer" style="color: ${fontColor}">——作者：${creator} · ${dateStr}</div>
@@ -129,15 +137,12 @@ export function renderCarouselCard(cardData, index) {
     font: cardData.Font || "'Noto Sans SC', sans-serif",
     gradientClass: cardData.GradientClass || 'card-gradient-1',
     customImage: cardData.Upload || "",
-    created: cardData.Created,
-    isMarkdown: true
+    created: cardData.Created
   };
 
   // Create card element using renderCard function with gradient support
   const cardId = `carousel-card-${index}`;
   const finalImage = normalizedCardData.customImage || normalizedCardData.imagePath;
-
-
 
   // 获取当前渐变对应的字体颜色
   const fontColor = gradientFontColors[normalizedCardData.gradientClass] || '#2c3e50';
@@ -154,7 +159,7 @@ export function renderCarouselCard(cardData, index) {
             background-color: ${quoteBoxBg}; 
             color: ${fontColor};
           ">${normalizedCardData.quote}</div>
-          ${finalImage ? `<img src="${finalImage}" alt="Card Image" />` : ''}
+          ${finalImage ? `<img src="${finalImage}" alt="Card Image" crossorigin="anonymous" />` : ''}
           <div class="detail-text">${normalizedCardData.detail}</div>
         </div>
         <div class="card-footer">
@@ -195,7 +200,6 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
     addDownloadBtn = false,
     cardIdPrefix = '',
     makeClickable = false,
-    showCommentForm = false
   } = options;
 
   // Generate a unique card ID
@@ -215,8 +219,7 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
     font: cardData.Font || "'Noto Sans SC', sans-serif",
     gradientClass: cardData.GradientClass || 'card-gradient-1',
     customImage: cardData.Upload || "",
-    created: cardData.Created,
-    isMarkdown: true
+    created: cardData.Created
   };
 
   // Create card element using universal renderCard function
@@ -508,8 +511,7 @@ export async function fetchAndRenderAllCards(containerId, makeClickable = false)
         appendCardToContainer(card, dateContainer.id, {
           imgPrefix: '../',
           makeClickable: makeClickable,
-          showCommentForm: true,
-          isMarkdown: true
+          showCommentForm: true
         });
       });
     });
@@ -1051,7 +1053,7 @@ export function downloadCover(elementId = ".cover", filenamePrefix = "cover") {
     }).catch(err => {
       console.log("截图失败", err);
     }, 500);
-  });
+    });
 }
 
 /**

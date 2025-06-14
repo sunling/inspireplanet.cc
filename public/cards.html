@@ -80,24 +80,7 @@
       margin-bottom: 20px;
     }
 
-    .card-container {
-      position: relative;
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-    }
+    /* Card styles moved to card-common.css */
     
     /* Card hover overlay */
     .card-hover-overlay {
@@ -269,46 +252,7 @@
       }
     }
 
-    .title {
-      font-size: 22px;
-      text-align: center;
-      padding: 15px 10px 0;
-      font-weight: bold;
-    }
-
-    .quote-box {
-      margin: 12px 15px;
-      border-radius: 8px;
-      padding: 10px;
-      font-style: italic;
-      font-weight: 600;
-      font-size: 16px;
-    }
-
-    .card img {
-      width: 90%;
-      height: auto;
-      object-fit: contain;
-      border-radius: 12px;
-      margin: 0 20px;
-    }
-
-    .detail-text {
-      font-size: 14px;
-      line-height: 1.5;
-      padding: 15px 20px;
-      margin: 0;
-    }
-
-    .card-footer {
-      padding: 0 20px 15px;
-      text-align: right;
-    }
-
-    .footer {
-      font-size: 12px;
-      font-style: italic;
-    }
+    /* Card content styles moved to card-common.css */
 
     .back-link {
       display: inline-block;
@@ -398,6 +342,7 @@
       margin: 20px auto;
     }
   </style>
+  <link rel="stylesheet" href="/styles/card-common.css">
   <link rel="stylesheet" href="/styles/card-gradients.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script type="module">

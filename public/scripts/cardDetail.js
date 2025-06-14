@@ -49,6 +49,9 @@ async function renderCardDetail() {
 
     // Prepare card data for rendering
     const detailText = sanitizeContent(card.Detail);
+    marked.setOptions({
+      breaks: true
+    });
     const markedText = detailText ? marked.parse(detailText) : '';
     const processedDetail = processLongUrls(markedText);
     const normalizedCardData = {
@@ -69,8 +72,7 @@ async function renderCardDetail() {
     // Create card element with a specific ID for downloading
     const cardElement = renderCard(normalizedCardData, {
       mode: 'list',
-      cardId: 'detail-card',
-      isMarkdown: true
+      cardId: 'detail-card'
     });
 
     // Append the card to the container
@@ -164,7 +166,11 @@ function downloadCard() {
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
-        imageTimeout: 5000,
+        imageTimeout: 10000,
+        foreignObjectRendering: false,
+        removeContainer: true,
+        width: clone.offsetWidth,
+        height: clone.offsetHeight
       }).then(canvas => {
         canvas.toBlob(blob => {
           // Create download link
