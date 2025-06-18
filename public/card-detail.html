@@ -427,11 +427,12 @@
   <script>
     async function initWeChatSDK() {
       const currentUrl = encodeURIComponent(window.location.href.split('#')[0]);
-      const res = await fetch(`https://http://8.134.113.39/sign?url=${currentUrl}`);
+      const res = await fetch(`http://8.134.113.39/sign?url=${currentUrl}`);
+      // const res = await fetch(`/api/sign?url=${currentUrl}`);
       const data = await res.json();
 
       if (data.error) {
-        console.error("微信SDK初始化失败:", data.error);
+        alert("微信SDK初始化失败:" + data.error);
         return;
       }
 
@@ -444,11 +445,41 @@
         jsApiList: ['updateAppMessageShareData', 'updateTimelineShareData']
       });
 
-      wx.ready(() => {
+      wx.ready(async () => {
         const title = document.querySelector('.card .title')?.textContent || '启发星球';
         const desc = document.querySelector('.card .quote')?.textContent || '点击查看卡片';
         const link = window.location.href;
-        const imgUrl = window.location.origin + '/images/default-share.png';
+        
+        // 尝试生成卡片图片作为分享封面
+        let imgUrl = window.location.origin + '/images/default-share.png';
+        
+        try {
+            const cardElement = document.querySelector('.card');
+            if (cardElement) {
+              // 使用html2canvas生成卡片图片
+              const canvas = await html2canvas(cardElement, {
+                useCORS: true,
+                allowTaint: false,
+                scale: 2, // 提高分辨率
+                backgroundColor: '#ffffff',
+                width: cardElement.offsetWidth,
+                height: cardElement.offsetHeight
+              });
+              
+              // 将canvas转换为base64
+              const dataUrl = canvas.toDataURL('image/png', 0.9);
+              console.log('生成的卡片图片:', dataUrl.substring(0, 100) + '...');
+              
+              // 注意：微信分享需要网络图片URL，base64无法直接使用
+              // 这里我们先记录生成成功，实际分享仍使用默认图片
+              // 如果需要使用生成的图片，需要将其上传到服务器
+              console.log('卡片图片生成成功，但微信分享需要网络URL，当前使用默认图片');
+              alert("卡片图片生成成功")
+            }
+          } catch (error) {
+            console.error('生成卡片图片失败:', error);
+            console.log('将使用默认分享图片');
+          }
 
         wx.updateAppMessageShareData({ title, desc, link, imgUrl });
         wx.updateTimelineShareData({ title, link, imgUrl });
