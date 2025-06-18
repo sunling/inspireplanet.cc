@@ -876,17 +876,23 @@
           </div>
         </div>
 
-        <!-- 最后一行：自定义插图、创作者、选择字体 -->
-        <div class="form-row">
+        <!-- 最后一行：自定义插图、找图按钮、选择字体 -->
+        <div class="form-row" style="margin-bottom: -36px;">
           <div class="form-group">
             <label for="bgUpload">自定义插图</label>
             <div class="file-upload-wrapper">
-              <button type="button" id="uploadBtn" class="upload-btn">📷 选择本地图片</button>
-              <small id="fileStatus" style="color: #888; font-size: 10px; margin-left: 10px;">未选择文件</small>
+              <button type="button" id="uploadBtn" class="upload-btn">📷 选择本地图片</button><br>
+              <small id="fileStatus" style="color: #888; font-size: 7px; margin-left: 10px;"></small>
               <input type="file" id="bgUpload" accept="image/*" style="display: none;">
             </div>
           </div>
-
+          <label for="bgUpload">或者</label>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button type="button" id="searchImagesBtn" class="upload-btn" style="min-width: 120px; padding: 8px 12px;">
+              根据启发内容找图🔍
+            </button>
+          </div>
           <div class="form-group">
             <label for="choose-font">选择字体</label>
             <select id="choose-font" onchange="updateCardPreview()">
@@ -900,45 +906,24 @@
               <option value="'KaiTi', serif">楷体</option>
             </select>
           </div>
-
         </div>
 
         <!-- 自动图片状态显示 - 隐藏或移到不明显位置 -->
         <div class="form-group" style="display: none;">
           <div id="autoImageStatus"
-            style="font-size: 10px; color: #999; text-align: center; padding: 2px; opacity: 0.7;">正在根据背景颜色自动匹配图片...
+            style="font-size: 10px; color: #999; text-align: center; opacity: 0.7;">正在根据背景颜色自动匹配图片...
           </div>
         </div>
 
-        <!-- <div class="form-group">
-          <label for="detail">你的启发<small style="color: #888; font-size: 9px;">支持 Markdown 语法: **粗体** *斜体* ~~删除线~~
-              按回车↩︎换行</small></label>
-          <textarea id="detail" oninput="updateCardPreview()" style="min-height: 80px; resize: vertical;"
-            placeholder="写下你的启发和行动吧..."></textarea>
-          <div id="imageGenerationStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
-        </div> -->
-
-        <!-- 隐藏搜索图片功能 -->
-        <div class="form-group" style="display: none;">
-          <button type="button" id="searchImagesBtn" class="upload-btn" style="width: 100%;">
-            根据启发内容找图🔍
-          </button>
-          <div id="searchImagesStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
-
+        <!-- 搜索图片状态和结果显示区 -->
+        <!-- <div class="form-group"> -->
+          <div id="searchImagesStatus" style="margin-top: -5px; font-size: 12px; color: #666;"></div>
           <!-- 搜索结果图片展示区 -->
-          <div id="searchImagesResults" style="display: none; margin-top: -26px;">
+          <div id="searchImagesResults" style="display: none; margin-top: -2px;">
             <h5 style="margin-bottom: 10px; font-size: 14px;">搜索结果：<span id="searchQuery"></span></h5>
             <div id="imageResults" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
           </div>
-
-          <!-- 自动图片结果显示 -->
-          <div id="autoImageResults" style="display: none; margin-top: 10px;">
-            <div style="margin-bottom: 8px; font-size: 10px; color: #999; opacity: 0.8;">
-              根据背景色自动匹配的图片：
-            </div>
-            <div id="autoImageGrid" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
-          </div>
-        </div>
+        <!-- </div> -->
 
         <div class="buttons">
           <button onclick="submitCard()" class="primary-btn">提交到展示区</button>
@@ -1345,6 +1330,8 @@
       const statusDiv = document.getElementById('autoImageStatus');
       const resultsDiv = document.getElementById('autoImageResults');
       const imageGridDiv = document.getElementById('autoImageGrid');
+      
+      // 如果显示元素不存在，仍然执行搜索但不显示界面
 
       // 定义渐变对应的搜索关键词
       const gradientSearchTerms = {
@@ -1396,8 +1383,8 @@
         window.customImage = null;
 
         // 更新状态显示和卡片预览
-        statusDiv.textContent = '正在根据背景颜色自动匹配图片...';
-        resultsDiv.style.display = 'none';
+        if (statusDiv) statusDiv.textContent = '正在根据背景颜色自动匹配图片...';
+        if (resultsDiv) resultsDiv.style.display = 'none';
         updateCardPreview(); // 立即更新预览显示加载状态
 
         // 调用搜索API
@@ -1425,18 +1412,20 @@
           window.selectedSearchImage = selectedImage.url;
           window.customImage = null; // 清除自定义上传的图片
 
-          // 显示所有图片供用户选择
-          displayImages(data.images, randomIndex, statusDiv, resultsDiv, imageGridDiv);
+          // 显示所有图片供用户选择（如果显示元素存在）
+          if (statusDiv && resultsDiv && imageGridDiv) {
+            displayImages(data.images, randomIndex, statusDiv, resultsDiv, imageGridDiv);
+          }
 
           // 更新状态
-          statusDiv.textContent = '';
+          if (statusDiv) statusDiv.textContent = '';
 
           // 更新卡片预览
           updateCardPreview();
         } else {
           // 清除加载状态
           window.isLoadingAutoImage = false;
-          statusDiv.textContent = '未找到匹配的图片';
+          if (statusDiv) statusDiv.textContent = '未找到匹配的图片';
           window.selectedSearchImage = null;
           window.customImage = null;
           updateCardPreview();
@@ -1445,7 +1434,7 @@
         // 清除加载状态
         window.isLoadingAutoImage = false;
         console.error('自动搜索图片失败:', error);
-        statusDiv.textContent = '自动搜索图片失败，请稍后再试';
+        if (statusDiv) statusDiv.textContent = '自动搜索图片失败，请稍后再试';
         window.selectedSearchImage = null;
         window.customImage = null;
         updateCardPreview();
