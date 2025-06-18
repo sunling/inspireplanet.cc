@@ -109,8 +109,6 @@ export async function shareToWechat(options) {
   }
 }
 
-
-
 /**
  * 为页面添加分享功能
  * @param {Object} config 配置选项

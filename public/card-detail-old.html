@@ -2,14 +2,6 @@
 <html lang="zh-CN">
 
 <head>
-  <!-- 微信和通用社交平台分享预览信息 -->
-  <meta property="og:title" content="" id="meta-og-title" />
-  <meta property="og:description" content="" id="meta-og-desc" />
-  <meta property="og:image" content="https://cards.bysunling.com/images/default-share.png" id="meta-og-img" />
-  <meta property="og:url" content="" id="meta-og-url" />
-  <meta name="title" content="" id="meta-title" />
-  <meta name="description" content="" id="meta-desc" />
-  <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>启发星球 - 卡片详情</title>
@@ -21,25 +13,27 @@
   <script src="https://unpkg.com/dompurify@3.0.6/dist/purify.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+
   <script type="module">
     import { initShareFunction, initDownloadFunction } from './scripts/shareUtils.js';
-
+    
     // 初始化分享和下载功能
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
       // 初始化分享功能
       initShareFunction({
         cardSelector: '.card',
         shareButtonSelector: '#share-btn',
-        getShareData: function () {
+        getShareData: function() {
           // 从卡片内容中提取信息
           const titleElement = document.querySelector('.card .title');
           const quoteElement = document.querySelector('.card .quote');
           const creatorElement = document.querySelector('.card .creator');
-
+          
           const title = titleElement ? titleElement.textContent : '启发时刻卡片';
           const quote = quoteElement ? quoteElement.textContent : '分享一个触动我的观点';
           const creator = creatorElement ? creatorElement.textContent : '匿名';
-
+          
           return {
             title: `${title} - by ${creator}`,
             desc: quote.length > 50 ? quote.substring(0, 50) + '...' : quote,
@@ -47,12 +41,12 @@
           };
         }
       });
-
+      
       // 初始化下载功能
       initDownloadFunction({
         cardSelector: '.card',
         downloadButtonSelector: '#download-btn',
-        getFileName: function () {
+        getFileName: function() {
           const titleElement = document.querySelector('.card .title');
           const title = titleElement ? titleElement.textContent : 'card';
           return `${title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}-${new Date().getTime()}.png`;
@@ -152,9 +146,7 @@
       flex-wrap: wrap;
     }
 
-    .download-btn,
-    .edit-btn,
-    .share-btn {
+    .download-btn, .edit-btn, .share-btn {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       border: none;
@@ -178,9 +170,7 @@
       box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
     }
 
-    .download-btn:hover,
-    .edit-btn:hover,
-    .share-btn:hover {
+    .download-btn:hover, .edit-btn:hover, .share-btn:hover {
       transform: translateY(-2px);
     }
 
@@ -196,8 +186,7 @@
       box-shadow: 0 6px 20px rgba(17, 153, 142, 0.6);
     }
 
-    .download-btn:active,
-    .edit-btn:active {
+    .download-btn:active, .edit-btn:active {
       transform: translateY(0);
     }
 
@@ -401,14 +390,14 @@
 
   <div class="action-buttons">
     <button id="download-btn" class="download-btn">下载卡片</button>
-    <button id="share-btn" class="share-btn">📱 分享到微信</button>
+    <button id="share-btn" class="share-btn" onclick="shareToWechat()">📱 分享到微信</button>
     <button id="edit-btn" class="edit-btn" style="display: none;">编辑卡片</button>
   </div>
 
   <div class="comments-section">
     <h2>评论区</h2>
     <div class="no-comments">暂无评论</div>
-
+    
     <div class="comment-form">
       <div class="form-group">
         <label for="commenter-name">您的名字</label>
@@ -423,72 +412,6 @@
   </div>
 
   <script type="module" src="scripts/cardDetail.js"></script>
-
-  <script>
-    async function initWeChatSDK() {
-      const currentUrl = encodeURIComponent(window.location.href.split('#')[0]);
-      const res = await fetch(`https://http://8.134.113.39/sign?url=${currentUrl}`);
-      const data = await res.json();
-
-      if (data.error) {
-        console.error("微信SDK初始化失败:", data.error);
-        return;
-      }
-
-      wx.config({
-        debug: false,
-        appId: data.appId,
-        timestamp: data.timestamp,
-        nonceStr: data.nonceStr,
-        signature: data.signature,
-        jsApiList: ['updateAppMessageShareData', 'updateTimelineShareData']
-      });
-
-      wx.ready(() => {
-        const title = document.querySelector('.card .title')?.textContent || '启发星球';
-        const desc = document.querySelector('.card .quote')?.textContent || '点击查看卡片';
-        const link = window.location.href;
-        const imgUrl = window.location.origin + '/images/default-share.png';
-
-        wx.updateAppMessageShareData({ title, desc, link, imgUrl });
-        wx.updateTimelineShareData({ title, link, imgUrl });
-      });
-
-      wx.error(function (err) {
-        console.error("微信配置失败：", err);
-      });
-    }
-
-    if (/micromessenger/i.test(navigator.userAgent)) {
-      initWeChatSDK();
-    }
-
-    document.getElementById('share-btn').addEventListener('click', () => {
-      if (/micromessenger/i.test(navigator.userAgent)) {
-        alert("请点击右上角 ··· 菜单分享到微信好友或朋友圈");
-      } else {
-        alert("请用微信打开此页面后再点击右上角菜单进行分享");
-      }
-    });
-  </script>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const title = document.querySelector('.card .title')?.textContent || '启发卡片';
-      const desc = document.querySelector('.card .quote')?.textContent || '卡片内容';
-      const url = window.location.href;
-      const img = window.location.origin + '/images/default-share.png';
-
-      document.getElementById('meta-og-title').setAttribute('content', title);
-      document.getElementById('meta-og-desc').setAttribute('content', desc);
-      document.getElementById('meta-og-url').setAttribute('content', url);
-      document.getElementById('meta-og-img').setAttribute('content', img);
-      document.getElementById('meta-title').setAttribute('content', title);
-      document.getElementById('meta-desc').setAttribute('content', desc);
-    });
-  </script>
 </body>
-
-
 
 </html>
