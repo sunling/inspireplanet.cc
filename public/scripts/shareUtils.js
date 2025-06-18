@@ -54,107 +54,51 @@ export async function shareToWechat(options) {
       throw new Error('html2canvas未加载，请确保已引入html2canvas库');
     }
 
-    // 使用html2canvas生成卡片图片
-    const canvas = await html2canvas(cardElement, {
-      backgroundColor: null,
-      scale: 2, // 提高图片质量
-      useCORS: false, // 禁用CORS以避免跨域问题
-      allowTaint: true, // 允许污染画布
-      logging: false,
-      proxy: undefined, // 不使用代理
-      foreignObjectRendering: false // 禁用外部对象渲染
-    });
-
-    // 将canvas转换为blob
-    const blob = await new Promise(resolve => {
-      canvas.toBlob(resolve, 'image/png', 0.9);
-    });
-
-    // 创建图片URL
-    const imageUrl = URL.createObjectURL(blob);
-
-    // 检查是否在本地开发环境
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-    if (isLocalhost) {
-      // 本地开发环境：直接下载图片
-      const link = document.createElement('a');
-      link.download = downloadFileName;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-
-      // 恢复按钮状态
-      shareButton.textContent = originalText;
-      shareButton.disabled = false;
-
-      alert('本地开发环境：卡片已下载到您的设备！在生产环境中将支持微信分享。');
-      return;
-    }
-
-    // 生产环境：配置微信分享
+    // 使用cardUtils中的downloadCard功能
+    const { downloadCard } = await import('./cardUtils.js');
+    
+    // 为卡片元素添加临时ID以便downloadCard函数使用
+    const tempId = `temp-share-card-${Date.now()}`;
+    const originalId = cardElement.id;
+    cardElement.id = tempId;
+    
     try {
-      // 获取当前页面URL
-      const currentUrl = window.location.href;
-
-      // 调用签名API
-      const response = await fetch(`http://8.134.113.39/sign?url=${encodeURIComponent(currentUrl)}`);
-      const signData = await response.json();
-
-      // 检查微信JS SDK是否已加载
-      if (typeof wx === 'undefined') {
-        // 动态加载微信JS SDK
-        await loadWechatSDK();
+      // 调用cardUtils中的downloadCard函数
+      downloadCard(`#${tempId}`, downloadFileName.replace('.png', '-'));
+      
+      // 生产环境下的微信分享配置（如果需要）
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        if (typeof wx !== 'undefined' && wx.config) {
+          wx.ready(() => {
+            wx.updateAppMessageShareData({
+              title: shareData.title,
+              desc: shareData.desc,
+              link: shareData.link,
+              imgUrl: window.location.origin + '/images/default-share.png', // 使用默认分享图片
+              success: () => {
+                console.log('分享配置成功');
+              },
+              fail: (error) => {
+                console.error('分享配置失败:', error);
+              }
+            });
+          });
+        }
       }
-
-      // 配置微信JS SDK
-      wx.config({
-        debug: false,
-        appId: signData.appId,
-        timestamp: signData.timestamp,
-        nonceStr: signData.nonceStr,
-        signature: signData.signature,
-        jsApiList: ['updateAppMessageShareData', 'updateTimelineShareData']
-      });
-
-      wx.ready(function() {
-        const finalShareData = {
-          title: shareData.title,
-          desc: shareData.desc,
-          link: shareData.link || currentUrl,
-          imgUrl: imageUrl // 使用生成的卡片图片
-        };
-
-        // 分享到朋友圈
-        wx.updateTimelineShareData(finalShareData);
-
-        // 分享给朋友
-        wx.updateAppMessageShareData(finalShareData);
-
-        // 恢复按钮状态
-        shareButton.textContent = originalText;
-        shareButton.disabled = false;
-
-        alert('卡片已准备好分享！请在微信中打开此页面进行分享。');
-      });
-
-      wx.error(function(res) {
-        console.error('微信配置失败:', res);
-        shareButton.textContent = originalText;
-        shareButton.disabled = false;
-        alert('微信分享配置失败，请稍后重试。');
-      });
-    } catch (apiError) {
-      console.error('API调用失败:', apiError);
-      // API失败时降级为下载图片
-      const link = document.createElement('a');
-      link.download = downloadFileName;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-
-      shareButton.textContent = originalText;
-      shareButton.disabled = false;
-      alert('微信分享暂时不可用，卡片已下载到您的设备！');
+    } finally {
+      // 恢复原始ID
+      if (originalId) {
+        cardElement.id = originalId;
+      } else {
+        cardElement.removeAttribute('id');
+      }
     }
+
+    // 分享功能已通过downloadCard完成
+    
+    // 恢复按钮状态
+    shareButton.textContent = originalText;
+    shareButton.disabled = false;
 
   } catch (error) {
     console.error('分享失败:', error);
@@ -165,45 +109,7 @@ export async function shareToWechat(options) {
   }
 }
 
-/**
- * 简单的下载卡片功能
- * @param {HTMLElement} cardElement 要下载的卡片DOM元素
- * @param {string} fileName 下载文件名（可选）
- */
-export async function downloadCard(cardElement, fileName = `inspiration-card-${new Date().getTime()}.png`) {
-  if (!cardElement) {
-    alert('未找到卡片内容');
-    return;
-  }
 
-  try {
-    // 确保html2canvas已加载
-    if (typeof html2canvas === 'undefined') {
-      throw new Error('html2canvas未加载，请确保已引入html2canvas库');
-    }
-
-    // 使用html2canvas生成卡片图片
-    const canvas = await html2canvas(cardElement, {
-      backgroundColor: null,
-      scale: 2,
-      useCORS: false,
-      allowTaint: true,
-      logging: false,
-      proxy: undefined,
-      foreignObjectRendering: false
-    });
-
-    // 下载图片
-    const link = document.createElement('a');
-    link.download = fileName;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-
-  } catch (error) {
-    console.error('下载失败:', error);
-    alert('下载卡片失败，请稍后重试。');
-  }
-}
 
 /**
  * 为页面添加分享功能
