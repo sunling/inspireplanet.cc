@@ -13,18 +13,18 @@
   <script type="module" src="scripts/cardUtils.js"></script>
   <script type="module">
     import { initShareFunction } from './scripts/shareUtils.js';
-    
+
     // 初始化分享功能
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       initShareFunction({
         cardSelector: '.card',
         shareButtonSelector: 'button[onclick="shareToWechat()"]',
-        getShareData: function() {
+        getShareData: function () {
           // 获取卡片信息
           const title = document.getElementById('title').value || '我的启发时刻卡片';
           const quote = document.getElementById('quote').value || '分享一个触动我的观点';
           const creator = document.getElementById('creator').value || '匿名';
-          
+
           return {
             title: `${title} - by ${creator}`,
             desc: quote.length > 50 ? quote.substring(0, 50) + '...' : quote,
@@ -115,6 +115,7 @@
       margin-bottom: 40px;
       position: relative;
       overflow: hidden;
+      align-items: flex-start;
     }
 
     /* Form */
@@ -124,6 +125,9 @@
       display: flex;
       flex-direction: column;
       gap: 15px;
+      align-self: flex-start;
+      position: sticky;
+      top: 0;
     }
 
     .form-row {
@@ -144,6 +148,27 @@
       font-size: 14px;
     }
 
+    /* 重要字段的标签样式 */
+    label[for="title"],
+    label[for="quote"],
+    label[for="detail"],
+    label[for="creator"],
+    label[for="title"] {
+      font-size: 15px !important;
+      font-weight: 700 !important;
+      color: #2c3e50 !important;
+      margin-bottom: 8px !important;
+    }
+
+    /* 添加必填标识 */
+    label[for="title"]::after,
+    label[for="quote"]::after,
+    label[for="detail"]::after {
+      content: " *";
+      color: #e74c3c;
+      font-weight: bold;
+    }
+
     .form input,
     .form textarea,
     .form select {
@@ -156,6 +181,39 @@
       transition: all 0.3s ease;
     }
 
+    /* 重要输入框样式 - 标题、观点、启发、作者 */
+    #title,
+    #quote,
+    #detail,
+    #creator {
+      background-color: #fff;
+      border: 1.5px solid #ddd;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    #title {
+      font-size: 16px;
+      padding: 12px;
+      /* border-color: #FFB6C1; */
+      box-shadow: 0 1px 4px rgba(255, 182, 193, 0.1);
+    }
+
+    #quote,
+    #detail {
+      font-size: 15px;
+      padding: 12px;
+      line-height: 1.5;
+      border-color: #B0C4DE;
+      box-shadow: 0 1px 4px rgba(176, 196, 222, 0.1);
+    }
+
+    #creator {
+      border-color: #B0C4DE;
+      box-shadow: 0 1px 4px rgba(176, 196, 222, 0.1);
+    }
+
     .form input:focus,
     .form textarea:focus,
     .form select:focus {
@@ -165,12 +223,22 @@
       outline: none;
     }
 
+    #title:focus,
+    #quote:focus,
+    #detail:focus,
+    #creator:focus {
+      border-color: #4a6fa5 !important;
+      box-shadow: 0 0 0 4px rgba(74, 111, 165, 0.3) !important;
+    }
+
     /* Preview */
     #preview {
       width: 460px;
       display: flex;
-      justify-content: center; /* Center card horizontally */
-      align-items: flex-start;    /* Center card vertically */
+      justify-content: center;
+      /* Center card horizontally */
+      align-items: flex-start;
+      /* Center card vertically */
       padding: 24px;
       border-radius: 16px;
       background: transparent;
@@ -245,6 +313,8 @@
       color: #666;
       border: 1px solid rgba(221, 160, 221, 0.3);
       box-shadow: 0 3px 8px rgba(221, 160, 221, 0.2);
+      min-width: 140px;
+      padding: 8px 16px;
     }
 
     .upload-btn:hover {
@@ -386,6 +456,16 @@
       }
     }
 
+    @keyframes shimmer {
+      0% {
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      }
+
+      100% {
+        background-position: 20px 20px, 20px 30px, 30px 10px, 10px 20px;
+      }
+    }
+
     /* 认证相关样式 */
     .auth-section {
       position: absolute;
@@ -512,6 +592,153 @@
       color: #444;
     }
 
+    /* 背景选择器样式 */
+    .gradient-selector {
+      display: grid;
+      grid-template-columns: repeat(14, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .gradient-option {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gradient-option:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .gradient-option.selected {
+      border-color: #4a6fa5;
+      box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.3);
+      transform: scale(1.05);
+    }
+
+    .gradient-option::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: inherit;
+      opacity: 0.8;
+    }
+
+    /* 为每个渐变选项添加对应的背景 */
+    .gradient-option[data-gradient="card-gradient-1"] {
+      background-image: linear-gradient(to right top,
+          rgba(209, 107, 165, 0.8), rgba(199, 119, 185, 0.7), rgba(186, 131, 202, 0.6),
+          rgba(170, 143, 216, 0.5), rgba(154, 154, 225, 0.4), rgba(138, 167, 236, 0.3),
+          rgba(121, 179, 244, 0.2), rgba(105, 191, 248, 0.3), rgba(82, 207, 254, 0.4),
+          rgba(65, 223, 255, 0.5), rgba(70, 238, 250, 0.6), rgba(95, 251, 241, 0.7));
+    }
+
+    .gradient-option[data-gradient="card-gradient-2"] {
+      background-image: linear-gradient(to right top,
+          rgba(255, 126, 95, 0.8), rgba(255, 140, 109, 0.7), rgba(255, 154, 124, 0.6),
+          rgba(255, 168, 138, 0.5), rgba(255, 182, 153, 0.4), rgba(255, 194, 168, 0.3),
+          rgba(255, 206, 184, 0.2), rgba(255, 217, 199, 0.3), rgba(255, 229, 215, 0.4),
+          rgba(255, 242, 231, 0.5), rgba(255, 254, 250, 0.6), rgba(255, 255, 255, 0.7));
+    }
+
+    .gradient-option[data-gradient="card-gradient-3"] {
+      background-image: linear-gradient(to right top,
+          rgba(107, 33, 168, 0.8), rgba(134, 47, 178, 0.7), rgba(160, 61, 189, 0.6),
+          rgba(186, 76, 200, 0.5), rgba(211, 91, 211, 0.4), rgba(227, 108, 217, 0.3),
+          rgba(242, 125, 223, 0.2), rgba(255, 141, 229, 0.3), rgba(255, 157, 226, 0.4),
+          rgba(255, 172, 223, 0.5), rgba(255, 188, 221, 0.6), rgba(255, 204, 220, 0.7));
+    }
+
+    .gradient-option[data-gradient="card-gradient-4"] {
+      background-image: linear-gradient(to right top,
+          rgba(0, 201, 255, 0.8), rgba(0, 179, 255, 0.7), rgba(0, 156, 255, 0.6),
+          rgba(0, 130, 255, 0.5), rgba(0, 100, 255, 0.4), rgba(0, 89, 255, 0.3),
+          rgba(0, 77, 255, 0.2), rgba(0, 63, 255, 0.3), rgba(0, 49, 255, 0.4),
+          rgba(0, 32, 255, 0.5), rgba(0, 12, 255, 0.6), rgba(11, 0, 255, 0.7));
+    }
+
+    .gradient-option[data-gradient="card-gradient-5"] {
+      background-image: linear-gradient(to right top,
+          rgba(249, 197, 44, 0.8), rgba(246, 182, 47, 0.7), rgba(242, 168, 51, 0.6),
+          rgba(238, 153, 55, 0.5), rgba(233, 139, 60, 0.4), rgba(227, 126, 65, 0.3),
+          rgba(221, 113, 70, 0.2), rgba(215, 100, 76, 0.3), rgba(207, 86, 79, 0.4),
+          rgba(198, 73, 82, 0.5), rgba(188, 60, 84, 0.6), rgba(178, 48, 86, 0.7));
+    }
+
+    .gradient-option[data-gradient="card-gradient-6"] {
+      background-image: linear-gradient(to right top,
+          rgba(168, 255, 120, 0.8), rgba(159, 245, 120, 0.7), rgba(150, 235, 120, 0.6),
+          rgba(141, 225, 120, 0.5), rgba(132, 215, 120, 0.4), rgba(124, 208, 120, 0.3),
+          rgba(116, 201, 120, 0.2), rgba(108, 194, 120, 0.3), rgba(99, 186, 121, 0.4),
+          rgba(90, 179, 121, 0.5), rgba(81, 172, 122, 0.6), rgba(72, 165, 122, 0.7));
+    }
+
+    .gradient-option[data-gradient="card-gradient-7"] {
+      background-image: linear-gradient(to right top,
+          rgba(255, 138, 0, 0.8), rgba(255, 122, 26, 0.7), rgba(255, 105, 42, 0.6),
+          rgba(255, 86, 55, 0.5), rgba(255, 63, 67, 0.4), rgba(255, 54, 76, 0.3),
+          rgba(255, 44, 85, 0.2), rgba(255, 33, 94, 0.3), rgba(255, 26, 106, 0.4),
+          rgba(255, 23, 118, 0.5), rgba(255, 26, 131, 0.6), rgba(249, 37, 144, 0.7));
+    }
+
+    .gradient-option[data-gradient="card-gradient-8"] {
+      background-image: linear-gradient(to right top,
+          rgba(240, 248, 255, 0.8), rgba(230, 240, 250, 0.7), rgba(220, 235, 245, 0.6),
+          rgba(210, 230, 240, 0.5), rgba(200, 225, 235, 0.4), rgba(190, 220, 230, 0.3),
+          rgba(180, 215, 225, 0.2), rgba(170, 210, 220, 0.3));
+    }
+
+    .gradient-option[data-gradient="card-gradient-9"] {
+      background-image: linear-gradient(to right top,
+          rgba(248, 250, 252, 0.8), rgba(241, 245, 249, 0.7), rgba(234, 240, 246, 0.6),
+          rgba(226, 232, 240, 0.5), rgba(203, 213, 225, 0.4), rgba(186, 200, 214, 0.3),
+          rgba(169, 187, 203, 0.2), rgba(148, 163, 184, 0.3));
+    }
+
+    .gradient-option[data-gradient="card-gradient-10"] {
+      background-image: linear-gradient(to right top,
+          rgba(254, 252, 232, 0.8), rgba(253, 246, 178, 0.7), rgba(252, 211, 77, 0.6),
+          rgba(245, 158, 11, 0.5), rgba(217, 119, 6, 0.4), rgba(180, 83, 9, 0.3),
+          rgba(146, 64, 14, 0.2), rgba(120, 53, 15, 0.3));
+    }
+
+    .gradient-option[data-gradient="card-gradient-11"] {
+      background-image: linear-gradient(to right top,
+          rgba(240, 253, 244, 0.8), rgba(220, 252, 231, 0.7), rgba(187, 247, 208, 0.6),
+          rgba(134, 239, 172, 0.5), rgba(74, 222, 128, 0.4), rgba(34, 197, 94, 0.3),
+          rgba(22, 163, 74, 0.2), rgba(21, 128, 61, 0.3));
+    }
+
+    .gradient-option[data-gradient="card-gradient-12"] {
+      background-image: linear-gradient(to right top,
+          rgba(253, 244, 255, 0.8), rgba(250, 232, 255, 0.7), rgba(243, 232, 255, 0.6),
+          rgba(233, 213, 255, 0.5), rgba(196, 181, 253, 0.4), rgba(167, 139, 250, 0.3),
+          rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.3));
+    }
+
+    .gradient-option[data-gradient="card-gradient-13"] {
+      background-image: linear-gradient(to right top,
+          rgba(255, 251, 235, 0.8), rgba(254, 243, 199, 0.7), rgba(253, 230, 138, 0.6),
+          rgba(252, 211, 77, 0.5), rgba(245, 158, 11, 0.4), rgba(217, 119, 6, 0.3),
+          rgba(194, 65, 12, 0.2), rgba(154, 52, 18, 0.3));
+    }
+
+    .gradient-option[data-gradient="card-gradient-14"] {
+      background-image: linear-gradient(to right top,
+          rgba(248, 250, 252, 0.8), rgba(241, 245, 249, 0.7), rgba(226, 232, 240, 0.6),
+          rgba(203, 213, 225, 0.5), rgba(148, 163, 184, 0.4), rgba(100, 116, 139, 0.3),
+          rgba(71, 85, 105, 0.2), rgba(51, 65, 85, 0.3));
+    }
+
     /* Responsive Styles */
     @media (max-width: 768px) {
       .main-content {
@@ -535,13 +762,22 @@
         display: flex;
         justify-content: center;
       }
-      
+
       .login-buttons {
         justify-content: center;
       }
-      
+
       .user-avatar-container {
         justify-content: center;
+      }
+
+      .gradient-selector {
+        grid-template-columns: repeat(7, 1fr);
+      }
+
+      .gradient-option {
+        width: 35px;
+        height: 35px;
       }
     }
 
@@ -568,7 +804,7 @@
           <a href="auth.html" class="header-btn auth-btn">登录</a>
           <!-- <a href="auth.html?tab=register" class="header-btn auth-btn register-btn">注册</a> -->
         </div>
-        
+
         <!-- 已登录状态 -->
         <div id="user-profile" class="user-profile" style="display: none;">
           <div class="user-avatar-container">
@@ -580,11 +816,10 @@
           </div>
         </div>
       </div>
-      
+
       <a href="cover-editor.html" class="header-btn view-all-btn">制作封面</a>
       <a href="weekly-cards.html" class="header-btn view-all-btn" style="right: 115px;">查看每周会议卡片</a>
-      <a href="cards.html" class="header-btn view-all-btn"
-        style="right: 270px;">查看全部提交的卡片</a>
+      <a href="cards.html" class="header-btn view-all-btn" style="right: 270px;">查看全部提交的卡片</a>
     </div>
   </header>
 
@@ -593,84 +828,100 @@
     <!-- Main Content -->
     <div class="main-content">
       <div class="form">
+        <!-- 第一行：标题 -->
         <div class="form-row">
+          <div class="form-group" style="flex: 0 0 120px;">
+            <label for="creator">创作者</label>
+            <input id="creator" placeholder="匿名" oninput="updateCardPreview()">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="title">标题</label>
+            <input id="title" placeholder="这一刻，我想说..." oninput="updateCardPreview()">
+          </div>
+        </div>
+
+        <!-- 第二行：触动你的观点 -->
+        <div class="form-group">
+          <label for="quote">触动你的观点<small style="color: #888; font-size: 9px;">按回车↩︎换行</small></label>
+          <textarea id="quote" oninput="updateCardPreview()" placeholder="写下让你触动的一句话、一段对话、或一个片段..."></textarea>
+        </div>
+
+        <!-- 第三行：你的启发 -->
+        <div class="form-group">
+          <label for="detail">你的启发<small style="color: #888; font-size: 9px;">支持 Markdown 语法: **粗体** *斜体* ~~删除线~~
+              按回车↩︎换行</small></label>
+          <textarea id="detail" oninput="updateCardPreview()" style="min-height: 100px; resize: vertical;"
+            placeholder="写下你的启发和行动吧..."></textarea>
+          <div id="imageGenerationStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
+        </div>
+
+        <!-- 第四行：选择背景 -->
+        <div class="form-group">
+          <label for="choose-gradient">选择背景</label>
+          <div class="gradient-selector" id="gradient-selector">
+            <div class="gradient-option selected" data-gradient="card-gradient-1" title="🌈 彩虹梦境"></div>
+            <div class="gradient-option" data-gradient="card-gradient-2" title="🌅 日出暖阳"></div>
+            <div class="gradient-option" data-gradient="card-gradient-3" title="💜 紫色幻想"></div>
+            <div class="gradient-option" data-gradient="card-gradient-4" title="🌊 海洋蓝调"></div>
+            <div class="gradient-option" data-gradient="card-gradient-5" title="🔥 火焰橙黄"></div>
+            <div class="gradient-option" data-gradient="card-gradient-6" title="🌿 清新绿意"></div>
+            <div class="gradient-option" data-gradient="card-gradient-7" title="❤️ 热情红橙"></div>
+            <div class="gradient-option" data-gradient="card-gradient-8" title="☁️ 天空蓝白"></div>
+            <div class="gradient-option" data-gradient="card-gradient-9" title="🌫️ 雾霭灰蓝"></div>
+            <div class="gradient-option" data-gradient="card-gradient-10" title="🍯 蜂蜜暖黄"></div>
+            <div class="gradient-option" data-gradient="card-gradient-11" title="🌱 薄荷清绿"></div>
+            <div class="gradient-option" data-gradient="card-gradient-12" title="🌸 淡雅紫粉"></div>
+            <div class="gradient-option" data-gradient="card-gradient-13" title="🌾 麦田金黄"></div>
+            <div class="gradient-option" data-gradient="card-gradient-14" title="🌙 月光银灰"></div>
+          </div>
+        </div>
+
+        <!-- 最后一行：自定义插图、创作者、选择字体 -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="bgUpload">自定义插图</label>
+            <div class="file-upload-wrapper">
+              <button type="button" id="uploadBtn" class="upload-btn">📷 选择本地图片</button>
+              <small id="fileStatus" style="color: #888; font-size: 10px; margin-left: 10px;">未选择文件</small>
+              <input type="file" id="bgUpload" accept="image/*" style="display: none;">
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="choose-font">选择字体</label>
             <select id="choose-font" onchange="updateCardPreview()">
+              <option value="'PingFang SC', sans-serif">苹方</option>
               <option value="'Noto Sans SC', sans-serif">思源黑体</option>
               <option value="'Smiley Sans', sans-serif">得意黑</option>
               <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
               <option value="'LXGW WenKai', serif">霞鹜文楷</option>
               <option value="'Alibaba PuHuiTi', sans-serif">阿里汉仪智能黑体</option>
               <option value="'Noto Serif SC', serif">思源宋体</option>
-              <option value="'PingFang SC', sans-serif">苹方</option>
               <option value="'KaiTi', serif">楷体</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="choose-gradient">选择背景</label>
-            <select id="choose-gradient" onchange="updateGradientSelection()">
-              <option value="card-gradient-1">🌈 彩虹梦境</option>
-              <option value="card-gradient-2">🌅 日出暖阳</option>
-              <option value="card-gradient-3">💜 紫色幻想</option>
-              <option value="card-gradient-4">🌊 海洋蓝调</option>
-              <option value="card-gradient-5">🔥 火焰橙黄</option>
-              <option value="card-gradient-6">🌿 清新绿意</option>
-              <option value="card-gradient-7">❤️ 热情红橙</option>
-              <option value="card-gradient-8">☁️ 天空蓝白</option>
-              <option value="card-gradient-9">🌫️ 雾霭灰蓝</option>
-              <option value="card-gradient-10">🍯 蜂蜜暖黄</option>
-              <option value="card-gradient-11">🌱 薄荷清绿</option>
-              <option value="card-gradient-12">🌸 淡雅紫粉</option>
-              <option value="card-gradient-13">🌾 麦田金黄</option>
-              <option value="card-gradient-14">🌙 月光银灰</option>
-            </select>
+
+        </div>
+
+        <!-- 自动图片状态显示 - 隐藏或移到不明显位置 -->
+        <div class="form-group" style="display: none;">
+          <div id="autoImageStatus"
+            style="font-size: 10px; color: #999; text-align: center; padding: 2px; opacity: 0.7;">正在根据背景颜色自动匹配图片...
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="creator">创作者</label>
-            <input id="creator" placeholder="匿名" oninput="updateCardPreview()">
-          </div>
-          <div class="form-group">
-            <label for="title">标题</label>
-            <input id="title" placeholder="这一刻，我想说..." oninput="updateCardPreview()">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="quote">触动你的观点<small style="color: #888; font-size: 9px;">按回车↩︎换行</small></label>
-          <textarea id="quote" oninput="updateCardPreview()" placeholder="写下让你触动的一句话、一段对话、或一个片段..."></textarea>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="image-select">选择插图</label>
-            <select id="image-select" onchange="onSelectImage()"></select>
-          </div>
-
-          <div class="form-group">
-            <label for="bgUpload">自定义插图</label>
-            <div class="file-upload-wrapper">
-              <button type="button" id="uploadBtn" class="upload-btn">📷 上传图片</button><br>
-              <small id="fileStatus" style="color: #888; font-size: 12px; margin-left: 10px;">No file chosen</small>
-              <input type="file" id="bgUpload" accept="image/*" style="display: none;">
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group">
+        <!-- <div class="form-group">
           <label for="detail">你的启发<small style="color: #888; font-size: 9px;">支持 Markdown 语法: **粗体** *斜体* ~~删除线~~
               按回车↩︎换行</small></label>
           <textarea id="detail" oninput="updateCardPreview()" style="min-height: 80px; resize: vertical;"
             placeholder="写下你的启发和行动吧..."></textarea>
           <div id="imageGenerationStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
-        </div>
+        </div> -->
 
-        <div class="form-group">
+        <!-- 隐藏搜索图片功能 -->
+        <div class="form-group" style="display: none;">
           <button type="button" id="searchImagesBtn" class="upload-btn" style="width: 100%;">
-            根据启发内容找图🔍 
+            根据启发内容找图🔍
           </button>
           <div id="searchImagesStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
 
@@ -678,6 +929,14 @@
           <div id="searchImagesResults" style="display: none; margin-top: -26px;">
             <h5 style="margin-bottom: 10px; font-size: 14px;">搜索结果：<span id="searchQuery"></span></h5>
             <div id="imageResults" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+          </div>
+
+          <!-- 自动图片结果显示 -->
+          <div id="autoImageResults" style="display: none; margin-top: 10px;">
+            <div style="margin-bottom: 8px; font-size: 10px; color: #999; opacity: 0.8;">
+              根据背景色自动匹配的图片：
+            </div>
+            <div id="autoImageGrid" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
           </div>
         </div>
 
@@ -729,7 +988,6 @@
       downloadCard,
       uploadCard,
       fetchCards,
-      loadImages,
       onUploadBg,
       bindCustomFileUpload,
       getRandomItem,
@@ -740,12 +998,17 @@
     // Global variables
     window.customImage = "";
     window.currentGradientClass = "";
+    window.selectedSearchImage = null;
+    window.isLoadingAutoImage = false; // 跟踪自动图片加载状态
+
+    // 图片缓存对象
+    const imageCache = {};
 
     let swiper;
 
     // 渐变样式数组
-  // 导入共享的渐变配置
-  import { gradientClasses, gradientFontColors, getFontColorForGradient } from './scripts/gradientConfig.js';
+    // 导入共享的渐变配置
+    import { gradientClasses, gradientFontColors, getFontColorForGradient } from './scripts/gradientConfig.js';
 
 
 
@@ -760,64 +1023,105 @@
     document.addEventListener('DOMContentLoaded', function () {
       // 初始化随机渐变
       randomizeGradient();
-      
-      // 设置渐变选择器的默认值
-      const gradientSelect = document.getElementById('choose-gradient');
-      if (gradientSelect) {
-        gradientSelect.value = window.currentGradientClass;
-      }
-      
-      // Load images for the select dropdown
-      loadImages(() => {
-        // Initial card render after images are loaded
-        updateCardPreview();
-      });
+
+      // 初始化渐变选择器
+      initGradientSelector();
+
+      // 根据初始背景颜色自动搜索图片
+      autoSearchImagesByGradient(window.currentGradientClass);
+
+      // 已移除内置图片选择功能
+      // loadImages(() => {
+      //   // Initial card render after images are loaded
+      //   updateCardPreview();
+      // });
+
+      // Initial card render
+      updateCardPreview();
 
       // Setup file upload
       setupFileUpload();
 
       // Load latest cards
       loadLatestCardsCarousel();
-      
+
+      // 自动聚焦到标题输入框
+      setTimeout(() => {
+        const titleInput = document.getElementById('title');
+        if (titleInput) {
+          titleInput.focus();
+        }
+      }, 500);
+
       // 初始化认证UI
       updateAuthUI();
-      
+
       // 监听storage变化（用于多标签页同步）
-      window.addEventListener('storage', function(e) {
+      window.addEventListener('storage', function (e) {
         if (e.key === 'authToken' || e.key === 'user') {
           updateAuthUI();
         }
       });
     });
 
-    // Function to handle gradient selection
+    // 初始化渐变选择器
+    function initGradientSelector() {
+      const gradientOptions = document.querySelectorAll('.gradient-option');
+
+      // 设置默认选中状态
+      gradientOptions.forEach(option => {
+        option.classList.remove('selected');
+        if (option.dataset.gradient === window.currentGradientClass) {
+          option.classList.add('selected');
+        }
+      });
+
+      // 添加点击事件监听器
+      gradientOptions.forEach(option => {
+        option.addEventListener('click', function () {
+          // 移除所有选中状态
+          gradientOptions.forEach(opt => opt.classList.remove('selected'));
+          // 添加当前选中状态
+          this.classList.add('selected');
+          // 更新当前渐变类
+          window.currentGradientClass = this.dataset.gradient;
+          // 根据新选择的背景颜色自动搜索图片
+          autoSearchImagesByGradient(window.currentGradientClass);
+          // 更新卡片预览
+          updateCardPreview();
+        });
+      });
+    }
+
+    // Function to handle gradient selection (保持向后兼容)
     window.updateGradientSelection = function () {
-      const selectedGradient = document.getElementById('choose-gradient').value;
-      window.currentGradientClass = selectedGradient;
+      // 这个函数现在主要用于向后兼容，实际功能由initGradientSelector处理
       updateCardPreview();
     };
 
-    // Function to handle image selection
-    window.onSelectImage = function () {
-      customImage = "";
-      // 清除搜索选中的图片
-      window.selectedSearchImage = null;
-      document.getElementById("fileStatus").innerHTML = "";
-      updateCardPreview();
-    };
+    // Function to handle image selection - 已移除内置图片选择功能
+    // window.onSelectImage = function () {
+    //   customImage = "";
+    //   // 清除搜索选中的图片
+    //   window.selectedSearchImage = null;
+    //   document.getElementById("fileStatus").innerHTML = "";
+    //   updateCardPreview();
+    // };
 
     // Function to submit a card
     window.submitCard = function () {
-      // 确保使用当前选择的渐变背景
-      const selectedGradient = document.getElementById('choose-gradient').value;
-      window.currentGradientClass = selectedGradient;
-      
+      // 确保使用当前选择的渐变背景（从选中的小方块获取）
+      const selectedOption = document.querySelector('.gradient-option.selected');
+      if (selectedOption) {
+        window.currentGradientClass = selectedOption.dataset.gradient;
+      }
+
       uploadCard({
         gradientClass: window.currentGradientClass,
         font: document.getElementById("choose-font").value,
         title: document.getElementById('title').value,
         quote: document.getElementById('quote').value,
-        imagePath: document.getElementById('image-select').value,
+        imagePath: '',
         detail: document.getElementById('detail').value,
         creator: document.getElementById('creator').value,
         upload: customImage,
@@ -851,7 +1155,7 @@
         title: document.getElementById('title').value || '这一刻，我想说...',
         quote: document.getElementById('quote').value || '请写下触动到你的观点',
         detail: parsedDetail, // 使用解析后的HTML
-        imagePath: document.getElementById('image-select').value,
+        imagePath: '',
         creator: document.getElementById('creator').value || '匿名',
         font: document.getElementById('choose-font').value || `'Noto Sans SC', sans-serif`,
         gradientClass: window.currentGradientClass,
@@ -860,15 +1164,22 @@
         isMarkdown: true // 标记使用了Markdown
       };
 
-      // 优先级：搜索选中的图片 > 自定义上传的图片 > 预设图片
+      // 优先级：搜索选中的图片 > 自定义上传的图片 > 加载状态显示
       // 检查是否有真正选择的搜索结果图片（通过特定的标识来判断）
       const searchSelectedImage = window.selectedSearchImage || '';
-      const finalImage = searchSelectedImage || customImage || document.getElementById('image-select').value;
+      let finalImage = searchSelectedImage || customImage;
+
+      // 如果正在加载自动图片且没有选中的图片，显示加载状态而不是内置图片
+      if (window.isLoadingAutoImage && !finalImage) {
+        finalImage = null; // 不显示任何图片，稍后会添加加载提示
+      } else if (!finalImage) {
+        finalImage = ''; // 没有内置图片选择功能
+      }
       // 格式化当前时间
       const now = new Date();
       const pad = (n) => n.toString().padStart(2, '0');
       const currentTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-      
+
       // 获取当前渐变对应的字体颜色
       const fontColor = getFontColorForGradient(window.currentGradientClass);
       const quoteBoxBg = 'rgba(255, 255, 255, 0.9)';
@@ -883,7 +1194,20 @@
               background-color: ${quoteBoxBg}; 
               color: ${fontColor};
             ">${options.quote}</div>
-            ${finalImage ? `<img id="quote-image-preview-card" src="${finalImage}" alt="Card Image" crossorigin="anonymous" />` : ''}
+            ${finalImage ? `<img id="quote-image-preview-card" src="${finalImage}" alt="Card Image" crossorigin="anonymous" />` : (window.isLoadingAutoImage ? `<div class="image-loading-placeholder" style="
+              width: 100%;
+              height: 200px;
+              background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+              background-size: 20px 20px;
+              background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+              border-radius: 12px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #666;
+              font-size: 14px;
+              animation: shimmer 2s infinite;
+            ">正在为您匹配图片...</div>` : '')}
             <div class="detail-text">${processLongUrls(options.detail)}</div>
           </div>
           <div class="card-footer">
@@ -907,24 +1231,24 @@
       const bgUpload = document.getElementById('bgUpload');
       const uploadBtn = document.getElementById('uploadBtn');
       const fileStatus = document.getElementById('fileStatus');
-      
+
       if (!bgUpload || !uploadBtn || !fileStatus) {
         console.warn("上传功能初始化失败：元素未找到");
         return;
       }
-      
+
       // 直接绑定上传按钮点击事件
       uploadBtn.addEventListener('click', () => {
         bgUpload.click();
       });
-      
+
       // 绑定文件选择事件
       bgUpload.addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (!file) return;
-        
+
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
           customImage = e.target.result;
           // 清除搜索选中的图片，避免冲突
           window.selectedSearchImage = null;
@@ -1016,13 +1340,187 @@
         });
       }
     }
+    // 根据渐变背景颜色自动搜索图片
+    async function autoSearchImagesByGradient(gradientClass) {
+      const statusDiv = document.getElementById('autoImageStatus');
+      const resultsDiv = document.getElementById('autoImageResults');
+      const imageGridDiv = document.getElementById('autoImageGrid');
+
+      // 定义渐变对应的搜索关键词
+      const gradientSearchTerms = {
+        'card-gradient-1': 'rainbow colorful abstract art',
+        'card-gradient-2': 'sunrise warm orange yellow nature',
+        'card-gradient-3': 'purple fantasy magical violet',
+        'card-gradient-4': 'ocean blue water sea waves',
+        'card-gradient-5': 'fire flame orange red energy',
+        'card-gradient-6': 'green nature forest fresh leaves',
+        'card-gradient-7': 'red orange passion warm sunset',
+        'card-gradient-8': 'sky blue white clouds peaceful',
+        'card-gradient-9': 'grey mist fog minimal calm',
+        'card-gradient-10': 'honey yellow warm golden light',
+        'card-gradient-11': 'mint green fresh nature spring',
+        'card-gradient-12': 'purple pink soft pastel flowers',
+        'card-gradient-13': 'golden wheat field warm autumn',
+        'card-gradient-14': 'silver grey moonlight minimal'
+      };
+
+      const searchTerm = gradientSearchTerms[gradientClass] || 'abstract colorful';
+
+      try {
+        // 检查缓存
+        if (imageCache[gradientClass] && imageCache[gradientClass].length > 0) {
+          // 从缓存中随机选择一张图片
+          const cachedImages = imageCache[gradientClass];
+          const randomIndex = Math.floor(Math.random() * cachedImages.length);
+          const selectedImage = cachedImages[randomIndex];
+
+          // 设置选中的图片
+          window.selectedSearchImage = selectedImage.url;
+          window.customImage = null;
+          window.isLoadingAutoImage = false;
+
+          // 显示缓存的图片
+          displayImages(cachedImages, randomIndex, statusDiv, resultsDiv, imageGridDiv);
+
+          // 更新状态
+          statusDiv.textContent = '已从缓存加载图片';
+
+          // 更新卡片预览
+          updateCardPreview();
+          return;
+        }
+
+        // 设置加载状态
+        window.isLoadingAutoImage = true;
+        window.selectedSearchImage = null;
+        window.customImage = null;
+
+        // 更新状态显示和卡片预览
+        statusDiv.textContent = '正在根据背景颜色自动匹配图片...';
+        resultsDiv.style.display = 'none';
+        updateCardPreview(); // 立即更新预览显示加载状态
+
+        // 调用搜索API
+        const response = await fetch('/.netlify/functions/searchImage', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: searchTerm,
+            orientation: 'landscape'
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.images && data.images.length > 0) {
+          // 缓存图片数据
+          imageCache[gradientClass] = data.images;
+
+          // 清除加载状态并随机选择一张图片
+          window.isLoadingAutoImage = false;
+          const randomIndex = Math.floor(Math.random() * data.images.length);
+          const selectedImage = data.images[randomIndex];
+          window.selectedSearchImage = selectedImage.url;
+          window.customImage = null; // 清除自定义上传的图片
+
+          // 显示所有图片供用户选择
+          displayImages(data.images, randomIndex, statusDiv, resultsDiv, imageGridDiv);
+
+          // 更新状态
+          statusDiv.textContent = '';
+
+          // 更新卡片预览
+          updateCardPreview();
+        } else {
+          // 清除加载状态
+          window.isLoadingAutoImage = false;
+          statusDiv.textContent = '未找到匹配的图片';
+          window.selectedSearchImage = null;
+          window.customImage = null;
+          updateCardPreview();
+        }
+      } catch (error) {
+        // 清除加载状态
+        window.isLoadingAutoImage = false;
+        console.error('自动搜索图片失败:', error);
+        statusDiv.textContent = '自动搜索图片失败，请稍后再试';
+        window.selectedSearchImage = null;
+        window.customImage = null;
+        updateCardPreview();
+      }
+    }
+
+    // 显示图片的辅助函数
+    function displayImages(images, selectedIndex, statusDiv, resultsDiv, imageGridDiv) {
+      // 清空之前的结果
+      imageGridDiv.innerHTML = '';
+
+      images.forEach((image, index) => {
+        const imgContainer = document.createElement('div');
+        imgContainer.style.width = 'calc(33.33% - 10px)';
+        imgContainer.style.position = 'relative';
+        imgContainer.style.cursor = 'pointer';
+        imgContainer.style.borderRadius = '8px';
+        imgContainer.style.overflow = 'hidden';
+        imgContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+
+        // 选中的图片高亮显示
+        if (index === selectedIndex) {
+          imgContainer.style.border = '3px solid #4a6fa5';
+        }
+
+        const img = document.createElement('img');
+        img.src = image.thumb;
+        img.alt = image.title;
+        img.style.width = '100%';
+        img.style.height = '100px';
+        img.style.objectFit = 'cover';
+
+        const overlay = document.createElement('div');
+        overlay.style.position = 'absolute';
+        overlay.style.bottom = '0';
+        overlay.style.left = '0';
+        overlay.style.right = '0';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.6)';
+        overlay.style.color = 'white';
+        overlay.style.padding = '4px';
+        overlay.style.fontSize = '10px';
+        overlay.textContent = image.description;
+
+        imgContainer.appendChild(img);
+        imgContainer.appendChild(overlay);
+
+        // 添加点击事件
+        imgContainer.addEventListener('click', () => {
+          window.selectedSearchImage = image.url;
+          window.customImage = null;
+
+          // 更新选中状态
+          document.querySelectorAll('#autoImageGrid > div').forEach(div => {
+            div.style.border = 'none';
+          });
+          imgContainer.style.border = '3px solid #4a6fa5';
+
+          // 更新卡片预览
+          updateCardPreview();
+        });
+
+        imageGridDiv.appendChild(imgContainer);
+      });
+
+      // 显示结果
+      resultsDiv.style.display = 'block';
+    }
+
     // Function to search for images based on inspiration content
     async function searchImagesFromDetail() {
       // Get content from all three fields
       const titleText = document.getElementById('title').value || '';
       const quoteText = document.getElementById('quote').value || '';
       const detailText = document.getElementById('detail').value || '';
-      
+
       // Check if at least one field has content
       if (!titleText && !quoteText && !detailText) {
         alert('请先输入标题、引用或启发内容');
@@ -1050,7 +1548,7 @@
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             text: combinedText,
             orientation: 'landscape'
           }),
@@ -1144,7 +1642,7 @@
     function checkAuthStatus() {
       const token = localStorage.getItem('authToken');
       const user = localStorage.getItem('user');
-      
+
       if (token && user) {
         try {
           return JSON.parse(user);
@@ -1156,7 +1654,7 @@
       return null;
     }
 
-    window.logout = function() {
+    window.logout = function () {
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       updateAuthUI();
@@ -1168,16 +1666,16 @@
       const user = checkAuthStatus();
       const loginButtons = document.getElementById('login-buttons');
       const userProfile = document.getElementById('user-profile');
-      
+
       if (user) {
         // 已登录状态
         if (loginButtons) loginButtons.style.display = 'none';
         if (userProfile) userProfile.style.display = 'block';
-        
+
         // 更新用户信息
         const userAvatar = document.getElementById('user-avatar');
         const userName = document.getElementById('user-name');
-        
+
         if (userAvatar && userName) {
           // 设置头像（如果用户有头像URL，否则使用默认头像）
           if (user.avatar_url) {
@@ -1186,11 +1684,11 @@
             // 使用用户名首字母生成头像
             userAvatar.src = generateAvatarUrl(user.email || user.username || '用户');
           }
-          
+
           // 设置用户名
           userName.textContent = user.username || user.email || '用户';
         }
-        
+
         // 自动填充创作者字段
         const creatorInput = document.getElementById('creator');
         if (creatorInput && !creatorInput.value) {
@@ -1213,7 +1711,7 @@
       const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
       const colorIndex = name.charCodeAt(0) % colors.length;
       const bgColor = colors[colorIndex];
-      
+
       // 创建本地SVG头像以避免CORS问题
       const svg = `
         <svg width="64" height="64" xmlns="http://www.w3.org/2000/svg">
@@ -1221,7 +1719,7 @@
           <text x="32" y="40" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="white">${firstChar}</text>
         </svg>
       `;
-      
+
       // 将SVG转换为data URL
       const svgBlob = new Blob([svg], { type: 'image/svg+xml' });
       return URL.createObjectURL(svgBlob);
