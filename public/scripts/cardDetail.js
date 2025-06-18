@@ -65,7 +65,6 @@ async function renderCardDetail() {
       customImage: card.Upload || "",
       created: card.Created
     };
-    console.log(normalizedCardData.gradientClass, '=====')
 
     // Clear container
     cardContainer.innerHTML = '';
@@ -76,7 +75,6 @@ async function renderCardDetail() {
       cardId: 'detail-card'
     });
 
-    console.log(cardElement, '=====')
     // Append the card to the container
     cardContainer.appendChild(cardElement);
 

@@ -198,6 +198,7 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
   const {
     imgPrefix = '',
     addDownloadBtn = false,
+    addShareBtn = false,
     cardIdPrefix = '',
     makeClickable = false,
   } = options;
@@ -230,16 +231,54 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
   cardWrapper.className = 'card-container';
   cardWrapper.appendChild(cardElement);
 
-  // Add download button if requested
-  if (addDownloadBtn) {
-    const downloadBtn = document.createElement('button');
-    downloadBtn.className = 'download-btn';
-    downloadBtn.innerHTML = '下载';
-    downloadBtn.onclick = function (e) {
-      e.stopPropagation(); // Prevent event bubbling
-      downloadCard(`#${uniqueCardId}`);
-    };
-    cardWrapper.appendChild(downloadBtn);
+  // Add action buttons if requested
+  if (addDownloadBtn || addShareBtn) {
+    const actionButtonsContainer = document.createElement('div');
+    actionButtonsContainer.className = 'action-buttons';
+    actionButtonsContainer.style.cssText = 'display: flex; gap: 8px; margin-top: 10px; justify-content: center;';
+    
+    if (addDownloadBtn) {
+      const downloadBtn = document.createElement('button');
+      downloadBtn.className = 'download-btn';
+      downloadBtn.innerHTML = '下载';
+      downloadBtn.style.cssText = 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-size: 14px; cursor: pointer; transition: all 0.3s ease;';
+      downloadBtn.onclick = function (e) {
+        e.stopPropagation(); // Prevent event bubbling
+        downloadCard(`#${uniqueCardId}`);
+      };
+      actionButtonsContainer.appendChild(downloadBtn);
+    }
+    
+    if (addShareBtn) {
+      const shareBtn = document.createElement('button');
+      shareBtn.className = 'share-btn';
+      shareBtn.innerHTML = '📱 分享';
+      shareBtn.style.cssText = 'background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-size: 14px; cursor: pointer; transition: all 0.3s ease;';
+      shareBtn.onclick = async function (e) {
+        e.stopPropagation(); // Prevent event bubbling
+        
+        // 动态导入shareUtils模块
+        try {
+          const { shareToWechat } = await import('./shareUtils.js');
+          await shareToWechat({
+            cardElement: cardElement,
+            shareButton: shareBtn,
+            shareData: {
+              title: `${normalizedCardData.title} - by ${normalizedCardData.creator}`,
+              desc: normalizedCardData.quote.length > 50 ? normalizedCardData.quote.substring(0, 50) + '...' : normalizedCardData.quote,
+              link: window.location.href
+            },
+            downloadFileName: `${normalizedCardData.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}-${new Date().getTime()}.png`
+          });
+        } catch (error) {
+          console.error('分享功能加载失败:', error);
+          alert('分享功能暂时不可用，请稍后重试。');
+        }
+      };
+      actionButtonsContainer.appendChild(shareBtn);
+    }
+    
+    cardWrapper.appendChild(actionButtonsContainer);
   }
 
   // Create hover overlay with View Details button and Comment form

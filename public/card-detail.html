@@ -13,6 +13,45 @@
   <script src="https://unpkg.com/dompurify@3.0.6/dist/purify.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script type="module">
+    import { initShareFunction, initDownloadFunction } from './scripts/shareUtils.js';
+    
+    // 初始化分享和下载功能
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初始化分享功能
+      initShareFunction({
+        cardSelector: '.card',
+        shareButtonSelector: '#share-btn',
+        getShareData: function() {
+          // 从卡片内容中提取信息
+          const titleElement = document.querySelector('.card .title');
+          const quoteElement = document.querySelector('.card .quote');
+          const creatorElement = document.querySelector('.card .creator');
+          
+          const title = titleElement ? titleElement.textContent : '启发时刻卡片';
+          const quote = quoteElement ? quoteElement.textContent : '分享一个触动我的观点';
+          const creator = creatorElement ? creatorElement.textContent : '匿名';
+          
+          return {
+            title: `${title} - by ${creator}`,
+            desc: quote.length > 50 ? quote.substring(0, 50) + '...' : quote,
+            link: window.location.href
+          };
+        }
+      });
+      
+      // 初始化下载功能
+      initDownloadFunction({
+        cardSelector: '.card',
+        downloadButtonSelector: '#download-btn',
+        getFileName: function() {
+          const titleElement = document.querySelector('.card .title');
+          const title = titleElement ? titleElement.textContent : 'card';
+          return `${title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}-${new Date().getTime()}.png`;
+        }
+      });
+    });
+  </script>
   <style>
     body {
       margin: 0;
@@ -105,17 +144,18 @@
       flex-wrap: wrap;
     }
 
-    .download-btn, .edit-btn {
+    .download-btn, .edit-btn, .share-btn {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       border: none;
       padding: 12px 24px;
-      border-radius: 8px;
+      border-radius: 25px;
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
       transition: all 0.3s ease;
       box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      margin: 0 8px;
     }
 
     .edit-btn {
@@ -123,7 +163,12 @@
       box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
     }
 
-    .download-btn:hover, .edit-btn:hover {
+    .share-btn {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
+    }
+
+    .download-btn:hover, .edit-btn:hover, .share-btn:hover {
       transform: translateY(-2px);
     }
 
@@ -133,6 +178,10 @@
 
     .edit-btn:hover {
       box-shadow: 0 6px 20px rgba(240, 147, 251, 0.6);
+    }
+
+    .share-btn:hover {
+      box-shadow: 0 6px 20px rgba(17, 153, 142, 0.6);
     }
 
     .download-btn:active, .edit-btn:active {
@@ -339,6 +388,7 @@
 
   <div class="action-buttons">
     <button id="download-btn" class="download-btn">下载卡片</button>
+    <button id="share-btn" class="share-btn" onclick="shareToWechat()">📱 分享到微信</button>
     <button id="edit-btn" class="edit-btn" style="display: none;">编辑卡片</button>
   </div>
 

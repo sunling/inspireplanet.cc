@@ -11,6 +11,29 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <!-- Import the new combined utility file as a module -->
   <script type="module" src="scripts/cardUtils.js"></script>
+  <script type="module">
+    import { initShareFunction } from './scripts/shareUtils.js';
+    
+    // 初始化分享功能
+    document.addEventListener('DOMContentLoaded', function() {
+      initShareFunction({
+        cardSelector: '.card',
+        shareButtonSelector: 'button[onclick="shareToWechat()"]',
+        getShareData: function() {
+          // 获取卡片信息
+          const title = document.getElementById('title').value || '我的启发时刻卡片';
+          const quote = document.getElementById('quote').value || '分享一个触动我的观点';
+          const creator = document.getElementById('creator').value || '匿名';
+          
+          return {
+            title: `${title} - by ${creator}`,
+            desc: quote.length > 50 ? quote.substring(0, 50) + '...' : quote,
+            link: window.location.href
+          };
+        }
+      });
+    });
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
   <link
@@ -661,6 +684,7 @@
         <div class="buttons">
           <button onclick="submitCard()" class="primary-btn">提交到展示区</button>
           <button onclick="downloadCardImage()">下载卡片</button>
+          <!-- <button onclick="shareToWechat()" class="upload-btn">📱 分享到微信</button> -->
         </div>
       </div>
 
@@ -1188,10 +1212,22 @@
       const firstChar = name.charAt(0).toUpperCase();
       const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
       const colorIndex = name.charCodeAt(0) % colors.length;
-      const bgColor = colors[colorIndex].substring(1);
+      const bgColor = colors[colorIndex];
       
-      return `https://ui-avatars.com/api/?name=${encodeURIComponent(firstChar)}&background=${bgColor}&color=fff&size=64&font-size=0.6`;
+      // 创建本地SVG头像以避免CORS问题
+      const svg = `
+        <svg width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+          <rect width="64" height="64" fill="${bgColor}"/>
+          <text x="32" y="40" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="white">${firstChar}</text>
+        </svg>
+      `;
+      
+      // 将SVG转换为data URL
+      const svgBlob = new Blob([svg], { type: 'image/svg+xml' });
+      return URL.createObjectURL(svgBlob);
     }
+
+    // 分享功能已移至 shareUtils.js 模块
   </script>
 </body>
 
