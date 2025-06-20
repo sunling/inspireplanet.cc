@@ -801,11 +801,11 @@
       <div id="auth-section" class="auth-section">
         <!-- 未登录状态 -->
         <div id="login-buttons" class="login-buttons">
-          <a href="auth.html" class="header-btn auth-btn">登录</a>
+          <!-- <a href="auth.html" class="header-btn auth-btn">登录</a> -->
           <!-- <a href="auth.html?tab=register" class="header-btn auth-btn register-btn">注册</a> -->
         </div>
 
-        <!-- 已登录状态 -->
+        <!-- 已登录状态 
         <div id="user-profile" class="user-profile" style="display: none;">
           <div class="user-avatar-container">
             <img id="user-avatar" class="user-avatar" src="" alt="用户头像" crossorigin="anonymous">
@@ -815,6 +815,7 @@
             </div>
           </div>
         </div>
+        -->
       </div>
 
       <a href="cover-editor.html" class="header-btn view-all-btn">制作封面</a>
@@ -848,8 +849,7 @@
 
         <!-- 第三行：你的启发 -->
         <div class="form-group">
-          <label for="detail">你的启发<small style="color: #888; font-size: 9px;">支持 Markdown 语法: **粗体** *斜体* ~~删除线~~
-              按回车↩︎换行</small></label>
+          <label for="detail">你的启发<small style="color: #888; font-size: 9px;">支持 Markdown 语法，按回车↩︎换行</small></label>
           <textarea id="detail" oninput="updateCardPreview()" style="min-height: 100px; resize: vertical;"
             placeholder="写下你的启发和行动吧..."></textarea>
           <div id="imageGenerationStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
