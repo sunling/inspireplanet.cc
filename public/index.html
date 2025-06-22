@@ -1660,18 +1660,28 @@
 
     // Authentication functions
     function checkAuthStatus() {
-      // 检查本地存储的登录信息
-      const token = localStorage.getItem('authToken');
-      const user = localStorage.getItem('user');
+      // 使用跨域名认证工具检查登录状态
+      if (window.crossDomainAuth) {
+        const token = window.crossDomainAuth.getToken();
+        const user = window.crossDomainAuth.getUser();
+        
+        if (token && user) {
+          return user;
+        }
+      } else {
+        // 降级方案：检查本地存储的登录信息
+        const token = localStorage.getItem('authToken');
+        const user = localStorage.getItem('user');
 
-      if (token && user) {
-        try {
-          return JSON.parse(user);
-        } catch (e) {
-          console.error('解析用户信息失败:', e);
-          // 清除损坏的数据
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('user');
+        if (token && user) {
+          try {
+            return JSON.parse(user);
+          } catch (e) {
+            console.error('解析用户信息失败:', e);
+            // 清除损坏的数据
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+          }
         }
       }
 
@@ -1679,9 +1689,14 @@
     }
 
     window.logout = function () {
-      // 清除本地登录状态
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
+      // 使用跨域名认证工具清除登录状态
+      if (window.crossDomainAuth) {
+        window.crossDomainAuth.clearAuth();
+      } else {
+        // 降级方案：清除本地登录状态
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+      }
       
       // 更新UI并刷新页面
       updateAuthUI();
@@ -1753,6 +1768,9 @@
 
     // 分享功能已移至 shareUtils.js 模块
   </script>
+  
+  <!-- 引入跨域认证工具库 -->
+  <script src="https://bysunling.com/scripts/auth-utils.js"></script>
 </body>
 
 </html>
