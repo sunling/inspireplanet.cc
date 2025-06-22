@@ -1659,8 +1659,8 @@
     }
 
     // Authentication functions
-    async function checkAuthStatus() {
-      // 首先检查本地存储
+    function checkAuthStatus() {
+      // 检查本地存储的登录信息
       const token = localStorage.getItem('authToken');
       const user = localStorage.getItem('user');
 
@@ -1669,60 +1669,27 @@
           return JSON.parse(user);
         } catch (e) {
           console.error('解析用户信息失败:', e);
+          // 清除损坏的数据
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
         }
-      }
-
-      // 如果本地没有登录信息，尝试从主域名检查登录状态
-      try {
-        const response = await fetch('https://bysunling.com/api/auth/status', {
-          method: 'GET',
-          credentials: 'include', // 包含cookies
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.user && data.token) {
-            // 同步登录状态到本地
-            localStorage.setItem('authToken', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            return data.user;
-          }
-        }
-      } catch (error) {
-        console.log('无法从主域名获取登录状态:', error.message);
       }
 
       return null;
     }
 
-    window.logout = async function () {
+    window.logout = function () {
       // 清除本地登录状态
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       
-      // 尝试从主域名登出
-      try {
-        await fetch('https://bysunling.com/api/auth/logout', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-      } catch (error) {
-        console.log('主域名登出失败:', error.message);
-      }
-      
+      // 更新UI并刷新页面
       updateAuthUI();
-      // 可选：刷新页面或重定向
       window.location.reload();
     };
 
-    async function updateAuthUI() {
-      const user = await checkAuthStatus();
+    function updateAuthUI() {
+      const user = checkAuthStatus();
       const loginButtons = document.getElementById('login-buttons');
       const userProfile = document.getElementById('user-profile');
 
