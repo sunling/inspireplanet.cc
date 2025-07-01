@@ -5,34 +5,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Page One Workshop 报名页</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/utility.css">
     <style>
+        /* Page-specific styles */
         body {
-            font-family: 'Segoe UI', 'PingFang SC', sans-serif;
-            background: #f9f9f9;
-            margin: 0;
+            background: var(--bg-light);
             padding: 2rem;
-            color: #333;
-            line-height: 1.6;
         }
 
-        h1,
-        h2 {
-            color: #007acc;
+        h1, h2 {
+            color: var(--primary);
             margin-bottom: 1rem;
         }
 
         h3 {
             margin-top: 0;
             font-size: 1.2rem;
+            color: var(--text);
         }
 
         .container {
-            background: #fff;
+            background: white;
             padding: 2.5rem;
-            border-radius: 12px;
+            border-radius: var(--radius);
             max-width: 800px;
             margin: 0 auto;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 127, 80, 0.05);
         }
 
         .weeks-container {
@@ -44,15 +44,113 @@
         }
 
         .week {
-            background: #f0f8ff;
+            background: var(--bg-light);
             padding: 1rem;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             margin: 0;
             flex: 1;
             min-width: 130px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            border-left: 4px solid #007acc;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
             transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .week:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .week p {
+            margin: 0.5rem 0 0;
+            font-size: 0.95rem;
+            color: var(--text-light);
+        }
+
+        .qr {
+            text-align: center;
+            margin: 2.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-light);
+            border-radius: var(--radius-sm);
+            border: 1px dashed rgba(255, 127, 80, 0.2);
+        }
+
+        .qr img {
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow);
+            transition: transform 0.3s;
+        }
+
+        .qr img:hover {
+            transform: scale(1.05);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            margin-top: 1.5rem;
+        }
+
+        label {
+            margin-top: 1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        input, textarea {
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 127, 80, 0.2);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            background: white;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.1);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+        }
+
+        button {
+            margin-top: 1.5rem;
+            background: var(--gradient-accent);
+            color: var(--text);
+            border: none;
+            padding: 0.9rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        button:hover {
+            background: var(--gradient-primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2.5rem;
+            color: var(--text-lighter);
+            font-size: 0.9rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 127, 80, 0.1);
         }
 
         /* 适配移动设备 */
@@ -88,101 +186,6 @@
             body {
                 padding: 1rem;
             }
-        }
-
-        .week:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .week p {
-            margin: 0.5rem 0 0;
-            font-size: 0.95rem;
-        }
-
-        .qr {
-            text-align: center;
-            margin: 2.5rem 0;
-            padding: 1.5rem;
-            background: #fcfcfc;
-            border-radius: 8px;
-            border: 1px dashed #ddd;
-        }
-
-        .qr img {
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s;
-        }
-
-        .qr img:hover {
-            transform: scale(1.05);
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-            margin-top: 1.5rem;
-        }
-
-        label {
-            margin-top: 1rem;
-            font-weight: 500;
-        }
-
-        input,
-        textarea {
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-
-        input:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #007acc;
-            box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.1);
-        }
-
-        .radio-group {
-            display: flex;
-            gap: 1.5rem;
-            margin-top: 0.5rem;
-        }
-
-        button {
-            margin-top: 1.5rem;
-            background: linear-gradient(135deg, #FFB6C1, #FFE4E1, #F0E68C);
-            color: #666;
-            border: none;
-            padding: 0.9rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            transition: all 0.3s ease;
-        }
-
-        button:hover {
-            background: linear-gradient(135deg, #FF91A4, #FFD1D4, #EDE066);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
-        }
-
-        button:active {
-            transform: translateY(1px);
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 2.5rem;
-            color: #777;
-            font-size: 0.9rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #eee;
         }
     </style>
 </head>
@@ -246,7 +249,7 @@
             <textarea id="expectation" name="expectation" rows="3" required></textarea>
 
             <label>是否已支付？<small
-                    style="color: #888; font-size: 9px;">如果费用上有问题并真的很想报名，可以发邮件给我sunling621@gmail.com</small></label>
+                    class="text-muted text-xs">如果费用上有问题并真的很想报名，可以发邮件给我sunling621@gmail.com</small></label>
             <div class="radio-group">
                 <label><input type="radio" name="paid" value="true" required> 是</label>
                 <label><input type="radio" name="paid" value="false"> 否</label>
@@ -305,6 +308,7 @@
         });
     </script>
 
+<script src="/scripts/layout.js"></script>
 </body>
 
 </html>

@@ -16,6 +16,24 @@ export const gradientClasses = [
   'card-gradient-14'
 ];
 
+// 定义渐变对应的搜索关键词
+export const gradientSearchTerms = {
+  'card-gradient-1': "rainbow colorful abstract art",
+  'card-gradient-2': "sunrise warm orange yellow nature",
+  'card-gradient-3': "purple fantasy magical violet",
+  'card-gradient-4': "ocean blue water sea waves",
+  'card-gradient-5': "fire flame orange red energy",
+  'card-gradient-6': "green nature forest fresh leaves",
+  'card-gradient-7': "red orange passion warm sunset",
+  'card-gradient-8': "sky blue white clouds peaceful",
+  'card-gradient-9': "grey mist fog minimal calm",
+  'card-gradient-10': "honey yellow warm golden light",
+  'card-gradient-11': "mint green fresh nature spring",
+  'card-gradient-12': "purple pink soft pastel flowers",
+  'card-gradient-13': "golden wheat field warm autumn",
+  'card-gradient-14': "silver grey moonlight minimal"
+};
+
 // 为每个渐变背景配置合适的字体颜色
 export const gradientFontColors = {
   'card-gradient-1': '#2c3e50',    // 彩虹梦境 - 深蓝灰

@@ -16,7 +16,7 @@ function checkEditPermission(card) {
   if (!user) {
     showError('请先登录后再编辑卡片');
     setTimeout(() => {
-      window.location.href = 'auth.html';
+      window.location.href = 'login';
     }, 2000);
     return false;
   }
@@ -39,7 +39,7 @@ function checkEditPermission(card) {
     console.error('解析用户信息失败:', e);
     showError('用户信息验证失败');
     setTimeout(() => {
-      window.location.href = 'auth.html';
+      window.location.href = 'login';
     }, 2000);
     return false;
   }
@@ -209,7 +209,7 @@ async function handleFormSubmit(event) {
     if (response.ok && result.success) {
       alert('卡片更新成功！');
       // Redirect back to card detail page
-      window.location.href = `card-detail.html?id=${cardId}`;
+      window.location.href = `card-detail?id=${cardId}`;
     } else {
       alert(`更新失败: ${result.error || '未知错误'}`);
     }

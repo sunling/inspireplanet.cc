@@ -60,7 +60,7 @@ export async function handler(event, context) {
 // 处理用户注册
 async function handleRegister(event, headers) {
   try {
-    const { username, email, password, name } = JSON.parse(event.body)
+    const { username, email, password, name, wechat } = JSON.parse(event.body)
 
     // 验证输入
     if (!username || !email || !password || !name) {
@@ -140,7 +140,8 @@ async function handleRegister(event, headers) {
         username,
         email,
         password: hashedPassword,
-        name
+        name,
+        wechat,
       })
       .select('id, username, email')
       .single()

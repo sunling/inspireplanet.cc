@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户中心 - 启发星球</title>
+    
+    <!-- 引入共有样式 -->
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/page-specific.css">
+    <link rel="stylesheet" href="/styles/utility.css">
+    
+    <style>
+        .profile-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+        }
+        
+        .profile-header {
+            background: var(--gradient-warm);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
+            text-align: center;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto var(--spacing-md);
+            font-size: 2rem;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .profile-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .profile-email {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        .profile-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-lg);
+        }
+        
+        .profile-section {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow);
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 2px solid var(--accent-lighter);
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-sm) 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        .info-value {
+            color: var(--text);
+            font-weight: 500;
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        .action-btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: block;
+        }
+        
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-secondary {
+            background: var(--accent-lighter);
+            color: var(--text);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--accent-light);
+        }
+        
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: var(--spacing-md);
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: var(--spacing-md);
+            background: var(--accent-lighter);
+            border-radius: var(--radius);
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: var(--spacing-xs);
+        }
+        
+        .message {
+            padding: var(--spacing-md);
+            border-radius: var(--radius);
+            margin-bottom: var(--spacing-md);
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        @media (max-width: 768px) {
+            .profile-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .profile-container {
+                padding: var(--spacing-md);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 引入header -->
+    <div id="header-placeholder"></div>
+    
+    <main class="main-content">
+        <div class="profile-container">
+            <div id="message" class="message"></div>
+            
+            <!-- 用户信息头部 -->
+            <div class="profile-header">
+                <div class="profile-avatar" id="userAvatar">U</div>
+                <div class="profile-name" id="profileName">用户名</div>
+                <div class="profile-email" id="profileEmail">user@example.com</div>
+            </div>
+            
+            <div class="profile-content">
+                <!-- 基本信息 -->
+                <div class="profile-section">
+                    <h3 class="section-title">基本信息</h3>
+                    <div class="info-item">
+                        <span class="info-label">用户名</span>
+                        <span class="info-value" id="infoUsername">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">邮箱</span>
+                        <span class="info-value" id="infoEmail">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">注册时间</span>
+                        <span class="info-value" id="infoRegisterTime">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">最后登录</span>
+                        <span class="info-value" id="infoLastLogin">-</span>
+                    </div>
+                </div>
+                
+                <!-- 账户操作 -->
+                <div class="profile-section">
+                    <h3 class="section-title">账户操作</h3>
+                    <div class="action-buttons">
+                        <a href="/change-password" class="action-btn btn-primary">修改密码</a>
+                        <button class="action-btn btn-secondary" onclick="editProfile()">编辑资料</button>
+                        <a href="/cards?filter=mine" class="action-btn btn-secondary">我的卡片</a>
+                        <button class="action-btn btn-danger" onclick="confirmLogout()">退出登录</button>
+                    </div>
+                </div>
+                
+                <!-- 统计信息 -->
+                <div class="profile-section" style="grid-column: 1 / -1;">
+                    <h3 class="section-title">我的统计</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-number" id="cardCount">0</span>
+                            <span class="stat-label">创建卡片</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="viewCount">0</span>
+                            <span class="stat-label">浏览次数</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="likeCount">0</span>
+                            <span class="stat-label">获得点赞</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="commentCount">0</span>
+                            <span class="stat-label">收到评论</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- 引入footer -->
+    <div id="footer-placeholder"></div>
+    
+    <script>
+        // 加载header和footer
+        async function loadSharedComponents() {
+            try {
+                const [headerResponse, footerResponse] = await Promise.all([
+                    fetch('/shared/header.html'),
+                    fetch('/shared/footer.html')
+                ]);
+                
+                if (headerResponse.ok) {
+                    document.getElementById('header-placeholder').innerHTML = await headerResponse.text();
+                }
+                
+                if (footerResponse.ok) {
+                    document.getElementById('footer-placeholder').innerHTML = await footerResponse.text();
+                }
+            } catch (error) {
+                console.error('加载共享组件失败:', error);
+            }
+        }
+        
+        // 检查登录状态
+        function checkAuthStatus() {
+            const token = localStorage.getItem('userToken');
+            const userInfo = localStorage.getItem('userInfo');
+            
+            if (!token || !userInfo) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            try {
+                const user = JSON.parse(userInfo);
+                loadUserProfile(user);
+            } catch (error) {
+                console.error('解析用户信息失败:', error);
+                window.location.href = '/login';
+            }
+        }
+        
+        // 加载用户资料
+        function loadUserProfile(user) {
+            // 设置头像
+            const avatar = document.getElementById('userAvatar');
+            avatar.textContent = (user.name || user.username || '用户').charAt(0).toUpperCase();
+            
+            // 设置基本信息
+            document.getElementById('profileName').textContent = user.name || user.username || '用户';
+            document.getElementById('profileEmail').textContent = user.email || '未设置邮箱';
+            document.getElementById('infoUsername').textContent = user.username || user.name || '-';
+            document.getElementById('infoEmail').textContent = user.email || '-';
+            document.getElementById('infoRegisterTime').textContent = formatDate(user.createdAt) || '-';
+            document.getElementById('infoLastLogin').textContent = formatDate(user.lastLoginAt) || '刚刚';
+            
+            // 加载统计信息
+            loadUserStats(user.id || user._id);
+        }
+        
+        // 加载用户统计信息
+        async function loadUserStats(userId) {
+            // 本地开发环境的模拟数据
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                document.getElementById('cardCount').textContent = '12';
+                document.getElementById('viewCount').textContent = '1,234';
+                document.getElementById('likeCount').textContent = '89';
+                document.getElementById('commentCount').textContent = '45';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/.netlify/functions/userStats?userId=${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('cardCount').textContent = stats.cardCount || '0';
+                    document.getElementById('viewCount').textContent = formatNumber(stats.viewCount || 0);
+                    document.getElementById('likeCount').textContent = stats.likeCount || '0';
+                    document.getElementById('commentCount').textContent = stats.commentCount || '0';
+                }
+            } catch (error) {
+                console.error('加载统计信息失败:', error);
+            }
+        }
+        
+        // 编辑资料
+        function editProfile() {
+            showMessage('编辑资料功能即将上线', 'success');
+        }
+        
+        // 确认退出登录
+        function confirmLogout() {
+            if (confirm('确定要退出登录吗？')) {
+                logout();
+            }
+        }
+        
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('userToken');
+            localStorage.removeItem('userInfo');
+            localStorage.removeItem('userId');
+            window.location.href = '/';
+        }
+        
+        // 显示消息
+        function showMessage(text, type = 'success') {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.className = `message ${type}`;
+            message.style.display = 'block';
+            
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 3000);
+        }
+        
+        // 格式化日期
+        function formatDate(dateString) {
+            if (!dateString) return null;
+            
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                });
+            } catch (error) {
+                return null;
+            }
+        }
+        
+        // 格式化数字
+        function formatNumber(num) {
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'k';
+            }
+            return num.toString();
+        }
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSharedComponents();
+            checkAuthStatus();
+        });
+    </script>
+</body>
+</html>

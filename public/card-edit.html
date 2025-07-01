@@ -10,15 +10,17 @@
     rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="stylesheet" href="/styles/utility.css">
   <script src="https://unpkg.com/dompurify@3.0.6/dist/purify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     body {
       margin: 0;
       padding: 0;
-      font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+      font-family: var(--font-sans);
       min-height: 100vh;
-      background: linear-gradient(135deg, #f9f9f9, #e0eafc);
+      background: var(--bg-light);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -49,7 +51,7 @@
     .back-button {
       display: flex;
       align-items: center;
-      color: #4a6fa5;
+      color: var(--primary);
       text-decoration: none;
       font-weight: bold;
       margin-right: 20px;
@@ -68,7 +70,7 @@
 
     .header h1 {
       font-size: 28px;
-      color: #333;
+      color: var(--text);
       margin: 0;
       flex-grow: 1;
       text-align: center;
@@ -85,9 +87,10 @@
     .form-container {
       flex: 1;
       background: white;
-      border-radius: 12px;
+      border-radius: var(--radius);
       padding: 30px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid rgba(255, 127, 80, 0.05);
     }
 
     .preview-container {
@@ -104,7 +107,7 @@
       display: block;
       margin-bottom: 8px;
       font-weight: bold;
-      color: #333;
+      color: var(--text);
     }
 
     .form-group input,
@@ -112,18 +115,20 @@
     .form-group select {
       width: 100%;
       padding: 12px;
-      border: 2px solid #e1e5e9;
-      border-radius: 8px;
+      border: 2px solid rgba(255, 127, 80, 0.2);
+      border-radius: var(--radius-sm);
       font-size: 16px;
       transition: border-color 0.3s ease;
       box-sizing: border-box;
+      background: white;
     }
 
     .form-group input:focus,
     .form-group textarea:focus,
     .form-group select:focus {
       outline: none;
-      border-color: #4a6fa5;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.1);
     }
 
     .form-group textarea {
@@ -142,7 +147,7 @@
     .secondary-btn {
       padding: 12px 24px;
       border: none;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
@@ -150,31 +155,32 @@
     }
 
     .primary-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--gradient-primary);
       color: white;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      box-shadow: var(--shadow-md);
     }
 
     .primary-btn:hover {
+      background: var(--primary-dark);
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      box-shadow: var(--shadow-lg);
     }
 
     .secondary-btn {
-      background: #f8f9fa;
-      color: #6c757d;
-      border: 2px solid #e1e5e9;
+      background: var(--bg-light);
+      color: var(--text);
+      border: 2px solid rgba(255, 127, 80, 0.2);
     }
 
     .secondary-btn:hover {
-      background: #e9ecef;
-      border-color: #adb5bd;
+      background: rgba(255, 127, 80, 0.1);
+      border-color: var(--primary);
     }
 
     .loading {
       text-align: center;
       padding: 40px;
-      color: #666;
+      color: var(--text-light);
       font-size: 18px;
     }
 
@@ -182,7 +188,7 @@
       background: #f8d7da;
       color: #721c24;
       padding: 15px;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       margin: 20px 0;
       text-align: center;
     }
@@ -219,15 +225,15 @@
       </svg>
       返回
     </a>
-    <h1>编辑卡片</h1>
+    <h1>✏️ 雕琢你的灵感</h1>
   </div>
 
   <div class="main-container">
     <div class="form-container">
       <div id="loading" class="loading">加载中...</div>
-      <div id="error-message" class="error-message" style="display: none;"></div>
+      <div id="error-message" class="error-message hidden"></div>
       
-      <form id="edit-form" style="display: none;">
+      <form id="edit-form" class="hidden">
         <div class="form-group">
           <label for="title">标题</label>
           <input type="text" id="title" name="title" placeholder="请输入卡片标题" required>
@@ -298,6 +304,7 @@
   </div>
 
   <script type="module" src="scripts/cardEdit.js"></script>
+<script src="/scripts/layout.js"></script>
 </body>
 
 </html>

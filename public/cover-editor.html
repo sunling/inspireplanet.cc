@@ -11,14 +11,16 @@
     rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="stylesheet" href="/styles/utility.css">
 
   <style>
     body {
       display: flex;
       gap: 40px;
       padding: 40px;
-      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-      background: #f5f5f5;
+      font-family: var(--font-sans);
+      background: var(--bg-light);
     }
 
     .form {
@@ -29,17 +31,28 @@
     }
 
     .form input,
-    .form select {
+    .form select,
+    .form textarea {
       width: 100%;
       padding: 8px 12px;
       font-size: 14px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      border: 1px solid rgba(255, 127, 80, 0.2);
+      border-radius: var(--radius-sm);
+      background: white;
+      transition: border-color 0.3s;
+    }
+
+    .form input:focus,
+    .form select:focus,
+    .form textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.1);
     }
 
     .form label {
       font-weight: bold;
-      color: #4a6fa5;
+      color: var(--primary);
       font-size: 14px;
     }
 
@@ -51,18 +64,20 @@
 
     button {
       padding: 8px 16px;
-      background: linear-gradient(135deg, #FFB6C1, #FFE4E1, #F0E68C);
-      color: #666;
+      background: var(--gradient-accent);
+      color: var(--text);
       border: none;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
       transition: all 0.3s ease;
+      box-shadow: var(--shadow);
     }
     
     button:hover {
-      background: linear-gradient(135deg, #FF91A4, #FFD1D4, #EDE066);
+      background: var(--gradient-primary);
+      color: white;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
+      box-shadow: var(--shadow-md);
     }
 
     #preview .cover {
@@ -71,7 +86,7 @@
       height: 383px;
       overflow: hidden;
       background: #323449;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
     }
 
     #preview .bg {
@@ -125,13 +140,17 @@
       background: #323449;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
     }
   </style>
 </head>
 
 <body>
+  <div class="page-header" style="width: 100%; text-align: center; margin-bottom: 30px; padding: 20px;">
+    <h1 style="color: #333; margin: 0; font-size: 28px;">🎨 封面创作工坊</h1>
+    <p style="color: #666; margin: 10px 0 0 0; font-size: 16px;">✨ 为你的灵感穿上最美的外衣，让每一个想法都闪闪发光</p>
+  </div>
   <div class="form">
     <label>选择字体：
       <select id="choose-font" onchange="renderCover()">
@@ -145,8 +164,8 @@
         <option value="'KaiTi', serif">楷体</option>
       </select>
     </label>
-    <label for="main-title">标题:<small style="color: #888; font-size: 9px;">按回车↩︎换行</small></label>
-    <textarea id="main-title" oninput="renderCover()" style="min-height: 80px; resize: vertical;"></textarea>
+    <label for="main-title">标题:<small class="text-muted text-xs">按回车↩︎换行</small></label>
+    <textarea id="main-title" oninput="renderCover()" class="min-h-20 resize-vertical"></textarea>
     <label>关键词(空格分割):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
     <label>文字布局风格：
       <select id="layout-select" onchange="renderCover()">
@@ -160,24 +179,24 @@
     <label>自定义背景图:
       <div class="file-upload-wrapper">
         <button type="button" id="uploadBtn" class="upload-btn">上传图片</button>
-        <span id="fileStatus" style="color: #888; font-size: 12px;">未选择文件</span>
-        <input type="file" id="bgUpload" accept="image/*" style="display: none;">
+        <span id="fileStatus" class="text-muted text-sm">未选择文件</span>
+    <input type="file" id="bgUpload" accept="image/*" class="hidden">
       </div>
     </label>
     
     <label>图片搜索:
       <div>
-        <button type="button" id="searchImagesBtn" class="upload-btn" style="width: 100%;">
+        <button type="button" id="searchImagesBtn" class="upload-btn w-full">
           根据标题和关键词搜索封面图🔍
         </button>
-        <div id="searchImagesStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
+        <div id="searchImagesStatus" class="mt-1 text-sm text-secondary"></div>
       </div>
     </label>
     
     <!-- 搜索结果图片展示区 -->
-    <div id="searchImagesResults" style="display: none; margin-top: 10px;">
-      <h5 style="margin-bottom: 10px; font-size: 14px;">搜索结果：<span id="searchQuery"></span></h5>
-      <div id="imageResults" style="display: flex; flex-wrap: wrap; gap: 10px; max-height: 300px; overflow-y: auto;"></div>
+    <div id="searchImagesResults" class="hidden mt-2">
+      <h5 class="mb-2 text-base">搜索结果：<span id="searchQuery"></span></h5>
+      <div id="imageResults" class="flex flex-wrap gap-2 max-h-75 overflow-y-auto"></div>
     </div>
     <!-- <div class="buttons">
       <button onclick="downloadCoverImage()">下载</button>
@@ -196,7 +215,7 @@
     </div>
     <div class="buttons">
       <button onclick="downloadCoverImage()">下载</button>
-      <div style="margin-top: 10px;"><a href="/cover-editor-mobile.html" >前往制作竖版封面</a></div>
+      <div class="mt-2"><a href="/cover-editor-mobile.html" >前往制作竖版封面</a></div>
     </div>
   </div>
 
@@ -400,6 +419,7 @@
       }
     }
   </script>
+<script src="/scripts/layout.js"></script>
 </body>
 
 </html>

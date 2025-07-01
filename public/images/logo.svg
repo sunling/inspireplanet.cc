@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <circle cx="20" cy="20" r="18" fill="#4a6fa5" />
+  <text x="20" y="25" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="white">启</text>
+  <path d="M10,30 Q20,40 30,30" stroke="#fff" stroke-width="2" fill="none" />
+</svg>

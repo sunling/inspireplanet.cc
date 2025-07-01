@@ -1,290 +1,380 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>启发星球 ✨ Weekly Inspiration Cards</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter&family=Playfair+Display&family=Montserrat&family=Lato&family=Dancing+Script&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>启发星球 ✨ Weekly Inspiration Cards</title>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter&family=Playfair+Display&family=Montserrat&family=Lato&family=Dancing+Script&display=swap"
-    rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #f9f9f9, #e0eafc);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 30px;
-      padding: 30px 20px;
-      animation: fadeIn 1s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "PingFang SC", "Helvetica Neue", sans-serif;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f9f9f9, #e0eafc);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 30px;
+        padding: 30px 20px;
+        animation: fadeIn 1s ease forwards;
       }
 
-      to {
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+
+        to {
+          opacity: 1;
+        }
+      }
+
+      .cards-container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .date-heading {
+        font-size: 24px;
+        color: #4a6fa5;
+        margin: 40px 0 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e0eafc;
+        width: 100%;
+      }
+
+      .date-cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 30px;
+        width: 100%;
+        margin-bottom: 20px;
+      }
+
+      /* Card styles moved to card-common.css */
+
+      .back-link {
+        display: inline-block;
+        margin-top: 30px;
+        padding: 10px 20px;
+        background: #4a6fa5;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+      }
+
+      .back-link:hover {
+        background: #3a5a8c;
+        transform: translateY(-2px);
+      }
+
+      .empty-message {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-size: 18px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .episode-filter {
+        margin: 20px auto;
+        text-align: center;
+      }
+
+      .episode-filter select {
+        padding: 8px 15px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        background-color: white;
+        font-size: 16px;
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      .loading-indicator {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-size: 18px;
+      }
+
+      /* Download button styles */
+      .card-container {
+        position: relative;
+      }
+
+      .download-btn {
+        position: absolute;
+        bottom: 15px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #666;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        opacity: 0;
+        transition: all 0.3s ease;
+        z-index: 10;
+        border: none;
+        backdrop-filter: blur(10px);
+      }
+
+      .download-btn:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 145, 164, 0.95),
+          rgba(255, 209, 212, 0.95),
+          rgba(237, 224, 102, 0.95)
+        );
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255, 182, 193, 0.4);
+      }
+
+      .card-container:hover .download-btn {
         opacity: 1;
       }
-    }
+    </style>
+    <link rel="stylesheet" href="/styles/card-common.css" />
+    <link rel="stylesheet" href="/styles/card-gradients.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="/styles/main.css" />
+    <script type="module">
+      // Import functions from cardUtils.js
+      import {
+        downloadCard,
+        fetchWeeklyCards,
+        fetchAndRenderWeeklyCards,
+        processLongUrls,
+      } from "./scripts/cardUtils.js";
 
-    .header {
-      text-align: center;
-      width: 100%;
-      max-width: 1200px;
-      margin-bottom: 20px;
-    }
+      // 页面加载完成后执行
+      document.addEventListener("DOMContentLoaded", function () {
+        // 检查URL参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasEpisodeParam = checkIfHasEpisodeParam();
 
-    .header h1 {
-      font-size: 32px;
-      color: #333;
-      margin-bottom: 10px;
-    }
-
-    .header p {
-      font-size: 18px;
-      color: #666;
-      margin: 0;
-    }
-
-    .cards-container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    
-    .date-heading {
-      font-size: 24px;
-      color: #4a6fa5;
-      margin: 40px 0 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #e0eafc;
-      width: 100%;
-    }
-    
-    .date-cards-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 30px;
-      width: 100%;
-      margin-bottom: 20px;
-    }
-
-    /* Card styles moved to card-common.css */
-
-    .back-link {
-      display: inline-block;
-      margin-top: 30px;
-      padding: 10px 20px;
-      background: #4a6fa5;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: bold;
-      transition: all 0.3s ease;
-    }
-
-    .back-link:hover {
-      background: #3a5a8c;
-      transform: translateY(-2px);
-    }
-
-    .empty-message {
-      text-align: center;
-      padding: 40px;
-      color: #666;
-      font-size: 18px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    .episode-filter {
-      margin: 20px auto;
-      text-align: center;
-    }
-
-    .episode-filter select {
-      padding: 8px 15px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      background-color: white;
-      font-size: 16px;
-      font-family: inherit;
-      cursor: pointer;
-    }
-
-    .loading-indicator {
-      text-align: center;
-      padding: 40px;
-      color: #666;
-      font-size: 18px;
-    }
-    
-    /* Download button styles */
-    .card-container {
-      position: relative;
-    }
-    
-    .download-btn {
-      position: absolute;
-      bottom: 15px;
-      right: 15px;
-      background: rgba(255, 255, 255, 0.9);
-      color: #666;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      cursor: pointer;
-      opacity: 0;
-      transition: all 0.3s ease;
-      z-index: 10;
-      border: none;
-      backdrop-filter: blur(10px);
-    }
-    
-    .download-btn:hover {
-      background: linear-gradient(135deg, rgba(255, 145, 164, 0.95), rgba(255, 209, 212, 0.95), rgba(237, 224, 102, 0.95));
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.4);
-    }
-    
-    .card-container:hover .download-btn {
-      opacity: 1;
-    }
-  </style>
-  <link rel="stylesheet" href="/styles/card-common.css">
-  <link rel="stylesheet" href="/styles/card-gradients.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script type="module">
-    // Import functions from cardUtils.js
-    import {
-      downloadCard,
-      fetchWeeklyCards,
-      fetchAndRenderWeeklyCards,
-      processLongUrls
-    } from './scripts/cardUtils.js';
-    
-    // 页面加载完成后执行
-    document.addEventListener('DOMContentLoaded', function () {
-      // Fetch and render weekly cards
-      fetchAndRenderWeeklyCards('cards');
-      
-      // Set up episode filter
-      setupEpisodeFilter();
-    });
-    
-    // Set up episode filter functionality
-    function setupEpisodeFilter() {
-      const filterSelect = document.getElementById('episode-filter');
-      if (!filterSelect) return;
-      
-      // Listen for changes to the filter
-      filterSelect.addEventListener('change', function() {
-        const selectedEpisode = this.value;
-        
-        if (selectedEpisode === 'all') {
-          // Show all episodes
-          document.querySelectorAll('.date-heading').forEach(heading => {
-            heading.style.display = 'block';
-          });
-          document.querySelectorAll('.date-cards-container').forEach(container => {
-            container.style.display = 'grid';
-          });
+        // 如果没有指定周刊参数，则只显示最近10集，否则显示全部
+        if (!hasEpisodeParam) {
+          // 默认只显示最近10集
+          fetchAndRenderWeeklyCards("cards", 10);
         } else {
-          // Hide all episodes
-          document.querySelectorAll('.date-heading').forEach(heading => {
-            heading.style.display = 'none';
-          });
-          document.querySelectorAll('.date-cards-container').forEach(container => {
-            container.style.display = 'none';
-          });
-          
-          // Show only the selected episode
-          const selectedHeading = document.getElementById(`episode-${selectedEpisode.toLowerCase()}`);
-          const selectedContainer = document.getElementById(`episode-container-${selectedEpisode.toLowerCase()}`);
-          
-          if (selectedHeading) selectedHeading.style.display = 'block';
-          if (selectedContainer) selectedContainer.style.display = 'grid';
-          
-          // Scroll to the selected episode
-          if (selectedHeading) {
-            selectedHeading.scrollIntoView({ behavior: 'smooth' });
+          // 有参数时显示全部，让参数过滤生效
+          fetchAndRenderWeeklyCards("cards");
+        }
+
+        // Set up episode filter
+        setupEpisodeFilter();
+
+        // 检查URL参数，如果有指定周刊，则显示对应内容
+        checkUrlParamsForEpisode();
+      });
+
+      // 检查是否有周刊参数
+      function checkIfHasEpisodeParam() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const pathSegments = window.location.pathname.split("/");
+        const lastPathSegment = pathSegments[pathSegments.length - 1];
+
+        // 检查路径最后部分是否包含EP格式
+        if (lastPathSegment.match(/^EP\d+$/i)) {
+          return true;
+        }
+
+        // 检查查询参数
+        for (const [key, value] of urlParams.entries()) {
+          if (
+            key.toLowerCase() === "episode" ||
+            key.toLowerCase() === "ep" ||
+            value.match(/^EP\d+$/i) ||
+            key.match(/^EP\d+$/i)
+          ) {
+            return true;
           }
         }
-      });
-      
-      // Populate filter with available episodes
-      populateEpisodeFilter(filterSelect);
-    }
-    
-    // Populate episode filter with available episodes
-    async function populateEpisodeFilter(filterSelect) {
-      try {
-        // Get weekly cards
-        const cards = await fetchWeeklyCards();
-        
-        if (!cards || cards.length === 0) return;
-        
-        // Get unique episodes
-        const episodes = [...new Set(cards.map(card => card.Episode))].filter(Boolean);
-        
-        // Sort episodes in descending order
-        episodes.sort((a, b) => {
-          const numA = parseInt(a.replace(/\D/g, ''));
-          const numB = parseInt(b.replace(/\D/g, ''));
-          return numB - numA;
-        });
-        
-        // Clear existing options except "All Episodes"
-        while (filterSelect.options.length > 1) {
-          filterSelect.remove(1);
-        }
-        
-        // Add episode options
-        episodes.forEach(episode => {
-          const option = document.createElement('option');
-          option.value = episode;
-          option.textContent = episode;
-          filterSelect.appendChild(option);
-        });
-      } catch (error) {
-        console.error('Failed to populate episode filter:', error);
+
+        return false;
       }
-    }
-  </script>
-</head>
 
-<body>
-  <div class="header">
-    <h1>启发星球 ✨ Weekly Inspiration Cards</h1>
-    <p>每一周，我们在分享与成长中汇聚火花 ✨</p>
-  </div>
+      // 检查URL参数是否指定了特定周刊
+      function checkUrlParamsForEpisode() {
+        // 获取URL参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const pathSegments = window.location.pathname.split("/");
+        const lastPathSegment = pathSegments[pathSegments.length - 1];
 
-  <div class="episode-filter">
-    <select id="episode-filter">
-      <option value="all">所有会议</option>
-    </select>
-  </div>
+        // 检查URL路径中是否包含EP格式的参数（例如weekly-cards.html/EP24）
+        let episodeParam = null;
 
-  <div class="cards-container" id="cards">
-    <div class="loading-indicator">加载中...</div>
-  </div>
+        // 检查路径最后部分是否包含EP格式
+        if (lastPathSegment.match(/^EP\d+$/i)) {
+          episodeParam = lastPathSegment.toUpperCase();
+        }
 
-  <a href="index.html" class="back-link">返回首页</a>
-</body>
+        // 如果路径中没有，则检查查询参数
+        if (!episodeParam) {
+          // 尝试从查询参数中获取episode参数
+          for (const [key, value] of urlParams.entries()) {
+            // 检查是否有episode参数或者值本身是EP格式
+            if (key.toLowerCase() === "episode" || key.toLowerCase() === "ep") {
+              episodeParam = value.toUpperCase();
+              // 如果值不是EP开头，则添加EP前缀
+              if (!episodeParam.startsWith("EP")) {
+                episodeParam = "EP" + episodeParam;
+              }
+              break;
+            } else if (value.match(/^EP\d+$/i)) {
+              episodeParam = value.toUpperCase();
+              break;
+            } else if (key.match(/^EP\d+$/i)) {
+              episodeParam = key.toUpperCase();
+              break;
+            }
+          }
+        }
 
+        // 如果找到了EP参数，则设置下拉框并触发change事件
+        if (episodeParam) {
+          const filterSelect = document.getElementById("episode-filter");
+          if (filterSelect) {
+            // 等待一段时间，确保下拉框已经被填充
+            setTimeout(() => {
+              // 设置下拉框值
+              filterSelect.value = episodeParam;
+              // 手动触发change事件
+              const event = new Event("change");
+              filterSelect.dispatchEvent(event);
+            }, 1000); // 给下拉框填充留出时间
+          }
+        }
+      }
+
+      // Set up episode filter functionality
+      function setupEpisodeFilter() {
+        const filterSelect = document.getElementById("episode-filter");
+        if (!filterSelect) return;
+
+        // Listen for changes to the filter
+        filterSelect.addEventListener("change", function () {
+          const selectedEpisode = this.value;
+
+          if (selectedEpisode === "all") {
+            // Show all episodes
+            document.querySelectorAll(".date-heading").forEach((heading) => {
+              heading.style.display = "block";
+            });
+            document
+              .querySelectorAll(".date-cards-container")
+              .forEach((container) => {
+                container.style.display = "grid";
+              });
+          } else {
+            // Hide all episodes
+            document.querySelectorAll(".date-heading").forEach((heading) => {
+              heading.style.display = "none";
+            });
+            document
+              .querySelectorAll(".date-cards-container")
+              .forEach((container) => {
+                container.style.display = "none";
+              });
+
+            // Show only the selected episode
+            const selectedHeading = document.getElementById(
+              `episode-${selectedEpisode.toLowerCase()}`
+            );
+            const selectedContainer = document.getElementById(
+              `episode-container-${selectedEpisode.toLowerCase()}`
+            );
+
+            if (selectedHeading) selectedHeading.style.display = "block";
+            if (selectedContainer) selectedContainer.style.display = "grid";
+
+            // Scroll to the selected episode
+            if (selectedHeading) {
+              selectedHeading.scrollIntoView({ behavior: "smooth" });
+            }
+          }
+        });
+
+        // Populate filter with available episodes
+        populateEpisodeFilter(filterSelect);
+      }
+
+      // Populate episode filter with available episodes
+      async function populateEpisodeFilter(filterSelect) {
+        try {
+          // Get weekly cards
+          const cards = await fetchWeeklyCards();
+
+          if (!cards || cards.length === 0) return;
+
+          // Get unique episodes
+          const episodes = [
+            ...new Set(cards.map((card) => card.Episode)),
+          ].filter(Boolean);
+
+          // Sort episodes in descending order
+          episodes.sort((a, b) => {
+            const numA = parseInt(a.replace(/\D/g, ""));
+            const numB = parseInt(b.replace(/\D/g, ""));
+            return numB - numA;
+          });
+
+          // Clear existing options except "All Episodes"
+          while (filterSelect.options.length > 1) {
+            filterSelect.remove(1);
+          }
+
+          // Add episode options
+          episodes.forEach((episode) => {
+            const option = document.createElement("option");
+            option.value = episode;
+            option.textContent = episode;
+            filterSelect.appendChild(option);
+          });
+        } catch (error) {
+          console.error("Failed to populate episode filter:", error);
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <div class="episode-filter">
+      <select id="episode-filter">
+        <option value="all">所有会议</option>
+      </select>
+    </div>
+
+    <div class="cards-container" id="cards">
+      <div class="loading-indicator">加载中...</div>
+    </div>
+
+    <a href="index" class="back-link">返回首页</a>
+    <script src="/scripts/layout.js"></script>
+  </body>
 </html>

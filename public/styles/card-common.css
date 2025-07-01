@@ -6,7 +6,6 @@
 }
 
 .card {
-  background: transparent;
   overflow: hidden;
   color: #f1f1f1;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);

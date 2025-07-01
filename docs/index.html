@@ -3,14 +3,15 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>📢📢📢工具已升级</title>
+  <title>创建启发卡片 - 启发星球</title>
+  <link rel="stylesheet" href="/styles/main.css">
   <style>
     body {
       margin: 0;
       padding: 0;
-      font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+      font-family: var(--font-sans);
       min-height: 100vh;
-      background: linear-gradient(135deg, #f9f9f9, #e0eafc);
+      background: var(--bg-light);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -36,13 +37,13 @@
 
     .banner h1 {
       font-size: 32px;
-      color: #333;
+      color: var(--text);
       margin-bottom: 10px;
     }
 
     .banner p {
       font-size: 18px;
-      color: #666;
+      color: var(--text-light);
       margin: 0;
     }
 
@@ -54,27 +55,28 @@
     }
 
     .link-box {
-      background: #ffffff;
-      border-radius: 16px;
+      background: white;
+      border-radius: var(--radius);
       padding: 30px 40px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      box-shadow: var(--shadow-lg);
       text-align: center;
       width: 280px;
       transition: all 0.3s ease;
       cursor: pointer;
       text-decoration: none;
+      border: 1px solid rgba(255, 127, 80, 0.05);
     }
 
     .link-box:hover {
       transform: translateY(-8px);
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+      box-shadow: var(--shadow-lg);
     }
 
     .link-box a {
       display: block;
       font-size: 22px;
       font-weight: bold;
-      color: #4a6fa5;
+      color: var(--primary);
       text-decoration: none;
     }
 
@@ -82,7 +84,7 @@
       display: block;
       margin-top: 8px;
       font-size: 16px;
-      color: #999;
+      color: var(--text-lighter);
     }
   </style>
 </head>

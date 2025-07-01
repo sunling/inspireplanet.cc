@@ -12,6 +12,8 @@
     rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="stylesheet" href="/styles/utility.css">
 
   <style>
     .container {
@@ -33,8 +35,8 @@
       flex-direction: column;
       gap: 20px;
       padding: 16px;
-      font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-      background: #f5f5f5;
+      font-family: var(--font-sans);
+      background: var(--bg-light);
       border-radius: 3px;
     }
 
@@ -59,7 +61,7 @@
 
     .form label {
       font-weight: bold;
-      color: #4a6fa5;
+      color: var(--primary);
       font-size: 14px;
     }
 
@@ -68,13 +70,17 @@
       width: 100%;
       padding: 8px 12px;
       font-size: 16px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      border: 1px solid rgba(255, 127, 80, 0.2);
+      border-radius: var(--radius-sm);
+      background: white;
+      transition: border-color 0.3s;
     }
 
-    .form label {
-      font-weight: 500;
-      font-size: 14px;
+    .form input:focus,
+    .form select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.1);
     }
 
     .buttons {
@@ -85,18 +91,20 @@
 
     button {
       padding: 8px 16px;
-      background: linear-gradient(135deg, #FFB6C1, #FFE4E1, #F0E68C);
-      color: #666;
+      background: var(--gradient-accent);
+      color: var(--text);
       border: none;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
       transition: all 0.3s ease;
+      box-shadow: var(--shadow);
     }
     
     button:hover {
-      background: linear-gradient(135deg, #FF91A4, #FFD1D4, #EDE066);
+      background: var(--gradient-primary);
+      color: white;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
+      box-shadow: var(--shadow-md);
     }
 
     #preview {
@@ -113,7 +121,7 @@
       /* mobile friendly size */
       overflow: hidden;
       background: #323449;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
     }
 
     #preview .bg {
@@ -189,28 +197,28 @@
           <label for="bgUpload">自定义背景图</label>
           <div class="file-upload-wrapper">
             <button type="button" id="uploadBtn" class="upload-btn">📷 上传图片</button><br>
-            <small id="fileStatus" style="color: #888; font-size: 12px; margin-left: 10px;">No file chosen</small>
-            <input type="file" id="bgUpload" accept="image/*" style="display: none;">
+            <small id="fileStatus" class="text-muted text-sm ml-2">No file chosen</small>
+    <input type="file" id="bgUpload" accept="image/*" class="hidden">
           </div>
         </div>
       </div>
       
       <label>图片搜索:
         <div>
-          <button type="button" id="searchImagesBtn" class="upload-btn" style="width: 100%;">
+          <button type="button" id="searchImagesBtn" class="upload-btn w-full">
             根据标题和关键词搜索封面图🔍
           </button>
-          <div id="searchImagesStatus" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
+          <div id="searchImagesStatus" class="mt-1 text-sm text-secondary"></div>
         </div>
       </label>
       
       <!-- 搜索结果图片展示区 -->
-      <div id="searchImagesResults" style="display: none; margin-top: 10px;">
-        <h5 style="margin-bottom: 10px; font-size: 14px;">搜索结果：<span id="searchQuery"></span></h5>
-        <div id="imageResults" style="display: flex; flex-wrap: wrap; gap: 10px; max-height: 300px; overflow-y: auto;"></div>
+      <div id="searchImagesResults" class="hidden mt-2">
+      <h5 class="mb-2 text-base">搜索结果：<span id="searchQuery"></span></h5>
+      <div id="imageResults" class="flex flex-wrap gap-2 max-h-75 overflow-y-auto"></div>
       </div>
-      <label for="main-title">标题:<small style="color: #888; font-size: 9px;">按回车↩︎换行</small></label>
-      <textarea id="main-title" oninput="renderCover()" style="min-height: 80px; resize: vertical;"></textarea>
+      <label for="main-title">标题:<small class="text-muted text-xs">按回车↩︎换行</small></label>
+    <textarea id="main-title" oninput="renderCover()" class="min-h-20 resize-vertical"></textarea>
       <label>关键词(空格分隔):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
 
       <label>下载到本地:
@@ -411,6 +419,7 @@
       }
     }
   </script>
+<script src="/scripts/layout.js"></script>
 </body>
 
 </html>

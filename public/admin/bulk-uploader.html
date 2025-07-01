@@ -4,25 +4,34 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>启发星球 - 批量上传</title>
+  <link rel="stylesheet" href="/styles/main.css">
   <script src="bulk-uploader.js" defer></script>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: var(--font-sans);
       padding: 20px;
-      background-color: #f7f7f7;
+      background-color: var(--bg-light);
     }
     h1 {
       font-size: 24px;
       margin-bottom: 16px;
+      color: var(--primary);
     }
     textarea {
       width: 100%;
       height: 300px;
       font-size: 14px;
       padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      border: 1px solid rgba(255, 127, 80, 0.2);
+      border-radius: var(--radius-sm);
       resize: vertical;
+      background: white;
+      transition: border-color 0.3s;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.1);
     }
     .buttons {
       margin: 16px 0;
@@ -33,61 +42,72 @@
       padding: 10px 16px;
       font-size: 14px;
       border: none;
-      border-radius: 6px;
-      background: linear-gradient(135deg, #FFB6C1, #FFE4E1, #F0E68C);
-      color: #666;
+      border-radius: var(--radius-sm);
+      background: var(--gradient-accent);
+      color: var(--text);
       cursor: pointer;
       transition: all 0.3s ease;
+      box-shadow: var(--shadow);
     }
     button:hover {
-      background: linear-gradient(135deg, #FF91A4, #FFD1D4, #EDE066);
+      background: var(--gradient-primary);
+      color: white;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
+      box-shadow: var(--shadow-md);
     }
     button:disabled {
       background-color: #cccccc;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
     #result {
       margin-top: 20px;
     }
     .record {
       padding: 10px;
-      border-bottom: 1px solid #ddd;
+      border-bottom: 1px solid rgba(255, 127, 80, 0.1);
       display: flex;
       align-items: center;
       gap: 10px;
+      background: white;
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      box-shadow: var(--shadow);
     }
     .record:hover {
-      background-color: #f0f0f0;
+      background-color: var(--bg-light);
+      box-shadow: var(--shadow-md);
     }
     .record-number {
       font-weight: bold;
-      color: #666;
+      color: var(--text-light);
       min-width: 30px;
     }
     .record-episode {
-      background-color: #e0f2f1;
+      background-color: rgba(255, 127, 80, 0.1);
       padding: 2px 6px;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       font-size: 12px;
       min-width: 40px;
       text-align: center;
+      color: var(--primary);
     }
     .record-name {
-      color: #555;
+      color: var(--text-light);
       margin-right: 10px;
     }
     .record-title {
       font-weight: bold;
       flex-grow: 1;
+      color: var(--text);
     }
     .success {
-      color: green;
+      color: #4CAF50;
       font-weight: bold;
     }
     .error {
-      color: red;
+      color: #f44336;
       font-weight: bold;
       position: relative;
     }
@@ -100,7 +120,7 @@
       background-color: #333;
       color: white;
       padding: 5px 10px;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       font-size: 12px;
       bottom: 100%;
       right: 0;
@@ -110,8 +130,8 @@
     .summary {
       margin-top: 20px;
       padding: 15px;
-      background-color: #e8f5e9;
-      border-radius: 6px;
+      background-color: rgba(76, 175, 80, 0.1);
+      border-radius: var(--radius-sm);
       border-left: 4px solid #4CAF50;
     }
     .summary h3 {
@@ -133,5 +153,6 @@
 
 <div id="result"></div>
 
+<script src="/scripts/layout.js"></script>
 </body>
 </html>

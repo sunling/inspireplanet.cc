@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>所有卡片 - 启发时刻</title>
+  <title>我的卡片 - 启发时刻</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://unpkg.com/dompurify@3.0.6/dist/purify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -13,11 +13,49 @@
   <link rel="stylesheet" href="styles/main.css" />
   <link rel="stylesheet" href="styles/page-specific.css" />
   <link rel="stylesheet" href="styles/utility.css" />
+  <style>
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: var(--radius-lg);
+      margin: 2rem auto;
+      max-width: 600px;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .empty-state h3 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+    
+    .empty-state p {
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+    
+    .create-card-btn {
+      display: inline-block;
+      background: var(--gradient-primary);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .create-card-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+  </style>
 </head>
 
 <body class="cards-page bg-gradient-default">
   <div id="header-placeholder"></div>
-
   <div class="cards-container">
     <div id="cards-content">
       <!-- Cards will be loaded here -->
@@ -32,15 +70,45 @@
       processLongUrls
     } from './scripts/cardUtils.js';
 
-    // Load and render all cards
-    async function loadAllCards() {
+    // 获取当前登录用户信息
+    function getCurrentUser() {
+      try {
+        // 尝试从localStorage获取用户信息
+        const userStr = localStorage.getItem('userInfo');
+        if (userStr) {
+          return JSON.parse(userStr);
+        }
+        return null;
+      } catch (e) {
+        console.error('解析用户信息失败:', e);
+        return null;
+      }
+    }
+
+    // 加载当前用户的卡片
+    async function loadMyCards() {
       const container = document.getElementById('cards-content');
       if (!container) return;
 
-      // Show loading indicator
+      // 获取当前用户
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        // 用户未登录，显示提示信息
+        container.innerHTML = `
+          <div class="empty-state">
+            <h3>请先登录</h3>
+            <p>登录后才能查看您创建的卡片</p>
+            <a href="/login" class="create-card-btn">去登录</a>
+          </div>
+        `;
+        return;
+      }
+
+      // 显示加载指示器
       container.innerHTML = '<div class="loading-placeholder">加载中...</div>';
 
       try {
+        // 获取所有卡片
         const cards = await fetchCards();
 
         if (!cards || cards.length === 0) {
@@ -48,63 +116,69 @@
           return;
         }
 
-        // Clear loading indicator
+        // 清除加载指示器
         container.innerHTML = '';
 
-        // Filter valid cards
-        const validCards = cards.filter(card => card && card.Title && card.Quote)
+        // 过滤出当前用户创建的卡片
+        const username = currentUser.username || currentUser.email;
+        const myCards = cards.filter(card => card.Username === username)
+          .filter(card => card && card.Title && card.Quote)
           .map(card => sanitizeAndValidateCard(card, ['Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
           .filter(result => result.isValid)
           .map(result => result.sanitizedCard);
 
-        // Group cards by date
-        const groupedCards = groupCardsByDate(validCards);
+        if (myCards.length === 0) {
+          // 用户没有创建过卡片
+          container.innerHTML = `
+            <div class="empty-state">
+              <h3>您还没有创建过卡片</h3>
+              <p>创建一张卡片，记录下您的启发时刻</p>
+              <a href="/index" class="create-card-btn">创建卡片</a>
+            </div>
+          `;
+          return;
+        }
 
-        // Render grouped cards
+        // 按日期分组卡片
+        const groupedCards = groupCardsByDate(myCards);
+
+        // 渲染分组后的卡片
         Object.keys(groupedCards).sort().reverse().forEach(date => {
           const dateCards = groupedCards[date];
           
-          // Create date heading
+          // 创建日期标题
           const dateHeading = document.createElement('h2');
           dateHeading.className = 'date-heading';
           dateHeading.textContent = formatDate(date);
           container.appendChild(dateHeading);
 
-          // Create cards container for this date
+          // 创建该日期的卡片容器
           const dateCardsContainer = document.createElement('div');
           dateCardsContainer.className = 'date-cards-container';
 
-          // Render each card for this date
+          // 渲染该日期的每张卡片
           dateCards.forEach(card => {
             const cardElement = renderCarouselCard(card, Math.random());
             cardElement.style.cursor = 'pointer';
             
-            // Add click event to card for navigation
+            // 添加点击事件用于导航
             cardElement.addEventListener('click', function(e) {
-              // Don't navigate if clicking on overlay buttons
+              // 如果点击的不是悬浮按钮，则导航到详情页
               if (!e.target.closest('.card-hover-overlay')) {
                 window.location.href = `card-detail?id=${card.id}`;
               }
             });
             
-            // Add hover overlay
+            // 添加悬浮层
             const overlay = document.createElement('div');
             overlay.className = 'card-hover-overlay';
             overlay.innerHTML = `
               <button class="btn btn-warm view-details-btn" onclick="window.location.href='card-detail?id=${card.id}'">
                 查看详情
               </button>
-              <div class="comment-form-container">
-                <div class="comment-form-title">添加评论</div>
-                <input type="text" class="form-input comment-input" placeholder="你的名字" id="comment-name-${card.id}">
-                <textarea class="form-input comment-textarea" placeholder="写下你的想法..." id="comment-text-${card.id}"></textarea>
-                <button class="btn btn-warm submit-comment-btn" onclick="submitComment('${card.id}')">
-                  提交评论
-                </button>
-                <div class="message message-success comment-success" id="comment-success-${card.id}">
-                  评论提交成功！
-                </div>
-              </div>
+              <button class="btn btn-primary edit-btn" onclick="window.location.href='card-edit?id=${card.id}'">
+                编辑卡片
+              </button>
             `;
             
             cardElement.appendChild(overlay);
@@ -120,7 +194,7 @@
       }
     }
 
-    // Group cards by date
+    // 按日期分组卡片
     function groupCardsByDate(cards) {
       const grouped = {};
       cards.forEach(card => {
@@ -133,7 +207,7 @@
       return grouped;
     }
 
-    // Format date for display
+    // 格式化日期显示
     function formatDate(dateString) {
       const date = new Date(dateString);
       const today = new Date();
@@ -153,55 +227,8 @@
       }
     }
 
-    // Submit comment function
-    window.submitComment = async function(cardId) {
-      const nameInput = document.getElementById(`comment-name-${cardId}`);
-      const textInput = document.getElementById(`comment-text-${cardId}`);
-      const successDiv = document.getElementById(`comment-success-${cardId}`);
-
-      const name = nameInput.value.trim();
-      const text = textInput.value.trim();
-
-      if (!name || !text) {
-        alert('请填写姓名和评论内容');
-        return;
-      }
-
-      try {
-        const response = await fetch('/.netlify/functions/commentsHandler', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'addComment',
-            cardId: cardId,
-            author: name,
-            content: text
-          }),
-        });
-
-        if (response.ok) {
-          // Clear inputs
-          nameInput.value = '';
-          textInput.value = '';
-          
-          // Show success message
-          successDiv.style.display = 'block';
-          setTimeout(() => {
-            successDiv.style.display = 'none';
-          }, 3000);
-        } else {
-          throw new Error('提交失败');
-        }
-      } catch (error) {
-        console.error('提交评论失败:', error);
-        alert('提交评论失败，请稍后再试');
-      }
-    };
-
-    // Load cards when page loads
-    document.addEventListener('DOMContentLoaded', loadAllCards);
+    // 页面加载时加载卡片
+    document.addEventListener('DOMContentLoaded', loadMyCards);
   </script>
   
   <script src="/scripts/layout.js"></script>

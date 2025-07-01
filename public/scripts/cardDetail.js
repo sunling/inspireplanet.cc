@@ -90,7 +90,7 @@ async function renderCardDetail() {
     const editBtn = document.getElementById('edit-btn');
     if (editBtn) {
       editBtn.addEventListener('click', () => {
-        window.location.href = `card-edit.html?id=${cardId}`;
+        window.location.href = `card-edit?id=${cardId}`;
       });
     }
 

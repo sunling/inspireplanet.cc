@@ -13,7 +13,6 @@ import { gradientFontColors, getFontColorForGradient, getRandomGradientClass } f
  * @param {string} cardData.title - Card title
  * @param {string} cardData.quote - Card quote
  * @param {string} cardData.detail - Card detail text
- * @param {string} cardData.imagePath - Path to the image
  * @param {string} cardData.creator - Card creator name
  * @param {string} cardData.font - Font family
  * @param {string} cardData.customImage - Optional custom image (base64 or URL)
@@ -27,8 +26,8 @@ export function renderCard(cardData, options = {}) {
     title = "这一刻，我想说...",
     quote = "请写下触动到你的观点或者你的启发",
     detail = "你怎么看呢？",
-    imagePath = "",
     creator = "你的名字",
+    imagePath = "",
     font = "'Noto Sans SC', sans-serif",
     customImage = "",
     created = null
@@ -43,9 +42,8 @@ export function renderCard(cardData, options = {}) {
   const markedText = detail ? marked.parse(detail) : '';
   processedDetail = processLongUrls(markedText);
 
-
   // Use custom image if provided, otherwise use the image path
-  const finalImage = customImage || imagePath;
+  const finalImage = customImage || imagePath || `images/mistyblue.png`;
 
   // Create date string
   const dateStr = formatToLocal(created);
@@ -129,10 +127,9 @@ export function renderCarouselCard(cardData, index) {
   const markedText = cardData.Detail ? marked.parse(cardData.Detail) : '';
   const processedDetail = processLongUrls(markedText);
   const normalizedCardData = {
-    title: cardData.Title || "默认标题",
-    quote: cardData.Quote || "默认金句",
+    title: cardData.Title || "",
+    quote: cardData.Quote || "",
     detail: processedDetail || "",
-    imagePath: cardData.ImagePath || "",
     creator: cardData.Creator || "匿名",
     font: cardData.Font || "'Noto Sans SC', sans-serif",
     gradientClass: cardData.GradientClass || 'card-gradient-1',
@@ -142,7 +139,7 @@ export function renderCarouselCard(cardData, index) {
 
   // Create card element using renderCard function with gradient support
   const cardId = `carousel-card-${index}`;
-  const finalImage = normalizedCardData.customImage || normalizedCardData.imagePath;
+  const finalImage = normalizedCardData.customImage || `images/mistyblue.png`;
 
   // 获取当前渐变对应的字体颜色
   const fontColor = gradientFontColors[normalizedCardData.gradientClass] || '#2c3e50';
@@ -159,11 +156,11 @@ export function renderCarouselCard(cardData, index) {
             background-color: ${quoteBoxBg}; 
             color: ${fontColor};
           ">${normalizedCardData.quote}</div>
-          ${finalImage ? `<img src="${finalImage}" alt="Card Image" crossorigin="anonymous" />` : ''}
+          <img src="${finalImage}" />
           <div class="detail-text">${normalizedCardData.detail}</div>
         </div>
         <div class="card-footer">
-            <div class="footer" style="color: ${fontColor}">——作者：${normalizedCardData.creator} · ${formatToLocal(normalizedCardData.created)}</div>
+            <div class="footer" style="color: ${fontColor}">——${normalizedCardData.creator} · ${formatToLocal(normalizedCardData.created)}</div>
         </div>
     </div>`;
 
@@ -196,7 +193,6 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
   const container = document.getElementById(containerId);
   if (!container) return null;
   const {
-    imgPrefix = '',
     addDownloadBtn = false,
     addShareBtn = false,
     cardIdPrefix = '',
@@ -215,9 +211,9 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
     title: cardData.Title || "这一刻，我想说",
     quote: cardData.Quote || "",
     detail: processedDetail || "",
-    imagePath: `${imgPrefix}${cardData.ImagePath}`,
+    imagePath: cardData.ImagePath,
     creator: cardData.Creator || "匿名",
-    font: cardData.Font || "'Noto Sans SC', sans-serif",
+    font: cardData.Font || "'PingFang SC', sans-serif",
     gradientClass: cardData.GradientClass || 'card-gradient-1',
     customImage: cardData.Upload || "",
     created: cardData.Created
@@ -285,7 +281,7 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
   if (makeClickable && cardData.id) {
     cardElement.style.cursor = 'pointer';
     cardElement.addEventListener('click', () => {
-      window.location.href = `card-detail.html?id=${cardData.id}`;
+      window.location.href = `card-detail?id=${cardData.id}`;
     });
 
     cardElement.addEventListener('click', (e) => {
@@ -295,7 +291,7 @@ export function appendCardToContainer(cardData, containerId, options = {}) {
         e.stopPropagation();
         hoverOverlay.classList.add('card-mobile-expand');
       } else if (makeClickable) {
-        window.location.href = `card-detail.html?id=${cardData.id}`;
+        window.location.href = `card-detail?id=${cardData.id}`;
       }
     });
   }
@@ -511,7 +507,7 @@ export async function fetchAndRenderAllCards(containerId, makeClickable = false)
     }
 
     const safeCards = cards
-      .map(card => sanitizeAndValidateCard(card, ['Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']))
+      .map(card => sanitizeAndValidateCard(card, ['Font', 'Title', 'Quote', 'Detail', 'Creator']))
       .filter(result => result.isValid)
       .map(result => result.sanitizedCard);
 
@@ -548,7 +544,6 @@ export async function fetchAndRenderAllCards(containerId, makeClickable = false)
       // Render cards for this date, with validation
       groupedCards[date].forEach(card => {
         appendCardToContainer(card, dateContainer.id, {
-          imgPrefix: '../',
           makeClickable: makeClickable,
           showCommentForm: true
         });
@@ -572,9 +567,10 @@ export function getRandomItem(array) {
 /**
  * Load and render weekly cards to a container, grouped by episode
  * @param {string} containerId - ID of the container element
+ * @param {number} limit - Optional limit for number of episodes to show (default: 0 means show all)
  * @returns {Promise<void>}
  */
-export async function fetchAndRenderWeeklyCards(containerId) {
+export async function fetchAndRenderWeeklyCards(containerId, limit = 0) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -604,19 +600,12 @@ export async function fetchAndRenderWeeklyCards(containerId) {
       const numB = parseInt(b.replace(/\D/g, ''));
       return numB - numA; // Descending order
     });
-
-    // Load available images
-    let availableImages = [];
-    try {
-      const response = await fetch('images.json');
-      availableImages = await response.json();
-    } catch (error) {
-      console.error('加载图片列表失败:', error);
-      availableImages = [{ file: 'biking.png' }]; // Fallback
-    }
+    
+    // 如果设置了limit参数且大于0，则只显示最新的limit个周刊
+    const episodesToShow = limit > 0 ? sortedEpisodes.slice(0, limit) : sortedEpisodes;
 
     // Render cards by episode groups
-    sortedEpisodes.forEach(episode => {
+    episodesToShow.forEach(episode => {
       // Create episode heading
       const episodeHeading = document.createElement('h2');
       episodeHeading.className = 'date-heading';
@@ -637,16 +626,11 @@ export async function fetchAndRenderWeeklyCards(containerId) {
 
       // Render cards for this episode with random styling
       sortedCards.forEach((card, index) => {
-        const randomFont = "'Noto Sans SC', sans-serif";
-        const randomImage = getRandomItem(availableImages);
-
         // Prepare card data with random styling
         const styledCard = {
           ...card,
-          ImagePath: card.ImagePath || `images/${randomImage.file}`,
           GradientClass: getRandomGradientClass()
         };
-
         // Append card to container with download button and unique ID
         appendCardToContainer(styledCard, episodeContainer.id, {
           addDownloadBtn: true,
@@ -654,6 +638,15 @@ export async function fetchAndRenderWeeklyCards(containerId) {
         });
       });
     });
+    
+    // 如果显示的周刊数量少于总数，添加一个"查看更多"的提示
+    if (limit > 0 && sortedEpisodes.length > limit) {
+      const moreInfoDiv = document.createElement('div');
+      moreInfoDiv.className = 'more-info';
+      moreInfoDiv.innerHTML = `<p>当前显示最新的${limit}集周刊。要查看所有周刊，请在下拉菜单中选择"所有会议"。</p>`;
+      moreInfoDiv.style.cssText = 'text-align: center; margin: 20px 0; color: #666; font-size: 16px;';
+      container.appendChild(moreInfoDiv);
+    }
   } catch (error) {
     console.error('加载每周会议卡片失败:', error);
     container.innerHTML = '<div class="empty-message">加载失败，请稍后再试</div>';
@@ -752,11 +745,11 @@ export async function uploadCard(cardData) {
   try {
     // Get current user information
     let username = '';
-    const user = localStorage.getItem('user');
+    const user = localStorage.getItem('userInfo');
     if (user) {
       try {
         const userData = JSON.parse(user);
-        username = userData.name || '';
+        username = userData.username || userData.name || '';
       } catch (e) {
         console.error('解析用户信息失败:', e);
       }
@@ -800,22 +793,21 @@ export async function uploadCard(cardData) {
       alert("🎉 提交成功!");
       return result;
     } else if (response.status === 409) {
-      console.log("❗️这张卡片已存在，跳过重复提交 ✅");
+      console.log("这张卡片已存在，跳过重复提交");
       return result;
     } else {
-      alert('提交失败，请检查控制台错误信息 ❌');
+      alert('提交失败，请检查控制台错误信息');
       console.error('提交失败:', result);
       return null;
     }
   } catch (error) {
-    // Restore button state
     if (submitBtn) {
       submitBtn.innerHTML = originalText;
       submitBtn.disabled = false;
     }
 
     console.error('提交过程中出错:', error);
-    alert('提交失败，请检查网络连接 ❌');
+    alert('提交失败，请检查网络连接');
     return null;
   }
 }
@@ -841,7 +833,7 @@ export async function fetchCards() {
     const data = await response.json();
     return data.records;
   } catch (error) {
-    console.error("❌ 读取失败:", error);
+    console.error("读取失败:", error);
     return [];
   }
 }
@@ -867,7 +859,7 @@ export async function fetchWeeklyCards() {
     const data = await response.json();
     return data.records;
   } catch (error) {
-    console.error("❌ 读取每周会议记录失败:", error);
+    console.error("读取每周会议记录失败:", error);
     return [];
   }
 }
@@ -893,14 +885,14 @@ export async function uploadImageToGitHub(base64Image) {
     const data = await response.json();
 
     if (response.ok && data.success) {
-      console.log('✅ 图片上传成功:', data.url);
+      console.log('图片上传成功:', data.url);
       return data.url;
     } else {
-      console.error('❌ 图片上传失败:', data.error || '未知错误');
+      console.error('图片上传失败:', data.error || '未知错误');
       return null;
     }
   } catch (error) {
-    console.error('❌ 图片上传过程中出错:', error);
+    console.error('图片上传过程中出错:', error);
     return null;
   }
 }
@@ -1117,44 +1109,6 @@ export function downloadCover(elementId = ".cover", filenamePrefix = "cover") {
 }
 
 /**
- * Load images and populate a select element
- * @param {Function} onLoadedFunc - Callback function
- * @param {string} selectId - ID of the select element
- * @param {string} jsonPath - Path to the JSON file with image data
- */
-export function loadImages(onLoadedFunc, selectId = "image-select", jsonPath = "images.json") {
-  fetch(jsonPath)
-    .then(res => res.json())
-    .then(imageGroups => {
-      const select = document.getElementById(selectId);
-      if (!select) return;
-
-      // Clear existing options
-      select.innerHTML = '';
-
-      // Add all image options (have't used the tags yet)
-      Object.values(imageGroups).flat().forEach(img => {
-        const option = new Option(img.desc, `images/${img.file}`);
-        select.add(option);
-      });
-
-      // Randomly select one from the list
-      select.value = getRandomItem(select.options).value;
-
-      if (typeof onLoadedFunc === "function") onLoadedFunc();
-    })
-    .catch(e => {
-      console.error("加载背景图失败:", e);
-      const select = document.getElementById(selectId);
-      if (select) {
-        select.innerHTML = `
-          <option value="images/biking.png">默认背景</option>
-        `;
-      }
-    });
-}
-
-/**
  * Handle image upload
  * @param {Event} event - Upload event
  * @param {Function} callBackFunc - Callback function with the image data
@@ -1328,7 +1282,7 @@ function hasDangerousContent(raw) {
  * @param {string[]} fields
  * @returns {object} { sanitizedCard, isValid }
  */
-export function sanitizeAndValidateCard(card, fields = ['Font', 'Title', 'Quote', 'Detail', 'ImagePath', 'Creator']) {
+export function sanitizeAndValidateCard(card, fields = ['Font', 'Title', 'Quote', 'Detail', 'Creator']) {
   if (typeof card !== 'object' || card === null) {
     console.warn('sanitizeCard received non-object:', card);
     return { sanitizedCard: {}, isValid: false };
