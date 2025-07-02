@@ -606,7 +606,7 @@ label[for="detail"]::after {
 }
 
 .site-logo {
-  width: 40px;
+  width: auto;
   height: 40px;
   margin-right: 10px;
   transition: transform 0.3s ease;

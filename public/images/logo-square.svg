@@ -16,8 +16,8 @@
   <path d="M14,14 L32,32" stroke="#FFFFFF" stroke-width="0.5" stroke-opacity="0.4" />
   <path d="M36,18 L18,34" stroke="#FFFFFF" stroke-width="0.5" stroke-opacity="0.4" />
   
-  <!-- 文字 - 启发星球 -->
-  <text x="24" y="27" font-family="'Noto Sans SC', sans-serif" font-size="10" font-weight="bold" text-anchor="middle" fill="white">启发</text>
+  <!-- 文字 - 启 -->
+  <text x="24" y="28" font-family="'Noto Sans SC', sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white">启</text>
   
   <!-- 渐变定义 -->
   <defs>
