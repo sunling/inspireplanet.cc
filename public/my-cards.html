@@ -144,7 +144,7 @@
 
         // 渲染分组后的卡片
         Object.keys(groupedCards).sort().reverse().forEach(date => {
-          const dateCards = groupedCards[date];
+          const dateCards = groupedCards[date].sort((a, b) => new Date(b.Created) - new Date(a.Created));
           
           // 创建日期标题
           const dateHeading = document.createElement('h2');
@@ -203,6 +203,10 @@
           grouped[date] = [];
         }
         grouped[date].push(card);
+      });
+      // 对每个日期内的卡片按时间倒序排列
+      Object.keys(grouped).forEach(date => {
+        grouped[date].sort((a, b) => new Date(b.Created) - new Date(a.Created));
       });
       return grouped;
     }

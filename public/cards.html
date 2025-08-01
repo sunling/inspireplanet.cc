@@ -60,8 +60,10 @@
         // Group cards by date
         const groupedCards = groupCardsByDate(validCards);
 
-        // Render grouped cards
-        Object.keys(groupedCards).sort().reverse().forEach(date => {
+        // Render grouped cards - sort by date (newest first)
+        Object.keys(groupedCards).sort((a, b) => {
+          return new Date(b) - new Date(a); // 按日期降序排序（新的在前）
+        }).forEach(date => {
           const dateCards = groupedCards[date];
           
           // Create date heading

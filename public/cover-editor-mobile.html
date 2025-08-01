@@ -2,9 +2,9 @@
 <html lang="zh-CN">
 
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>封面图编辑器 - 移动适配</title>
+  <title>竖版封面图编辑器</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script type="module" src="scripts/cardUtils.js"></script>
   <link
@@ -16,410 +16,736 @@
   <link rel="stylesheet" href="/styles/utility.css">
 
   <style>
-    .container {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    @media (min-width: 768px) {
-      .container {
-        flex-direction: row;
-        align-items: flex-start;
-        justify-content: space-between;
-      }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
     body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      padding: 16px;
-      font-family: var(--font-sans);
-      background: var(--bg-light);
-      border-radius: 3px;
     }
 
-    .form {
-      width: 32%;
+    /* Header */
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 1rem 2rem;
       display: flex;
-      flex-direction: column;
-      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    .form-row {
-      display: flex;
-      gap: 15px;
+    .header h1 {
+      color: #2c3e50;
+      font-size: 1.5rem;
+      font-weight: 600;
     }
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      flex: 1;
+    .header nav a {
+      color: #7f8c8d;
+      text-decoration: none;
+      margin-left: 2rem;
+      transition: color 0.3s;
     }
 
-    .form label {
-      font-weight: bold;
-      color: var(--primary);
-      font-size: 14px;
-    }
-
-    .form input,
-    .form select {
-      width: 100%;
-      padding: 8px 12px;
-      font-size: 16px;
-      border: 1px solid rgba(255, 127, 80, 0.2);
-      border-radius: var(--radius-sm);
-      background: white;
-      transition: border-color 0.3s;
-    }
-
-    .form input:focus,
-    .form select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.1);
-    }
-
-    .buttons {
-      display: flex;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
-    button {
-      padding: 8px 16px;
-      background: var(--gradient-accent);
-      color: var(--text);
-      border: none;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: var(--shadow);
-    }
-    
-    button:hover {
-      background: var(--gradient-primary);
-      color: white;
+    .header nav a:hover {
+      color: #3498db;
       transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
     }
 
-    #preview {
+    .header nav a {
+      transition: all 0.3s ease;
+    }
+
+    /* Main Content */
+    .main-container {
+      flex: 1;
       display: flex;
-      width: 64%;
-      justify-content: flex-start;
-    }
-
-    #preview .cover {
-      position: relative;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
       width: 100%;
-      max-width: 360px;
-      aspect-ratio: 3 / 4;
-      /* mobile friendly size */
-      overflow: hidden;
-      background: #323449;
-      border-radius: var(--radius-sm);
     }
 
-    #preview .bg {
+    /* Form Section */
+     .form-section {
+       width: 380px;
+       background: rgba(255, 255, 255, 0.95);
+       backdrop-filter: blur(10px);
+       border-radius: 16px;
+       padding: 1.5rem;
+       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+       border: 1px solid rgba(255, 255, 255, 0.2);
+       height: fit-content;
+       position: sticky;
+       top: 1.5rem;
+       max-height: calc(100vh - 3rem);
+       overflow-y: auto;
+     }
+
+     .form-group {
+       margin-bottom: 1rem;
+     }
+
+     .form-group.compact {
+       margin-bottom: 0.75rem;
+     }
+
+     /* 行内布局 */
+     .form-row {
+       display: flex;
+       gap: 12px;
+       margin-bottom: 12px;
+     }
+     .form-row .form-group {
+       flex: 1;
+       margin-bottom: 0;
+     }
+     .form-row .form-group label {
+       font-size: 13px;
+       margin-bottom: 4px;
+     }
+     .form-row .form-group input,
+     .form-row .form-group select {
+       padding: 6px 8px;
+       font-size: 13px;
+     }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #e1e8ed;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .btn-secondary:hover {
+      box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
+    }
+
+    .file-upload-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .file-upload-wrapper input[type=file] {
+      position: absolute;
+      left: -9999px;
+    }
+
+    .upload-status {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: #7f8c8d;
+    }
+
+    /* Preview Section */
+    .preview-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .cover-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .cover {
+      position: relative;
+      width: 360px;
+      height: 480px;
+      overflow: hidden;
+      background: #2c3e50;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .cover-bg {
       position: absolute;
       width: 100%;
       height: 100%;
       background-size: cover;
       background-position: center;
-      z-index: 0;
+      background-repeat: no-repeat;
     }
 
-    #preview .overlay {
+    .cover-overlay {
       position: absolute;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.4);
       z-index: 1;
     }
 
-    #preview .content {
+    .cover-content {
       position: absolute;
       z-index: 2;
       color: white;
       width: 90%;
-      left: 5%;
       top: 50%;
-      transform: translateY(-50%);
+      left: 50%;
+      transform: translate(-50%, -50%);
       text-align: center;
     }
 
-    .main-title {
-      font-size: 24px;
+    .cover-content.layout-top {
+      top: 80px;
+      transform: translate(-50%, 0);
+    }
+
+    .cover-content.layout-bottom {
+      top: auto;
+      bottom: 80px;
+      transform: translate(-50%, 0);
+    }
+
+    .cover-title {
+      font-size: 2.2rem;
       font-weight: bold;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+      line-height: 1.2;
+      margin-bottom: 1rem;
     }
 
-    .sub-title {
-      font-size: 16px;
-      margin-top: 8px;
-      color: #eee0c5;
+    .cover-keywords {
+      color: #f1c40f;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7);
+      line-height: 1.3;
     }
 
-    .keywords {
-      color: #FFDE59;
-      font-size: 14px;
-      margin-top: 16px;
-      font-weight: 500;
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .action-buttons .btn {
+      width: auto;
+      min-width: 120px;
+    }
+
+    /* Search Results */
+     .search-results {
+       margin-top: 0.75rem;
+       max-height: 180px;
+       overflow-y: auto;
+       border: 1px solid #e1e8ed;
+       border-radius: 8px;
+       padding: 0.75rem;
+       background: #f8f9fa;
+     }
+
+     .search-results.hidden {
+       display: none;
+     }
+
+     .search-results h4 {
+       margin-bottom: 0.75rem;
+       color: #2c3e50;
+       font-size: 0.85rem;
+       font-weight: 600;
+     }
+
+     .image-grid {
+       display: grid;
+       grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+       gap: 0.4rem;
+     }
+
+    .image-item {
+       position: relative;
+       cursor: pointer;
+       border-radius: 4px;
+       overflow: hidden;
+       aspect-ratio: 3/4;
+       border: 2px solid transparent;
+       transition: all 0.2s ease;
+     }
+
+     .image-item:hover {
+       border-color: #667eea;
+       transform: scale(1.05);
+     }
+
+     .image-item.selected {
+       border-color: #e74c3c;
+       box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+     }
+
+     .image-item img {
+       width: 100%;
+       height: 100%;
+       object-fit: cover;
+     }
+
+    /* Footer */
+    .footer {
+      background: white;
+      border-top: 1px solid #e1e8ed;
+      padding: 1.5rem 2rem;
+      text-align: center;
+      color: #7f8c8d;
+      font-size: 0.9rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .cover {
+        width: 300px;
+        height: 400px;
+      }
+
+      .cover-title {
+        font-size: 1.8rem;
+      }
+
+      .cover-keywords {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+      }
+
+      .form-section {
+        width: 100%;
+        position: static;
+        max-height: none;
+        margin-bottom: 1rem;
+      }
+
+      .cover {
+        width: 280px;
+        height: 373px;
+      }
+
+      .cover-title {
+        font-size: 1.8rem;
+      }
+
+      .cover-keywords {
+        font-size: 1rem;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .action-buttons .btn {
+        width: 100%;
+      }
+
+      .header {
+        padding: 0.75rem 1rem;
+      }
+
+      .header h1 {
+        font-size: 1.25rem;
+      }
+
+      .header nav a {
+        margin-left: 1rem;
+        font-size: 0.9rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .cover {
+        width: 240px;
+        height: 320px;
+      }
+
+      .cover-title {
+        font-size: 1.5rem;
+      }
+
+      .cover-keywords {
+        font-size: 0.9rem;
+      }
+
+      .form-section,
+      .cover-container {
+        padding: 1rem;
+      }
+    }
+
+    .loading {
+      color: #667eea;
+      font-style: italic;
+    }
+
+    .error {
+      color: #e74c3c;
+      font-size: 0.8rem;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <div class="form">
-      <label>选择字体：
-        <select id="choose-font" onchange="renderCover()">
-          <option value="'Noto Sans SC', sans-serif">思源黑体</option>
-          <option value="'Smiley Sans', sans-serif">得意黑</option>
-          <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
-          <option value="'LXGW WenKai', serif">霞鹜文楷</option>
-          <option value="'Alibaba PuHuiTi', sans-serif">阿里汉仪智能黑体</option>
-          <option value="'Noto Serif SC', serif">思源宋体</option>
-          <option value="'PingFang SC', sans-serif">苹方</option>
-          <option value="'KaiTi', serif">楷体</option>
-        </select>
-      </label>
+  <!-- Header -->
+  <header class="header">
+    <h1>📱 竖版封面编辑器</h1>
+    <nav>
+      <a href="/index.html">首页</a>
+      <a href="/cards.html">卡片库</a>
+      <a href="/cover-editor.html">横版封面</a>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <div class="main-container">
+    <!-- Form Section -->
+    <div class="form-section">
+      <div class="form-group">
+        <label for="cover-title">封面标题</label>
+        <textarea id="cover-title" placeholder="输入封面标题..." oninput="updatePreview()">启发星球</textarea>
+        <small style="color: #7f8c8d;">按回车换行</small>
+      </div>
+
+      <div class="form-group">
+        <label for="cover-keywords">关键词</label>
+        <input type="text" id="cover-keywords" placeholder="用空格分隔关键词" oninput="updatePreview()" value="灵感 创意 分享">
+      </div>
+
       <div class="form-row">
         <div class="form-group">
-          <label for="image-select">选择背景图</label>
-          <select id="image-select" onchange="onSelectImage()"></select>
+          <label for="font-select">字体选择</label>
+          <select id="font-select" onchange="updatePreview()">
+            <option value="'Noto Sans SC', sans-serif">思源黑体</option>
+            <option value="'Smiley Sans', sans-serif">得意黑</option>
+            <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
+            <option value="'LXGW WenKai', serif">霞鹜文楷</option>
+            <option value="'Alibaba PuHuiTi', sans-serif">阿里汉仪智能黑体</option>
+            <option value="'Noto Serif SC', serif">思源宋体</option>
+            <option value="'PingFang SC', sans-serif">苹方</option>
+            <option value="'KaiTi', serif">楷体</option>
+          </select>
         </div>
-
         <div class="form-group">
-          <label for="bgUpload">自定义背景图</label>
-          <div class="file-upload-wrapper">
-            <button type="button" id="uploadBtn" class="upload-btn">📷 上传图片</button><br>
-            <small id="fileStatus" class="text-muted text-sm ml-2">No file chosen</small>
-    <input type="file" id="bgUpload" accept="image/*" class="hidden">
+          <label for="layout-select">布局风格</label>
+          <select id="layout-select" onchange="updatePreview()">
+            <option value="center">居中排版</option>
+            <option value="top">顶部排版</option>
+            <option value="bottom">底部排版</option>
+          </select>
+        </div>
+      </div>
+
+       <div class="form-row">
+         <div class="form-group">
+           <label for="bg-select">背景图片</label>
+           <select id="bg-select" onchange="updatePreview()">
+             <option value="images/mistyblue.png">默认背景</option>
+           </select>
+         </div>
+         <div class="form-group">
+           <label>自定义背景图</label>
+           <div class="file-upload-wrapper">
+             <button type="button" class="btn btn-secondary" onclick="document.getElementById('bg-upload').click()">
+               📁 上传图片
+             </button>
+             <input type="file" id="bg-upload" accept="image/*" onchange="handleFileUpload(event)">
+           </div>
+           <div id="upload-status" class="upload-status"></div>
+         </div>
+       </div>
+
+       <div class="form-group compact">
+         <button type="button" class="btn" onclick="searchImages()">🔍 搜索相关图片</button>
+         <div id="search-status" class="upload-status"></div>
+       </div>
+
+      <!-- Search Results -->
+      <div id="search-results" class="search-results hidden">
+        <h4>搜索结果：<span id="search-query"></span></h4>
+        <div id="image-grid" class="image-grid"></div>
+      </div>
+    </div>
+
+    <!-- Preview Section -->
+    <div class="preview-section">
+      <div class="cover-container">
+        <div class="cover" id="cover-preview">
+          <div class="cover-bg" id="cover-bg"></div>
+          <div class="cover-overlay"></div>
+          <div class="cover-content" id="cover-content">
+            <div class="cover-title" id="preview-title">启发星球</div>
+            <div class="cover-keywords" id="preview-keywords">灵感 / 创意 / 分享</div>
           </div>
         </div>
-      </div>
-      
-      <label>图片搜索:
-        <div>
-          <button type="button" id="searchImagesBtn" class="upload-btn w-full">
-            根据标题和关键词搜索封面图🔍
-          </button>
-          <div id="searchImagesStatus" class="mt-1 text-sm text-secondary"></div>
-        </div>
-      </label>
-      
-      <!-- 搜索结果图片展示区 -->
-      <div id="searchImagesResults" class="hidden mt-2">
-      <h5 class="mb-2 text-base">搜索结果：<span id="searchQuery"></span></h5>
-      <div id="imageResults" class="flex flex-wrap gap-2 max-h-75 overflow-y-auto"></div>
-      </div>
-      <label for="main-title">标题:<small class="text-muted text-xs">按回车↩︎换行</small></label>
-    <textarea id="main-title" oninput="renderCover()" class="min-h-20 resize-vertical"></textarea>
-      <label>关键词(空格分隔):<input id="tags" placeholder="tag1 tag2 tag3..." oninput="renderCover()"></label>
 
-      <label>下载到本地:
-        <button onclick="downloadCoverImage()">下载</button>
-      </label>
-    </div>
-
-    <div id="preview">
-      <div class="cover">
-        <div class="bg" id="bg"></div>
-        <div class="overlay"></div>
-        <div class="content" id="content">
-          <div class="main-title" id="title">标题</div>
-          <div class="keywords" id="keywords">关键词1 / 关键词2 / 关键词3</div>
+        <div class="action-buttons">
+          <button class="btn" onclick="downloadCover()">下载</button>
+          <button class="btn btn-secondary" onclick="resetForm()">重置</button>
         </div>
       </div>
     </div>
-
   </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>&copy; 2025 启发星球 - 记录每一次被点燃的时刻</p>
+  </footer>
+
   <script type="module">
     // Import functions from cardUtils.js
     import {
       downloadCover,
-      loadImages,
       onUploadBg,
       bindCustomFileUpload
     } from './scripts/cardUtils.js';
 
-    window.customBgImage = "";
+    let customBgImage = '';
+
     // Initialize the page
     document.addEventListener('DOMContentLoaded', function () {
-      // Load images for the select dropdown
-      loadImages(() => {
-        // Initial card render after images are loaded
-        renderCover();
-      });
-
-      // Setup file upload
-      setupFileUpload();
-      
-      // Add event listener for the search images button
-      document.getElementById('searchImagesBtn').addEventListener('click', searchImagesFromTitleAndTags);
+      updatePreview();
     });
 
-    window.onSelectImage = function () {
-      customBgImage = "";
-      document.getElementById("fileStatus").innerHTML = "";
-      renderCover();
-    }
+    // Update preview function
+    window.updatePreview = function () {
+      const title = document.getElementById('cover-title').value || '启发星球';
+      const keywords = document.getElementById('cover-keywords').value || '灵感 创意 分享';
+      const font = document.getElementById('font-select').value;
+      const layout = document.getElementById('layout-select').value;
+      const bgSelect = document.getElementById('bg-select').value;
 
-    window.renderCover = function (uploadImg = "") {
-      if (uploadImg) {
-        customBgImage = uploadImg;
+      // Update title
+      const formattedTitle = title.replace(/\n/g, '<br>');
+      document.getElementById('preview-title').innerHTML = formattedTitle;
+
+      // Update keywords
+      const formattedKeywords = keywords.split(' ').filter(k => k.trim()).join(' / ');
+      document.getElementById('preview-keywords').textContent = formattedKeywords;
+
+      // Update font
+      const content = document.getElementById('cover-content');
+      content.style.fontFamily = font;
+
+      // Update layout
+      content.classList.remove('layout-top', 'layout-bottom');
+      if (layout === 'top') {
+        content.classList.add('layout-top');
+      } else if (layout === 'bottom') {
+        content.classList.add('layout-bottom');
       }
-      const main = document.getElementById("main-title").value || "主标题";
-      const tags = document.getElementById("tags").value || 'tag1 tag2 tag3';
-      const selectedBg = document.getElementById("image-select").value;
-      const selectedFont = document.getElementById("choose-font").value;
-      const formattedTitle = typeof main === 'string' ? main.replace(/\n/g, '<br>') : main;
-      document.getElementById("title").innerHTML = formattedTitle;
-      document.getElementById("keywords").innerText = tags.split(" ").join(" / ");
-      const bgImage = customBgImage || selectedBg;
-      document.getElementById("bg").style.backgroundImage = `url('${bgImage}')`;
-      document.getElementById("content").style.fontFamily = selectedFont;
-    }
 
-    // Function to download the current card
-    window.downloadCoverImage = function () {
-      downloadCover();
+      // Update background
+      const finalBg = customBgImage || bgSelect;
+      document.getElementById('cover-bg').style.backgroundImage = `url('${finalBg}')`;
     };
 
-    // Setup file upload functionality
-    function setupFileUpload() {
-      const bgUpload = document.getElementById('bgUpload');
-      if (bgUpload) {
-        bgUpload.addEventListener('change', (event) => {
-          onUploadBg(event, renderCover);
-        });
+    // Handle file upload
+    window.handleFileUpload = function (event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          customBgImage = e.target.result;
+          updatePreview();
+          document.getElementById('upload-status').textContent = `已上传：${file.name}`;
+        };
+        reader.readAsDataURL(file);
       }
+    };
 
-      // Bind custom upload button
-      bindCustomFileUpload({
-        inputId: 'bgUpload',
-        buttonId: 'uploadBtn',
-        statusId: 'fileStatus',
-        onLoad: renderCover
-      });
-    }
-    
-    // Function to search for images based on title and tags
-    async function searchImagesFromTitleAndTags() {
-      const titleText = document.getElementById('main-title').value;
-      const tagsText = document.getElementById('tags').value;
-      
-      if (!titleText && !tagsText) {
+    // Search images function
+    window.searchImages = async function () {
+      const title = document.getElementById('cover-title').value;
+      const keywords = document.getElementById('cover-keywords').value;
+      const searchText = `${title} ${keywords}`.trim();
+
+      if (!searchText) {
         alert('请先输入标题或关键词');
         return;
       }
-      
-      // Combine title and tags for search
-      const searchText = `${titleText} ${tagsText}`;
-      
-      const searchBtn = document.getElementById('searchImagesBtn');
-      const statusDiv = document.getElementById('searchImagesStatus');
-      const resultsDiv = document.getElementById('searchImagesResults');
-      const querySpan = document.getElementById('searchQuery');
-      const imageResultsDiv = document.getElementById('imageResults');
-      
+
+      const statusDiv = document.getElementById('search-status');
+      const resultsDiv = document.getElementById('search-results');
+      const querySpan = document.getElementById('search-query');
+      const imageGrid = document.getElementById('image-grid');
+
       try {
-        // Update UI to show loading state
-        searchBtn.disabled = true;
-        statusDiv.textContent = '正在搜索相关图片，请稍候...';
-        resultsDiv.style.display = 'none';
-        
-        // Call the Netlify function
+        statusDiv.textContent = '正在搜索相关图片...';
+        statusDiv.className = 'upload-status loading';
+        resultsDiv.classList.add('hidden');
+
         const response = await fetch('/.netlify/functions/searchImage', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             text: searchText,
-            orientation: 'portrait' // 移动版封面需要竖版图片
+            orientation: 'portrait'
           }),
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok) {
-          // Display the search query
           querySpan.textContent = data.query;
-          
-          // Clear previous results
-          imageResultsDiv.innerHTML = '';
-          
-          // Display the images
+          imageGrid.innerHTML = '';
+
           if (data.images && data.images.length > 0) {
             data.images.forEach(image => {
               const imgContainer = document.createElement('div');
-              imgContainer.style.width = 'calc(33.33% - 10px)';
-              imgContainer.style.position = 'relative';
-              imgContainer.style.cursor = 'pointer';
-              imgContainer.style.borderRadius = '8px';
-              imgContainer.style.overflow = 'hidden';
-              imgContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-              
+              imgContainer.className = 'image-item';
+              imgContainer.title = image.description;
+
               const img = document.createElement('img');
               img.src = image.thumb;
               img.alt = image.title;
-              img.style.width = '100%';
-              img.style.height = '100px';
-              img.style.objectFit = 'cover';
-              
-              const overlay = document.createElement('div');
-              overlay.style.position = 'absolute';
-              overlay.style.bottom = '0';
-              overlay.style.left = '0';
-              overlay.style.right = '0';
-              overlay.style.backgroundColor = 'rgba(0,0,0,0.6)';
-              overlay.style.color = 'white';
-              overlay.style.padding = '4px';
-              overlay.style.fontSize = '10px';
-              overlay.textContent = image.description;
-              
+
               imgContainer.appendChild(img);
-              imgContainer.appendChild(overlay);
-              
-              // Add click event to select this image
+
               imgContainer.addEventListener('click', () => {
-                // Update the custom image
-                customBgImage = image.url;
-                // Update the card preview
-                renderCover();
-                // Add a highlight to the selected image
-                document.querySelectorAll('#imageResults > div').forEach(div => {
-                  div.style.border = 'none';
+                // Remove previous selection
+                document.querySelectorAll('.image-item').forEach(item => {
+                  item.classList.remove('selected');
                 });
-                imgContainer.style.border = '3px solid #323449';
+                // Add selection to current item
+                imgContainer.classList.add('selected');
+                // Update background
+                customBgImage = image.url;
+                updatePreview();
               });
-              
-              imageResultsDiv.appendChild(imgContainer);
+
+              imageGrid.appendChild(imgContainer);
             });
-            
-            // Show the results
-            resultsDiv.style.display = 'block';
-            statusDiv.textContent = ''; // Clear status message
+
+            resultsDiv.classList.remove('hidden');
+            statusDiv.textContent = '';
           } else {
-            statusDiv.textContent = '未找到相关图片，请尝试修改标题或关键词。';
+            statusDiv.textContent = '未找到相关图片，请尝试修改关键词';
+            statusDiv.className = 'upload-status error';
           }
         } else {
-          throw new Error(data.error || '搜索图片失败');
+          throw new Error(data.error || '搜索失败');
         }
       } catch (error) {
         console.error('Error searching images:', error);
         statusDiv.textContent = `搜索失败: ${error.message}`;
-      } finally {
-        searchBtn.disabled = false;
+        statusDiv.className = 'upload-status error';
       }
-    }
+    };
+
+    // Download cover function
+    window.downloadCover = function () {
+      const coverElement = document.getElementById('cover-preview');
+      html2canvas(coverElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `竖版封面_${new Date().getTime()}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+      }).catch(error => {
+        console.error('下载失败:', error);
+        alert('下载失败，请重试');
+      });
+    };
+
+    // Reset form function
+    window.resetForm = function () {
+      document.getElementById('cover-title').value = '启发星球';
+      document.getElementById('cover-keywords').value = '灵感 创意 分享';
+      document.getElementById('font-select').value = "'Noto Sans SC', sans-serif";
+      document.getElementById('layout-select').value = 'center';
+      document.getElementById('bg-select').value = 'images/mistyblue.png';
+      document.getElementById('bg-upload').value = '';
+      document.getElementById('upload-status').textContent = '';
+      document.getElementById('search-status').textContent = '';
+      document.getElementById('search-results').classList.add('hidden');
+      customBgImage = '';
+      updatePreview();
+    };
   </script>
-<script src="/scripts/layout.js"></script>
 </body>
 
 </html>
