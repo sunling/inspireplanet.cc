@@ -1,1172 +1,911 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>创造你的启发时刻卡片</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://unpkg.com/dompurify@3.0.6/dist/purify.min.js"></script>
-    <!-- Add Markdown parser -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- Import the new combined utility file as a module -->
-    <script type="module" src="scripts/cardUtils.js"></script>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter&family=Playfair+Display&family=Montserrat&family=Lato&family=Dancing+Script&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&family=Noto+Serif+SC&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="styles/card-common.css" />
-    <link rel="stylesheet" href="styles/card-gradients.css" />
-    <link rel="stylesheet" href="styles/main.css" />
-    <link rel="stylesheet" href="styles/page-specific.css" />
-    <link rel="stylesheet" href="styles/utility.css" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="启发星球 - 点亮彼此的能量场，分享智慧、记录感悟、创造美好的社区平台">
+    <meta name="keywords" content="启发星球,智慧卡片,感悟分享,社区,创作">
+    <title>启发星球 - 点亮彼此的能量场</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/utility.css">
+    <link rel="stylesheet" href="/styles/card-common.css">
+    <link rel="stylesheet" href="/styles/card-gradients.css">
     <style>
-      * {
-        -webkit-font-smoothing: antialiased;
-        box-sizing: border-box;
-      }
-
-      body {
-        display: flex;
-        flex-direction: column;
-        margin: 0;
-        padding: 0;
-        font-family: "PingFang SC", -apple-system, BlinkMacSystemFont,
-          "Helvetica Neue", sans-serif;
-        background: linear-gradient(135deg, #f9f9f9, #e0eafc);
-        min-height: 100vh;
-        color: #333;
-      }
-
-      .main-content {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 30px;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-        padding: 30px;
-        margin-bottom: 40px;
-        position: relative;
-        overflow: hidden;
-        align-items: flex-start;
-      }
-
-      /* Preview */
-      #preview {
-        width: 460px;
-        display: flex;
-        justify-content: center;
-        /* Center card horizontally */
-        align-items: flex-start;
-        /* Center card vertically */
-        padding: 24px;
-        border-radius: 16px;
-        background: transparent;
-        transition: all 0.3s ease;
-      }
-
-      /* Carousel */
-      .latest-cards-section {
-        margin-top: 40px;
-        width: 100%;
-      }
-
-      .carousel-container {
-        width: 100%;
-        max-width: 1200px;
-        /* margin: 0 auto; */
-        /* padding: 20px 0; */
-      }
-
-      .swiper {
-        width: 100%;
-        padding-bottom: 40px;
-      }
-
-      .swiper-slide {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        /* padding: 10px; */
-      }
-
-      .carousel-card-wrapper {
-        width: 100%;
-        max-width: 420px;
-        /* min-width: 300px; */
-        box-sizing: border-box;
-      }
-
-      .swiper-pagination {
-        bottom: 0;
-      }
-
-      .swiper-button-next,
-      .swiper-button-prev {
-        color: #4a6fa5;
-      }
-
-      .view-all-button-container {
-        text-align: center;
-        margin-top: 20px;
-      }
-
-      .view-all-button {
-        display: inline-block;
-        background-color: #ff7f50;
-        /* 橙色，和提交按钮统一 */
-        color: #fff;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-size: 16px;
-        text-decoration: none;
-        transition: transform 0.2s, background-color 0.2s;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-      }
-
-      .view-all-button:hover {
-        background-color: #ff9966;
-        /* hover时更亮一点 */
-        transform: scale(1.05);
-      }
-
-      .header-btn:hover {
-        background: rgba(255, 255, 255, 1);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        color: #444;
-      }
-
-      /* Footer */
-      .page-footer {
-        text-align: center;
-        padding: 20px;
-        font-size: 14px;
-        margin-top: auto;
-        color: #666;
-      }
-
-      /* Animations */
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
+        /* Floating Action Buttons */
+        .floating-actions {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
-
-        to {
-          opacity: 1;
+        
+        .fab-main {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
         }
-      }
-
-      @keyframes fadeInDown {
-        from {
-          opacity: 0;
-          transform: translateY(-20px);
+        
+        .fab-main:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(255, 127, 80, 0.4);
         }
-
-        to {
-          opacity: 1;
-          transform: translateY(0);
+        
+        .fab-menu {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 8px;
         }
-      }
-
-      @keyframes shimmer {
-        0% {
-          background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        
+        .fab-menu.active {
+            display: flex;
+            animation: fadeInUp 0.3s ease;
         }
-
-        100% {
-          background-position: 20px 20px, 20px 30px, 30px 10px, 10px 20px;
+        
+        .fab-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideInRight 0.3s ease forwards;
         }
-      }
-
-      /* Responsive Styles */
-      @media (max-width: 768px) {
-        .main-content {
-          flex-direction: column;
-          padding: 20px;
+        
+        .fab-item:nth-child(1) { animation-delay: 0.1s; }
+        .fab-item:nth-child(2) { animation-delay: 0.2s; }
+        .fab-item:nth-child(3) { animation-delay: 0.3s; }
+        .fab-item:nth-child(4) { animation-delay: 0.4s; }
+        
+        .fab-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-md);
         }
-
-        .form,
-        #preview {
-          width: 100%;
+        
+        .fab-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
         }
-
-        .carousel-card-wrapper {
-          max-width: 90%;
+        
+        .fab-label {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            backdrop-filter: blur(10px);
         }
-
-        .auth-section {
-          position: static;
-          margin-bottom: 10px;
-          right: auto;
-          display: flex;
-          justify-content: center;
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-
-        .login-buttons {
-          justify-content: center;
+        
+        @keyframes slideInRight {
+             to {
+                 opacity: 1;
+                 transform: translateY(0);
+             }
+         }
+         
+         /* View All Button */
+         .view-all-btn {
+             display: inline-flex;
+             align-items: center;
+             gap: 8px;
+             padding: 12px 24px;
+             background: var(--gradient-primary);
+             color: white;
+             text-decoration: none;
+             border-radius: 25px;
+             font-weight: 600;
+             font-size: 1rem;
+             transition: all 0.3s ease;
+             box-shadow: var(--shadow-md);
+             border: 2px solid transparent;
+         }
+         
+         .view-all-btn:hover {
+             background: var(--primary-dark);
+             transform: translateY(-2px);
+             box-shadow: var(--shadow-lg);
+         }
+         
+         .view-all-btn .arrow {
+             font-size: 1.2rem;
+             transition: transform 0.3s ease;
+         }
+         
+         .view-all-btn:hover .arrow {
+             transform: translateX(4px);
+         }
+        
+        /* Cards Carousel Section */
+        .carousel-section {
+            padding: 80px 0;
+            background: var(--gradient-bg);
         }
-
-        .user-avatar-container {
-          justify-content: center;
+        
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            color: #333;
+            position: relative;
         }
-
-        .gradient-selector {
-          grid-template-columns: repeat(7, 1fr);
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-sm);
         }
-
-        .gradient-option {
-          width: 35px;
-          height: 35px;
+        
+        .carousel-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
         }
-      }
+        
+        .carousel-wrapper {
+            overflow: hidden;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .carousel-track {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+        
+        .carousel-card {
+            min-width: 100%;
+            padding: 40px;
+            background: white;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+        
+        .card-preview {
+            flex: 0 0 300px;
+            height: 400px;
+            border-radius: var(--radius);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .cover {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: var(--radius);
+        }
+        
+        .cover-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .cover-content {
+            position: relative;
+            z-index: 2;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            width: 100%;
+        }
+        
+        .cover-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            line-height: 1.2;
+        }
+        
+        .cover-quote {
+            font-size: 1rem;
+            font-style: italic;
+            line-height: 1.4;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+            opacity: 0.95;
+        }
+        
+        .card-content {
+            flex: 1;
+            padding-left: 20px;
+        }
+        
+        .card-meta {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .card-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        
+        .card-quote {
+            font-size: 1.3rem;
+            font-style: italic;
+            color: #555;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .card-quote::before {
+            content: '"';
+            position: absolute;
+            left: 0;
+            top: -10px;
+            font-size: 3rem;
+            color: var(--primary);
+            opacity: 0.3;
+        }
+        
+        .card-detail {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .carousel-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .carousel-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 127, 80, 0.1);
+            color: var(--primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .carousel-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .carousel-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 127, 80, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .indicator.active {
+            background: var(--primary);
+            transform: scale(1.2);
+        }
+        
+        /* Quick Actions Grid */
+        .quick-actions {
+            padding: 80px 0;
+            background: var(--gradient-bg);
+        }
+        
+        .quick-actions .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            color: var(--text);
+            position: relative;
+        }
+        
+        .quick-actions .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-sm);
+        }
+        
+        .actions-grid {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 2rem;
+        }
+        
+        .action-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .action-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .action-card:hover::before {
+            left: 100%;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+        
+        .action-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 1rem;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .action-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .action-desc {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+        }
+        
+        /* Focus styles for accessibility */
+        .action-card:focus,
+        .cta-btn:focus,
+        .carousel-btn:focus,
+        .indicator:focus {
+            outline: 3px solid var(--primary);
+            outline-offset: 2px;
+        }
+        
+        /* Skip to content link */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: var(--primary);
+            color: white;
+            padding: 8px;
+            text-decoration: none;
+            border-radius: 4px;
+            z-index: 1000;
+        }
+        
+        .skip-link:focus {
+            top: 6px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--accent-lighter);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1.1rem;
+            }
+            
+            .carousel-card {
+                flex-direction: column;
+                text-align: center;
+                padding: 30px 20px;
+            }
+            
+            .card-preview {
+                flex: 0 0 250px;
+                height: 300px;
+            }
+            
+            .card-content {
+                padding-left: 0;
+            }
+            
+            .actions-grid {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 1.5rem;
+                padding: 0 15px;
+            }
+            
+            .action-card {
+                padding: 1.5rem;
+            }
+            
+            .action-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 1.3rem;
+            }
+            
+            .quick-actions .section-title {
+                font-size: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            /* Mobile FAB adjustments */
+            .floating-actions {
+                right: 16px;
+                bottom: 16px;
+            }
+            
+            .fab-main {
+                width: 52px;
+                height: 52px;
+                font-size: 1.4rem;
+            }
+            
+            .fab-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 1.1rem;
+            }
+            
+            .fab-label {
+                font-size: 0.8rem;
+                padding: 4px 8px;
+            }
+            
+            .fab-item {
+                gap: 8px;
+            }
+        }
     </style>
-    <link rel="stylesheet" href="styles/card-common.css" />
-    <link rel="stylesheet" href="styles/card-gradients.css" />
-    <link rel="stylesheet" href="styles/main.css" />
-  </head>
+</head>
+<body>
+    <!-- Skip to content link for accessibility -->
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+    
 
-  <body>
-    <!-- Header Section -->
-    <div class="container">
-      <!-- Main Content -->
-      <div class="main-content">
-        <div class="form">
-          <!-- 第一行：标题 -->
-          <div class="form-row">
-            <div class="form-group flex-0-0-120">
-              <label for="creator">创作者</label>
-              <input
-                id="creator"
-                placeholder="匿名"
-                oninput="updateCardPreview()"
-              />
-            </div>
-            <div class="form-group flex-1">
-              <label for="title">标题</label>
-              <input
-                id="title"
-                placeholder="这一刻，我想说..."
-                oninput="updateCardPreview()"
-              />
-            </div>
-          </div>
-
-          <!-- 第二行：触动你的观点 -->
-          <div class="form-group">
-            <label for="quote"
-              >触动你的观点<small class="text-muted text-xs"
-                >按回车↩︎换行</small
-              ></label
-            >
-            <textarea
-              id="quote"
-              oninput="updateCardPreview()"
-              placeholder="写下让你触动的一句话、一段对话、或一个片段..."
-            ></textarea>
-          </div>
-
-          <!-- 第三行：你的启发 -->
-          <div class="form-group">
-            <label for="detail"
-              >你的启发<small class="text-muted text-xs"
-                >支持 Markdown 语法，按回车↩︎换行</small
-              ></label
-            >
-            <textarea
-              id="detail"
-              oninput="updateCardPreview()"
-              class="min-h-25 resize-vertical"
-              placeholder="写下你的启发和行动吧..."
-            ></textarea>
-            <div
-              id="imageGenerationStatus"
-              class="mt-1 text-sm text-secondary"
-            ></div>
-          </div>
-
-          <!-- 第四行：选择背景 -->
-          <div class="form-group">
-            <label for="choose-gradient">选择背景</label>
-            <div class="gradient-selector" id="gradient-selector">
-              <div
-                class="gradient-option selected"
-                data-gradient="card-gradient-1"
-                title="🌈 彩虹梦境"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-2"
-                title="🌅 日出暖阳"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-3"
-                title="💜 紫色幻想"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-4"
-                title="🌊 海洋蓝调"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-5"
-                title="🔥 火焰橙黄"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-6"
-                title="🌿 清新绿意"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-7"
-                title="❤️ 热情红橙"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-8"
-                title="☁️ 天空蓝白"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-9"
-                title="🌫️ 雾霭灰蓝"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-10"
-                title="🍯 蜂蜜暖黄"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-11"
-                title="🌱 薄荷清绿"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-12"
-                title="🌸 淡雅紫粉"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-13"
-                title="🌾 麦田金黄"
-              ></div>
-              <div
-                class="gradient-option"
-                data-gradient="card-gradient-14"
-                title="🌙 月光银灰"
-              ></div>
-            </div>
-          </div>
-
-          <!-- 最后一行：自定义插图、找图按钮、选择字体 -->
-          <div class="form-row mb-neg-9">
-            <div class="form-group">
-              <label for="bgUpload">自定义插图</label>
-              <div class="file-upload-wrapper">
-                <button type="button" id="uploadBtn" class="upload-btn">
-                  📷 选择本地图片</button
-                ><br />
-                <small id="fileStatus" class="text-muted ml-2 text-7px"></small>
-                <input
-                  type="file"
-                  id="bgUpload"
-                  accept="image/*"
-                  class="hidden"
-                />
-              </div>
-            </div>
-            <label for="bgUpload">或者</label>
-            <div class="form-group">
-              <label>&nbsp;</label>
-              <button
-                type="button"
-                id="searchImagesBtn"
-                class="upload-btn min-w-120 p-2"
-              >
-                根据启发内容找图🔍
-              </button>
-            </div>
-            <div class="form-group">
-              <label for="choose-font">选择字体</label>
-              <select id="choose-font" onchange="updateCardPreview()">
-                <option value="'PingFang SC', sans-serif">苹方</option>
-                <option value="'Noto Sans SC', sans-serif">思源黑体</option>
-                <option value="'Smiley Sans', sans-serif">得意黑</option>
-                <option value="'Ma Shan Zheng', cursive">马善政毛笔体</option>
-                <option value="'LXGW WenKai', serif">霞鹜文楷</option>
-                <option value="'Alibaba PuHuiTi', sans-serif">
-                  阿里汉仪智能黑体
-                </option>
-                <option value="'Noto Serif SC', serif">思源宋体</option>
-                <option value="'KaiTi', serif">楷体</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- 自动图片状态显示 - 隐藏或移到不明显位置 -->
-          <div class="form-group hidden">
-            <div
-              id="autoImageStatus"
-              class="text-center text-light opacity-70 text-10px"
-            >
-              正在根据背景颜色自动匹配图片...
-            </div>
-          </div>
-
-          <!-- 搜索图片状态和结果显示区 -->
-          <!-- <div class="form-group"> -->
-          <div
-            id="searchImagesStatus"
-            class="mt-neg-1 text-sm text-secondary"
-          ></div>
-          <!-- 搜索结果图片展示区 -->
-          <div id="searchImagesResults" class="hidden mt-neg-0-5">
-            <h5 class="mb-2 text-base">
-              搜索结果：<span id="searchQuery"></span>
-            </h5>
-            <div id="imageResults" class="flex flex-wrap gap-2"></div>
-          </div>
-          <!-- </div> -->
-
-          <div class="buttons">
-            <button onclick="submitCard()" class="primary-btn">
-              提交到展示区
-            </button>
-            <button onclick="downloadCardImage()">下载卡片</button>
-            <!-- <button onclick="shareToWechat()" class="upload-btn">📱 分享到微信</button> -->
-          </div>
-        </div>
-
-        <div id="preview" class="animate__animated animate__fadeIn">
-          <!-- 卡片内容将在这里生成 -->
-        </div>
-      </div>
-
-      <!-- Latest Submitted Cards Section -->
-      <div class="latest-cards-section">
-        <h2>展示区</h2>
+    
+    <!-- Latest Weekly Cards Carousel -->
+    <section class="carousel-section" role="main" id="main-content">
         <div class="carousel-container">
-          <div class="swiper" id="latest-cards-swiper">
-            <div class="swiper-wrapper" id="latest-cards">
-              <!-- Cards will be loaded here -->
+            <h2 class="section-title">启发星球·智慧之光</h2>
+            <div id="carousel-content" role="region" aria-label="最新卡片轮播" aria-live="polite">
+                <div class="loading">
+                    <div class="loading-spinner" role="status" aria-label="正在加载"></div>
+                    <p>正在加载最新卡片...</p>
+                </div>
             </div>
-            <div class="swiper-pagination"></div>
-            <div class="swiper-button-next"></div>
-            <div class="swiper-button-prev"></div>
-          </div>
         </div>
-        <div class="view-all-button-container">
-          <a href="cards" class="view-all-button">浏览更多灵感</a>
+        
+        <!-- View All Cards Button -->
+        <div class="view-all-container" style="text-align: center; margin-top: 2rem;">
+            <a href="weekly-cards" class="view-all-btn" role="button" aria-label="查看所有启发星球金句卡片">
+                <span>查看往期金句卡片</span>
+                <span class="arrow">→</span>
+            </a>
         </div>
-      </div>
+    </section>
+    
+    <!-- Floating Action Buttons -->
+    <div class="floating-actions" role="navigation" aria-label="快速操作">
+        <div class="fab-menu" id="fab-menu">
+            <div class="fab-item">
+                <span class="fab-label">社群卡片</span>
+                <a href="cards" class="fab-btn" aria-label="查看社群创建的卡片">🎨</a>
+            </div>
+            <div class="fab-item">
+                <span class="fab-label">新建卡片</span>
+                <a href="create-card" class="fab-btn" aria-label="新建卡片">✨</a>
+            </div>
+            <div class="fab-item">
+                <span class="fab-label">新建活动</span>
+                <a href="weekly-cards.html" class="fab-btn" aria-label="新建活动">📅</a>
+            </div>
+            <div class="fab-item">
+                <span class="fab-label">封面制作</span>
+                <a href="cover-editor.html" class="fab-btn" aria-label="封面制作">🖼️</a>
+            </div>
+        </div>
+        <button class="fab-main" id="fab-main" aria-label="打开快速操作菜单">
+            <span id="fab-icon">+</span>
+        </button>
     </div>
-
-    <!-- Swiper JS -->
-    <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
-
-    <!-- Main script using ES modules -->
-    <script type="module">
-      // Import functions from cardUtils.js
-      import {
-        renderEditorCard,
-        renderCarouselCard,
-        downloadCard,
-        uploadCard,
-        fetchCards,
-        onUploadBg,
-        bindCustomFileUpload,
-        getRandomItem,
-        sanitizeAndValidateCard,
-        processLongUrls,
-      } from "./scripts/cardUtils.js";
-
-      // Global variables
-      window.customImage = "";
-      window.currentGradientClass = "";
-      window.selectedSearchImage = null;
-      window.isLoadingAutoImage = false; // 跟踪自动图片加载状态
-
-      // 图片缓存对象
-      const imageCache = {};
-
-      let swiper;
-
-      // 渐变样式数组
-      // 导入共享的渐变配置
-      import {
-        gradientClasses,
-        gradientFontColors,
-        getFontColorForGradient,
-        gradientSearchTerms,
-      } from "./scripts/gradientConfig.js";
-
-      // 随机选择渐变背景
-      function randomizeGradient() {
-        const randomIndex = Math.floor(Math.random() * gradientClasses.length);
-        window.currentGradientClass = gradientClasses[randomIndex];
-        return window.currentGradientClass;
-      }
-
-      // Initialize the page
-      document.addEventListener("DOMContentLoaded", function () {
-        // 初始化随机渐变
-        randomizeGradient();
-
-        // 初始化渐变选择器
-        initGradientSelector();
-
-        // 根据初始背景颜色自动搜索图片
-        autoSearchImagesByGradient(window.currentGradientClass);
-
-        // Initial card render
-        updateCardPreview();
-
-        // Setup file upload
-        setupFileUpload();
-
-        // Load latest cards
-        loadLatestCardsCarousel();
-
-        // 自动聚焦到标题输入框
-        setTimeout(() => {
-          const titleInput = document.getElementById("title");
-          if (titleInput) {
-            titleInput.focus();
-          }
-        }, 500);
-      });
-
-      // 初始化渐变选择器
-      function initGradientSelector() {
-        const gradientOptions = document.querySelectorAll(".gradient-option");
-
-        // 设置默认选中状态
-        gradientOptions.forEach((option) => {
-          option.classList.remove("selected");
-          if (option.dataset.gradient === window.currentGradientClass) {
-            option.classList.add("selected");
-          }
-        });
-
-        // 添加点击事件监听器
-        gradientOptions.forEach((option) => {
-          option.addEventListener("click", function () {
-            // 移除所有选中状态
-            gradientOptions.forEach((opt) => opt.classList.remove("selected"));
-            // 添加当前选中状态
-            this.classList.add("selected");
-            // 更新当前渐变类
-            window.currentGradientClass = this.dataset.gradient;
-            // 根据新选择的背景颜色自动搜索图片
-            autoSearchImagesByGradient(window.currentGradientClass);
-            // 更新卡片预览
-            updateCardPreview();
-          });
-        });
-      }
-
-      // Function to handle gradient selection (保持向后兼容)
-      window.updateGradientSelection = function () {
-        // 这个函数现在主要用于向后兼容，实际功能由initGradientSelector处理
-        updateCardPreview();
-      };
-
-      // Function to submit a card
-      window.submitCard = function () {
-        // 确保使用当前选择的渐变背景（从选中的小方块获取）
-        const selectedOption = document.querySelector(
-          ".gradient-option.selected"
-        );
-        if (selectedOption) {
-          window.currentGradientClass = selectedOption.dataset.gradient;
-        }
-
-        uploadCard({
-          gradientClass: window.currentGradientClass,
-          font: document.getElementById("choose-font").value,
-          title: document.getElementById("title").value,
-          quote: document.getElementById("quote").value,
-          imagePath: "",
-          detail: document.getElementById("detail").value,
-          creator: document.getElementById("creator").value,
-          upload: customImage,
-          searchImageSelected:
-            document.getElementById("quote-image-preview-card").src || "",
-        }).then((result) => {
-          if (result) {
-            // Refresh latest cards carousel
-            loadLatestCardsCarousel();
-          }
-        });
-      };
-
-      window.updateCardPreview = function (uploadImg) {
-        // If uploadImg is provided, update the customImage variable
-        if (uploadImg) {
-          customImage = uploadImg;
-        }
-
-        // 获取详情内容并转换Markdown为HTML
-        const detailText =
-          document.getElementById("detail").value || "请填写你的启发和行动";
-
-        // 配置marked，启用换行选项
-        marked.setOptions({
-          breaks: true, // 将单个换行符解析为<br>
-        });
-
-        // 使用marked.js解析Markdown
-        const parsedDetail = detailText ? marked.parse(detailText) : "";
-
-        const options = {
-          title: document.getElementById("title").value || "这一刻，我想说...",
-          quote:
-            document.getElementById("quote").value || "请写下触动到你的观点",
-          detail: parsedDetail, // 使用解析后的HTML
-          imagePath: "",
-          creator: document.getElementById("creator").value || "匿名",
-          font:
-            document.getElementById("choose-font").value ||
-            `'Noto Sans SC', sans-serif`,
-          gradientClass: window.currentGradientClass,
-          customImage: customImage,
-          created: new Date().toISOString(), // 添加当前时间
-          isMarkdown: true, // 标记使用了Markdown
-        };
-
-        // 优先级：搜索选中的图片 > 自定义上传的图片 > 加载状态显示
-        // 检查是否有真正选择的搜索结果图片（通过特定的标识来判断）
-        const searchSelectedImage = window.selectedSearchImage || "";
-        let finalImage = searchSelectedImage || customImage;
-
-        // 如果正在加载自动图片且没有选中的图片，显示加载状态而不是内置图片
-        if (window.isLoadingAutoImage && !finalImage) {
-          finalImage = null; // 不显示任何图片，稍后会添加加载提示
-        } else if (!finalImage) {
-          finalImage = ""; // 没有内置图片选择功能
-        }
-        // 格式化当前时间
-        const now = new Date();
-        const pad = (n) => n.toString().padStart(2, "0");
-        const currentTime = `${now.getFullYear()}-${pad(
-          now.getMonth() + 1
-        )}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(
-          now.getMinutes()
-        )}`;
-
-        // 获取当前渐变对应的字体颜色
-        const fontColor = getFontColorForGradient(window.currentGradientClass);
-        const quoteBoxBg = "rgba(255, 255, 255, 0.9)";
-        const cardHTML = `
-        <div class="card ${window.currentGradientClass}" style="
-              font-family: ${options.font};
-              color: ${fontColor};
-            ">
-           <div class="card-body">
-            <div class="title">${options.title}</div>
-            <div class="quote-box" style="
-              background-color: ${quoteBoxBg}; 
-              color: ${fontColor};
-            ">${options.quote}</div>
-            ${
-              finalImage
-                ? `<img id="quote-image-preview-card" src="${finalImage}" alt="Card Image" crossorigin="anonymous" />`
-                : window.isLoadingAutoImage
-                ? `<div class="image-loading-placeholder" style="
-              width: 100%;
-              height: 200px;
-              background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
-              background-size: 20px 20px;
-              background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-              border-radius: 12px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: #666;
-              font-size: 14px;
-              animation: shimmer 2s infinite;
-            ">正在为您匹配图片...</div>`
-                : ""
-            }
-            <div class="detail-text">${processLongUrls(options.detail)}</div>
-          </div>
-          <div class="card-footer">
-            <div class="footer" style="color: ${fontColor}">——作者：${
-          options.creator
-        } · ${currentTime}</div>
-          </div>
-        </div>
-      `;
-
-        // Clear the preview container and append the new card
-        const previewContainer = document.getElementById("preview");
-        previewContainer.innerHTML = cardHTML;
-      };
-
-      // Function to download the current card
-      window.downloadCardImage = function () {
-        downloadCard(".card", "inspiration-card-");
-      };
-
-      // Setup file upload functionality
-      function setupFileUpload() {
-        const bgUpload = document.getElementById("bgUpload");
-        const uploadBtn = document.getElementById("uploadBtn");
-        const fileStatus = document.getElementById("fileStatus");
-
-        if (!bgUpload || !uploadBtn || !fileStatus) {
-          console.warn("上传功能初始化失败：元素未找到");
-          return;
-        }
-
-        // 直接绑定上传按钮点击事件
-        uploadBtn.addEventListener("click", () => {
-          bgUpload.click();
-        });
-
-        // 绑定文件选择事件
-        bgUpload.addEventListener("change", (event) => {
-          const file = event.target.files[0];
-          if (!file) return;
-
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            customImage = e.target.result;
-            // 清除搜索选中的图片，避免冲突
-            window.selectedSearchImage = null;
-            fileStatus.textContent = "已上传：" + file.name;
-            updateCardPreview(customImage); // 确保传递图片数据
-            event.target.value = ""; // 清空值以支持重复上传
-          };
-          reader.readAsDataURL(file);
-        });
-      }
-
-      // Load and render latest cards to carousel
-      async function loadLatestCardsCarousel() {
-        const container = document.getElementById("latest-cards");
-        if (!container) return;
-
-        // Show loading indicator
-        container.innerHTML =
-          '<div class="swiper-slide"><div class="loading-indicator">加载中...</div></div>';
-
-        try {
-          const cards = await fetchCards();
-
-          if (!cards || cards.length === 0) {
-            container.innerHTML =
-              '<div class="swiper-slide"><div class="loading-indicator">暂无卡片数据</div></div>';
-            return;
-          }
-
-          // Clear loading indicator
-          container.innerHTML = "";
-
-          // Filter valid cards and limit to 20
-          const validCards = cards
-            .filter((card) => card && card.Title && card.Quote)
-            .map((card) =>
-              sanitizeAndValidateCard(card, [
-                "Font",
-                "Title",
-                "Quote",
-                "Detail",
-                "ImagePath",
-                "Creator",
-              ])
-            )
-            .filter((result) => result.isValid)
-            .map((result) => result.sanitizedCard);
-          const recentCards = validCards.slice(0, 20);
-
-          // Render each card
-          recentCards.forEach((card, index) => {
-            const cardElement = renderCarouselCard(card, index);
-            cardElement.style.cursor = "pointer";
-            cardElement.addEventListener("click", () => {
-              window.location.href = `card-detail?id=${card.id}`;
-            });
-            container.appendChild(cardElement);
-          });
-
-          // Initialize or update Swiper
-          initOrUpdateSwiper();
-        } catch (error) {
-          console.error("加载最新卡片失败:", error);
-          container.innerHTML =
-            '<div class="swiper-slide"><div class="loading-indicator">加载失败，请稍后再试</div></div>';
-        }
-      }
-
-      // Initialize or update Swiper
-      function initOrUpdateSwiper() {
-        if (swiper) {
-          swiper.update();
-        } else {
-          swiper = new Swiper("#latest-cards-swiper", {
-            slidesPerView: 1,
-            spaceBetween: 30,
-            loop: true,
-            centeredSlides: true,
-            autoplay: {
-              delay: 5 * 60 * 1000,
-              disableOnInteraction: true,
-            },
-            pagination: {
-              el: ".swiper-pagination",
-              clickable: true,
-            },
-            navigation: {
-              nextEl: ".swiper-button-next",
-              prevEl: ".swiper-button-prev",
-            },
-            breakpoints: {
-              640: {
-                slidesPerView: 1,
-              },
-              768: {
-                slidesPerView: 2,
-              },
-              1024: {
-                slidesPerView: 3,
-              },
-            },
-          });
-        }
-      }
-      // 根据渐变背景颜色自动搜索图片
-      async function autoSearchImagesByGradient(gradientClass) {
-        const statusDiv = document.getElementById("autoImageStatus");
-        const resultsDiv = document.getElementById("autoImageResults");
-        const imageGridDiv = document.getElementById("autoImageGrid");
-
-        const searchTerm =
-          gradientSearchTerms[gradientClass] || "abstract colorful";
-
-        try {
-          // 检查缓存
-          if (
-            imageCache[gradientClass] &&
-            imageCache[gradientClass].length > 0
-          ) {
-            // 从缓存中随机选择一张图片
-            const cachedImages = imageCache[gradientClass];
-            const randomIndex = Math.floor(Math.random() * cachedImages.length);
-            const selectedImage = cachedImages[randomIndex];
-
-            // 设置选中的图片
-            window.selectedSearchImage = selectedImage.url;
-            window.customImage = null;
-            window.isLoadingAutoImage = false;
-
-            // 显示缓存的图片
-            displayImages(
-              cachedImages,
-              randomIndex,
-              statusDiv,
-              resultsDiv,
-              imageGridDiv
-            );
-
-            // 更新状态
-            statusDiv.textContent = "已从缓存加载图片";
-
-            // 更新卡片预览
-            updateCardPreview();
-            return;
-          }
-
-          // 设置加载状态
-          window.isLoadingAutoImage = true;
-          window.selectedSearchImage = null;
-          window.customImage = null;
-
-          // 更新状态显示和卡片预览
-          if (statusDiv)
-            statusDiv.textContent = "正在根据背景颜色自动匹配图片...";
-          if (resultsDiv) resultsDiv.style.display = "none";
-          updateCardPreview(); // 立即更新预览显示加载状态
-
-          // 调用搜索API
-          const response = await fetch("/.netlify/functions/searchImage", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              text: searchTerm,
-              orientation: "landscape",
-            }),
-          });
-
-          const data = await response.json();
-
-          if (response.ok && data.images && data.images.length > 0) {
-            // 缓存图片数据
-            imageCache[gradientClass] = data.images;
-
-            // 清除加载状态并随机选择一张图片
-            window.isLoadingAutoImage = false;
-            const randomIndex = Math.floor(Math.random() * data.images.length);
-            const selectedImage = data.images[randomIndex];
-            window.selectedSearchImage = selectedImage.url;
-            window.customImage = null; // 清除自定义上传的图片
-
-            // 显示所有图片供用户选择（如果显示元素存在）
-            if (statusDiv && resultsDiv && imageGridDiv) {
-              displayImages(
-                data.images,
-                randomIndex,
-                statusDiv,
-                resultsDiv,
-                imageGridDiv
-              );
-            }
-
-            // 更新状态
-            if (statusDiv) statusDiv.textContent = "";
-
-            // 更新卡片预览
-            updateCardPreview();
-          } else {
-            // 清除加载状态
-            window.isLoadingAutoImage = false;
-            if (statusDiv) statusDiv.textContent = "未找到匹配的图片";
-            window.selectedSearchImage = null;
-            window.customImage = null;
-            updateCardPreview();
-          }
-        } catch (error) {
-          // 清除加载状态
-          window.isLoadingAutoImage = false;
-          console.error("自动搜索图片失败:", error);
-          if (statusDiv) statusDiv.textContent = "自动搜索图片失败，请稍后再试";
-          window.selectedSearchImage = null;
-          window.customImage = null;
-          updateCardPreview();
-        }
-      }
-
-      // 显示图片的辅助函数
-      function displayImages(
-        images,
-        selectedIndex,
-        statusDiv,
-        resultsDiv,
-        imageGridDiv
-      ) {
-        // 清空之前的结果
-        imageGridDiv.innerHTML = "";
-
-        images.forEach((image, index) => {
-          const imgContainer = document.createElement("div");
-          imgContainer.style.width = "calc(33.33% - 10px)";
-          imgContainer.style.position = "relative";
-          imgContainer.style.cursor = "pointer";
-          imgContainer.style.borderRadius = "8px";
-          imgContainer.style.overflow = "hidden";
-          imgContainer.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
-
-          // 选中的图片高亮显示
-          if (index === selectedIndex) {
-            imgContainer.style.border = "3px solid #4a6fa5";
-          }
-
-          const img = document.createElement("img");
-          img.src = image.thumb;
-          img.alt = image.title;
-          img.style.width = "100%";
-          img.style.height = "100px";
-          img.style.objectFit = "cover";
-
-          const overlay = document.createElement("div");
-          overlay.style.position = "absolute";
-          overlay.style.bottom = "0";
-          overlay.style.left = "0";
-          overlay.style.right = "0";
-          overlay.style.backgroundColor = "rgba(0,0,0,0.6)";
-          overlay.style.color = "white";
-          overlay.style.padding = "4px";
-          overlay.style.fontSize = "10px";
-          overlay.textContent = image.description;
-
-          imgContainer.appendChild(img);
-          imgContainer.appendChild(overlay);
-
-          // 添加点击事件
-          imgContainer.addEventListener("click", () => {
-            window.selectedSearchImage = image.url;
-            window.customImage = null;
-
-            // 更新选中状态
-            document.querySelectorAll("#autoImageGrid > div").forEach((div) => {
-              div.style.border = "none";
-            });
-            imgContainer.style.border = "3px solid #4a6fa5";
-
-            // 更新卡片预览
-            updateCardPreview();
-          });
-
-          imageGridDiv.appendChild(imgContainer);
-        });
-
-        // 显示结果
-        resultsDiv.style.display = "block";
-      }
-
-      // Function to search for images based on inspiration content
-      async function searchImagesFromDetail() {
-        // Get content from all three fields
-        const titleText = document.getElementById("title").value || "";
-        const quoteText = document.getElementById("quote").value || "";
-        const detailText = document.getElementById("detail").value || "";
-
-        // Check if at least one field has content
-        if (!titleText && !quoteText && !detailText) {
-          alert("请先输入标题、引用或启发内容");
-          return;
-        }
-
-        const searchBtn = document.getElementById("searchImagesBtn");
-        const statusDiv = document.getElementById("searchImagesStatus");
-        const resultsDiv = document.getElementById("searchImagesResults");
-        const querySpan = document.getElementById("searchQuery");
-        const imageResultsDiv = document.getElementById("imageResults");
-
-        try {
-          // Update UI to show loading state
-          searchBtn.disabled = true;
-          statusDiv.textContent = "正在搜索相关图片，请稍候...";
-          resultsDiv.style.display = "none";
-
-          // Combine all three fields for searching
-          const combinedText = [titleText, quoteText, detailText]
-            .filter((text) => text.trim())
-            .join(" ");
-
-          // Call the Netlify function
-          const response = await fetch("/.netlify/functions/searchImage", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              text: combinedText,
-              orientation: "landscape",
-            }),
-          });
-
-          const data = await response.json();
-
-          if (response.ok) {
-            // Display the search query
-            querySpan.textContent = data.query;
-
-            // Clear previous results
-            imageResultsDiv.innerHTML = "";
-
-            // Display the images
-            if (data.images && data.images.length > 0) {
-              data.images.forEach((image) => {
-                const imgContainer = document.createElement("div");
-                imgContainer.style.width = "calc(33.33% - 10px)";
-                imgContainer.style.position = "relative";
-                imgContainer.style.cursor = "pointer";
-                imgContainer.style.borderRadius = "8px";
-                imgContainer.style.overflow = "hidden";
-                imgContainer.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
-
-                const img = document.createElement("img");
-                img.src = image.thumb;
-                img.alt = image.title;
-                img.style.width = "100%";
-                img.style.height = "100px";
-                img.style.objectFit = "cover";
-
-                const overlay = document.createElement("div");
-                overlay.style.position = "absolute";
-                overlay.style.bottom = "0";
-                overlay.style.left = "0";
-                overlay.style.right = "0";
-                overlay.style.backgroundColor = "rgba(0,0,0,0.6)";
-                overlay.style.color = "white";
-                overlay.style.padding = "4px";
-                overlay.style.fontSize = "10px";
-                overlay.textContent = image.description;
-
-                imgContainer.appendChild(img);
-                imgContainer.appendChild(overlay);
-
-                // Add click event to select this image
-                imgContainer.addEventListener("click", () => {
-                  // 设置选中的搜索图片
-                  window.selectedSearchImage = image.url;
-                  // 清除自定义上传的图片，避免冲突
-                  customImage = null;
-                  // 更新文件状态显示
-                  const fileStatus = document.getElementById("fileStatus");
-                  if (fileStatus) {
-                    fileStatus.textContent = "已选择搜索结果图片";
-                  }
-                  // Update the card preview
-                  updateCardPreview();
-                  // Add a highlight to the selected image
-                  document
-                    .querySelectorAll("#imageResults > div")
-                    .forEach((div) => {
-                      div.style.border = "none";
-                    });
-                  imgContainer.style.border = "3px solid #4a6fa5";
-                });
-
-                imageResultsDiv.appendChild(imgContainer);
-              });
-
-              // Show the results
-              resultsDiv.style.display = "block";
-              statusDiv.textContent = ""; // Clear status message
-            } else {
-              statusDiv.textContent = "未找到相关图片，请尝试修改启发内容。";
-            }
-          } else {
-            throw new Error(data.error || "搜索图片失败");
-          }
-        } catch (error) {
-          console.error("Error searching images:", error);
-          statusDiv.textContent = `搜索失败: ${error.message}`;
-        } finally {
-          searchBtn.disabled = false;
-        }
-      }
-
-      // Add event listener for the search images button
-      document
-        .getElementById("searchImagesBtn")
-        .addEventListener("click", searchImagesFromDetail);
-    </script>
-
+    
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+    
     <script src="/scripts/layout.js"></script>
-  </body>
+    <script>
+        let currentSlide = 0;
+        let slides = [];
+        let autoPlayInterval;
+        let isPlaying = true;
+        
+        // 加载最新一期卡片数据
+        async function loadLatestCards() {
+            try {
+                const response = await fetch('/.netlify/functions/getLatestWeeklyCards');
+                const data = await response.json();
+                
+                if (data.records && data.records.length > 0) {
+                    slides = data.records;
+                    renderCarousel();
+                    startAutoPlay();
+                } else {
+                    showEmptyState();
+                }
+            } catch (error) {
+                console.error('Error loading cards:', error);
+                showErrorState();
+            }
+        }
+        
+        // 渲染轮播组件
+        function renderCarousel() {
+            const carouselContent = document.getElementById('carousel-content');
+            
+            const carouselHTML = `
+                <div class="carousel-wrapper">
+                    <div class="carousel-track" id="carousel-track">
+                        ${slides.map((card, index) => `
+                            <div class="carousel-card" data-index="${index}">
+                                <div class="card-preview">
+                                    <div class="cover gradient-bg-1" style="background-image: ${card.ImagePath ? `url('${card.ImagePath}')` : 'none'}; background-size: cover; background-position: center;">
+                                        <div class="cover-overlay">
+                                            <div class="cover-content">
+                                                <h3 class="cover-title">${card.Title}</h3>
+                                                <p class="cover-quote">"${card.Quote}"</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-content">
+                                    <div class="card-meta">第${card.Episode}期 · ${card.Name}</div>
+                                    <h3 class="card-title">${card.Title}</h3>
+                                    <blockquote class="card-quote">${card.Quote}</blockquote>
+                                    <p class="card-detail">${card.Detail}</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="carousel-controls" role="group" aria-label="轮播控制">
+                    <button class="carousel-btn" onclick="prevSlide()" aria-label="上一张卡片">‹</button>
+                    <button class="carousel-btn" onclick="toggleAutoPlay()" id="play-btn" aria-label="暂停自动播放">⏸️</button>
+                    <button class="carousel-btn" onclick="nextSlide()" aria-label="下一张卡片">›</button>
+                </div>
+                <div class="carousel-indicators" role="tablist" aria-label="卡片指示器">
+                    ${slides.map((_, index) => `
+                        <button class="indicator ${index === 0 ? 'active' : ''}" onclick="goToSlide(${index})" role="tab" aria-label="第${index + 1}张卡片" aria-selected="${index === 0}"></button>
+                    `).join('')}
+                </div>
+            `;
+            
+            carouselContent.innerHTML = carouselHTML;
+            updateCarousel();
+        }
+        
+        // 更新轮播位置
+        function updateCarousel() {
+            const track = document.getElementById('carousel-track');
+            const indicators = document.querySelectorAll('.indicator');
+            
+            if (track) {
+                track.style.transform = `translateX(-${currentSlide * 100}%)`;
+            }
+            
+            indicators.forEach((indicator, index) => {
+                const isActive = index === currentSlide;
+                indicator.classList.toggle('active', isActive);
+                indicator.setAttribute('aria-selected', isActive.toString());
+            });
+        }
+        
+        // 下一张
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % slides.length;
+            updateCarousel();
+        }
+        
+        // 上一张
+        function prevSlide() {
+            currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+            updateCarousel();
+        }
+        
+        // 跳转到指定幻灯片
+        function goToSlide(index) {
+            currentSlide = index;
+            updateCarousel();
+        }
+        
+        // 开始自动播放
+        function startAutoPlay() {
+            if (autoPlayInterval) clearInterval(autoPlayInterval);
+            autoPlayInterval = setInterval(nextSlide, 5000);
+        }
+        
+        // 停止自动播放
+        function stopAutoPlay() {
+            if (autoPlayInterval) {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+            }
+        }
+        
+        // 切换自动播放
+        function toggleAutoPlay() {
+            const playBtn = document.getElementById('play-btn');
+            if (isPlaying) {
+                stopAutoPlay();
+                playBtn.textContent = '▶️';
+                playBtn.setAttribute('aria-label', '开始自动播放');
+                isPlaying = false;
+            } else {
+                startAutoPlay();
+                playBtn.textContent = '⏸️';
+                playBtn.setAttribute('aria-label', '暂停自动播放');
+                isPlaying = true;
+            }
+        }
+        
+        // 显示空状态
+        function showEmptyState() {
+            const carouselContent = document.getElementById('carousel-content');
+            carouselContent.innerHTML = `
+                <div class="loading">
+                    <p>暂无最新卡片内容</p>
+                    <a href="/public/cards.html" class="cta-btn primary">查看所有卡片</a>
+                </div>
+            `;
+        }
+        
+        // 显示错误状态
+        function showErrorState() {
+            const carouselContent = document.getElementById('carousel-content');
+            carouselContent.innerHTML = `
+                <div class="loading">
+                    <p>加载失败，请稍后重试</p>
+                    <button class="cta-btn primary" onclick="loadLatestCards()">重新加载</button>
+                </div>
+            `;
+        }
+        
+        // 键盘导航支持
+        function handleKeyboardNavigation(e) {
+            if (e.target.closest('.carousel-section')) {
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        prevSlide();
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        nextSlide();
+                        break;
+                    case ' ':
+                        e.preventDefault();
+                        toggleAutoPlay();
+                        break;
+                }
+            }
+        }
+        
+        // Floating Action Button functionality
+        function initFAB() {
+            const fabMain = document.getElementById('fab-main');
+            const fabMenu = document.getElementById('fab-menu');
+            const fabIcon = document.getElementById('fab-icon');
+            let isOpen = false;
+            
+            fabMain.addEventListener('click', function() {
+                isOpen = !isOpen;
+                
+                if (isOpen) {
+                    fabMenu.classList.add('active');
+                    fabIcon.style.transform = 'rotate(45deg)';
+                    fabMain.setAttribute('aria-expanded', 'true');
+                    fabMain.setAttribute('aria-label', '关闭快速操作菜单');
+                } else {
+                    fabMenu.classList.remove('active');
+                    fabIcon.style.transform = 'rotate(0deg)';
+                    fabMain.setAttribute('aria-expanded', 'false');
+                    fabMain.setAttribute('aria-label', '打开快速操作菜单');
+                }
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.floating-actions') && isOpen) {
+                    isOpen = false;
+                    fabMenu.classList.remove('active');
+                    fabIcon.style.transform = 'rotate(0deg)';
+                    fabMain.setAttribute('aria-expanded', 'false');
+                    fabMain.setAttribute('aria-label', '打开快速操作菜单');
+                }
+            });
+            
+            // Keyboard support
+            fabMain.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fabMain.click();
+                }
+            });
+        }
+        
+        // 初始化和事件监听
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLatestCards();
+            initFAB();
+            
+            // 键盘导航
+            document.addEventListener('keydown', handleKeyboardNavigation);
+            
+            // 添加触摸滑动支持
+            let startX = 0;
+            let startY = 0;
+            let isSwipe = false;
+            
+            document.addEventListener('touchstart', function(e) {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                isSwipe = false;
+            });
+            
+            document.addEventListener('touchmove', function(e) {
+                if (!startX || !startY) return;
+                
+                const diffX = startX - e.touches[0].clientX;
+                const diffY = startY - e.touches[0].clientY;
+                
+                if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                    isSwipe = true;
+                    if (diffX > 0) {
+                        nextSlide();
+                    } else {
+                        prevSlide();
+                    }
+                    startX = 0;
+                    startY = 0;
+                }
+            });
+            
+            // 悬停暂停
+            document.addEventListener('mouseenter', function(e) {
+                if (e.target.closest('.carousel-wrapper')) {
+                    stopAutoPlay();
+                }
+            });
+            
+            document.addEventListener('mouseleave', function(e) {
+                if (e.target.closest('.carousel-wrapper') && isPlaying) {
+                    startAutoPlay();
+                }
+            });
+        });
+    </script>
+</body>
 </html>

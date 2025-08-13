@@ -142,9 +142,11 @@
         // 按日期分组卡片
         const groupedCards = groupCardsByDate(myCards);
 
-        // 渲染分组后的卡片
-        Object.keys(groupedCards).sort().reverse().forEach(date => {
-          const dateCards = groupedCards[date].sort((a, b) => new Date(b.Created) - new Date(a.Created));
+        // 渲染分组后的卡片 - 按日期倒序排列
+        Object.keys(groupedCards)
+          .sort((a, b) => new Date(b) - new Date(a))
+          .forEach(date => {
+          const dateCards = groupedCards[date];
           
           // 创建日期标题
           const dateHeading = document.createElement('h2');
