@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动详情 - 启发星球</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/utility.css">
+    <link rel="stylesheet" href="/styles/page-specific.css">
+    <style>
+        /* 重置页面样式，忽略共享样式影响 */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+            max-width: none !important;
+        }
+        
+        main {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        .meetup-detail-container {
+            width: 90% !important;
+            max-width: 1200px !important;
+            margin: 20px auto !important;
+            padding: var(--spacing-xl) !important;
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            box-sizing: border-box;
+        }
+
+        .meetup-header {
+            text-align: center;
+            margin-bottom: var(--spacing-2xl);
+            padding-bottom: var(--spacing-xl);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .meetup-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: var(--spacing-md);
+            line-height: 1.3;
+        }
+
+        .meetup-type {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--radius-lg);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .meetup-type.online {
+            background: var(--accent-lighter);
+            color: var(--primary-dark);
+        }
+
+        .meetup-type.offline {
+            background: #e8f5e8;
+            color: #2d5a2d;
+        }
+
+        .meetup-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+        }
+
+        .meta-icon {
+            font-size: 1.2rem;
+        }
+
+        .meetup-description {
+            background: var(--bg-light);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius);
+            margin-bottom: var(--spacing-2xl);
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        .meetup-organizer {
+            background: linear-gradient(135deg, var(--gradient-blue));
+            color: white;
+            padding: var(--spacing-xl);
+            border-radius: var(--radius);
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .organizer-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .organizer-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+
+        .organizer-name {
+            font-weight: 500;
+        }
+
+        .organizer-contact {
+            background: rgba(255, 255, 255, 0.2);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+        }
+
+        .join-section {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            background: linear-gradient(135deg, var(--gradient-green));
+            border-radius: var(--radius-lg);
+            color: white;
+        }
+
+        .join-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .join-btn {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: var(--spacing-md) var(--spacing-2xl);
+            border-radius: var(--radius-lg);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-md);
+        }
+
+        .join-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .join-btn:disabled {
+            background: var(--muted);
+            color: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .participant-info {
+            margin-top: var(--spacing-md);
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-light);
+            font-family: var(--font-sans);
+        }
+
+        .error {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: #e74c3c;
+            background: #fdf2f2;
+            border-radius: var(--radius);
+            margin: var(--spacing-lg) 0;
+            font-family: var(--font-sans);
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: var(--spacing-xl);
+            transition: color 0.3s ease;
+        }
+
+        .back-btn:hover {
+            color: var(--primary-dark);
+        }
+
+        @media (max-width: 768px) {
+            .meetup-detail-container {
+                margin: var(--spacing-md);
+                padding: var(--spacing-lg);
+            }
+
+            .meetup-title {
+                font-size: 1.5rem;
+            }
+
+            .meetup-meta {
+                grid-template-columns: 1fr;
+            }
+
+            .organizer-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-default">
+    <div id="header-placeholder"></div>
+
+    <main>
+        <div class="meetup-detail-container">
+            <a href="meetups.html" class="back-btn">
+                ← 返回活动列表
+            </a>
+
+            <div id="meetupContent">
+                <div class="loading">正在加载活动详情...</div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="scripts/layout.js"></script>
+    <script>
+        let currentMeetup = null;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const meetupId = urlParams.get('id');
+            
+            if (!meetupId) {
+                showError('缺少活动ID参数');
+                return;
+            }
+            
+            loadMeetupDetail(meetupId);
+        });
+
+        // 加载活动详情
+        async function loadMeetupDetail(meetupId) {
+            try {
+                const response = await fetch(`/.netlify/functions/meetupHandler?id=${meetupId}`);
+                const data = await response.json();
+                
+                if (data.success && data.meetups && data.meetups.length > 0) {
+                    currentMeetup = data.meetups[0];
+                    renderMeetupDetail();
+                } else {
+                    showError('活动不存在或已被删除');
+                }
+            } catch (error) {
+                console.error('Load meetup detail error:', error);
+                showError('加载活动详情失败，请稍后重试');
+            }
+        }
+
+        // 渲染活动详情
+        function renderMeetupDetail() {
+            const container = document.getElementById('meetupContent');
+            const meetup = currentMeetup;
+            
+            const meetupDate = new Date(meetup.datetime);
+            const isUpcoming = meetupDate > new Date();
+            const formattedDate = formatDate(meetupDate);
+            const formattedTime = formatTime(meetupDate.toTimeString().slice(0, 5));
+            
+            container.innerHTML = `
+                <div class="meetup-header">
+                    <div class="meetup-type ${meetup.mode || meetup.type}">
+                        ${(meetup.mode || meetup.type) === 'online' ? '线上活动' : '线下活动'}
+                    </div>
+                    <h1 class="meetup-title">${escapeHtml(meetup.title)}</h1>
+                </div>
+
+                <div class="meetup-meta">
+                    <div class="meta-item">
+                        <span class="meta-icon">📅</span>
+                        <span>${formattedDate}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">🕐</span>
+                        <span>${formattedTime}</span>
+                    </div>
+                    ${meetup.duration ? `
+                        <div class="meta-item">
+                            <span class="meta-icon">⏱️</span>
+                            <span>${meetup.duration} 小时</span>
+                        </div>
+                    ` : ''}
+                    ${meetup.location ? `
+                        <div class="meta-item">
+                            <span class="meta-icon">📍</span>
+                            <span>${escapeHtml(meetup.location)}</span>
+                        </div>
+                    ` : ''}
+                    ${meetup.fee !== null && meetup.fee !== undefined ? `
+                        <div class="meta-item">
+                            <span class="meta-icon">💰</span>
+                            <span>${meetup.fee > 0 ? meetup.fee + ' 元' : '免费'}</span>
+                        </div>
+                    ` : ''}
+                    ${meetup.max_ppl ? `
+                        <div class="meta-item">
+                            <span class="meta-icon">👥</span>
+                            <span>最多 ${meetup.max_ppl} 人</span>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="meetup-description">
+                    <h3 style="margin-bottom: var(--spacing-md); color: var(--text);">活动介绍</h3>
+                    <p>${escapeHtml(meetup.description).replace(/\n/g, '<br>')}</p>
+                </div>
+
+                <div class="meetup-organizer">
+                    <div class="organizer-title">组织者信息</div>
+                    <div class="organizer-info">
+                        <span class="organizer-name">👤 ${escapeHtml(meetup.creator || meetup.organizer)}</span>
+                        ${meetup.wechat_id || meetup.contact ? `
+                            <span class="organizer-contact">微信：${escapeHtml(meetup.wechat_id || meetup.contact)}</span>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div class="join-section">
+                    <div class="join-title">
+                        ${isUpcoming ? '立即报名参加' : '活动已结束'}
+                    </div>
+                    <button class="join-btn" 
+                            onclick="joinMeetup('${meetup.id}', '${meetup.cover || ''}')"
+                            ${!isUpcoming ? 'disabled' : ''}>
+                        ${isUpcoming ? '报名参加' : '已结束'}
+                    </button>
+                    <div class="participant-info">
+                        ${meetup.participant_count || 0}${meetup.max_ppl ? '/' + meetup.max_ppl : ''} 人已报名
+                    </div>
+                </div>
+            `;
+        }
+
+        // 报名参加活动
+        function joinMeetup(meetupId, qrImageUrl) {
+            const token = localStorage.getItem('userToken');
+            const userInfo = localStorage.getItem('userInfo');
+            if (!token || !userInfo) {
+                alert('请先登录后再报名参加活动');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            if (qrImageUrl) {
+                // 显示二维码
+                showQRCode(qrImageUrl);
+            } else {
+                alert('该活动暂未提供群聊二维码，请联系组织者获取参与方式');
+            }
+        }
+
+        // 显示二维码弹窗
+        function showQRCode(qrImageUrl) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    padding: 30px;
+                    border-radius: 15px;
+                    text-align: center;
+                    max-width: 400px;
+                    width: 90%;
+                ">
+                    <h3 style="margin-bottom: 20px; color: #333;">扫码进群</h3>
+                    <img src="${qrImageUrl}" alt="群聊二维码" style="
+                        max-width: 100%;
+                        height: auto;
+                        border-radius: 10px;
+                        margin-bottom: 20px;
+                    ">
+                    <p style="color: #666; margin-bottom: 20px;">请使用微信扫描二维码加入群聊</p>
+                    <button onclick="this.parentElement.parentElement.remove()" style="
+                        background: #667eea;
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 20px;
+                        cursor: pointer;
+                    ">关闭</button>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // 点击背景关闭
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const container = document.getElementById('meetupContent');
+            container.innerHTML = `
+                <div class="error">
+                    <h3>加载失败</h3>
+                    <p>${message}</p>
+                    <a href="meetups.html" style="color: var(--primary); text-decoration: none;">返回活动列表</a>
+                </div>
+            `;
+        }
+
+        // 格式化日期
+        function formatDate(date) {
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+            };
+            return date.toLocaleDateString('zh-CN', options);
+        }
+
+        // 格式化时间
+        function formatTime(timeString) {
+            const [hours, minutes] = timeString.split(':');
+            return `${hours}:${minutes}`;
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+
+</html>

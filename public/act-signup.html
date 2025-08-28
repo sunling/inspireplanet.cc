@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI × Coding × Thinking 工作坊 · 招募</title>
+    <link rel="stylesheet" href="/styles/main.css" />
+    <link rel="stylesheet" href="/styles/utility.css" />
+    <style>
+      /* Page-specific styles */
+      body {
+        background: var(--bg-light);
+        padding: 2rem;
+      }
+
+      h1,
+      h2 {
+        color: var(--primary);
+        margin-bottom: 1rem;
+      }
+
+      h3 {
+        margin-top: 0;
+        font-size: 1.2rem;
+        color: var(--text);
+      }
+
+      .container {
+        background: white;
+        padding: 2.5rem;
+        border-radius: var(--radius);
+        max-width: 800px;
+        margin: 0 auto;
+        box-shadow: var(--shadow-md);
+        border: 1px solid rgba(255, 127, 80, 0.05);
+      }
+
+      .weeks-container {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 12px;
+        margin: 1.5rem 0;
+        justify-content: space-between;
+      }
+
+      .week {
+        background: var(--bg-light);
+        padding: 1rem;
+        border-radius: var(--radius-sm);
+        margin: 0;
+        flex: 1;
+        min-width: 130px;
+        box-shadow: var(--shadow);
+        border-left: 4px solid var(--primary);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .week:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .week p {
+        margin: 0.5rem 0 0;
+        font-size: 0.95rem;
+        color: var(--text-light);
+      }
+
+      .qr {
+        text-align: center;
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background: var(--bg-light);
+        border-radius: var(--radius-sm);
+        border: 1px dashed rgba(255, 127, 80, 0.2);
+      }
+
+      .qr img {
+        border-radius: var(--radius-sm);
+        box-shadow: var(--shadow);
+        transition: transform 0.3s;
+      }
+
+      .qr img:hover {
+        transform: scale(1.05);
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        margin-top: 1.5rem;
+      }
+
+      label {
+        margin-top: 1rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      input,
+      textarea {
+        padding: 0.75rem;
+        border: 1px solid rgba(255, 127, 80, 0.2);
+        border-radius: var(--radius-sm);
+        font-size: 1rem;
+        transition: border-color 0.3s;
+        background: white;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.1);
+      }
+
+      .radio-group {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+      }
+
+      button {
+        margin-top: 1.5rem;
+        background: var(--gradient-accent);
+        color: var(--text);
+        border: none;
+        padding: 0.9rem;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow);
+      }
+
+      button:hover {
+        background: var(--gradient-primary);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      footer {
+        text-align: center;
+        margin-top: 2.5rem;
+        color: var(--text-lighter);
+        font-size: 0.9rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255, 127, 80, 0.1);
+      }
+
+      /* 适配移动设备 */
+      @media (max-width: 768px) {
+        .weeks-container {
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .week {
+          flex: 1 1 calc(50% - 10px);
+        }
+
+        .container {
+          padding: 1.5rem;
+        }
+
+        h3 {
+          font-size: 1.1rem;
+        }
+
+        .week p {
+          font-size: 0.9rem;
+        }
+      }
+
+      /* 适配超小屏幕 */
+      @media (max-width: 480px) {
+        .week {
+          flex: 1 1 100%;
+        }
+
+        body {
+          padding: 1rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>🚀 AI × Coding × Thinking 工作坊 · 招募</h1>
+      <p>
+        不会写代码，但想亲手做一个每天自动更新的"智能信息网站"？<br />
+        来加入我们的 4 节课的线上工作坊，一起把 AI × Coding × Thinking
+        结合起来，把想法变成真实作品。
+      </p>
+      <p>你将在 4 次课完成这一条完整链路：</p>
+      <p>
+        📅 <strong>时间：每周日中午12点（北京时间）</strong>4
+        节课，每周一次，每次约 60~90 分钟<br />
+        👩‍💻 <strong>形式：</strong>线上，边学边做<br />
+        💰 <strong>课程费用：</strong>199 元<br />
+        👉 如果你确实有经济上的困难，也可以发邮件 sunling621@gmail.com
+        跟我说，我们会想办法一起解决。
+      </p>
+
+      <h2>四节课程安排</h2>
+
+      <div class="weeks-container">
+        <div class="week">
+          <h3>第 1 课：上线你的第一个网站</h3>
+          <p>
+            一键部署，网站即刻展示孙玲精选的信息源内容（高质量文章与金句）。
+          </p>
+        </div>
+        <div class="week">
+          <h3>第 2 课：让网站更好用</h3>
+          <p>调整文字与提示、优化交互、个性化样式，增加信息源搜索功能。</p>
+        </div>
+        <div class="week">
+          <h3>第 3 课：学会信息分类</h3>
+          <p>设计标签与信息架构，支持搜索、筛选、排序。</p>
+        </div>
+        <div class="week">
+          <h3>第 4 课：让 AI 帮你工作</h3>
+          <p>
+            配置你关注的信息源，网站每天自动更新；AI 负责分析/整理/总结/翻译。
+          </p>
+        </div>
+      </div>
+
+      <div
+        style="
+          background: var(--bg-light);
+          padding: 1.5rem;
+          border-radius: var(--radius-sm);
+          margin: 2rem 0;
+          border-left: 4px solid var(--primary);
+        "
+      >
+        <h3 style="margin-top: 0; color: var(--primary)">
+          🎁 完成后你将拥有：
+        </h3>
+        <p style="margin-bottom: 0">
+          一个能自动更新、基于孙玲精选信息源的在线信息平台（可直接分享访问），帮助你从多个角度深入思考感兴趣的主题，主动获取和深度阅读高质量内容，解决信息获取碎片化和缺乏深度思考的问题。同时获得把
+          AI × Coding × Thinking 融合应用的实战体验。
+        </p>
+      </div>
+
+      <h2>报名信息</h2>
+      <form id="signup-form">
+        <label for="name">你的名字</label>
+        <input type="text" id="name" name="name" required />
+
+        <label for="wechat">微信号</label>
+        <input type="text" id="wechat" name="wechat" required />
+
+        <label for="why">为什么想报名？</label>
+        <textarea id="why" name="why" rows="3" required></textarea>
+
+        <label for="expectation">对这个 Workshop 的期待</label>
+        <textarea
+          id="expectation"
+          name="expectation"
+          rows="3"
+          required
+        ></textarea>
+
+        <div class="qr">
+          <p>扫码支付报名</p>
+          <img src="images/wechatpay-sl.png" alt="支付二维码" width="150" />
+        </div>
+        <label
+          >是否已支付？<small class="text-muted text-xs"
+            >如果费用上有问题并真的很想报名，可以发邮件给我sunling621@gmail.com</small
+          ></label
+        >
+        <div class="radio-group">
+          <label
+            ><input type="radio" name="paid" value="true" required /> 是</label
+          >
+          <label><input type="radio" name="paid" value="false" /> 否</label>
+        </div>
+        <button type="submit">提交报名信息</button>
+      </form>
+
+      <footer>
+        2025 © 孙玲 | AI × Coding × Thinking 工作坊
+      </footer>
+    </div>
+
+    <script>
+      document
+        .getElementById("signup-form")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const submitButton = this.querySelector('button[type="submit"]');
+          submitButton.disabled = true;
+          submitButton.textContent = "提交中...";
+
+          // 获取表单数据
+          const data = {
+            name: this.name.value.trim(),
+            wechat: this.wechat.value.trim(),
+            why: this.why.value.trim(),
+            expectation: this.expectation.value.trim(),
+            paid: this.querySelector('input[name="paid"]:checked').value,
+          };
+
+          try {
+            // 提交到 Netlify Function
+            const response = await fetch(
+              "/.netlify/functions/workshopHandler",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+              }
+            );
+
+            const result = await response.json();
+
+            if (result.success) {
+              // 隐藏表单，显示成功页面和二维码
+              document.querySelector(".container").innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                  <h2 style="color: var(--primary); margin-bottom: 1.5rem;">🎉 报名成功！</h2>
+                  <p style="margin-bottom: 2rem; font-size: 1.1rem;">感谢你的报名！请添加我的微信，我会尽快联系你并邀请进群。</p>
+                  
+                  <div style="background: #f8f9fa; padding: 2rem; border-radius: var(--radius-sm); margin: 2rem auto; max-width: 400px; border: 1px solid #e9ecef;">
+                    <h3 style="margin-top: 0; color: var(--text); margin-bottom: 1rem;">📱 添加微信</h3>
+                    <img src="/images/wechat-sl.jpg" alt="孙玲微信二维码" style="max-width: 200px; margin: 1rem auto; display: block; border-radius: var(--radius-sm);" />
+                    <p style="margin: 1rem 0 0 0; color: var(--primary); font-weight: bold; font-size: 1.1rem;">⚠️ 请备注：ACT</p>
+                    <p style="margin: 0.5rem 0 0 0; color: var(--text-light); font-size: 0.9rem;">这样我能快速识别你是工作坊学员</p>
+                  </div>
+                  
+                  <p style="color: var(--text-light); margin-top: 2rem;">我会在1天内联系你，邀请进群 🌿</p>
+                </div>
+              `;
+            } else {
+              alert(
+                "提交失败：" +
+                  (result.error || "未知错误，请稍后再试或联系管理员")
+              );
+            }
+          } catch (error) {
+            console.error("提交错误：", error);
+            alert("提交时发生错误，请稍后再试或联系管理员");
+          } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = "提交报名信息";
+          }
+        });
+    </script>
+  </body>
+</html>

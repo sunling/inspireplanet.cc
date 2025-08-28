@@ -9,13 +9,30 @@
     <link rel="stylesheet" href="/styles/utility.css">
     <link rel="stylesheet" href="/styles/page-specific.css">
     <style>
+        /* 重置页面样式，忽略共享样式影响 */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+            max-width: none !important;
+        }
+        
+        main {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
+            width: 90% !important;
+            max-width: 1200px !important;
+            margin: 20px auto !important;
+            padding: 2rem !important;
             background: white;
             border-radius: var(--radius);
             box-shadow: var(--shadow-md);
+            box-sizing: border-box;
         }
 
         .form-group {
@@ -133,8 +150,6 @@
 </head>
 
 <body>
-    <div id="header-placeholder"></div>
-
     <main class="main-content">
         <div class="container">
             <h1>发起活动</h1>
@@ -144,54 +159,51 @@
 
             <form id="meetup-form">
                 <div class="form-group">
-                    <label for="title">活动标题 *</label>
+                    <label for="title">活动标题</label>
                     <input type="text" id="title" name="title" required placeholder="输入活动标题">
                     <div class="error-message" id="title-error"></div>
                 </div>
 
                 <div class="form-group">
-                    <label for="description">活动描述 *</label>
+                    <label for="description">活动描述</label>
                     <textarea id="description" name="description" required placeholder="详细描述活动内容、目标和亮点"></textarea>
                     <div class="error-message" id="description-error"></div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="type">活动类型 *</label>
-                        <select id="type" name="type" required>
-                            <option value="">选择活动类型</option>
-                            <option value="online">线上活动</option>
-                            <option value="offline">线下活动</option>
-                            <option value="hybrid">线上线下结合</option>
-                        </select>
-                        <div class="error-message" id="type-error"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="category">活动分类</label>
-                        <select id="category" name="category">
-                            <option value="">选择分类</option>
-                            <option value="tech">技术交流</option>
-                            <option value="book">读书分享</option>
-                            <option value="career">职业发展</option>
-                            <option value="lifestyle">生活方式</option>
-                            <option value="creative">创意设计</option>
-                            <option value="other">其他</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label for="type">活动类型</label>
+                    <select id="type" name="type" required>
+                        <option value="">选择活动类型</option>
+                        <option value="online">线上活动</option>
+                        <option value="offline">线下活动</option>
+                        <option value="hybrid">线上线下结合</option>
+                    </select>
+                    <div class="error-message" id="type-error"></div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="date">活动日期 *</label>
+                        <label for="date">活动日期</label>
                         <input type="date" id="date" name="date" required>
                         <div class="error-message" id="date-error"></div>
                     </div>
 
                     <div class="form-group">
-                        <label for="time">活动时间 *</label>
+                        <label for="time">活动时间</label>
                         <input type="time" id="time" name="time" required>
                         <div class="error-message" id="time-error"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="duration">活动时长（小时）</label>
+                        <input type="number" id="duration" name="duration" min="0.5" step="0.5" placeholder="例如：2">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maxParticipants">最大参与人数</label>
+                        <input type="number" id="maxParticipants" name="maxParticipants" min="1" placeholder="不限制可留空">
                     </div>
                 </div>
 
@@ -200,32 +212,25 @@
                     <input type="text" id="location" name="location" placeholder="线下活动请填写具体地址，线上活动可填写平台名称">
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="maxParticipants">最大参与人数</label>
-                        <input type="number" id="maxParticipants" name="maxParticipants" min="1" placeholder="不限制可留空">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="fee">活动费用（元）</label>
-                        <input type="number" id="fee" name="fee" min="0" step="0.01" placeholder="免费活动填0">
-                    </div>
+                <div class="form-group">
+                    <label for="fee">活动费用（元）</label>
+                    <input type="number" id="fee" name="fee" min="0" step="0.01" placeholder="免费活动填0">
                 </div>
 
                 <div class="form-group">
-                    <label for="organizer">组织者姓名 *</label>
+                    <label for="organizer">组织者姓名</label>
                     <input type="text" id="organizer" name="organizer" required placeholder="您的姓名">
                     <div class="error-message" id="organizer-error"></div>
                 </div>
 
                 <div class="form-group">
-                    <label for="contact">联系方式 *</label>
-                    <input type="text" id="contact" name="contact" required placeholder="微信号、邮箱或电话">
+                    <label for="contact">微信号</label>
+                    <input type="text" id="contact" name="contact" required placeholder="请输入微信号">
                     <div class="error-message" id="contact-error"></div>
                 </div>
 
                 <div class="form-group">
-                    <label>活动群二维码 *</label>
+                    <label>活动群二维码</label>
                     <div class="qr-upload" id="qr-upload">
                         <input type="file" id="qr-file" accept="image/*" style="display: none;">
                         <div id="qr-upload-content">
@@ -235,11 +240,6 @@
                         <img id="qr-preview" class="qr-preview" style="display: none;">
                     </div>
                     <div class="error-message" id="qr-error"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="notes">备注信息</label>
-                    <textarea id="notes" name="notes" placeholder="其他需要说明的信息"></textarea>
                 </div>
 
                 <button type="submit" class="btn-primary" id="submit-btn">
@@ -254,29 +254,11 @@
     <script>
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
-            loadHeaderAndFooter();
             initializeForm();
             checkUserLoginAndFillOrganizer();
         });
 
-        // 加载头部和底部
-        async function loadHeaderAndFooter() {
-            try {
-                const [headerResponse, footerResponse] = await Promise.all([
-                    fetch('/shared/header.html'),
-                    fetch('/shared/footer.html')
-                ]);
 
-                if (headerResponse.ok) {
-                    document.getElementById('header-placeholder').innerHTML = await headerResponse.text();
-                }
-                if (footerResponse.ok) {
-                    document.getElementById('footer-placeholder').innerHTML = await footerResponse.text();
-                }
-            } catch (error) {
-                console.error('加载页面组件失败:', error);
-            }
-        }
 
         // 检查用户登录状态并填充组织者信息
         function checkUserLoginAndFillOrganizer() {
@@ -386,20 +368,25 @@
 
                 // 准备活动数据
                 const formData = new FormData(document.getElementById('meetup-form'));
+                
+                // 将用户输入的本地日期时间转换为UTC时间存储到数据库
+                // 创建本地时间的Date对象
+                const localDateTime = new Date(`${formData.get('date')}T${formData.get('time')}:00`);
+                // 转换为ISO字符串（UTC时间）
+                const datetime = localDateTime.toISOString();
+                
                 const meetupData = {
                     title: formData.get('title'),
                     description: formData.get('description'),
                     type: formData.get('type'),
-                    category: formData.get('category'),
-                    date: formData.get('date'),
-                    time: formData.get('time'),
+                    datetime: datetime,
                     location: formData.get('location'),
+                    duration: formData.get('duration') ? parseFloat(formData.get('duration')) : null,
                     maxParticipants: formData.get('maxParticipants') ? parseInt(formData.get('maxParticipants')) : null,
                     fee: formData.get('fee') ? parseFloat(formData.get('fee')) : 0,
                     organizer: formData.get('organizer'),
                     contact: formData.get('contact'),
                     qrImageUrl: qrImageUrl,
-                    notes: formData.get('notes'),
                     createdBy: getCurrentUsername()
                 };
 
@@ -438,21 +425,35 @@
 
         // 上传二维码图片
         async function uploadQRImage(file) {
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('folder', 'meetup-qr');
+            // 将文件转换为base64格式
+            const base64Image = await fileToBase64(file);
 
             const response = await fetch('/.netlify/functions/uploadImageToGitHub', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    base64Image: base64Image
+                })
             });
 
             const result = await response.json();
             if (result.success) {
                 return result.url;
             } else {
-                throw new Error('二维码上传失败');
+                throw new Error('二维码上传失败: ' + (result.error || '未知错误'));
             }
+        }
+
+        // 将文件转换为base64格式
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
         }
 
         // 获取当前用户名
