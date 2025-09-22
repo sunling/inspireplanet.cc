@@ -26,13 +26,28 @@
         
         .container {
             width: 90% !important;
-            max-width: 1200px !important;
+            max-width: 800px !important;
             margin: 20px auto !important;
             padding: 2rem !important;
             background: white;
             border-radius: var(--radius);
             box-shadow: var(--shadow-md);
             box-sizing: border-box;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: var(--radius-sm);
+            border-left: 4px solid var(--primary);
+        }
+
+        .form-section h3 {
+            margin: 0 0 1rem 0;
+            color: var(--text);
+            font-size: 1.1rem;
+            font-weight: 600;
         }
 
         .form-group {
@@ -44,6 +59,49 @@
             margin-bottom: 0.5rem;
             font-weight: 600;
             color: var(--text);
+        }
+
+        .optional {
+            font-weight: 400;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .quick-datetime-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .quick-datetime-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-right: 0.25rem;
+        }
+
+        .quick-datetime-btn {
+            padding: 0.4rem 0.8rem;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-datetime-btn:hover {
+            border-color: var(--primary);
+            background: rgba(255, 127, 80, 0.05);
+            color: var(--primary);
+        }
+
+        .quick-datetime-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
         }
 
         .form-group input,
@@ -105,21 +163,28 @@
             background: var(--primary);
             color: white;
             border: none;
-            padding: 0.75rem 2rem;
-            border-radius: var(--radius-sm);
-            font-size: 1rem;
+            padding: 1rem 3rem;
+            border-radius: var(--radius);
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 1rem;
+            box-shadow: 0 4px 12px rgba(255, 127, 80, 0.3);
         }
 
         .btn-primary:hover {
             background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 127, 80, 0.4);
         }
 
         .btn-primary:disabled {
             background: var(--muted);
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .error-message {
@@ -145,6 +210,23 @@
             .form-row {
                 grid-template-columns: 1fr;
             }
+
+            .quick-datetime-buttons {
+                gap: 0.4rem;
+            }
+
+            .quick-datetime-label {
+                width: 100%;
+                margin-bottom: 0.25rem;
+            }
+
+            .quick-datetime-btn {
+                flex: 1;
+                min-width: 80px;
+                text-align: center;
+                font-size: 0.8rem;
+                padding: 0.35rem 0.6rem;
+            }
         }
     </style>
 </head>
@@ -152,98 +234,104 @@
 <body>
     <main class="main-content">
         <div class="container">
-            <h1>发起活动</h1>
-            <p class="text-muted">创建一个线上或线下活动，邀请志同道合的朋友参与</p>
+            <!-- <h1>🎯 发起活动</h1> -->
+            <p class="text-muted">快速创建活动，连接志同道合的朋友</p>
 
             <div id="success-message" class="success-message" style="display: none;"></div>
 
             <form id="meetup-form">
-                <div class="form-group">
-                    <label for="title">活动标题</label>
-                    <input type="text" id="title" name="title" required placeholder="输入活动标题">
-                    <div class="error-message" id="title-error"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="description">活动描述</label>
-                    <textarea id="description" name="description" required placeholder="详细描述活动内容、目标和亮点"></textarea>
-                    <div class="error-message" id="description-error"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="type">活动类型</label>
-                    <select id="type" name="type" required>
-                        <option value="">选择活动类型</option>
-                        <option value="online">线上活动</option>
-                        <option value="offline">线下活动</option>
-                        <option value="hybrid">线上线下结合</option>
-                    </select>
-                    <div class="error-message" id="type-error"></div>
-                </div>
-
-                <div class="form-row">
+                <!-- 基本信息 -->
+                <div class="form-section">
+                    <h3>基本信息</h3>
                     <div class="form-group">
-                        <label for="date">活动日期</label>
-                        <input type="date" id="date" name="date" required>
-                        <div class="error-message" id="date-error"></div>
+                        <label for="title">活动标题</label>
+                        <input type="text" id="title" name="title" required placeholder="输入活动标题">
+                        <div class="error-message" id="title-error"></div>
                     </div>
 
                     <div class="form-group">
-                        <label for="time">活动时间</label>
-                        <input type="time" id="time" name="time" required>
-                        <div class="error-message" id="time-error"></div>
+                        <label for="description">活动描述</label>
+                        <textarea id="description" name="description" required placeholder="详细描述活动内容、目标和亮点"></textarea>
+                        <div class="error-message" id="description-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="type">活动类型</label>
+                        <select id="type" name="type" required>
+                            <option value="">选择活动类型</option>
+                            <option value="online">线上活动</option>
+                            <option value="offline">线下活动</option>
+                            <option value="hybrid">线上线下结合</option>
+                        </select>
+                        <div class="error-message" id="type-error"></div>
                     </div>
                 </div>
 
-                <div class="form-row">
+                <!-- 时间地点 -->
+                <div class="form-section">
+                    <h3>时间地点</h3>
                     <div class="form-group">
-                        <label for="duration">活动时长（小时）</label>
-                        <input type="number" id="duration" name="duration" min="0.5" step="0.5" placeholder="例如：2">
+                        <label for="datetime">活动时间</label>
+                        <input type="datetime-local" id="datetime" name="datetime" required>
+                        <div class="quick-datetime-buttons">
+                            <span class="quick-datetime-label">快捷选择：</span>
+                            <button type="button" class="quick-datetime-btn" data-type="tomorrow">明天 19:00</button>
+                            <button type="button" class="quick-datetime-btn" data-type="next-week">下周六 14:00</button>
+                            <button type="button" class="quick-datetime-btn" data-type="next-sunday">下周日 10:00</button>
+                            <button type="button" class="quick-datetime-btn" data-type="weekend">本周末 19:00</button>
+                        </div>
+                        <div class="error-message" id="datetime-error"></div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="location">活动地点</label>
+                            <input type="text" id="location" name="location" placeholder="线下活动请填写具体地址，线上活动可填写平台名称">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="duration">活动时长（小时）<span class="optional">（可选）</span></label>
+                            <input type="number" id="duration" name="duration" min="0.5" step="0.5" placeholder="例如：2">
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="maxParticipants">最大参与人数</label>
+                        <label for="maxParticipants">最大参与人数<span class="optional">（可选）</span></label>
                         <input type="number" id="maxParticipants" name="maxParticipants" min="1" placeholder="不限制可留空">
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="location">活动地点</label>
-                    <input type="text" id="location" name="location" placeholder="线下活动请填写具体地址，线上活动可填写平台名称">
-                </div>
-
-                <div class="form-group">
-                    <label for="fee">活动费用（元）</label>
-                    <input type="number" id="fee" name="fee" min="0" step="0.01" placeholder="免费活动填0">
-                </div>
-
-                <div class="form-group">
-                    <label for="organizer">组织者姓名</label>
-                    <input type="text" id="organizer" name="organizer" required placeholder="您的姓名">
-                    <div class="error-message" id="organizer-error"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="contact">微信号</label>
-                    <input type="text" id="contact" name="contact" required placeholder="请输入微信号">
-                    <div class="error-message" id="contact-error"></div>
-                </div>
-
-                <div class="form-group">
-                    <label>活动群二维码</label>
-                    <div class="qr-upload" id="qr-upload">
-                        <input type="file" id="qr-file" accept="image/*" style="display: none;">
-                        <div id="qr-upload-content">
-                            <p>点击或拖拽上传群二维码</p>
-                            <p class="text-muted text-sm">支持 JPG、PNG 格式，建议尺寸 400x400px</p>
-                        </div>
-                        <img id="qr-preview" class="qr-preview" style="display: none;">
+                <!-- 联系方式 -->
+                <div class="form-section">
+                    <h3>联系方式</h3>
+                    <div class="form-group">
+                        <label for="organizer">组织者姓名</label>
+                        <input type="text" id="organizer" name="organizer" required placeholder="您的姓名">
+                        <div class="error-message" id="organizer-error"></div>
                     </div>
-                    <div class="error-message" id="qr-error"></div>
+
+                    <div class="form-group">
+                        <label for="contact">微信号</label>
+                        <input type="text" id="contact" name="contact" required placeholder="请输入微信号">
+                        <div class="error-message" id="contact-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>活动群二维码</label>
+                        <div class="qr-upload" id="qr-upload">
+                            <input type="file" id="qr-file" accept="image/*" style="display: none;">
+                            <div id="qr-upload-content">
+                                <p>点击上传群二维码</p>
+                                <p class="text-muted text-sm">支持拖拽上传，JPG/PNG格式</p>
+                            </div>
+                            <img id="qr-preview" class="qr-preview" style="display: none;">
+                        </div>
+                        <div class="error-message" id="qr-error"></div>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-primary" id="submit-btn">
-                    发布活动
+                    🚀 发布活动
                 </button>
             </form>
         </div>
@@ -284,9 +372,16 @@
             const qrPreview = document.getElementById('qr-preview');
             const qrUploadContent = document.getElementById('qr-upload-content');
 
-            // 设置最小日期为今天
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('date').min = today;
+            // 设置最小日期时间为当前时间
+            const now = new Date();
+            const minDateTime = new Date(now.getTime() + 60 * 60 * 1000); // 最少1小时后
+            document.getElementById('datetime').min = formatDateTimeLocal(minDateTime);
+
+            // 设置默认活动时间为明天19:00
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(19, 0, 0, 0);
+            document.getElementById('datetime').value = formatDateTimeLocal(tomorrow);
 
             // 二维码上传处理
             qrUpload.addEventListener('click', () => qrFile.click());
@@ -317,6 +412,100 @@
 
             // 表单提交处理
             form.addEventListener('submit', handleFormSubmit);
+
+            // 快捷日期时间选择处理
+            initializeQuickDateTimeButtons();
+        }
+
+        // 格式化日期时间为datetime-local格式
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // 初始化快捷日期时间按钮
+        function initializeQuickDateTimeButtons() {
+            const datetimeInput = document.getElementById('datetime');
+            const quickDateTimeButtons = document.querySelectorAll('.quick-datetime-btn');
+
+            // 设置初始状态
+            updateQuickDateTimeButtonsState();
+
+            // 为每个快捷日期时间按钮添加点击事件
+            quickDateTimeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const type = button.getAttribute('data-type');
+                    const datetime = getQuickDateTime(type);
+                    datetimeInput.value = formatDateTimeLocal(datetime);
+                    updateQuickDateTimeButtonsState();
+                });
+            });
+
+            // 监听日期时间输入框的变化
+            datetimeInput.addEventListener('change', updateQuickDateTimeButtonsState);
+            datetimeInput.addEventListener('input', updateQuickDateTimeButtonsState);
+        }
+
+        // 获取快捷日期时间
+        function getQuickDateTime(type) {
+            const now = new Date();
+            const result = new Date();
+
+            switch (type) {
+                case 'tomorrow':
+                    result.setDate(now.getDate() + 1);
+                    result.setHours(19, 0, 0, 0);
+                    break;
+                case 'next-week':
+                    // 下周六
+                    const daysUntilNextSaturday = (6 - now.getDay() + 7) % 7 || 7;
+                    result.setDate(now.getDate() + daysUntilNextSaturday);
+                    result.setHours(14, 0, 0, 0);
+                    break;
+                case 'next-sunday':
+                    // 下周日
+                    const daysUntilNextSunday = (7 - now.getDay()) % 7 || 7;
+                    result.setDate(now.getDate() + daysUntilNextSunday);
+                    result.setHours(10, 0, 0, 0);
+                    break;
+                case 'weekend':
+                    // 本周末（如果今天是周六或周日，则选择下周末）
+                    const dayOfWeek = now.getDay();
+                    if (dayOfWeek === 0) { // 周日
+                        result.setDate(now.getDate() + 6); // 下周六
+                    } else if (dayOfWeek === 6) { // 周六
+                        result.setDate(now.getDate() + 7); // 下周日
+                    } else {
+                        result.setDate(now.getDate() + (6 - dayOfWeek)); // 本周六
+                    }
+                    result.setHours(19, 0, 0, 0);
+                    break;
+                default:
+                    return now;
+            }
+
+            return result;
+        }
+
+        // 更新快捷日期时间按钮的状态
+        function updateQuickDateTimeButtonsState() {
+            const datetimeInput = document.getElementById('datetime');
+            const quickDateTimeButtons = document.querySelectorAll('.quick-datetime-btn');
+            const currentDateTime = datetimeInput.value;
+
+            quickDateTimeButtons.forEach(button => {
+                const type = button.getAttribute('data-type');
+                const buttonDateTime = formatDateTimeLocal(getQuickDateTime(type));
+                if (buttonDateTime === currentDateTime) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
         }
 
         // 处理二维码文件
@@ -370,8 +559,7 @@
                 const formData = new FormData(document.getElementById('meetup-form'));
                 
                 // 将用户输入的本地日期时间转换为UTC时间存储到数据库
-                // 创建本地时间的Date对象
-                const localDateTime = new Date(`${formData.get('date')}T${formData.get('time')}:00`);
+                const localDateTime = new Date(formData.get('datetime'));
                 // 转换为ISO字符串（UTC时间）
                 const datetime = localDateTime.toISOString();
                 
@@ -383,7 +571,6 @@
                     location: formData.get('location'),
                     duration: formData.get('duration') ? parseFloat(formData.get('duration')) : null,
                     maxParticipants: formData.get('maxParticipants') ? parseInt(formData.get('maxParticipants')) : null,
-                    fee: formData.get('fee') ? parseFloat(formData.get('fee')) : 0,
                     organizer: formData.get('organizer'),
                     contact: formData.get('contact'),
                     qrImageUrl: qrImageUrl,
@@ -478,7 +665,7 @@
             clearAllErrors();
 
             // 验证必填字段
-            const requiredFields = ['title', 'description', 'type', 'date', 'time', 'organizer', 'contact'];
+            const requiredFields = ['title', 'description', 'type', 'datetime', 'organizer', 'contact'];
             requiredFields.forEach(field => {
                 const input = document.getElementById(field);
                 if (!input.value.trim()) {
@@ -487,11 +674,12 @@
                 }
             });
 
-            // 验证日期不能是过去
-            const dateInput = document.getElementById('date');
-            const today = new Date().toISOString().split('T')[0];
-            if (dateInput.value && dateInput.value < today) {
-                showError('date-error', '活动日期不能是过去的日期');
+            // 验证日期时间不能是过去
+            const datetimeInput = document.getElementById('datetime');
+            const now = new Date();
+            const selectedDateTime = new Date(datetimeInput.value);
+            if (datetimeInput.value && selectedDateTime <= now) {
+                showError('datetime-error', '活动时间必须是未来时间');
                 isValid = false;
             }
 

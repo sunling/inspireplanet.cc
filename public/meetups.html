@@ -144,6 +144,9 @@
             box-shadow: var(--shadow);
             transition: all 0.3s ease;
             border: 1px solid #f0f0f0;
+            height: 420px;
+            display: flex;
+            flex-direction: column;
         }
 
         .meetup-card:hover {
@@ -212,12 +215,19 @@
             font-family: var(--font-sans);
         }
 
+        .meetup-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
         .meetup-actions {
             display: flex;
             gap: var(--spacing-sm);
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
+            margin-top: auto;
         }
 
         .join-btn, .detail-btn {
@@ -323,6 +333,8 @@
 
             .meetup-card {
                 padding: var(--spacing-lg);
+                height: auto;
+                min-height: 380px;
             }
 
             .create-meetup-btn {
@@ -346,7 +358,7 @@
 
     <main class="meetup-container">
         <div class="meetup-header">
-            <h1>活动列表</h1>
+            <!-- <h1>活动列表</h1> -->
             <a href="create-meetup.html" class="create-meetup-btn" id="createMeetupBtn" style="display: none;">发起活动</a>
         </div>
 
@@ -494,32 +506,34 @@
                 
                 return `
                     <div class="meetup-card" onclick="window.location.href='meetup-detail.html?id=${meetup.id}'" style="cursor: pointer;">
-                        <div class="meetup-type ${meetup.type}">
-                            ${meetup.type === 'online' ? '线上活动' : '线下活动'}
-                        </div>
-                        <h3 class="meetup-title">
-                            <a href="meetup-detail.html?id=${meetup.id}" style="color: inherit; text-decoration: none;">
-                                ${escapeHtml(meetup.title)}
-                            </a>
-                        </h3>
-                        <div class="meetup-meta">
-                            <div class="meetup-meta-item">
-                                📅 ${formattedDate}
+                        <div class="meetup-content">
+                            <div class="meetup-type ${meetup.type}">
+                                ${meetup.type === 'online' ? '线上活动' : '线下活动'}
                             </div>
-                            <div class="meetup-meta-item">
-                                🕐 ${formattedTime}
-                            </div>
-                            ${meetup.location ? `
+                            <h3 class="meetup-title">
+                                <a href="meetup-detail.html?id=${meetup.id}" style="color: inherit; text-decoration: none;">
+                                    ${escapeHtml(meetup.title)}
+                                </a>
+                            </h3>
+                            <div class="meetup-meta">
                                 <div class="meetup-meta-item">
-                                    📍 ${escapeHtml(meetup.location)}
+                                    📅 ${formattedDate}
                                 </div>
-                            ` : ''}
-                        </div>
-                        <div class="meetup-description">
-                            ${escapeHtml(meetup.description)}
-                        </div>
-                        <div class="meetup-organizer">
-                            👤 组织者：${escapeHtml(meetup.organizer)}
+                                <div class="meetup-meta-item">
+                                    🕐 ${formattedTime}
+                                </div>
+                                ${meetup.location ? `
+                                    <div class="meetup-meta-item">
+                                        📍 ${escapeHtml(meetup.location)}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="meetup-description">
+                                ${escapeHtml(meetup.description)}
+                            </div>
+                            <div class="meetup-organizer">
+                                👤 组织者：${escapeHtml(meetup.organizer)}
+                            </div>
                         </div>
                         <div class="meetup-actions">
                             <button class="join-btn" 
@@ -711,15 +725,14 @@
                     
                     <div style="margin-bottom: 20px; text-align: left;">
                         <label style="display: block; margin-bottom: 5px; font-weight: bold;">微信号:</label>
-                        <input type="text" id="rsvpWechat" value="${user.wechat_id || ''}" readonly style="
+                        <input type="text" id="rsvpWechat" value="${user.wechat_id || ''}" style="
                             width: 100%;
                             padding: 10px;
                             border: 2px solid #e0e0e0;
                             border-radius: 8px;
                             font-size: 14px;
-                            background: #f5f5f5;
                             box-sizing: border-box;
-                        " />
+                        " placeholder="请输入您的微信号" />
                     </div>
                     
                     <div style="display: flex; gap: 10px; justify-content: center;">
@@ -786,7 +799,7 @@
                     // 显示成功消息和二维码
                     if (qrImageUrl) {
                         setTimeout(() => {
-                            alert('报名成功！现在为您显示群聊二维码。');
+                            // alert('报名成功！现在为您显示群聊二维码。');
                             showQRCode(qrImageUrl);
                         }, 500);
                     } else {
@@ -823,25 +836,61 @@
                     padding: 30px;
                     border-radius: 15px;
                     text-align: center;
-                    max-width: 400px;
+                    max-width: 420px;
                     width: 90%;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
                 ">
                     <h3 style="margin-bottom: 20px; color: #333;">扫码进群</h3>
+                    
+                    <!-- 重要提示 -->
+                    <div style="
+                        background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+                        color: white;
+                        padding: 12px 16px;
+                        border-radius: 8px;
+                        margin-bottom: 20px;
+                        font-size: 14px;
+                        font-weight: 500;
+                        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+                    ">
+                        ⚠️ 重要提醒：此二维码仅显示一次，请立即扫码进群或保存图片！
+                    </div>
+                    
                     <img src="${qrImageUrl}" alt="群聊二维码" style="
                         max-width: 100%;
                         height: auto;
                         border-radius: 10px;
-                        margin-bottom: 20px;
+                        margin-bottom: 15px;
+                        border: 1px solid #e0e0e0;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
                     ">
-                    <p style="color: #666; margin-bottom: 20px;">请使用微信扫描二维码加入群聊</p>
+                    
+                    <p style="color: #666; margin-bottom: 15px; font-size: 15px;">请使用微信扫描二维码加入群聊</p>
+                    
+                    <!-- 操作提示 -->
+                    <div style="
+                        background: #f8f9fa;
+                        padding: 12px;
+                        border-radius: 8px;
+                        margin-bottom: 20px;
+                        font-size: 13px;
+                        color: #666;
+                        border-left: 3px solid #667eea;
+                    ">
+                        💡 建议：长按二维码图片保存到相册，或截图保存以备后用
+                    </div>
+                    
                     <button onclick="this.parentElement.parentElement.remove()" style="
                         background: #667eea;
                         color: white;
                         border: none;
-                        padding: 10px 20px;
+                        padding: 12px 24px;
                         border-radius: 20px;
                         cursor: pointer;
-                    ">关闭</button>
+                        font-size: 14px;
+                        font-weight: 500;
+                        transition: background 0.3s ease;
+                    " onmouseover="this.style.background='#5a6fd8'" onmouseout="this.style.background='#667eea'">我已扫码/保存</button>
                 </div>
             `;
 
