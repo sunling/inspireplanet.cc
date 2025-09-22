@@ -11,115 +11,6 @@
     <link rel="stylesheet" href="/styles/card-common.css">
     <link rel="stylesheet" href="/styles/card-gradients.css">
     <style>
-        /* Floating Action Buttons */
-        .floating-actions {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        
-        .fab-main {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: var(--gradient-primary);
-            color: white;
-            border: none;
-            cursor: pointer;
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        
-        .fab-main:hover {
-            transform: scale(1.1);
-            box-shadow: 0 8px 25px rgba(255, 127, 80, 0.4);
-        }
-        
-        .fab-menu {
-            display: none;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        
-        .fab-menu.active {
-            display: flex;
-            animation: fadeInUp 0.3s ease;
-        }
-        
-        .fab-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: slideInRight 0.3s ease forwards;
-        }
-        
-        .fab-item:nth-child(1) { animation-delay: 0.1s; }
-        .fab-item:nth-child(2) { animation-delay: 0.2s; }
-        .fab-item:nth-child(3) { animation-delay: 0.3s; }
-        .fab-item:nth-child(4) { animation-delay: 0.4s; }
-        
-        .fab-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 2px solid var(--primary);
-            color: var(--primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .fab-btn:hover {
-            background: var(--primary);
-            color: white;
-            transform: scale(1.1);
-        }
-        
-        .fab-label {
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            white-space: nowrap;
-            backdrop-filter: blur(10px);
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes slideInRight {
-             to {
-                 opacity: 1;
-                 transform: translateY(0);
-             }
-         }
          
          /* View All Button */
          .view-all-btn {
@@ -549,32 +440,7 @@
                 margin-bottom: 2rem;
             }
             
-            /* Mobile FAB adjustments */
-            .floating-actions {
-                right: 16px;
-                bottom: 16px;
-            }
-            
-            .fab-main {
-                width: 52px;
-                height: 52px;
-                font-size: 1.4rem;
-            }
-            
-            .fab-btn {
-                width: 44px;
-                height: 44px;
-                font-size: 1.1rem;
-            }
-            
-            .fab-label {
-                font-size: 0.8rem;
-                padding: 4px 8px;
-            }
-            
-            .fab-item {
-                gap: 8px;
-            }
+
         }
     </style>
 </head>
@@ -609,29 +475,7 @@
     </section>
     
     <!-- Floating Action Buttons -->
-    <div class="floating-actions" role="navigation" aria-label="快速操作">
-        <div class="fab-menu" id="fab-menu">
-            <div class="fab-item">
-                <span class="fab-label">社群卡片</span>
-                <a href="cards" class="fab-btn" aria-label="查看社群创建的卡片">🎨</a>
-            </div>
-            <div class="fab-item">
-                <span class="fab-label">新建卡片</span>
-                <a href="create-card" class="fab-btn" aria-label="新建卡片">✨</a>
-            </div>
-            <div class="fab-item">
-                <span class="fab-label">新建活动</span>
-                <a href="weekly-cards.html" class="fab-btn" aria-label="新建活动">📅</a>
-            </div>
-            <div class="fab-item">
-                <span class="fab-label">封面制作</span>
-                <a href="cover-editor.html" class="fab-btn" aria-label="封面制作">🖼️</a>
-            </div>
-        </div>
-        <button class="fab-main" id="fab-main" aria-label="打开快速操作菜单">
-            <span id="fab-icon">+</span>
-        </button>
-    </div>
+    <div id="floating-actions-placeholder"></div>
     
     <!-- Footer -->
     <div id="footer-placeholder"></div>
@@ -813,53 +657,9 @@
             }
         }
         
-        // Floating Action Button functionality
-        function initFAB() {
-            const fabMain = document.getElementById('fab-main');
-            const fabMenu = document.getElementById('fab-menu');
-            const fabIcon = document.getElementById('fab-icon');
-            let isOpen = false;
-            
-            fabMain.addEventListener('click', function() {
-                isOpen = !isOpen;
-                
-                if (isOpen) {
-                    fabMenu.classList.add('active');
-                    fabIcon.style.transform = 'rotate(45deg)';
-                    fabMain.setAttribute('aria-expanded', 'true');
-                    fabMain.setAttribute('aria-label', '关闭快速操作菜单');
-                } else {
-                    fabMenu.classList.remove('active');
-                    fabIcon.style.transform = 'rotate(0deg)';
-                    fabMain.setAttribute('aria-expanded', 'false');
-                    fabMain.setAttribute('aria-label', '打开快速操作菜单');
-                }
-            });
-            
-            // Close menu when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.floating-actions') && isOpen) {
-                    isOpen = false;
-                    fabMenu.classList.remove('active');
-                    fabIcon.style.transform = 'rotate(0deg)';
-                    fabMain.setAttribute('aria-expanded', 'false');
-                    fabMain.setAttribute('aria-label', '打开快速操作菜单');
-                }
-            });
-            
-            // Keyboard support
-            fabMain.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    fabMain.click();
-                }
-            });
-        }
-        
         // 初始化和事件监听
         document.addEventListener('DOMContentLoaded', function() {
             loadLatestCards();
-            initFAB();
             
             // 键盘导航
             document.addEventListener('keydown', handleKeyboardNavigation);
@@ -907,5 +707,7 @@
             });
         });
     </script>
+    
+    <script src="/shared/floating-actions-loader.js"></script>
 </body>
 </html>

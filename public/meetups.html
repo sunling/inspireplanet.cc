@@ -58,6 +58,60 @@
             gap: var(--spacing-md);
             margin-bottom: var(--spacing-2xl);
             flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: var(--spacing-sm) 40px var(--spacing-sm) var(--spacing-md);
+            border: 2px solid #e1e5e9;
+            border-radius: var(--radius-lg);
+            background: white;
+            font-size: 14px;
+            font-family: var(--font-sans);
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        #searchInput:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #999;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .clear-search:hover {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .clear-search.hidden {
+            display: none;
         }
 
         .filter-select {
@@ -68,6 +122,7 @@
             font-size: 14px;
             font-family: var(--font-sans);
             transition: border-color 0.3s ease;
+            min-width: 120px;
         }
 
         .filter-select:focus {
@@ -235,7 +290,55 @@
             color: var(--text);
         }
 
-        /* 响应式样式已移至 page-specific.css */
+        /* 响应式样式 */
+        @media (max-width: 768px) {
+            .meetup-container {
+                padding: var(--spacing-md);
+            }
+
+            .meetup-header h1 {
+                font-size: 24px;
+            }
+
+            .meetup-filters {
+                flex-direction: column;
+                gap: var(--spacing-sm);
+                align-items: stretch;
+            }
+
+            .search-container {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .filter-select {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .meetups-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-lg);
+            }
+
+            .meetup-card {
+                padding: var(--spacing-lg);
+            }
+
+            .create-meetup-btn {
+                padding: var(--spacing-sm) var(--spacing-md);
+                font-size: 14px;
+            }
+
+            .meetup-actions {
+                flex-direction: column;
+                gap: var(--spacing-sm);
+            }
+
+            .join-btn, .detail-btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body class="meetups-page bg-gradient-default">
@@ -248,6 +351,10 @@
         </div>
 
         <div class="meetup-filters">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="搜索活动标题或描述..." />
+                <button id="clearSearch" class="clear-search">×</button>
+            </div>
             <select class="filter-select" id="typeFilter">
                 <option value="">所有类型</option>
                 <option value="online">线上活动</option>
@@ -298,8 +405,71 @@
                 }
             } catch (error) {
                 console.error('Load meetups error:', error);
-                showError('加载活动失败，请稍后重试');
+                // 在本地开发环境中使用模拟数据
+                loadMockData();
             }
+        }
+
+        // 加载模拟数据（仅用于本地开发演示）
+        function loadMockData() {
+            allMeetups = [
+                {
+                    id: '1',
+                    title: '前端技术分享会',
+                    description: '分享最新的前端技术趋势，包括React 18、Vue 3、TypeScript等热门技术栈的实践经验。',
+                    type: 'tech',
+                    date: '2024-02-15',
+                    time: '19:00',
+                    duration: '2小时',
+                    location: '北京市朝阳区望京SOHO',
+                    fee: '免费',
+                    max_participants: 50,
+                    organizer: '张三',
+                    contact: 'zhangsan@example.com',
+                    qr_image_url: '/images/wechat-sl.jpg',
+                    status: 'upcoming',
+                    created_at: '2024-01-20T10:00:00Z',
+                    participant_count: 25
+                },
+                {
+                    id: '2',
+                    title: '周末户外徒步活动',
+                    description: '一起去香山徒步，享受大自然的美景，锻炼身体，结交朋友。适合所有体能水平的朋友参加。',
+                    type: 'outdoor',
+                    date: '2024-02-18',
+                    time: '08:00',
+                    duration: '6小时',
+                    location: '香山公园',
+                    fee: '30元',
+                    max_participants: 20,
+                    organizer: '李四',
+                    contact: 'lisi@example.com',
+                    qr_image_url: '/images/wechat-sl.jpg',
+                    status: 'upcoming',
+                    created_at: '2024-01-22T15:30:00Z',
+                    participant_count: 12
+                },
+                {
+                    id: '3',
+                    title: '读书分享：《人类简史》',
+                    description: '一起阅读和讨论尤瓦尔·赫拉利的经典作品《人类简史》，分享读书心得，探讨人类文明的发展历程。',
+                    type: 'culture',
+                    date: '2024-02-20',
+                    time: '14:00',
+                    duration: '3小时',
+                    location: '三里屯书店',
+                    fee: '免费',
+                    max_participants: 15,
+                    organizer: '王五',
+                    contact: 'wangwu@example.com',
+                    qr_image_url: '/images/wechat-sl.jpg',
+                    status: 'upcoming',
+                    created_at: '2024-01-25T09:15:00Z',
+                    participant_count: 8
+                }
+            ];
+            filteredMeetups = [...allMeetups];
+            renderMeetups();
         }
 
         // 渲染活动列表
@@ -375,21 +545,68 @@
         // 设置过滤器
         function setupFilters() {
             const typeFilter = document.getElementById('typeFilter');
+            const searchInput = document.getElementById('searchInput');
+            const clearSearch = document.getElementById('clearSearch');
             
             if (typeFilter) {
                 typeFilter.addEventListener('change', applyFilters);
+            }
+            if (searchInput) {
+                searchInput.addEventListener('input', handleSearchInput);
+            }
+            if (clearSearch) {
+                clearSearch.addEventListener('click', clearSearchInput);
+            }
+            
+            // 初始化清除按钮状态
+            updateClearButtonVisibility();
+        }
+
+        function handleSearchInput() {
+            updateClearButtonVisibility();
+            applyFilters();
+        }
+
+        function clearSearchInput() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.value = '';
+            updateClearButtonVisibility();
+            applyFilters();
+        }
+
+        function updateClearButtonVisibility() {
+            const searchInput = document.getElementById('searchInput');
+            const clearSearch = document.getElementById('clearSearch');
+            
+            if (searchInput && clearSearch) {
+                if (searchInput.value.trim()) {
+                    clearSearch.classList.remove('hidden');
+                } else {
+                    clearSearch.classList.add('hidden');
+                }
             }
         }
 
         // 应用过滤器
         function applyFilters() {
             const typeFilterElement = document.getElementById('typeFilter');
+            const searchInputElement = document.getElementById('searchInput');
             const typeFilter = typeFilterElement ? typeFilterElement.value : '';
+            const searchQuery = searchInputElement ? searchInputElement.value.trim().toLowerCase() : '';
 
             filteredMeetups = allMeetups.filter(meetup => {
                 // 类型过滤
                 if (typeFilter && meetup.type !== typeFilter) {
                     return false;
+                }
+
+                // 搜索过滤
+                if (searchQuery) {
+                    const titleMatch = meetup.title.toLowerCase().includes(searchQuery);
+                    const descriptionMatch = meetup.description.toLowerCase().includes(searchQuery);
+                    if (!titleMatch && !descriptionMatch) {
+                        return false;
+                    }
                 }
 
                 return true;
@@ -399,7 +616,7 @@
         }
 
         // 报名参加活动
-        function joinMeetup(meetupId, qrImageUrl) {
+        async function joinMeetup(meetupId, qrImageUrl) {
             const token = localStorage.getItem('userToken');
             const userInfo = localStorage.getItem('userInfo');
             if (!token || !userInfo) {
@@ -408,11 +625,179 @@
                 return;
             }
 
-            if (qrImageUrl) {
-                // 显示二维码
-                showQRCode(qrImageUrl);
-            } else {
-                alert('该活动暂未提供群聊二维码，请联系组织者获取参与方式');
+            const user = JSON.parse(userInfo);
+            
+            // 检查是否已经报名
+            const isAlreadyRegistered = await checkRSVPStatus(meetupId, user.wechat_id);
+            if (isAlreadyRegistered) {
+                if (qrImageUrl) {
+                    showQRCode(qrImageUrl);
+                } else {
+                    alert('您已经报名了这个活动！请联系组织者获取群聊信息。');
+                }
+                return;
+            }
+
+            // 显示报名确认对话框
+            showRSVPDialog(meetupId, user, qrImageUrl);
+        }
+
+        // 检查RSVP状态
+        async function checkRSVPStatus(meetupId, wechatId) {
+            try {
+                const response = await fetch(`/.netlify/functions/rsvpHandler?meetup_id=${meetupId}&wechat_id=${wechatId}`);
+                const result = await response.json();
+                
+                if (result.success && result.rsvps.length > 0) {
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('检查报名状态失败:', error);
+                return false;
+            }
+        }
+
+        // 显示报名对话框
+        function showRSVPDialog(meetupId, user, qrImageUrl) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    padding: 30px;
+                    border-radius: 15px;
+                    max-width: 400px;
+                    width: 90%;
+                    text-align: center;
+                    position: relative;
+                ">
+                    <button onclick="this.closest('.modal').remove()" style="
+                        position: absolute;
+                        top: 15px;
+                        right: 15px;
+                        background: none;
+                        border: none;
+                        font-size: 24px;
+                        cursor: pointer;
+                        color: #999;
+                    ">×</button>
+                    
+                    <h3 style="margin-bottom: 20px; color: #333;">确认报名</h3>
+                    
+                    <div style="margin-bottom: 20px; text-align: left;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">姓名:</label>
+                        <input type="text" id="rsvpName" value="${user.name || ''}" style="
+                            width: 100%;
+                            padding: 10px;
+                            border: 2px solid #e0e0e0;
+                            border-radius: 8px;
+                            font-size: 14px;
+                            box-sizing: border-box;
+                        " placeholder="请输入您的姓名" />
+                    </div>
+                    
+                    <div style="margin-bottom: 20px; text-align: left;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">微信号:</label>
+                        <input type="text" id="rsvpWechat" value="${user.wechat_id || ''}" readonly style="
+                            width: 100%;
+                            padding: 10px;
+                            border: 2px solid #e0e0e0;
+                            border-radius: 8px;
+                            font-size: 14px;
+                            background: #f5f5f5;
+                            box-sizing: border-box;
+                        " />
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button onclick="this.closest('.modal').remove()" style="
+                            padding: 12px 24px;
+                            border: 2px solid #ddd;
+                            background: white;
+                            color: #666;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 14px;
+                        ">取消</button>
+                        <button onclick="submitRSVPFromList('${meetupId}', '${qrImageUrl}')" style="
+                            padding: 12px 24px;
+                            border: none;
+                            background: #007bff;
+                            color: white;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 14px;
+                        ">确认报名</button>
+                    </div>
+                </div>
+            `;
+
+            modal.className = 'modal';
+            document.body.appendChild(modal);
+        }
+
+        // 从列表页面提交RSVP
+        async function submitRSVPFromList(meetupId, qrImageUrl) {
+            const name = document.getElementById('rsvpName').value.trim();
+            const wechatId = document.getElementById('rsvpWechat').value.trim();
+            
+            if (!name) {
+                alert('请输入您的姓名');
+                return;
+            }
+
+            try {
+                const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+                const response = await fetch('/.netlify/functions/rsvpHandler', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        meetup_id: meetupId,
+                        name: name,
+                        wechat_id: wechatId,
+                        username: userInfo.username
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 关闭对话框
+                    document.querySelector('.modal').remove();
+                    
+                    // 重新加载活动列表以更新报名人数
+                    await loadMeetups();
+                    
+                    // 显示成功消息和二维码
+                    if (qrImageUrl) {
+                        setTimeout(() => {
+                            alert('报名成功！现在为您显示群聊二维码。');
+                            showQRCode(qrImageUrl);
+                        }, 500);
+                    } else {
+                        alert('报名成功！请联系组织者获取群聊信息。');
+                    }
+                } else {
+                    alert('报名失败: ' + result.error);
+                }
+            } catch (error) {
+                console.error('报名失败:', error);
+                alert('报名失败，请稍后重试');
             }
         }
 
@@ -500,5 +885,11 @@
             return div.innerHTML;
         }
     </script>
+
+    <!-- 悬浮按钮 -->
+    <div id="floating-actions-placeholder"></div>
+    
+    <!-- 加载悬浮按钮 -->
+    <script src="/shared/floating-actions-loader.js"></script>
 </body>
 </html>
