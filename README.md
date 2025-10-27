@@ -88,8 +88,8 @@
 
 1. 克隆仓库
    ```
-   git clone https://github.com/yourusername/content-crafter-kit.git
-   cd content-crafter-kit
+   git clone https://github.com/sunling/inspireplanet.cc
+   cd inspireplanet.cc
    ```
 
 2. 安装依赖
