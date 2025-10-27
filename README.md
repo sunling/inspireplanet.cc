@@ -1,8 +1,8 @@
 [![Netlify Status](https://api.netlify.com/api/v1/badges/4a2ba2a5-6271-4ab1-86ce-581643e5dcfe/deploy-status)](https://app.netlify.com/sites/inspiration-planet/deploys)
 
-# 启发星球闪卡 ✨
+# 启发星球 ✨
 
-一个用于创建、上传和展示来自书籍、播客、电影及个人感悟的启发闪卡的网页应用。该项目让用户能够捕捉灵感瞬间，并以视觉吸引人的形式与他人分享。
+启发星球是一个面向创作者与学习者的灵感社区，这个应用专注于「创建与分享启发卡片」与「组织活动与报名」。我们每周六早上都会举办线上分享会，交流过去一周的收获与思考，一起持续成长。
 
 ## 项目概述
 
@@ -22,17 +22,23 @@
   ├── cards.html         # 查看所有卡片
   ├── daily-card.html    # 日签卡片编辑器
   ├── index.html         # 主页（创建卡片 + 最新卡片轮播）
-  ├── text-optimizer.html # 文本优化器
   ├── weekly-cards.html  # 查看每周会议卡片
   ├── cover-editor.html  # 制作横版封面
   ├── cover-editor-mobile.html  # 制作竖版封面
+  ├── create-meetup.html # 创建活动
+  ├── meetups.html       # 活动列表与报名
+  ├── meetup-detail.html # 活动详情
+  ├── my-meetups.html    # 我创建的活动
+  ├── act-signup.html    # 活动报名页（独立入口）
   images.json    # 卡片背景图片的定义列表
 /public/netlify/functions # Netlify无服务器函数
   ├── authHandler.js
   ├── cardsHandler.js
   ├── commentsHandler.js
   ├── fetchWeeklyCards.js
-  ├── optimizeText.js
+  ├── getLatestWeeklyCards.js
+  ├── meetupHandler.js
+  ├── rsvpHandler.js
   ├── searchImage.js
   ├── uploadImageToGitHub.js
   ├── uploadWeeklyCard.js
@@ -45,32 +51,35 @@
 
 项目使用Netlify无服务器函数安全处理API请求：
 
+- **authHandler.js** – 处理登录、注册、会话校验
+- **cardsHandler.js** – 读取与更新卡片数据（Supabase）
+- **commentsHandler.js** – 管理卡片评论（读取/提交）
+- **fetchWeeklyCards.js** – 获取全部每周会议卡片
+- **getLatestWeeklyCards.js** – 获取最新一期的会议卡片
+- **searchImage.js** – 基于 OpenRouter + Unsplash 搜图
+- **uploadImageToGitHub.js** – 将生成的图片保存到 GitHub 仓库
+- **uploadWeeklyCard.js** – 批量/自动上传每周会议卡片（含自动配图）
+- **meetupHandler.js** – 活动创建、列表、更新、删除
+- **rsvpHandler.js** – 活动报名与状态管理
+- **workshopHandler.js** – 工作坊报名接口
 
-- **authHandler.js** – 处理登录、注册和会话
-- **cardsHandler.js** – 从 Supabase 获取卡片列表
-- **commentsHandler.js** – 管理评论数据
-- **fetchWeeklyCards.js** – 获取每周会议卡片
-- **optimizeText.js** – 使用 AI 优化文本
-- **searchImage.js** – 搜索合适的图片
-- **uploadImageToGitHub.js** – 将图片保存到 GitHub
-- **uploadWeeklyCard.js** – 批量上传每周卡片
-- **workshopHandler.js** – 工作坊相关接口
 ## 主要功能
 
-
 - **个性化卡片创建**：设计灵感卡片，支持自定义主题、字体和图片
-- **文本优化器**：使用 AI 优化卡片文本
 - **日签卡片编辑器**：快速创建每日卡片
-- **用户登录与注册**：通过 Supabase 进行身份验证
-- **安全上传**：所有卡片通过无服务器函数保存到 Supabase
+- **评论功能**：在卡片详情页面读取与提交评论
+- **活动与报名（Meetups）**：创建活动、查看列表、报名参与、管理自己的活动
+- **图片搜索与配图**：基于文本生成搜索词（OpenRouter），从 Unsplash 获取相关图片
+- **安全上传**：卡片与活动数据通过无服务器函数保存到 Supabase
 - **有序展示**：按日期（所有卡片）或剧集（每周会议总结卡片）分组查看
 - **下载功能**：直接从网站下载高质量图片格式的卡片
 - **最新卡片轮播**：在主页浏览最近10张卡片
-- **管理面板**：通过专用管理界面批量上传每周会议卡片
+- **批量上传**：通过管理面板批量上传每周会议卡片
+
 ## 部署信息
 
 - **托管服务**：Netlify
-- **生产环境URL**：https://inspiration-planet.netlify.app
+- **生产环境URL**：https://inspireplanet.cc/
 - **配置**：使用`.env`文件配置Supabase及其他API密钥
 
 ## 本地开发
@@ -127,4 +136,4 @@
 
 为启发星球 ✨ 用心打造。
 
-作者：([Sun ling](https://sunling.github.io/))。
+作者：([Sun ling](https://sunling.github.io/)).
