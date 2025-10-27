@@ -94,7 +94,7 @@ To set up the project locally:
    JWT_SECRET=your_jwt_secret
    OPENROUTER_API_KEY=your_openrouter_key
    UNSPLASH_ACCESS_KEY=your_unsplash_key
-   REPLICATE_API_TOKEN=your_replicate_token
+
    GITHUB_TOKEN=your_github_token
    GITHUB_REPO_OWNER=your_github_username
    GITHUB_REPO_NAME=your_repo_name

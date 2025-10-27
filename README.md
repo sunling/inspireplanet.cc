@@ -95,7 +95,7 @@
    JWT_SECRET=JWT 加密密钥
    OPENROUTER_API_KEY=OpenRouter API 密钥
    UNSPLASH_ACCESS_KEY=Unsplash Access Key
-   REPLICATE_API_TOKEN=Replicate API Token
+
    GITHUB_TOKEN=GitHub Token
    GITHUB_REPO_OWNER=GitHub 用户名
    GITHUB_REPO_NAME=仓库名

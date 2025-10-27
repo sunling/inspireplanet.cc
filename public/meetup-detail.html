@@ -885,46 +885,15 @@
                     <button class="modal-close" onclick="this.parentElement.parentElement.remove(); updateParticipantInfo();">×</button>
                     
                     <h3 class="modal-title">扫码进群</h3>
-                    
-                    <!-- 重要提示 -->
-                    <div style="
-                        background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-                        color: white;
-                        padding: 12px 16px;
-                        border-radius: var(--radius-sm);
-                        margin-bottom: 1.5rem;
-                        font-size: 0.9rem;
-                        font-weight: 500;
-                        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
-                    ">
-                        ⚠️ 重要提醒：此二维码仅显示一次，请立即扫码进群或保存图片！
-                    </div>
-                    
                     <img src="${qrImageUrl}" alt="群聊二维码" style="
                         max-width: 100%;
                         height: auto;
                         border-radius: var(--radius-sm);
-                        margin-bottom: 1rem;
-                        border: 1px solid var(--border);
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                    ">
-                    
-                    <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.95rem;">请使用微信扫描二维码加入群聊</p>
-                    
-                    <!-- 操作提示 -->
-                    <div style="
-                        background: var(--bg-secondary);
-                        padding: 12px;
-                        border-radius: var(--radius-sm);
                         margin-bottom: 1.5rem;
-                        font-size: 0.85rem;
-                        color: var(--text-muted);
-                        border-left: 3px solid var(--primary);
+                        border: 1px solid var(--border);
                     ">
-                        💡 建议：长按二维码图片保存到相册，或截图保存以备后用
-                    </div>
-                    
-                    <button class="btn-primary" onclick="this.parentElement.parentElement.remove(); updateParticipantInfo();">我已扫码/保存</button>
+                    <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">请使用微信扫描二维码加入群聊</p>
+                    <button class="btn-primary" onclick="this.parentElement.parentElement.remove(); updateParticipantInfo();">关闭</button>
                 </div>
             `;
 
