@@ -355,10 +355,20 @@
                     
                     showSuccess(result.message);
                     
-                    // 延迟跳转，让用户看到成功消息
+                    // 读取回跳地址并延迟跳转，让用户看到成功消息
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirect = urlParams.get('redirect');
                     setTimeout(() => {
-                        window.location.href = '/cards';
-                    }, 1500);
+                        if (redirect) {
+                            try {
+                                window.location.href = decodeURIComponent(redirect);
+                            } catch (_) {
+                                window.location.href = '/cards';
+                            }
+                        } else {
+                            window.location.href = '/cards';
+                        }
+                    }, 800);
                 } else {
                     showError(result.error || '操作失败，请重试');
                 }

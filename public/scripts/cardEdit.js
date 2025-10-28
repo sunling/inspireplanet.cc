@@ -16,7 +16,8 @@ function checkEditPermission(card) {
   if (!user) {
     showError('请先登录后再编辑卡片');
     setTimeout(() => {
-      window.location.href = 'login';
+      const redirect = encodeURIComponent(window.location.href);
+      window.location.href = `login.html?redirect=${redirect}`;
     }, 2000);
     return false;
   }
@@ -39,7 +40,8 @@ function checkEditPermission(card) {
     console.error('解析用户信息失败:', e);
     showError('用户信息验证失败');
     setTimeout(() => {
-      window.location.href = 'login';
+      const redirect = encodeURIComponent(window.location.href);
+      window.location.href = `login.html?redirect=${redirect}`;
     }, 2000);
     return false;
   }

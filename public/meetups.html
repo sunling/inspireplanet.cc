@@ -635,7 +635,7 @@
             const userInfo = localStorage.getItem('userInfo');
             if (!token || !userInfo) {
                 alert('请先登录后再报名参加活动');
-                window.location.href = 'auth.html';
+                window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
                 return;
             }
 
