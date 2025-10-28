@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>二维码生成测试</title>
+  <style>
+    body { font-family: -apple-system, system-ui, Segoe UI, Roboto, sans-serif; background:#fafafa; color:#333; margin:0; }
+    .container { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
+    h1 { font-size: 24px; margin: 0 0 12px 0; }
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius: 12px; padding:16px; margin: 12px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .result { margin-top:8px; font-size:14px; }
+    .pass { color: #16a34a; }
+    .fail { color: #dc2626; }
+    canvas { border:1px solid #e5e7eb; border-radius:8px; background:#fff; max-width: 100%; }
+    .row { display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>二维码生成测试</h1>
+    <p>本页测试两件事：1）二维码库是否可用；2）海报脚本是否能正确在右下角绘制二维码。</p>
+
+    <div class="card">
+      <h2 style="margin:0 0 8px 0;">用库直接生成二维码</h2>
+      <div class="row">
+        <canvas id="qrTestCanvas" width="300" height="300"></canvas>
+        <div id="qrTestResult" class="result">等待测试...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 8px 0;">在海报中绘制二维码</h2>
+      <div class="row">
+        <canvas id="posterTestCanvas" width="1080" height="1620" style="max-width:520px;"></canvas>
+        <div id="posterTestResult" class="result">等待测试...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 多 CDN 加载二维码库
+    async function loadQRCodeLibrary() {
+      // 如果已具备标准接口，则直接返回
+      if (window.QRCode && typeof window.QRCode.toCanvas === 'function') return;
+      const sources = [
+        '/scripts/qrcode.min.js',
+        'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
+        'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js'
+      ];
+      for (const src of sources) {
+        try {
+          await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src; s.async = true;
+            s.onload = resolve; s.onerror = () => reject(new Error('加载失败')); 
+            document.head.appendChild(s);
+          });
+          // 如果是 node-qrcode，直接可用。如果是 qrcodejs，则注入 shim。
+          if (window.QRCode) {
+            if (typeof window.QRCode.toCanvas === 'function') return;
+            // qrcodejs 兼容：注入 toCanvas 适配器
+            window.QRCode.toCanvas = function(canvas, text, opts = {}) {
+              return new Promise((resolve, reject) => {
+                const temp = document.createElement('div');
+                temp.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
+                document.body.appendChild(temp);
+                try {
+                  const size = opts.width || 256;
+                  const qr = new window.QRCode(temp, {
+                    text: text,
+                    width: size,
+                    height: size,
+                    correctLevel: window.QRCode.CorrectLevel && window.QRCode.CorrectLevel.H || 1
+                  });
+                  const qrCanvas = temp.querySelector('canvas');
+                  const qrImg = temp.querySelector('img');
+                  const ctx = canvas.getContext('2d');
+                  if (qrCanvas) {
+                    canvas.width = size; canvas.height = size;
+                    ctx.clearRect(0,0,canvas.width,canvas.height);
+                    ctx.drawImage(qrCanvas, 0, 0);
+                    resolve();
+                  } else if (qrImg) {
+                    if (qrImg.complete) {
+                      canvas.width = size; canvas.height = size;
+                      ctx.clearRect(0,0,canvas.width,canvas.height);
+                      ctx.drawImage(qrImg, 0, 0, size, size);
+                      resolve();
+                    } else {
+                      qrImg.onload = () => {
+                        canvas.width = size; canvas.height = size;
+                        ctx.clearRect(0,0,canvas.width,canvas.height);
+                        ctx.drawImage(qrImg, 0, 0, size, size);
+                        resolve();
+                      };
+                      qrImg.onerror = reject;
+                    }
+                  } else {
+                    reject(new Error('未生成二维码输出'));
+                  }
+                } catch (e) {
+                  reject(e);
+                } finally {
+                  document.body.removeChild(temp);
+                }
+              });
+            };
+            return; // shim 已注入，可用
+          }
+        } catch (e) { console.warn('二维码库来源不可用:', src); }
+      }
+      throw new Error('所有二维码库来源均不可用');
+    }
+
+    function countDarkPixels(ctx, x, y, w, h, threshold = 60) {
+      const data = ctx.getImageData(x, y, w, h).data;
+      let dark = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i+1], b = data[i+2];
+        const lum = 0.2126*r + 0.7152*g + 0.0722*b;
+        if (lum < threshold) dark++;
+      }
+      return dark;
+    }
+
+    async function runDirectQRTest() {
+      const el = document.getElementById('qrTestResult');
+      const canvas = document.getElementById('qrTestCanvas');
+      try {
+        await loadQRCodeLibrary();
+        await window.QRCode.toCanvas(canvas, 'https://example.com/test?q=123', { width: 280, margin: 2 });
+        const ctx = canvas.getContext('2d');
+        const dark = countDarkPixels(ctx, 0, 0, canvas.width, canvas.height, 80);
+        const ok = dark > 2000; // 应有大量黑色模块
+        el.innerHTML = ok ? '<span class="pass">✅ 直接生成二维码：通过</span>' : '<span class="fail">❌ 直接生成二维码：失败（黑色像素不足）</span>';
+      } catch (err) {
+        console.error(err);
+        el.innerHTML = '<span class="fail">❌ 直接生成二维码：失败（库不可用或绘制异常）</span>';
+      }
+    }
+
+    async function runPosterQRTest() {
+      const el = document.getElementById('posterTestResult');
+      const canvas = document.getElementById('posterTestCanvas');
+      try {
+        await loadQRCodeLibrary();
+        // 加载海报脚本
+        await new Promise((resolve, reject) => {
+          if (window.MeetupPoster && window.MeetupPoster.generateMeetupPoster) return resolve();
+          const s = document.createElement('script');
+          s.src = '/scripts/meetupPoster.js'; s.async = true;
+          s.onload = resolve; s.onerror = () => reject(new Error('海报脚本加载失败'));
+          document.head.appendChild(s);
+        });
+
+        const meetup = {
+          id: 'test-123', title: '测试主题', description: '测试, 话题, 条目', type: 'online',
+          datetime: new Date().toISOString(), location: '腾讯会议', duration: 1, organizer: '测试主持', contact: 'test'
+        };
+        await window.MeetupPoster.generateMeetupPoster(meetup, canvas, { detailUrl: location.origin + '/meetup-detail.html?id=test-123' });
+        const ctx = canvas.getContext('2d');
+        // 按当前实现，二维码位于 x=780,y=1200, 240x240
+        const dark = countDarkPixels(ctx, 780, 1200, 240, 240, 80);
+        const ok = dark > 8000; // 海报其他区域较亮，这里应该显著更暗
+        el.innerHTML = ok ? '<span class="pass">✅ 海报中二维码绘制：通过</span>' : '<span class="fail">❌ 海报中二维码绘制：失败（目标区域未检测到足够黑色像素）</span>';
+      } catch (err) {
+        console.error(err);
+        el.innerHTML = '<span class="fail">❌ 海报中二维码绘制：失败（依赖未就绪或绘制异常）</span>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      runDirectQRTest();
+      runPosterQRTest();
+    });
+  </script>
+</body>
+</html>

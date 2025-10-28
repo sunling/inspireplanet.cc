@@ -595,9 +595,9 @@
                 ← 返回活动列表
             </a>
 
-            <div class="page-header">
+            <!-- <div class="page-header">
                 <h1 class="page-title">活动详情</h1>
-            </div>
+            </div> -->
 
             <div id="meetupContent">
                 <div class="loading">正在加载活动详情...</div>
@@ -772,6 +772,71 @@
                     this.style.transform = 'translateY(0)';
                 });
             });
+
+            // 在详情页追加“扫码报名”二维码（本地库生成，避免外部 CDN 阻断）
+            (async () => {
+                try {
+                    const detailUrl = window.location.href;
+                    const qrSection = document.createElement('div');
+                    qrSection.className = 'detail-section';
+                    qrSection.innerHTML = `
+                        <h3>扫码报名</h3>
+                        <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;">
+                            <canvas id="detailQrCanvas" width="240" height="240" style="border:1px solid var(--border); border-radius:8px; background:#fff"></canvas>
+                            <p style="color: var(--text-muted); margin:0;">使用微信扫描二维码打开当前页面</p>
+                        </div>
+                    `;
+                    container.appendChild(qrSection);
+
+                    await ensureQRCodeLibrary();
+
+                    const canvas = qrSection.querySelector('#detailQrCanvas');
+                    const ctx = canvas.getContext('2d');
+                    // 优先使用标准接口；兼容 qrcodejs 构造器
+                    if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
+                        await window.QRCode.toCanvas(canvas, detailUrl, { width: 240, margin: 2 });
+                    } else if (window.QRCode) {
+                        const temp = document.createElement('div');
+                        temp.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
+                        document.body.appendChild(temp);
+                        try {
+                            const size = 240;
+                            const qr = new window.QRCode(temp, {
+                                text: detailUrl,
+                                width: size,
+                                height: size,
+                                correctLevel: window.QRCode.CorrectLevel && window.QRCode.CorrectLevel.H || 1
+                            });
+                            const qrCanvas = temp.querySelector('canvas');
+                            const qrImg = temp.querySelector('img');
+                            if (qrCanvas) {
+                                ctx.clearRect(0,0,canvas.width,canvas.height);
+                                ctx.drawImage(qrCanvas, 0, 0);
+                            } else if (qrImg) {
+                                await new Promise((resolve, reject) => {
+                                    if (qrImg.complete) return resolve();
+                                    qrImg.onload = resolve; qrImg.onerror = reject;
+                                });
+                                ctx.clearRect(0,0,canvas.width,canvas.height);
+                                ctx.drawImage(qrImg, 0, 0, size, size);
+                            } else {
+                                throw new Error('未生成二维码输出');
+                            }
+                        } finally {
+                            document.body.removeChild(temp);
+                        }
+                    } else {
+                        // 若库缺失，给出占位提示
+                        ctx.strokeStyle = '#bbb';
+                        ctx.strokeRect(0,0,240,240);
+                        ctx.fillStyle = '#888';
+                        ctx.font = '16px system-ui';
+                        ctx.fillText('二维码库未加载', 40, 120);
+                    }
+                } catch (e) {
+                    console.warn('详情页二维码生成失败:', e);
+                }
+            })();
         }
 
         // 报名参加活动
@@ -996,6 +1061,21 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // 确保本地二维码库已加载（首选 /scripts/qrcode.min.js）
+        async function ensureQRCodeLibrary() {
+            if (window.QRCode) return;
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = '/scripts/qrcode.min.js';
+                script.onload = resolve;
+                script.onerror = () => {
+                    console.error('加载本地二维码库失败: /scripts/qrcode.min.js');
+                    reject(new Error('二维码库加载失败'));
+                };
+                document.head.appendChild(script);
+            });
         }
 
         // 更新报名人数（不显示列表）
