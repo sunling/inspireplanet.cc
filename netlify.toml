@@ -1,10 +1,14 @@
 [build]
-  publish = "public"
+  publish = "dist"
   functions = "public/netlify/functions"
+  command = "vite build"
 
 [dev]
-  publish = "public"
+  publish = "dist"
   functions = "public/netlify/functions"
+  framework = "vite"
+  targetPort = 5173
+  port = 8888
   
 [functions]
   node_bundler = "esbuild"

@@ -2,22 +2,43 @@
   "name": "flashcard-for-inspiration-planet",
   "version": "1.0.0",
   "scripts": {
-    "dev": "netlify dev",
-    "build": "echo No build needed"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "netlify:dev": "netlify dev"
   },
   "dependencies": {
+    "@arco-design/mobile-react": "^2.38.2",
     "@supabase/supabase-js": "^2.49.4",
     "bcryptjs": "^3.0.2",
+    "dompurify": "^3.3.0",
     "dotenv": "^16.5.0",
+    "html2canvas": "^1.4.1",
     "jsonwebtoken": "^9.0.2",
     "luxon": "^3.6.1",
+    "marked": "^16.4.1",
     "node-fetch": "^2.6.7",
     "puppeteer": "^24.7.2",
-
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.5",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "netlify-cli": "^17.10.1"
+    "@types/dompurify": "^3.2.0",
+    "@types/marked": "^6.0.0",
+    "@types/node": "^24.9.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "netlify-cli": "^17.10.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12"
+  },
+  "peerDependencies": {
+    "react": ">=16.9.0",
+    "react-dom": ">=16.9.0",
+    "react-transition-group": ">=4.3.0"
   },
   "resolutions": {
     "puppeteer-core": "npm:puppeteer@^24.7.2"

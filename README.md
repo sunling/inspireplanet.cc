@@ -49,7 +49,7 @@
 
 ## Netlify 函数
 
-项目使用Netlify无服务器函数安全处理API请求：
+项目使用 Netlify 无服务器函数安全处理 API 请求：
 
 - **authHandler.js** – 处理登录、注册、会话校验
 - **cardsHandler.js** – 读取与更新卡片数据（Supabase）
@@ -73,31 +73,34 @@
 - **安全上传**：卡片与活动数据通过无服务器函数保存到 Supabase
 - **有序展示**：按日期（所有卡片）或剧集（每周会议总结卡片）分组查看
 - **下载功能**：直接从网站下载高质量图片格式的卡片
-- **最新卡片轮播**：在主页浏览最近10张卡片
+- **最新卡片轮播**：在主页浏览最近 10 张卡片
 - **批量上传**：通过管理面板批量上传每周会议卡片
 
 ## 部署信息
 
 - **托管服务**：Netlify
-- **生产环境URL**：https://inspireplanet.cc/
-- **配置**：使用`.env`文件配置Supabase及其他API密钥
+- **生产环境 URL**：https://inspireplanet.cc/
+- **配置**：使用`.env`文件配置 Supabase 及其他 API 密钥
 
 ## 本地开发
 
 本地搭建项目的步骤：
 
 1. 克隆仓库
+
    ```
    git clone https://github.com/sunling/inspireplanet.cc
    cd inspireplanet.cc
    ```
 
 2. 安装依赖
+
    ```
    npm install
    ```
 
 3. 创建`.env`文件，包含以下变量：
+
    ```
    SUPABASE_URL=Supabase 项目地址
    SUPABASE_ANON_KEY=Supabase 匿名密钥
@@ -111,7 +114,8 @@
    GITHUB_BRANCH=main
    ```
 
-4. 启动Netlify开发服务器
+4. 启动 Netlify 开发服务器
+
    ```
    npx netlify dev
    ```
@@ -130,10 +134,15 @@
 
 ## 贡献
 
-欢迎贡献！如有改进建议或发现任何问题，请随时提交issue或pull request。
+欢迎贡献！如有改进建议或发现任何问题，请随时提交 issue 或 pull request。
 
 ## 致谢
 
 为启发星球 ✨ 用心打造。
 
 作者：([Sun ling](https://sunling.github.io/)).
+
+## 第三方工具
+
+[组件库](https://arco.design/mobile/react/arco-design/pc/#/doc/readme)
+[react](https://zh-hans.react.dev/)
