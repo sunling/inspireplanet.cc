@@ -241,10 +241,18 @@ class LayoutManager {
     showLoginSection() {
         const loginSection = document.getElementById('loginSection');
         const userSection = document.getElementById('userSection');
+        const loginLink = loginSection ? loginSection.querySelector('a.login-btn') : null;
         
         if (loginSection && userSection) {
             loginSection.style.display = 'flex';
             userSection.style.display = 'none';
+
+            // 为登录按钮附加回跳参数
+            if (loginLink) {
+                const current = encodeURIComponent(window.location.href);
+                // 兼容不同路径写法，统一指向 login.html 并附带 redirect
+                loginLink.href = `/login.html?redirect=${current}`;
+            }
         }
     }
 
@@ -284,7 +292,8 @@ class LayoutManager {
         
         // Redirect to login page after a short delay
         setTimeout(() => {
-            window.location.href = '/login';
+            const redirect = encodeURIComponent(window.location.href);
+            window.location.href = `/login.html?redirect=${redirect}`;
         }, 1000);
     }
 
@@ -382,7 +391,8 @@ function logout() {
         localStorage.removeItem('userToken');
         localStorage.removeItem('userInfo');
         localStorage.removeItem('userId');
-        window.location.href = '/login';
+        const redirect = encodeURIComponent(window.location.href);
+        window.location.href = `/login.html?redirect=${redirect}`;
     }
 }
 

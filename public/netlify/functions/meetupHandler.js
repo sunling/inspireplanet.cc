@@ -187,13 +187,63 @@ async function getMeetups(event, headers) {
       }
     }
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        meetups: data
-      })
+    // 如果没有活动数据，直接返回
+    if (!data || data.length === 0) {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, meetups: [] })
+      }
+    }
+
+    // 计算报名人数，统一前端预期的字段命名
+    try {
+      const meetupIds = data.map(m => m.id).filter(Boolean)
+
+      let countsByMeetupId = {}
+      if (meetupIds.length > 0) {
+        const { data: rsvps, error: rsvpsError } = await supabase
+          .from('meetup_rsvps')
+          .select('meetup_id')
+          .in('meetup_id', meetupIds)
+          .eq('status', 'confirmed')
+
+        if (rsvpsError) {
+          console.error('RSVP query error:', rsvpsError)
+        } else if (rsvps && Array.isArray(rsvps)) {
+          countsByMeetupId = rsvps.reduce((acc, r) => {
+            const key = r.meetup_id
+            acc[key] = (acc[key] || 0) + 1
+            return acc
+          }, {})
+        }
+      }
+
+      // 规范化返回：兼容前端期望字段
+      const normalized = data.map(m => ({
+        ...m,
+        // 前端 meetups.html 期望的字段
+        type: m.type || m.mode || null,
+        organizer: m.organizer || m.creator || null,
+        contact: m.contact || m.wechat_id || null,
+        qr_image_url: m.qr_image_url || m.cover || null,
+        max_participants: m.max_participants || m.max_ppl || null,
+        participant_count: countsByMeetupId[m.id] || 0
+      }))
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, meetups: normalized })
+      }
+    } catch (aggError) {
+      console.error('Aggregate meetups error:', aggError)
+      // 发生聚合错误时，仍然返回原始数据，避免接口不可用
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, meetups: data })
+      }
     }
 
   } catch (error) {

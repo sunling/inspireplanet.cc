@@ -93,9 +93,61 @@
             margin-bottom: 1rem;
         }
 
+        /* 统一的基本信息卡片容器 */
+        .basic-info-box {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .basic-info-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 1rem;
+        }
+
+        .basic-info-row + .basic-info-row {
+            border-top: 1px solid var(--border);
+        }
+
+        .basic-info-icon {
+            font-size: 1.2rem;
+            color: var(--primary);
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .basic-info-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .basic-info-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .basic-info-value {
+            font-size: 0.95rem;
+            color: var(--text);
+            font-weight: 600;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            white-space: pre-line;
+        }
+
         .meta-item {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 0.75rem;
             padding: 1rem;
             background: white;
@@ -122,6 +174,8 @@
             flex-direction: column;
             gap: 0.25rem;
             flex: 1;
+            /* 允许长文本在弹性容器中正常换行 */
+            min-width: 0;
         }
 
         .meta-label {
@@ -136,6 +190,10 @@
             font-size: 0.95rem;
             color: var(--text);
             font-weight: 600;
+            /* 长文本换行与断词，避免被截断或溢出 */
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            white-space: pre-line;
         }
 
         .meetup-header {
@@ -618,54 +676,54 @@
                     </div>
                     
                     <h3>基本信息</h3>
-                    <div class="meta-grid">
-                        <div class="meta-item">
-                            <div class="meta-icon">📅</div>
-                            <div class="meta-content">
-                                <span class="meta-label">活动日期</span>
-                                <span class="meta-value">${formattedDate}</span>
+                    <div class="basic-info-box">
+                        <div class="basic-info-row">
+                            <div class="basic-info-icon">📅</div>
+                            <div class="basic-info-content">
+                                <span class="basic-info-label">活动日期</span>
+                                <span class="basic-info-value">${formattedDate}</span>
                             </div>
                         </div>
-                        <div class="meta-item">
-                            <div class="meta-icon">🕐</div>
-                            <div class="meta-content">
-                                <span class="meta-label">活动时间</span>
-                                <span class="meta-value">${formattedTime}</span>
+                        <div class="basic-info-row">
+                            <div class="basic-info-icon">🕐</div>
+                            <div class="basic-info-content">
+                                <span class="basic-info-label">活动时间</span>
+                                <span class="basic-info-value">${formattedTime}</span>
                             </div>
                         </div>
                         ${meetup.duration ? `
-                            <div class="meta-item">
-                                <div class="meta-icon">⏱️</div>
-                                <div class="meta-content">
-                                    <span class="meta-label">活动时长</span>
-                                    <span class="meta-value">${meetup.duration} 小时</span>
+                            <div class="basic-info-row">
+                                <div class="basic-info-icon">⏱️</div>
+                                <div class="basic-info-content">
+                                    <span class="basic-info-label">活动时长</span>
+                                    <span class="basic-info-value">${meetup.duration} 小时</span>
                                 </div>
                             </div>
                         ` : ''}
                         ${meetup.location ? `
-                            <div class="meta-item">
-                                <div class="meta-icon">📍</div>
-                                <div class="meta-content">
-                                    <span class="meta-label">活动地点</span>
-                                    <span class="meta-value">${escapeHtml(meetup.location)}</span>
+                            <div class="basic-info-row">
+                                <div class="basic-info-icon">📍</div>
+                                <div class="basic-info-content">
+                                    <span class="basic-info-label">活动地点</span>
+                                    <span class="basic-info-value">${escapeHtml(meetup.location)}</span>
                                 </div>
                             </div>
                         ` : ''}
                         ${meetup.fee !== null && meetup.fee !== undefined ? `
-                            <div class="meta-item">
-                                <div class="meta-icon">💰</div>
-                                <div class="meta-content">
-                                    <span class="meta-label">活动费用</span>
-                                    <span class="meta-value">${meetup.fee > 0 ? meetup.fee + ' 元' : '免费'}</span>
+                            <div class="basic-info-row">
+                                <div class="basic-info-icon">💰</div>
+                                <div class="basic-info-content">
+                                    <span class="basic-info-label">活动费用</span>
+                                    <span class="basic-info-value">${meetup.fee > 0 ? meetup.fee + ' 元' : '免费'}</span>
                                 </div>
                             </div>
                         ` : ''}
                         ${meetup.max_ppl ? `
-                            <div class="meta-item">
-                                <div class="meta-icon">👥</div>
-                                <div class="meta-content">
-                                    <span class="meta-label">人数限制</span>
-                                    <span class="meta-value">最多 ${meetup.max_ppl} 人</span>
+                            <div class="basic-info-row">
+                                <div class="basic-info-icon">👥</div>
+                                <div class="basic-info-content">
+                                    <span class="basic-info-label">人数限制</span>
+                                    <span class="basic-info-value">最多 ${meetup.max_ppl} 人</span>
                                 </div>
                             </div>
                         ` : ''}
@@ -683,9 +741,6 @@
                     <h3>组织者信息</h3>
                     <div class="organizer-info">
                         <span class="organizer-name">👤 ${escapeHtml(meetup.creator || meetup.organizer)}</span>
-                        ${meetup.wechat_id || meetup.contact ? `
-                            <span class="organizer-contact">微信：${escapeHtml(meetup.wechat_id || meetup.contact)}</span>
-                        ` : ''}
                     </div>
                 </div>
 
@@ -725,7 +780,7 @@
             const userInfo = localStorage.getItem('userInfo');
             if (!token || !userInfo) {
                 alert('请先登录后再报名参加活动');
-                window.location.href = 'login.html';
+                window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
                 return;
             }
 
@@ -885,46 +940,15 @@
                     <button class="modal-close" onclick="this.parentElement.parentElement.remove(); updateParticipantInfo();">×</button>
                     
                     <h3 class="modal-title">扫码进群</h3>
-                    
-                    <!-- 重要提示 -->
-                    <div style="
-                        background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-                        color: white;
-                        padding: 12px 16px;
-                        border-radius: var(--radius-sm);
-                        margin-bottom: 1.5rem;
-                        font-size: 0.9rem;
-                        font-weight: 500;
-                        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
-                    ">
-                        ⚠️ 重要提醒：此二维码仅显示一次，请立即扫码进群或保存图片！
-                    </div>
-                    
                     <img src="${qrImageUrl}" alt="群聊二维码" style="
                         max-width: 100%;
                         height: auto;
                         border-radius: var(--radius-sm);
-                        margin-bottom: 1rem;
-                        border: 1px solid var(--border);
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                    ">
-                    
-                    <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.95rem;">请使用微信扫描二维码加入群聊</p>
-                    
-                    <!-- 操作提示 -->
-                    <div style="
-                        background: var(--bg-secondary);
-                        padding: 12px;
-                        border-radius: var(--radius-sm);
                         margin-bottom: 1.5rem;
-                        font-size: 0.85rem;
-                        color: var(--text-muted);
-                        border-left: 3px solid var(--primary);
+                        border: 1px solid var(--border);
                     ">
-                        💡 建议：长按二维码图片保存到相册，或截图保存以备后用
-                    </div>
-                    
-                    <button class="btn-primary" onclick="this.parentElement.parentElement.remove(); updateParticipantInfo();">我已扫码/保存</button>
+                    <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">请使用微信扫描二维码加入群聊</p>
+                    <button class="btn-primary" onclick="this.parentElement.parentElement.remove(); updateParticipantInfo();">关闭</button>
                 </div>
             `;
 

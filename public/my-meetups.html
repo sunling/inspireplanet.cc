@@ -387,11 +387,12 @@
 
         // 显示登录提示
         function showLoginPrompt() {
+            const redirectUrl = encodeURIComponent(window.location.href);
             document.getElementById('authCheck').innerHTML = `
                 <div class="login-prompt">
                     <h3>请先登录</h3>
                     <p>您需要登录后才能查看和管理自己的活动</p>
-                    <a href="auth.html" class="login-btn">立即登录</a>
+                    <a href="login.html?redirect=${redirectUrl}" class="login-btn">立即登录</a>
                 </div>
             `;
         }
