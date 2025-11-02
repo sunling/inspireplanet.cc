@@ -1,5 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  Card,
+  CardContent,
+  CardActions,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  useMediaQuery,
+  useTheme,
+  CircularProgress,
+  Chip,
+} from '@mui/material';
 
 interface Meetup {
   id: string;
@@ -37,6 +57,9 @@ const Meetups: React.FC = () => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [currentMeetupId, setCurrentMeetupId] = useState<string | null>(null);
   const [currentQRUrl, setCurrentQRUrl] = useState<string | null>(null);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // RSVP表单状态
   const [rsvpForm, setRsvpForm] = useState({
@@ -329,211 +352,490 @@ const Meetups: React.FC = () => {
     return new Date(dateString) > new Date();
   };
 
+  // 获取活动类型标签
+  const getTypeLabel = (type: string): string => {
+    switch (type) {
+      case 'online':
+        return '线上活动';
+      case 'offline':
+        return '线下活动';
+      case 'culture':
+        return '文化活动';
+      case 'outdoor':
+        return '户外活动';
+      default:
+        return '其他活动';
+    }
+  };
+
+  // 获取活动类型颜色
+  const getTypeColor = (
+    type: string
+  ): 'primary' | 'success' | 'info' | 'warning' | 'default' => {
+    switch (type) {
+      case 'online':
+        return 'primary';
+      case 'offline':
+        return 'success';
+      case 'culture':
+        return 'info';
+      case 'outdoor':
+        return 'warning';
+      default:
+        return 'default';
+    }
+  };
+
+  // 获取活动状态标签
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case 'upcoming':
+        return '即将开始';
+      case 'ongoing':
+        return '进行中';
+      case 'ended':
+        return '已结束';
+      default:
+        return '未知状态';
+    }
+  };
+
+  // 获取活动状态颜色
+  const getStatusColor = (
+    status: string
+  ): 'primary' | 'success' | 'default' => {
+    switch (status) {
+      case 'upcoming':
+        return 'success';
+      case 'ongoing':
+        return 'primary';
+      case 'ended':
+        return 'default';
+      default:
+        return 'default';
+    }
+  };
+
   // 渲染活动列表
   const renderMeetups = () => {
     if (filteredMeetups.length === 0) {
       return (
-        <div className="empty-state">
-          <h3>暂无活动</h3>
-          <p>还没有符合条件的活动，快来发起第一个活动吧！</p>
-        </div>
+        <Box
+          sx={{
+            textAlign: 'center',
+            py: 8,
+            px: 2,
+            borderRadius: 2,
+            bgcolor: 'rgba(255, 255, 255, 0.8)',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <Typography variant="h5" component="h3" gutterBottom>
+            暂无活动
+          </Typography>
+          <Typography variant="body1">
+            还没有符合条件的活动，快来发起第一个活动吧！
+          </Typography>
+        </Box>
       );
     }
 
     return (
-      <div className="meetups-grid">
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(3, 1fr)',
+          },
+          gap: 3,
+          mt: 3,
+        }}
+      >
         {filteredMeetups.map((meetup) => {
           const isUpcomingMeetup = isUpcoming(meetup.datetime);
           const formattedDate = formatDate(meetup.datetime);
           const formattedTime = formatTime(meetup.datetime);
+          const typeColor = getTypeColor(meetup.type);
 
           return (
-            <div
+            <Card
               key={meetup.id}
-              className="meetup-card"
-              onClick={() => navigate(`/meetup-detail/${meetup.id}`)}
+              sx={{
+                height: '100%',
+                transition: 'transform 0.3s, box-shadow 0.3s',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                },
+                borderRadius: 2,
+                overflow: 'hidden',
+              }}
             >
-              <div className="meetup-content">
-                <div
-                  className={`meetup-type ${
-                    meetup.type === 'online' ? 'online' : 'offline'
-                  }`}
+              <CardContent
+                onClick={() => navigate(`/meetup-detail/${meetup.id}`)}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    mb: 2,
+                  }}
                 >
-                  {meetup.type === 'online' ? '线上活动' : '线下活动'}
-                </div>
-                <h3 className="meetup-title">{meetup.title}</h3>
-                <div className="meetup-meta">
-                  <div className="meetup-meta-item">📅 {formattedDate}</div>
-                  <div className="meetup-meta-item">🕐 {formattedTime}</div>
+                  <Chip
+                    label={getTypeLabel(meetup.type)}
+                    color={typeColor}
+                    size={isMobile ? 'small' : 'medium'}
+                  />
+                  <Chip
+                    label={getStatusLabel(meetup.status)}
+                    color={getStatusColor(meetup.status)}
+                    size="small"
+                    variant="outlined"
+                  />
+                </Box>
+                <Typography
+                  variant="h6"
+                  component="h3"
+                  gutterBottom
+                  sx={{ fontWeight: 600 }}
+                >
+                  {meetup.title}
+                </Typography>
+                <Box sx={{ mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2" sx={{ mr: 1 }}>
+                      📅
+                    </Typography>
+                    <Typography variant="body2">{formattedDate}</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2" sx={{ mr: 1 }}>
+                      🕐
+                    </Typography>
+                    <Typography variant="body2">{formattedTime}</Typography>
+                  </Box>
                   {meetup.location && (
-                    <div className="meetup-meta-item">📍 {meetup.location}</div>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Typography variant="body2" sx={{ mr: 1 }}>
+                        📍
+                      </Typography>
+                      <Typography variant="body2">{meetup.location}</Typography>
+                    </Box>
                   )}
-                </div>
-                <div className="meetup-description">{meetup.description}</div>
-                <div className="meetup-organizer">
-                  👤 组织者：{meetup.organizer}
-                </div>
-              </div>
-              <div className="meetup-actions">
-                <button
-                  className="join-btn"
+                </Box>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    mb: 2,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {meetup.description}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography variant="body2" sx={{ mr: 1 }}>
+                    👤
+                  </Typography>
+                  <Typography variant="body2">
+                    组织者：{meetup.organizer}
+                  </Typography>
+                </Box>
+              </CardContent>
+              <CardActions
+                sx={{
+                  justifyContent: 'space-between',
+                  p: 2,
+                  borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+                }}
+              >
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="primary"
+                  disabled={!isUpcomingMeetup}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleJoinMeetup(meetup.id, meetup.qr_image_url);
                   }}
-                  disabled={!isUpcomingMeetup}
+                  sx={{ fontWeight: 600 }}
                 >
                   {isUpcomingMeetup ? '报名参加' : '已结束'}
-                </button>
-                <button
-                  className="detail-btn"
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/meetup-detail/${meetup.id}`);
                   }}
                 >
                   查看详情
-                </button>
-                <div className="participant-count">
+                </Button>
+                <Typography variant="caption" color="text.secondary">
                   {meetup.participant_count}
                   {meetup.max_participants
                     ? '/' + meetup.max_participants
                     : ''}{' '}
                   人参加
-                </div>
-              </div>
-            </div>
+                </Typography>
+              </CardActions>
+            </Card>
           );
         })}
-      </div>
+      </Box>
     );
   };
 
   return (
-    <div className="meetups-page bg-gradient-default">
-      <main className="meetup-container">
-        <div className="meetup-header">
-          <h1>活动列表</h1>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        py: 4,
+        px: 2,
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      }}
+    >
+      <Container maxWidth="lg">
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 4,
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: 2,
+          }}
+        >
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ fontWeight: 700, color: 'primary.main' }}
+          >
+            活动列表
+          </Typography>
           {showCreateButton && (
-            <a
-              href="/create-meetup"
-              className="create-meetup-btn"
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              onClick={() => navigate('/create-meetup')}
               id="createMeetupBtn"
+              sx={{ fontWeight: 600, boxShadow: '0 3px 6px rgba(0,0,0,0.16)' }}
             >
               发起活动
-            </a>
+            </Button>
           )}
-        </div>
+        </Box>
 
-        <div className="meetup-filters">
-          <div className="search-container">
-            <input
-              type="text"
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            mb: 4,
+            flexDirection: { xs: 'column', sm: 'row' },
+          }}
+        >
+          <Box sx={{ flex: 1, position: 'relative' }}>
+            <TextField
+              fullWidth
               id="searchInput"
               placeholder="搜索活动标题或描述..."
               value={searchQuery}
               onChange={handleSearchChange}
+              variant="outlined"
+              size={isMobile ? 'small' : 'medium'}
+              InputProps={{
+                endAdornment: searchQuery ? (
+                  <Button
+                    onClick={handleClearSearch}
+                    size="small"
+                    sx={{ minWidth: 'auto' }}
+                  >
+                    ×
+                  </Button>
+                ) : undefined,
+              }}
+              sx={{ bgcolor: 'rgba(255, 255, 255, 0.9)', borderRadius: 1 }}
             />
-            <button
-              id="clearSearch"
-              className={`clear-search ${searchQuery ? '' : 'hidden'}`}
-              onClick={handleClearSearch}
+          </Box>
+          <Box sx={{ width: { xs: '100%', sm: '180px' } }}>
+            <Select
+              fullWidth
+              value={typeFilter}
+              onChange={(event) =>
+                handleTypeFilterChange(
+                  event as unknown as React.ChangeEvent<HTMLSelectElement>
+                )
+              }
+              displayEmpty
+              variant="outlined"
+              size={isMobile ? 'small' : 'medium'}
+              id="typeFilter"
+              sx={{ bgcolor: 'rgba(255, 255, 255, 0.9)', borderRadius: 1 }}
             >
-              ×
-            </button>
-          </div>
-          <select
-            className="filter-select"
-            id="typeFilter"
-            value={typeFilter}
-            onChange={handleTypeFilterChange}
-          >
-            <option value="">所有类型</option>
-            <option value="online">线上活动</option>
-            <option value="offline">线下活动</option>
-          </select>
-        </div>
+              <MenuItem value="">所有类型</MenuItem>
+              <MenuItem value="online">线上活动</MenuItem>
+              <MenuItem value="offline">线下活动</MenuItem>
+              <MenuItem value="culture">文化活动</MenuItem>
+              <MenuItem value="outdoor">户外活动</MenuItem>
+            </Select>
+          </Box>
+        </Box>
 
-        <div id="meetupsContainer">
+        <Box id="meetupsContainer">
           {isLoading ? (
-            <div className="loading">正在加载活动...</div>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                py: 10,
+                bgcolor: 'rgba(255, 255, 255, 0.8)',
+                borderRadius: 2,
+              }}
+            >
+              <CircularProgress />
+              <Typography variant="body1" sx={{ ml: 2 }}>
+                正在加载活动...
+              </Typography>
+            </Box>
           ) : error ? (
-            <div className="error">{error}</div>
+            <Box
+              sx={{
+                textAlign: 'center',
+                py: 10,
+                px: 2,
+                bgcolor: 'rgba(255, 255, 255, 0.8)',
+                borderRadius: 2,
+              }}
+            >
+              <Typography variant="body1" color="error">
+                {error}
+              </Typography>
+              <Button
+                variant="outlined"
+                color="error"
+                sx={{ mt: 2 }}
+                onClick={loadMeetups}
+              >
+                重试
+              </Button>
+            </Box>
           ) : (
             renderMeetups()
           )}
-        </div>
-      </main>
+        </Box>
+      </Container>
 
       {/* 报名确认对话框 */}
-      {showRSVPDialog && (
-        <div className="modal" onClick={() => setShowRSVPDialog(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="modal-close"
-              onClick={() => setShowRSVPDialog(false)}
-            >
-              ×
-            </button>
-
-            <h3>确认报名</h3>
-
-            <div className="form-group">
-              <label>姓名:</label>
-              <input
-                type="text"
-                value={rsvpForm.name}
-                onChange={(e) =>
-                  setRsvpForm((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="请输入您的姓名"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>微信号:</label>
-              <input
-                type="text"
-                value={rsvpForm.wechatId}
-                onChange={(e) =>
-                  setRsvpForm((prev) => ({ ...prev, wechatId: e.target.value }))
-                }
-                placeholder="请输入您的微信号"
-              />
-            </div>
-
-            <div className="modal-actions">
-              <button
-                className="btn-secondary"
-                onClick={() => setShowRSVPDialog(false)}
-              >
-                取消
-              </button>
-              <button className="btn-primary" onClick={handleSubmitRSVP}>
-                确认报名
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog
+        open={showRSVPDialog}
+        onClose={() => setShowRSVPDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 600 }}>确认报名</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 1 }}>
+            <TextField
+              fullWidth
+              label="姓名"
+              value={rsvpForm.name}
+              onChange={(e) =>
+                setRsvpForm((prev) => ({ ...prev, name: e.target.value }))
+              }
+              margin="normal"
+              variant="outlined"
+              placeholder="请输入您的姓名"
+              required
+            />
+            <TextField
+              fullWidth
+              label="微信号"
+              value={rsvpForm.wechatId}
+              onChange={(e) =>
+                setRsvpForm((prev) => ({ ...prev, wechatId: e.target.value }))
+              }
+              margin="normal"
+              variant="outlined"
+              placeholder="请输入您的微信号"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowRSVPDialog(false)}>取消</Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSubmitRSVP}
+            disabled={!rsvpForm.name.trim()}
+          >
+            确认报名
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* 二维码弹窗 */}
-      {showQRModal && currentQRUrl && (
-        <div className="modal" onClick={() => setShowQRModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>扫码进群</h3>
-            <img src={currentQRUrl} alt="群聊二维码" className="qr-image" />
-            <p>请使用微信扫描二维码加入群聊</p>
-            <button
-              className="btn-primary"
-              onClick={() => setShowQRModal(false)}
-            >
-              关闭
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      <Dialog
+        open={showQRModal}
+        onClose={() => setShowQRModal(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 600, textAlign: 'center' }}>
+          扫码进群
+        </DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              py: 4,
+            }}
+          >
+            {currentQRUrl && (
+              <Box
+                sx={{
+                  bgcolor: 'white',
+                  p: 2,
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                  borderRadius: 2,
+                  mb: 2,
+                }}
+              >
+                <img
+                  src={currentQRUrl}
+                  alt="群聊二维码"
+                  style={{ maxWidth: '200px', height: 'auto' }}
+                />
+              </Box>
+            )}
+            <Typography variant="body1" sx={{ textAlign: 'center' }}>
+              请使用微信扫描二维码加入群聊
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center' }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setShowQRModal(false)}
+            fullWidth
+            sx={{ mx: 2 }}
+          >
+            关闭
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

@@ -1,11 +1,37 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
+import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Grid,
+  Paper,
+  useMediaQuery,
+  useTheme,
+  CircularProgress,
+  Card,
+  CardMedia,
+  CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 
 const CoverEditorMobile: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverPreviewRef = useRef<HTMLDivElement>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
   // 状态管理
   const [title, setTitle] = useState<string>('启发星球');
@@ -178,171 +204,382 @@ const CoverEditorMobile: React.FC = () => {
   };
 
   return (
-    <>
-      {/* 主内容区域 */}
-      <div className="main-container">
-        {/* 表单部分 */}
-        <div className="form-section">
-          <div className="form-group">
-            <label htmlFor="cover-title-mobile">封面标题</label>
-            <textarea
-              id="cover-title-mobile"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="输入封面标题..."
-            ></textarea>
-            <small style={{ color: '#7f8c8d' }}>按回车换行</small>
-          </div>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: { xs: 3, md: 6 } }}>
+      <Container maxWidth="lg">
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            mb: 4,
+            textAlign: 'center',
+            fontWeight: 'bold',
+            color: '#333',
+          }}
+        >
+          竖版封面编辑器
+        </Typography>
 
-          <div className="form-group">
-            <label htmlFor="cover-keywords-mobile">关键词</label>
-            <input
-              type="text"
-              id="cover-keywords-mobile"
-              value={keywords}
-              onChange={(e) => setKeywords(e.target.value)}
-              placeholder="用空格分隔关键词"
-            />
-          </div>
+        <Grid container spacing={4} direction={isMobile ? 'column' : 'row'}>
+          {/* 表单部分 */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Paper
+              elevation={3}
+              sx={{
+                p: { xs: 3, md: 4 },
+                borderRadius: 2,
+                bgcolor: 'white',
+              }}
+            >
+              <Typography
+                variant="h6"
+                component="h2"
+                sx={{ mb: 3, color: '#555' }}
+              >
+                设计参数
+              </Typography>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="font-select-mobile">字体选择</label>
-              <select
-                id="font-select-mobile"
-                value={fontFamily}
-                onChange={(e) => setFontFamily(e.target.value)}
-              >
-                {fontOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor="layout-select-mobile">布局风格</label>
-              <select
-                id="layout-select-mobile"
-                value={layout}
-                onChange={(e) => setLayout(e.target.value)}
-              >
-                {layoutOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="bg-select-mobile">背景图片</label>
-              <select
-                id="bg-select-mobile"
-                value={bgSelect}
-                onChange={(e) => setBgSelect(e.target.value)}
-              >
-                <option value="images/mistyblue.png">默认背景</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>自定义背景图</label>
-              <div className="file-upload-wrapper">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  📁 上传图片
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  style={{ display: 'none' }}
+              <Box sx={{ mb: 3 }}>
+                <TextField
+                  fullWidth
+                  label="封面标题"
+                  variant="outlined"
+                  multiline
+                  rows={3}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="输入封面标题..."
+                  InputProps={{
+                    sx: {
+                      borderRadius: 1,
+                    },
+                  }}
                 />
-              </div>
-              <div className="upload-status">{uploadStatus}</div>
-            </div>
-          </div>
+                <Typography
+                  variant="caption"
+                  sx={{ color: '#7f8c8d', mt: 1, display: 'block' }}
+                >
+                  按回车换行
+                </Typography>
+              </Box>
 
-          <div className="form-group compact">
-            <button
-              type="button"
-              className="btn"
-              onClick={searchImagesHandler}
-              disabled={searching}
-            >
-              🔍 搜索相关图片
-            </button>
-            <div className={`upload-status ${searching ? 'loading' : ''}`}>
-              {searchStatus}
-            </div>
-          </div>
+              <Box sx={{ mb: 3 }}>
+                <TextField
+                  fullWidth
+                  label="关键词"
+                  variant="outlined"
+                  value={keywords}
+                  onChange={(e) => setKeywords(e.target.value)}
+                  placeholder="用空格分隔关键词"
+                  InputProps={{
+                    sx: {
+                      borderRadius: 1,
+                    },
+                  }}
+                />
+              </Box>
 
-          {/* 搜索结果 */}
-          {showSearchResults && (
-            <div className="search-results">
-              <h4>搜索结果：{searchQuery}</h4>
-              <div className="image-grid">
-                {searchImages.map((image, index) => (
-                  <div
-                    key={index}
-                    className="image-item"
-                    title={image.description}
-                    onClick={() => selectImage(image.url)}
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>字体选择</InputLabel>
+                    <Select
+                      value={fontFamily}
+                      onChange={(e) => setFontFamily(e.target.value)}
+                      label="字体选择"
+                    >
+                      {fontOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>布局风格</InputLabel>
+                    <Select
+                      value={layout}
+                      onChange={(e) => setLayout(e.target.value)}
+                      label="布局风格"
+                    >
+                      {layoutOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>背景图片</InputLabel>
+                    <Select
+                      value={bgSelect}
+                      onChange={(e) => setBgSelect(e.target.value)}
+                      label="背景图片"
+                    >
+                      <MenuItem value="images/mistyblue.png">默认背景</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormControl fullWidth>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      自定义背景图
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => fileInputRef.current?.click()}
+                      startIcon={<span>📁</span>}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      上传图片
+                    </Button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{ mt: 1, display: 'block' }}
+                    >
+                      {uploadStatus}
+                    </Typography>
+                  </FormControl>
+                </Grid>
+              </Grid>
+
+              <Box sx={{ mb: 3 }}>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={searchImagesHandler}
+                  disabled={searching}
+                  startIcon={<span>🔍</span>}
+                  sx={{
+                    textTransform: 'none',
+                    py: 1.2,
+                    mb: 1,
+                  }}
+                >
+                  搜索相关图片
+                </Button>
+                {searching && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      mb: 1,
+                    }}
                   >
-                    <img src={image.thumb} alt={image.title} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+                    <CircularProgress size={20} sx={{ mr: 1 }} />
+                    <Typography variant="body2" sx={{ color: '#666' }}>
+                      {searchStatus}
+                    </Typography>
+                  </Box>
+                )}
+                {!searching && searchStatus && (
+                  <Typography
+                    variant="body2"
+                    color="error"
+                    sx={{ textAlign: 'center' }}
+                  >
+                    {searchStatus}
+                  </Typography>
+                )}
+              </Box>
 
-        {/* 预览部分 */}
-        <div className="preview-section">
-          <div className="cover-container">
-            <div
-              className="cover-mobile"
-              id="cover-preview-mobile"
-              ref={coverPreviewRef}
+              {/* 搜索结果 */}
+              {showSearchResults && (
+                <Box
+                  sx={{
+                    mt: 3,
+                    p: 2,
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 1,
+                    bgcolor: '#fafafa',
+                  }}
+                >
+                  <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                    搜索结果：{searchQuery}
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {searchImages.map((image, index) => (
+                      <Grid size={{ xs: 4 }} key={index}>
+                        <Card
+                          sx={{
+                            cursor: 'pointer',
+                            '&:hover': { opacity: 0.8, boxShadow: 2 },
+                          }}
+                          onClick={() => selectImage(image.url)}
+                        >
+                          <CardMedia
+                            component="img"
+                            height="80"
+                            image={image.thumb}
+                            alt={image.title}
+                            title={image.description}
+                          />
+                          <CardContent sx={{ p: 1 }}>
+                            <Typography variant="caption" noWrap>
+                              {image.title}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              )}
+            </Paper>
+          </Grid>
+
+          {/* 预览部分 */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Paper
+              elevation={3}
+              sx={{
+                p: { xs: 3, md: 4 },
+                borderRadius: 2,
+                bgcolor: 'white',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              }}
             >
-              <div
-                className="cover-bg"
-                style={{ backgroundImage: `url('${getBgImage()}')` }}
-              ></div>
-              <div className="cover-overlay"></div>
-              <div
-                className={`cover-content ${
-                  layout === 'left' ? 'layout-left' : ''
-                }`}
-                style={{ fontFamily }}
+              <Typography
+                variant="h6"
+                component="h2"
+                sx={{
+                  mb: 3,
+                  color: '#555',
+                  width: '100%',
+                  textAlign: 'center',
+                }}
               >
-                <div className="cover-title mobile-title">
-                  {formatTitle(title)}
-                </div>
-                <div className="cover-keywords mobile-keywords">
-                  {formatKeywords(keywords)}
-                </div>
-              </div>
-            </div>
+                预览效果
+              </Typography>
 
-            <div className="action-buttons">
-              <button className="btn" onClick={downloadCover}>
-                下载
-              </button>
-              <button className="btn btn-secondary" onClick={resetForm}>
-                重置
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
+              <Box
+                sx={{
+                  width: isMobile ? '100%' : '300px',
+                  maxWidth: '300px',
+                  mb: 3,
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}
+              >
+                <div
+                  ref={coverPreviewRef}
+                  style={{
+                    width: '280px',
+                    height: '560px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      backgroundImage: `url('${getBgImage()}')`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      bgcolor: 'rgba(0,0,0,0.3)',
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent:
+                        layout === 'center' ? 'center' : 'flex-start',
+                      alignItems: layout === 'center' ? 'center' : 'flex-start',
+                      padding: layout === 'center' ? '2rem' : '3rem 2rem 2rem',
+                      fontFamily,
+                      color: 'white',
+                      textAlign: layout === 'center' ? 'center' : 'left',
+                    }}
+                  >
+                    <Typography
+                      variant="h4"
+                      component="h3"
+                      sx={{
+                        fontWeight: 'bold',
+                        fontSize: { xs: '1.8rem', sm: '2rem' },
+                        textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                        mb: layout === 'center' ? 2 : 3,
+                      }}
+                    >
+                      {formatTitle(title)}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontSize: { xs: '0.9rem', sm: '1rem' },
+                        textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                        bgcolor: 'rgba(0,0,0,0.3)',
+                        px: 2,
+                        py: 1,
+                        borderRadius: 1,
+                        display: 'inline-block',
+                      }}
+                    >
+                      {formatKeywords(keywords)}
+                    </Typography>
+                  </Box>
+                </div>
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                <Button
+                  variant="contained"
+                  onClick={downloadCover}
+                  sx={{ textTransform: 'none', px: 4, py: 1.2 }}
+                >
+                  下载
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={resetForm}
+                  sx={{ textTransform: 'none', px: 4, py: 1.2 }}
+                >
+                  重置
+                </Button>
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
   );
 };
 

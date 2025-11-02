@@ -1,5 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  Box,
+  Menu,
+  MenuItem,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import {
+  Menu as MenuIcon,
+  ExpandMore as ChevronDown,
+  Home,
+  Add,
+  CardMembership,
+  CalendarToday,
+  Book,
+  Info,
+  AccountCircle,
+  Logout,
+} from '@mui/icons-material';
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -12,108 +40,221 @@ const Header: React.FC<HeaderProps> = ({
   userName,
   onLogout,
 }) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+  const handleMenuToggle = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setUserMenuAnchor(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchor(null);
   };
 
   const handleLogout = () => {
     onLogout();
-    setIsDropdownOpen(false);
+    handleUserMenuClose();
     navigate('/');
   };
 
-  return (
-    <header className="site-header">
-      <div className="header-container">
-        <div className="header-left">
-          <div className="site-branding">
-            <Link to="/" className="site-title">
-              <img
-                src="/images/logo.png"
-                alt="启发星球"
-                className="site-logo"
-              />
-              启发星球
-            </Link>
-            <span className="site-subtitle">在真实中启发，在连接中发光</span>
-          </div>
-        </div>
+  const handleMenuClick = () => {
+    setIsMenuOpen(false);
+  };
 
-        <nav className="header-nav">
-          <Link to="/create-card" className="nav-link">
-            创建卡片
-          </Link>
-          <Link to="/cards" className="nav-link">
-            卡片广场
-          </Link>
-          <Link to="/my-cards" className="nav-link">
-            我的卡片
-          </Link>
-          <Link to="/meetups" className="nav-link">
-            活动广场
-          </Link>
-          <Link to="/weekly-cards" className="nav-link">
-            启发星球周刊
-          </Link>
-          <Link to="/about" className="nav-link">
-            关于我们
-          </Link>
-        </nav>
+  const navItems = [
+    { path: '/create-card', label: '创建卡片', icon: <Add fontSize="small" /> },
+    {
+      path: '/cards',
+      label: '卡片广场',
+      icon: <CardMembership fontSize="small" />,
+    },
+    {
+      path: '/my-cards',
+      label: '我的卡片',
+      icon: <AccountCircle fontSize="small" />,
+    },
+    {
+      path: '/meetups',
+      label: '活动广场',
+      icon: <CalendarToday fontSize="small" />,
+    },
+    {
+      path: '/weekly-cards',
+      label: '启发星球周刊',
+      icon: <Book fontSize="small" />,
+    },
+    { path: '/about', label: '关于我们', icon: <Info fontSize="small" /> },
+  ];
 
-        <div className="header-right">
-          {/* 未登录状态 */}
-          {!isAuthenticated && (
-            <div className="auth-section">
-              <Link to="/login" className="login-btn">
-                登录
-              </Link>
-            </div>
-          )}
+  const renderNavLinks = () => (
+    <>
+      {navItems.map((item) => (
+        <Button
+          key={item.path}
+          color="inherit"
+          startIcon={item.icon}
+          component={Link}
+          to={item.path}
+          sx={{
+            marginLeft: 1,
+            display: { xs: 'none', md: 'flex' },
+            textTransform: 'none',
+            fontSize: '0.9rem',
+          }}
+        >
+          {item.label}
+        </Button>
+      ))}
+    </>
+  );
 
-          {/* 已登录状态 */}
-          {isAuthenticated && (
-            <div
-              className={`auth-section user-dropdown ${
-                isDropdownOpen ? 'open' : ''
-              }`}
+  const renderMobileMenu = () => (
+    <Drawer anchor="left" open={isMenuOpen} onClose={handleMenuToggle}>
+      <Box sx={{ width: 250, padding: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+          <img
+            src="/images/logo.png"
+            alt="启发星球"
+            style={{ width: 32, height: 32, marginRight: 8 }}
+          />
+          <Typography variant="h6" color="primary">
+            启发星球
+          </Typography>
+        </Box>
+        <List>
+          <ListItem component={Link} to="/" onClick={handleMenuClick}>
+            <Home fontSize="small" sx={{ mr: 2 }} />
+            <ListItemText primary="首页" />
+          </ListItem>
+          {navItems.map((item) => (
+            <ListItem
+              key={item.path}
+              component={Link}
+              to={item.path}
+              onClick={handleMenuClick}
             >
-              <button className="user-btn" onClick={toggleDropdown}>
-                <span>{userName}</span>
-                <svg
-                  className="dropdown-icon"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
+              {item.icon}
+              <ListItemText primary={item.label} />
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </Drawer>
+  );
+
+  const userMenuOpen = Boolean(userMenuAnchor);
+
+  return (
+    <AppBar
+      position="static"
+      elevation={3}
+      sx={{ backgroundColor: '#fff', color: '#333' }}
+    >
+      <Toolbar sx={{ justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {isMobile && (
+            <IconButton
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              onClick={handleMenuToggle}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+          <Link
+            to="/"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              textDecoration: 'none',
+              color: 'inherit',
+            }}
+          >
+            <img
+              src="/images/logo.png"
+              alt="启发星球"
+              style={{ width: 32, height: 32, marginRight: 8 }}
+            />
+            <div>
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{ fontWeight: 'bold' }}
+              >
+                启发星球
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{ display: { xs: 'none', sm: 'block' } }}
+              >
+                在真实中启发，在连接中发光
+              </Typography>
+            </div>
+          </Link>
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {!isMobile && renderNavLinks()}
+
+          {!isAuthenticated ? (
+            <Button
+              color="primary"
+              variant="contained"
+              component={Link}
+              to="/login"
+              sx={{ ml: 2, backgroundColor: '#1976d2' }}
+            >
+              登录
+            </Button>
+          ) : (
+            <div ref={menuRef}>
+              <Button
+                color="inherit"
+                onClick={handleUserMenuOpen}
+                startIcon={<AccountCircle />}
+                endIcon={<ChevronDown fontSize="small" />}
+                sx={{ ml: 2, textTransform: 'none' }}
+              >
+                {userName}
+              </Button>
+              <Menu
+                anchorEl={userMenuAnchor}
+                open={userMenuOpen}
+                onClose={handleUserMenuClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              >
+                <MenuItem
+                  component={Link}
+                  to="/my-meetups"
+                  onClick={handleUserMenuClose}
                 >
-                  <path
-                    d="M2 4l4 4 4-4"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    fill="none"
-                  />
-                </svg>
-              </button>
-              {isDropdownOpen && (
-                <div className="dropdown-menu">
-                  <Link to="/my-meetups" className="dropdown-item">
-                    我的活动
-                  </Link>
-                  <button
-                    className="dropdown-item logout-btn"
-                    onClick={handleLogout}
-                  >
-                    退出登录
-                  </button>
-                </div>
-              )}
+                  <CalendarToday fontSize="small" sx={{ mr: 1 }} />
+                  我的活动
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>
+                  <Logout fontSize="small" sx={{ mr: 1 }} />
+                  退出登录
+                </MenuItem>
+              </Menu>
             </div>
           )}
-        </div>
-      </div>
-    </header>
+        </Box>
+      </Toolbar>
+      {renderMobileMenu()}
+    </AppBar>
   );
 };
 

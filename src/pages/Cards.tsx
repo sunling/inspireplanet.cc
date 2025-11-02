@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
+import {
+  Box,
+  Container,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  TextField,
+  CircularProgress,
+  Alert,
+  useMediaQuery,
+  useTheme,
+  Grid,
+} from '@mui/material';
 
 // 导入渐变字体颜色配置
 const gradientFontColors: Record<string, string> = {
@@ -14,6 +28,40 @@ const gradientFontColors: Record<string, string> = {
   'card-gradient-8': '#ffffff',
   'card-gradient-9': '#ffffff',
   'card-gradient-10': '#ffffff',
+};
+
+// 定义卡片渐变样式映射
+const gradientStyles: Record<string, React.CSSProperties> = {
+  'card-gradient-1': {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  },
+  'card-gradient-2': {
+    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+  },
+  'card-gradient-3': {
+    background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+  },
+  'card-gradient-4': {
+    background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+  },
+  'card-gradient-5': {
+    background: 'linear-gradient(135deg, #00dbde 0%, #fc00ff 100%)',
+  },
+  'card-gradient-6': {
+    background: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+  },
+  'card-gradient-7': {
+    background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+  },
+  'card-gradient-8': {
+    background: 'linear-gradient(135deg, #d299c2 0%, #fef9d7 100%)',
+  },
+  'card-gradient-9': {
+    background: 'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)',
+  },
+  'card-gradient-10': {
+    background: 'linear-gradient(135deg, #eea849 0%, #f46b45 100%)',
+  },
 };
 
 // 获取渐变对应的字体颜色
@@ -40,6 +88,9 @@ const Cards: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [groupedCards, setGroupedCards] = useState<Record<string, Card[]>>({});
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
   // 模拟数据
   const mockCards: Card[] = [
@@ -186,10 +237,11 @@ const Cards: React.FC = () => {
     const [commentName, setCommentName] = useState<string>('');
     const [commentText, setCommentText] = useState<string>('');
 
-    // 获取字体颜色
+    // 获取字体颜色和渐变样式
     const fontColor = getFontColorForGradient(
       card.gradient || 'card-gradient-1'
     );
+    const gradientStyle = gradientStyles[card.gradient || 'card-gradient-1'];
     // Quote box背景色
     const quoteBoxBg = 'rgba(255, 255, 255, 0.9)';
     // 最终图片路径，使用默认图片如果没有提供
@@ -206,151 +258,289 @@ const Cards: React.FC = () => {
     };
 
     return (
-      <div className="card-container" onClick={() => onCardClick(card.id)}>
-        <div
-          className={`card ${card.gradient || 'card-gradient-1'}`}
-          style={{
-            cursor: 'pointer',
+      <Box
+        sx={{
+          position: 'relative',
+          cursor: 'pointer',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            transition: 'transform 0.3s ease',
+          },
+        }}
+        onClick={() => onCardClick(card.id)}
+      >
+        <Card
+          sx={{
+            ...gradientStyle,
             color: fontColor,
             fontFamily: card.Font || 'sans-serif',
+            borderRadius: '8px',
+            padding: 2,
+            height: '100%',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
           }}
         >
           {/* 卡片图片 */}
           {finalImage && (
-            <img
+            <Box
+              component="img"
               src={finalImage}
               alt={card.Title}
-              className="card-image"
               loading="lazy"
+              sx={{
+                width: '100%',
+                height: 'auto',
+                borderRadius: '4px',
+                mb: 2,
+              }}
             />
           )}
 
           {/* 卡片标题 */}
-          <div className="card-header">
-            <h3 className="card-title">{card.Title}</h3>
-            <div className="card-date">{formatCardDate(card.Created)}</div>
-          </div>
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              variant={isMobile ? 'h6' : 'h5'}
+              sx={{ fontWeight: 'bold', mb: 1 }}
+            >
+              {card.Title}
+            </Typography>
+            <Typography variant="caption" sx={{ opacity: 0.8 }}>
+              {formatCardDate(card.Created)}
+            </Typography>
+          </Box>
 
           {/* 卡片引言 */}
-          <div
-            className="card-quote-container"
-            style={{ backgroundColor: quoteBoxBg }}
+          <Box
+            sx={{
+              backgroundColor: quoteBoxBg,
+              padding: 2,
+              borderRadius: '4px',
+              mb: 2,
+              color: '#333',
+            }}
           >
-            <p className="card-quote">"{card.Quote}"</p>
-          </div>
+            <Typography variant="body1" sx={{ fontStyle: 'italic' }}>
+              "{card.Quote}"
+            </Typography>
+          </Box>
 
           {/* 卡片详情 */}
           {card.Detail && (
-            <div className="card-detail">
-              <p>{card.Detail}</p>
-            </div>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2">{card.Detail}</Typography>
+            </Box>
           )}
 
           {/* 卡片创作者 */}
           {card.Creator && (
-            <div className="card-creator">
-              <span>— {card.Creator}</span>
-            </div>
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 'medium' }}>
+                — {card.Creator}
+              </Typography>
+            </Box>
           )}
-        </div>
-        <div
-          className={`card ${card.gradient || 'card-gradient-1'}`}
-          style={{
-            cursor: 'pointer',
-            color: fontColor,
-            fontFamily: card.Font || 'sans-serif',
+        </Card>
+
+        {/* 卡片操作区域 */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 2,
+            opacity: 0,
+            '&:hover': {
+              opacity: 1,
+              transition: 'opacity 0.3s ease',
+            },
           }}
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* 卡片悬停覆盖层 */}
-          <div
-            className="card-hover-overlay"
-            onClick={(e) => e.stopPropagation()}
-            onMouseEnter={() => setShowCommentForm(false)}
+          <Button
+            variant="contained"
+            color="primary"
+            size={isMobile ? 'small' : 'medium'}
+            sx={{ mb: 2 }}
+            onClick={() => onCardClick(card.id)}
           >
-            <button
-              className="btn btn-warm view-details-btn"
-              onClick={() => onCardClick(card.id)}
-            >
-              查看详情
-            </button>
+            查看详情
+          </Button>
 
-            {showCommentForm && (
-              <div className="comment-form-container">
-                <div className="comment-form-title">添加评论</div>
-                <input
-                  type="text"
-                  className="form-input comment-input"
-                  placeholder="你的名字"
-                  value={commentName}
-                  onChange={(e) => setCommentName(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <textarea
-                  className="form-input comment-textarea"
-                  placeholder="写下你的想法..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <button
-                  className="btn btn-warm submit-comment-btn"
-                  onClick={() =>
-                    onSubmitComment(card.id, commentName, commentText)
-                  }
-                >
-                  提交评论
-                </button>
-              </div>
-            )}
-
-            <button
-              className="btn btn-secondary add-comment-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowCommentForm(!showCommentForm);
+          {showCommentForm && (
+            <Box
+              sx={{
+                width: '100%',
+                backgroundColor: 'white',
+                padding: 2,
+                borderRadius: '4px',
+                mb: 2,
               }}
             >
-              {showCommentForm ? '取消' : '添加评论'}
-            </button>
-          </div>
-        </div>
-      </div>
+              <Typography
+                variant="subtitle2"
+                sx={{ mb: 1, color: '#333', fontWeight: 'bold' }}
+              >
+                添加评论
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="你的名字"
+                value={commentName}
+                onChange={(e) => setCommentName(e.target.value)}
+                margin="dense"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                size="small"
+                placeholder="写下你的想法..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                margin="dense"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                size="small"
+                onClick={() =>
+                  onSubmitComment(card.id, commentName, commentText)
+                }
+              >
+                提交评论
+              </Button>
+            </Box>
+          )}
+
+          <Button
+            variant="outlined"
+            color="inherit"
+            size={isMobile ? 'small' : 'medium'}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowCommentForm(!showCommentForm);
+            }}
+          >
+            {showCommentForm ? '取消' : '添加评论'}
+          </Button>
+        </Box>
+      </Box>
     );
   };
 
+  // 获取适当的网格列数
+  const getGridColumns = () => {
+    if (isMobile) return 1;
+    if (isMedium) return 2;
+    return 3;
+  };
+
   return (
-    <div className="cards-page bg-gradient-default">
-      <div className="cards-container">
-        <div id="cards-content">
+    <Box
+      sx={{
+        minHeight: '100vh',
+        padding: 2,
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      }}
+    >
+      <Container maxWidth="lg">
+        <Box id="cards-content" sx={{ py: 4 }}>
           {loading ? (
-            <div className="loading-placeholder">加载中...</div>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                py: 10,
+              }}
+            >
+              <CircularProgress size={60} color="inherit" />
+            </Box>
           ) : error ? (
-            <div className="text-center p-lg">{error}</div>
+            <Box sx={{ py: 6 }}>
+              <Alert severity="error" sx={{ textAlign: 'center' }}>
+                {error}
+              </Alert>
+            </Box>
           ) : Object.keys(groupedCards).length === 0 ? (
-            <div className="text-center p-lg">暂无卡片数据</div>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                py: 10,
+              }}
+            >
+              <Typography variant="h6" sx={{ color: 'white' }}>
+                暂无卡片数据
+              </Typography>
+            </Box>
           ) : (
             // 按日期排序（最新的在前）
             Object.keys(groupedCards)
               .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
               .map((date) => (
-                <div key={date}>
-                  <h2 className="date-heading">{formatDate(date)}</h2>
-                  <div className="date-cards-container">
+                <Box key={date} sx={{ mb: 8 }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      mb: 4,
+                      color: 'white',
+                      fontWeight: 'bold',
+                      textAlign: 'center',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                    }}
+                  >
+                    {formatDate(date)}
+                  </Typography>
+                  <Grid
+                    container
+                    spacing={4}
+                    sx={{
+                      '& > .MuiGrid-item': {
+                        display: 'flex',
+                      },
+                    }}
+                  >
                     {groupedCards[date].map((card) => (
-                      <CardComponent
+                      <Grid
+                        size={{
+                          xs: 12,
+                          sm: getGridColumns() === 1 ? 12 : 6,
+                          md: Math.floor(12 / getGridColumns()),
+                        }}
                         key={card.id}
-                        card={card}
-                        onCardClick={handleCardClick}
-                        onSubmitComment={handleSubmitComment}
-                      />
+                      >
+                        <CardComponent
+                          card={card}
+                          onCardClick={handleCardClick}
+                          onSubmitComment={handleSubmitComment}
+                        />
+                      </Grid>
                     ))}
-                  </div>
-                </div>
+                  </Grid>
+                </Box>
               ))
           )}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 

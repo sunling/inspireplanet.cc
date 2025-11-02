@@ -1,6 +1,23 @@
 import React, { useState, useEffect, JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
+import {
+  Box,
+  Container,
+  Typography,
+  Card,
+  CardContent,
+  CardMedia,
+  Button,
+  Grid,
+  Paper,
+  useMediaQuery,
+  useTheme,
+  CircularProgress,
+  Avatar,
+  Chip,
+  Divider,
+} from '@mui/material';
 
 // 导入渐变字体颜色配置
 const gradientFontColors: Record<string, string> = {
@@ -46,6 +63,9 @@ const MyCards: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
   // 获取当前登录用户信息
   const getCurrentUser = (): any => {
@@ -379,30 +399,203 @@ const MyCards: React.FC = () => {
   const groupedCards = groupCardsByDate(cards);
 
   return (
-    <div className="cards-container">
-      <div id="cards-content">
-        {/* 渲染分组后的卡片 - 按日期倒序排列 */}
-        {Object.keys(groupedCards)
-          .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
-          .map((date) => {
-            const dateCards = groupedCards[date];
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
+      <Container maxWidth="lg">
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            mb: 4,
+            fontWeight: 'bold',
+            color: '#333',
+          }}
+        >
+          我的灵感卡片
+        </Typography>
 
-            return (
-              <div key={date}>
-                {/* 日期标题 */}
-                <h2 className="date-heading">{formatDate(date)}</h2>
+        <Paper elevation={2} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 2,
+            }}
+          >
+            <Button
+              variant="contained"
+              onClick={() => navigate('/create-card')}
+              sx={{ textTransform: 'none', px: 3 }}
+            >
+              创建新卡片
+            </Button>
+          </Box>
+        </Paper>
 
-                {/* 该日期的卡片容器 */}
-                <div className="date-cards-container">
-                  {dateCards.map((card, index) =>
-                    renderCarouselCard(card, index)
-                  )}
-                </div>
-              </div>
-            );
-          })}
-      </div>
-    </div>
+        {loading ? (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              py: 10,
+            }}
+          >
+            <CircularProgress size={48} />
+          </Box>
+        ) : error ? (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              py: 10,
+            }}
+          >
+            <Typography variant="h6" color="error">
+              {error}
+            </Typography>
+          </Box>
+        ) : cards.length === 0 ? (
+          <Paper
+            elevation={1}
+            sx={{
+              p: 6,
+              textAlign: 'center',
+              borderRadius: 2,
+            }}
+          >
+            {renderEmptyState()}
+          </Paper>
+        ) : (
+          <Box>
+            {Object.keys(groupedCards)
+              .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+              .map((date) => {
+                const dateCards = groupedCards[date];
+                return (
+                  <Paper
+                    key={date}
+                    elevation={2}
+                    sx={{
+                      mb: 4,
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        p: 2,
+                        bgcolor: '#fafafa',
+                        borderBottom: '1px solid #e0e0e0',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography
+                        variant="h6"
+                        sx={{ color: '#555', fontWeight: 'bold' }}
+                      >
+                        {formatDate(date)}
+                      </Typography>
+                      <Chip
+                        label={`${dateCards.length} 张卡片`}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                    </Box>
+                    <Box sx={{ p: 2 }}>
+                      <Grid container spacing={3}>
+                        {dateCards.map((card, index) => (
+                          <Grid
+                            size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                            key={card.id}
+                          >
+                            <Card
+                              onClick={() =>
+                                navigate(`/card-detail?id=${card.id}`)
+                              }
+                              sx={{
+                                height: '100%',
+                                cursor: 'pointer',
+                                transition: 'transform 0.2s, box-shadow 0.2s',
+                                '&:hover': {
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: 3,
+                                },
+                              }}
+                            >
+                              <CardContent sx={{ p: 0 }}>
+                                <Box
+                                  sx={{
+                                    p: 3,
+                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                    fontFamily: card.Font || 'sans-serif',
+                                  }}
+                                >
+                                  <Typography
+                                    variant="h6"
+                                    component="div"
+                                    gutterBottom
+                                    sx={{ fontWeight: 'bold' }}
+                                  >
+                                    {card.Title}
+                                  </Typography>
+                                  <Typography variant="body1" paragraph>
+                                    {card.Quote}
+                                  </Typography>
+                                  {card.ImagePath && (
+                                    <Box sx={{ mt: 2, mb: 2 }}>
+                                      <CardMedia
+                                        component="img"
+                                        height="140"
+                                        image={card.ImagePath}
+                                        alt={card.Title}
+                                        sx={{
+                                          borderRadius: 1,
+                                          objectFit: 'contain',
+                                        }}
+                                      />
+                                    </Box>
+                                  )}
+                                  <Divider sx={{ my: 2 }} />
+                                  <Box
+                                    sx={{
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="body2"
+                                      color="textSecondary"
+                                    >
+                                      ——{card.Creator || '匿名'}
+                                    </Typography>
+                                    <Typography
+                                      variant="caption"
+                                      color="textSecondary"
+                                    >
+                                      {formatDate(card.Created)}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  </Paper>
+                );
+              })}
+          </Box>
+        )}
+      </Container>
+    </Box>
   );
 };
 

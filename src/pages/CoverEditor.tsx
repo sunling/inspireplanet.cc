@@ -1,11 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
+import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Grid,
+  Paper,
+  useMediaQuery,
+  useTheme,
+  CircularProgress,
+  Card,
+  CardMedia,
+  CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 
 const CoverEditor: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverPreviewRef = useRef<HTMLDivElement>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
   // 状态管理
   const [title, setTitle] = useState<string>('启发星球');
@@ -178,163 +204,323 @@ const CoverEditor: React.FC = () => {
   };
 
   return (
-    <>
-      {/* 主内容区域 */}
-      <div className="main-container">
-        {/* 表单部分 */}
-        <div className="form-section">
-          <div className="form-group">
-            <label htmlFor="cover-title">封面标题</label>
-            <textarea
-              id="cover-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="输入封面标题..."
-            ></textarea>
-            <small style={{ color: '#7f8c8d' }}>按回车换行</small>
-          </div>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
+      <Container maxWidth="lg">
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            mb: 4,
+            textAlign: 'center',
+            fontWeight: 'bold',
+            color: '#333',
+          }}
+        >
+          封面编辑器
+        </Typography>
 
-          <div className="form-group">
-            <label htmlFor="cover-keywords">关键词</label>
-            <input
-              type="text"
-              id="cover-keywords"
-              value={keywords}
-              onChange={(e) => setKeywords(e.target.value)}
-              placeholder="用空格分隔关键词"
-            />
-          </div>
+        <Grid container spacing={4}>
+          {/* 表单部分 */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+              <Typography variant="h6" sx={{ mb: 3, color: '#555' }}>
+                设计选项
+              </Typography>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="font-select">字体选择</label>
-              <select
-                id="font-select"
-                value={fontFamily}
-                onChange={(e) => setFontFamily(e.target.value)}
+              <TextField
+                fullWidth
+                label="封面标题"
+                multiline
+                rows={3}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="输入封面标题..."
+                margin="normal"
+                InputProps={{
+                  sx: { fontFamily: fontFamily },
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{ color: '#7f8c8d', display: 'block', mb: 2 }}
               >
-                {fontOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor="layout-select">布局风格</label>
-              <select
-                id="layout-select"
-                value={layout}
-                onChange={(e) => setLayout(e.target.value)}
-              >
-                {layoutOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+                按回车换行
+              </Typography>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="bg-select">背景图片</label>
-              <select
-                id="bg-select"
-                value={bgSelect}
-                onChange={(e) => setBgSelect(e.target.value)}
-              >
-                <option value="images/mistyblue.png">默认背景</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>自定义背景图</label>
-              <div className="file-upload-wrapper">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => fileInputRef.current?.click()}
+              <TextField
+                fullWidth
+                label="关键词"
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+                placeholder="用空格分隔关键词"
+                margin="normal"
+              />
+
+              <Grid container spacing={2} sx={{ my: 2 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>字体选择</InputLabel>
+                    <Select
+                      value={fontFamily}
+                      label="字体选择"
+                      onChange={(e) => setFontFamily(e.target.value)}
+                    >
+                      {fontOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>布局风格</InputLabel>
+                    <Select
+                      value={layout}
+                      label="布局风格"
+                      onChange={(e) => setLayout(e.target.value)}
+                    >
+                      {layoutOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+
+              <Grid container spacing={2} sx={{ my: 2 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>背景图片</InputLabel>
+                    <Select
+                      value={bgSelect}
+                      label="背景图片"
+                      onChange={(e) => setBgSelect(e.target.value)}
+                    >
+                      <MenuItem value="images/mistyblue.png">默认背景</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormControl fullWidth>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      自定义背景图
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => fileInputRef.current?.click()}
+                      startIcon={<span>📁</span>}
+                    >
+                      上传图片
+                    </Button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      style={{ display: 'none' }}
+                    />
+                    {uploadStatus && (
+                      <Typography
+                        variant="caption"
+                        sx={{ mt: 1, display: 'block', color: '#666' }}
+                      >
+                        {uploadStatus}
+                      </Typography>
+                    )}
+                  </FormControl>
+                </Grid>
+              </Grid>
+
+              <Box sx={{ my: 3 }}>
+                <Button
+                  variant="contained"
+                  onClick={searchImagesHandler}
+                  disabled={searching}
+                  startIcon={
+                    searching ? <CircularProgress size={16} /> : <span>🔍</span>
+                  }
+                  sx={{ mr: 2 }}
                 >
-                  📁 上传图片
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  style={{ display: 'none' }}
-                />
-              </div>
-              <div className="upload-status">{uploadStatus}</div>
-            </div>
-          </div>
-
-          <div className="form-group compact">
-            <button
-              type="button"
-              className="btn"
-              onClick={searchImagesHandler}
-              disabled={searching}
-            >
-              🔍 搜索相关图片
-            </button>
-            <div className={`upload-status ${searching ? 'loading' : ''}`}>
-              {searchStatus}
-            </div>
-          </div>
-
-          {/* 搜索结果 */}
-          {showSearchResults && (
-            <div className="search-results">
-              <h4>搜索结果：{searchQuery}</h4>
-              <div className="image-grid">
-                {searchImages.map((image, index) => (
-                  <div
-                    key={index}
-                    className="image-item"
-                    title={image.description}
-                    onClick={() => selectImage(image.url)}
+                  搜索相关图片
+                </Button>
+                {searchStatus && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      ml: 1,
+                      display: 'inline',
+                      color: '#666',
+                      ...(searching && { fontWeight: 'bold' }),
+                    }}
                   >
-                    <img src={image.thumb} alt={image.title} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+                    {searchStatus}
+                  </Typography>
+                )}
+              </Box>
 
-        {/* 预览部分 */}
-        <div className="preview-section">
-          <div className="cover-container">
-            <div className="cover" id="cover-preview" ref={coverPreviewRef}>
-              <div
-                className="cover-bg"
-                style={{ backgroundImage: `url('${getBgImage()}')` }}
-              ></div>
-              <div className="cover-overlay"></div>
-              <div
-                className={`cover-content ${
-                  layout === 'left' ? 'layout-left' : ''
-                }`}
-                style={{ fontFamily }}
+              {/* 搜索结果 */}
+              {showSearchResults && (
+                <Box
+                  sx={{
+                    mt: 3,
+                    p: 2,
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 1,
+                  }}
+                >
+                  <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                    搜索结果：{searchQuery}
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {searchImages.map((image, index) => (
+                      <Grid size={{ xs: 6, sm: 4 }} key={index}>
+                        <Card
+                          sx={{
+                            cursor: 'pointer',
+                            '&:hover': { boxShadow: 2 },
+                            transition: 'box-shadow 0.2s',
+                          }}
+                          onClick={() => selectImage(image.url)}
+                        >
+                          <CardMedia
+                            component="img"
+                            height="80"
+                            image={image.thumb}
+                            alt={image.title}
+                          />
+                          <CardContent>
+                            <Typography variant="caption" noWrap>
+                              {image.title}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              )}
+            </Paper>
+          </Grid>
+
+          {/* 预览部分 */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Paper elevation={2} sx={{ p: 3, borderRadius: 2, height: '100%' }}>
+              <Typography variant="h6" sx={{ mb: 3, color: '#555' }}>
+                预览
+              </Typography>
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  minHeight: { xs: '400px', sm: '500px' },
+                }}
               >
-                <div className="cover-title">{formatTitle(title)}</div>
-                <div className="cover-keywords">{formatKeywords(keywords)}</div>
-              </div>
-            </div>
+                <Box
+                  className="cover"
+                  ref={coverPreviewRef}
+                  sx={{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: { xs: '300px', sm: '400px', md: '500px' },
+                    aspectRatio: '16/9',
+                    overflow: 'hidden',
+                    borderRadius: 2,
+                    boxShadow: 3,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      backgroundImage: `url('${getBgImage()}')`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      backgroundColor: 'rgba(0,0,0,0.2)',
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: layout === 'left' ? 'flex-start' : 'center',
+                      padding: '2rem',
+                      fontFamily: fontFamily,
+                      color: 'white',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                    }}
+                  >
+                    <Typography
+                      variant="h3"
+                      component="div"
+                      sx={{
+                        fontWeight: 'bold',
+                        mb: 2,
+                        textAlign: layout === 'left' ? 'left' : 'center',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {formatTitle(title)}
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      component="div"
+                      sx={{
+                        opacity: 0.9,
+                        textAlign: layout === 'left' ? 'left' : 'center',
+                      }}
+                    >
+                      {formatKeywords(keywords)}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
 
-            <div className="action-buttons">
-              <button className="btn" onClick={downloadCover}>
-                下载
-              </button>
-              <button className="btn btn-secondary" onClick={resetForm}>
-                重置
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
+              <Box
+                sx={{
+                  mt: 4,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 2,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  onClick={downloadCover}
+                  size="large"
+                  sx={{ textTransform: 'none', px: 4 }}
+                >
+                  下载
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={resetForm}
+                  size="large"
+                  sx={{ textTransform: 'none', px: 4 }}
+                >
+                  重置
+                </Button>
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
   );
 };
 

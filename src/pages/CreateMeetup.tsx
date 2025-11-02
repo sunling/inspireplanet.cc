@@ -1,3 +1,14 @@
+import {
+  Card,
+  CardContent,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,6 +27,8 @@ interface MeetupData {
 
 const CreateMeetup: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragover, setDragover] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -442,107 +455,220 @@ const CreateMeetup: React.FC = () => {
         </div>
 
         {/* 时间地点 */}
-        <div className="form-section">
-          <h3>时间地点</h3>
-          <div className="form-group">
-            <label htmlFor="datetime">活动时间</label>
-            <input
-              type="datetime-local"
-              id="datetime"
-              name="datetime"
-              value={meetupData.datetime}
-              onChange={handleInputChange}
-              required
-            />
-            <div className="quick-datetime-buttons">
-              <span className="quick-datetime-label">快捷选择：</span>
-              <button
-                type="button"
-                className={`quick-datetime-btn ${
-                  isQuickDateTimeActive('tomorrow') ? 'active' : ''
-                }`}
-                onClick={() => handleQuickDateTimeSelect('tomorrow')}
-              >
-                明天 19:00
-              </button>
-              <button
-                type="button"
-                className={`quick-datetime-btn ${
-                  isQuickDateTimeActive('next-week') ? 'active' : ''
-                }`}
-                onClick={() => handleQuickDateTimeSelect('next-week')}
-              >
-                下周六 14:00
-              </button>
-              <button
-                type="button"
-                className={`quick-datetime-btn ${
-                  isQuickDateTimeActive('next-sunday') ? 'active' : ''
-                }`}
-                onClick={() => handleQuickDateTimeSelect('next-sunday')}
-              >
-                下周日 10:00
-              </button>
-              <button
-                type="button"
-                className={`quick-datetime-btn ${
-                  isQuickDateTimeActive('weekend') ? 'active' : ''
-                }`}
-                onClick={() => handleQuickDateTimeSelect('weekend')}
-              >
-                本周末 19:00
-              </button>
-            </div>
-            {errors.datetime && (
-              <div className="error-message">{errors.datetime}</div>
-            )}
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="location">活动地点</label>
-              <input
-                type="text"
-                id="location"
-                name="location"
-                value={meetupData.location}
+        <Card sx={{ mb: 4, boxShadow: 2, borderRadius: 3, overflow: 'hidden' }}>
+          <CardContent sx={{ p: 0 }}>
+            <Box sx={{ bgcolor: '#667eea', p: 2 }}>
+              <Typography variant="h6" color="white" fontWeight="bold">
+                时间地点
+              </Typography>
+            </Box>
+            <Box sx={{ p: 3 }}>
+              <TextField
+                fullWidth
+                id="datetime"
+                name="datetime"
+                label="活动时间"
+                type="datetime-local"
+                value={meetupData.datetime}
                 onChange={handleInputChange}
-                placeholder="线下活动请填写具体地址，线上活动可填写平台名称"
+                required
+                error={!!errors.datetime}
+                helperText={errors.datetime || '选择活动开始时间'}
+                margin="normal"
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                  },
+                }}
+                size={isMobile ? 'small' : 'medium'}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&:hover fieldset': {
+                      borderColor: '#667eea',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea',
+                    },
+                  },
+                }}
               />
-            </div>
 
-            <div className="form-group">
-              <label htmlFor="duration">
-                活动时长（小时）<span className="optional">（可选）</span>
-              </label>
-              <input
-                type="number"
-                id="duration"
-                name="duration"
-                value={meetupData.duration}
-                onChange={handleInputChange}
-                min="0.5"
-                step="0.5"
-                placeholder="例如：2"
-              />
-            </div>
-          </div>
+              <Box sx={{ mt: 2, mb: 3 }}>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  sx={{ mb: 1 }}
+                >
+                  快捷选择：
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 1,
+                    '& > button': {
+                      minWidth: isMobile ? 'auto' : '120px',
+                    },
+                  }}
+                >
+                  <Button
+                    variant={
+                      isQuickDateTimeActive('tomorrow')
+                        ? 'contained'
+                        : 'outlined'
+                    }
+                    color="primary"
+                    size="small"
+                    onClick={() => handleQuickDateTimeSelect('tomorrow')}
+                    sx={{
+                      backgroundColor: isQuickDateTimeActive('tomorrow')
+                        ? '#667eea'
+                        : 'transparent',
+                      borderColor: '#667eea',
+                      color: isQuickDateTimeActive('tomorrow')
+                        ? 'white'
+                        : '#667eea',
+                      '&:hover': {
+                        backgroundColor: isQuickDateTimeActive('tomorrow')
+                          ? '#5a67d8'
+                          : 'rgba(102, 126, 234, 0.1)',
+                        borderColor: '#5a67d8',
+                      },
+                    }}
+                  >
+                    明天 19:00
+                  </Button>
+                  <Button
+                    variant={
+                      isQuickDateTimeActive('next-week')
+                        ? 'contained'
+                        : 'outlined'
+                    }
+                    color="primary"
+                    size="small"
+                    onClick={() => handleQuickDateTimeSelect('next-week')}
+                    sx={{
+                      backgroundColor: isQuickDateTimeActive('next-week')
+                        ? '#667eea'
+                        : 'transparent',
+                      borderColor: '#667eea',
+                      color: isQuickDateTimeActive('next-week')
+                        ? 'white'
+                        : '#667eea',
+                      '&:hover': {
+                        backgroundColor: isQuickDateTimeActive('next-week')
+                          ? '#5a67d8'
+                          : 'rgba(102, 126, 234, 0.1)',
+                        borderColor: '#5a67d8',
+                      },
+                    }}
+                  >
+                    下周六 14:00
+                  </Button>
+                  <Button
+                    variant={
+                      isQuickDateTimeActive('next-sunday')
+                        ? 'contained'
+                        : 'outlined'
+                    }
+                    color="primary"
+                    size="small"
+                    onClick={() => handleQuickDateTimeSelect('next-sunday')}
+                    sx={{
+                      backgroundColor: isQuickDateTimeActive('next-sunday')
+                        ? '#667eea'
+                        : 'transparent',
+                      borderColor: '#667eea',
+                      color: isQuickDateTimeActive('next-sunday')
+                        ? 'white'
+                        : '#667eea',
+                      '&:hover': {
+                        backgroundColor: isQuickDateTimeActive('next-sunday')
+                          ? '#5a67d8'
+                          : 'rgba(102, 126, 234, 0.1)',
+                        borderColor: '#5a67d8',
+                      },
+                    }}
+                  >
+                    下周日 10:00
+                  </Button>
+                  <Button
+                    variant={
+                      isQuickDateTimeActive('weekend')
+                        ? 'contained'
+                        : 'outlined'
+                    }
+                    color="primary"
+                    size="small"
+                    onClick={() => handleQuickDateTimeSelect('weekend')}
+                    sx={{
+                      backgroundColor: isQuickDateTimeActive('weekend')
+                        ? '#667eea'
+                        : 'transparent',
+                      borderColor: '#667eea',
+                      color: isQuickDateTimeActive('weekend')
+                        ? 'white'
+                        : '#667eea',
+                      '&:hover': {
+                        backgroundColor: isQuickDateTimeActive('weekend')
+                          ? '#5a67d8'
+                          : 'rgba(102, 126, 234, 0.1)',
+                        borderColor: '#5a67d8',
+                      },
+                    }}
+                  >
+                    本周末 19:00
+                  </Button>
+                </Box>
+              </Box>
 
-          <div className="form-group">
-            <label htmlFor="maxParticipants">
-              最大参与人数<span className="optional">（可选）</span>
-            </label>
-            <input
-              type="number"
-              id="maxParticipants"
-              name="maxParticipants"
-              value={meetupData.maxParticipants}
-              onChange={handleInputChange}
-              min="1"
-              placeholder="不限制可留空"
-            />
-          </div>
-        </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="location">活动地点</label>
+                  <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    value={meetupData.location}
+                    onChange={handleInputChange}
+                    placeholder="线下活动请填写具体地址，线上活动可填写平台名称"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="duration">
+                    活动时长（小时）<span className="optional">（可选）</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="duration"
+                    name="duration"
+                    value={meetupData.duration}
+                    onChange={handleInputChange}
+                    min="0.5"
+                    step="0.5"
+                    placeholder="例如：2"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="maxParticipants">
+                  最大参与人数<span className="optional">（可选）</span>
+                </label>
+                <input
+                  type="number"
+                  id="maxParticipants"
+                  name="maxParticipants"
+                  value={meetupData.maxParticipants}
+                  onChange={handleInputChange}
+                  min="1"
+                  placeholder="不限制可留空"
+                />
+              </div>
+            </Box>
+          </CardContent>
+        </Card>
 
         {/* 联系方式 */}
         <div className="form-section">

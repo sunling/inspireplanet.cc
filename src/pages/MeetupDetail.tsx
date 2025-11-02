@@ -1,5 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import {
+  Box,
+  Container,
+  Typography,
+  Card,
+  CardContent,
+  CardMedia,
+  Button,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Chip,
+  CircularProgress,
+  Alert,
+  Divider,
+  Avatar,
+  useMediaQuery,
+  useTheme,
+  Paper,
+} from '@mui/material';
 
 interface Meetup {
   id: string;
@@ -38,6 +60,9 @@ interface UserInfo {
 const MeetupDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
   const [meetup, setMeetup] = useState<Meetup | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -305,6 +330,16 @@ const MeetupDetail: React.FC = () => {
     return div.innerHTML;
   };
 
+  // 格式化描述文本（支持换行）
+  const formatDescription = (text: string) => {
+    return text.split('\n').map((line, index) => (
+      <React.Fragment key={index}>
+        {line}
+        {index < text.split('\n').length - 1 && <br />}
+      </React.Fragment>
+    ));
+  };
+
   // 检查活动是否即将举行
   const isUpcoming = (dateString: string) => {
     return new Date(dateString) > new Date();
@@ -320,342 +355,423 @@ const MeetupDetail: React.FC = () => {
     const formattedTime = formatTime(meetup.datetime);
 
     return (
-      <div className="detail-content fade-in">
-        <div className="detail-section">
-          <div className="meetup-header">
-            <div
-              className={`meetup-type ${
-                (meetup.mode || meetup.type) === 'online' ? 'online' : 'offline'
-              }`}
-            >
-              {(meetup.mode || meetup.type) === 'online'
-                ? '线上活动'
-                : '线下活动'}
-            </div>
-            <h2
-              style={{
-                margin: '0 0 1rem 0',
-                color: 'var(--text)',
-                fontSize: '1.5rem',
-                fontWeight: 700,
+      <Box sx={{ mt: 4 }}>
+        <Card elevation={0} sx={{ mb: 4, overflow: 'hidden', borderRadius: 2 }}>
+          {meetup.cover && (
+            <CardMedia
+              component="img"
+              height="200"
+              image={meetup.cover}
+              alt={meetup.title}
+              sx={{
+                height: { xs: '180px', sm: '220px', md: '280px' },
+                objectFit: 'cover',
+              }}
+            />
+          )}
+          <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
+              <Chip
+                label={
+                  (meetup.mode || meetup.type) === 'online'
+                    ? '线上活动'
+                    : '线下活动'
+                }
+                color={
+                  (meetup.mode || meetup.type) === 'online'
+                    ? 'primary'
+                    : 'secondary'
+                }
+                size="small"
+              />
+              <Chip
+                label={isUpcomingMeetup ? '可报名' : '已结束'}
+                color={isUpcomingMeetup ? 'success' : 'default'}
+                size="small"
+              />
+            </Box>
+
+            <Typography
+              variant="h4"
+              component="h1"
+              sx={{
+                mb: 3,
+                fontWeight: 'bold',
+                color: '#333',
+                fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
               }}
             >
-              {escapeHtml(meetup.title)}
-            </h2>
-            <div
-              className={`status-badge ${
-                isUpcomingMeetup ? 'available' : 'ended'
-              }`}
-            >
-              {isUpcomingMeetup ? '可报名' : '已结束'}
-            </div>
-          </div>
+              {meetup.title}
+            </Typography>
 
-          <h3>基本信息</h3>
-          <div className="basic-info-box">
-            <div className="basic-info-row">
-              <div className="basic-info-icon">📅</div>
-              <div className="basic-info-content">
-                <span className="basic-info-label">活动日期</span>
-                <span className="basic-info-value">{formattedDate}</span>
-              </div>
-            </div>
-            <div className="basic-info-row">
-              <div className="basic-info-icon">🕐</div>
-              <div className="basic-info-content">
-                <span className="basic-info-label">活动时间</span>
-                <span className="basic-info-value">{formattedTime}</span>
-              </div>
-            </div>
-            {meetup.duration && (
-              <div className="basic-info-row">
-                <div className="basic-info-icon">⏱️</div>
-                <div className="basic-info-content">
-                  <span className="basic-info-label">活动时长</span>
-                  <span className="basic-info-value">
-                    {meetup.duration} 小时
-                  </span>
-                </div>
-              </div>
-            )}
-            {meetup.location && (
-              <div className="basic-info-row">
-                <div className="basic-info-icon">📍</div>
-                <div className="basic-info-content">
-                  <span className="basic-info-label">活动地点</span>
-                  <span className="basic-info-value">
-                    {escapeHtml(meetup.location)}
-                  </span>
-                </div>
-              </div>
-            )}
-            {meetup.fee !== null && meetup.fee !== undefined && (
-              <div className="basic-info-row">
-                <div className="basic-info-icon">💰</div>
-                <div className="basic-info-content">
-                  <span className="basic-info-label">活动费用</span>
-                  <span className="basic-info-value">
-                    {Number(meetup.fee) > 0 ? `${meetup.fee} 元` : '免费'}
-                  </span>
-                </div>
-              </div>
-            )}
-            {(meetup.max_ppl || meetup.max_participants) && (
-              <div className="basic-info-row">
-                <div className="basic-info-icon">👥</div>
-                <div className="basic-info-content">
-                  <span className="basic-info-label">人数限制</span>
-                  <span className="basic-info-value">
-                    最多 {meetup.max_ppl || meetup.max_participants} 人
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+            {/* 基本信息 */}
+            <Box sx={{ mb: 4, p: 3, bgColor: '#f8f9fa', borderRadius: 1 }}>
+              <Typography variant="h6" sx={{ mb: 2, color: '#555' }}>
+                基本信息
+              </Typography>
 
-        <div className="detail-section">
-          <h3>活动介绍</h3>
-          <div className="description-content">
-            {escapeHtml(meetup.description).replace(/\n/g, '<br>')}
-          </div>
-        </div>
+              <Box sx={{ display: 'flex', mb: 2, alignItems: 'center' }}>
+                <Typography sx={{ mr: 2, minWidth: '30px' }}>📅</Typography>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ color: '#666' }}>
+                    活动日期
+                  </Typography>
+                  <Typography>{formattedDate}</Typography>
+                </Box>
+              </Box>
 
-        <div className="detail-section">
-          <h3>组织者信息</h3>
-          <div className="organizer-info">
-            <span className="organizer-name">
-              👤 {escapeHtml(meetup.creator || meetup.organizer)}
-            </span>
-          </div>
-        </div>
+              <Box sx={{ display: 'flex', mb: 2, alignItems: 'center' }}>
+                <Typography sx={{ mr: 2, minWidth: '30px' }}>🕐</Typography>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ color: '#666' }}>
+                    活动时间
+                  </Typography>
+                  <Typography>{formattedTime}</Typography>
+                </Box>
+              </Box>
 
-        <div className="action-section">
-          <div className="action-title">
-            {isUpcomingMeetup ? '立即报名参加' : '活动已结束'}
-          </div>
-          <button
-            className={`action-btn ${isActionLoading ? 'btn-loading' : ''}`}
-            onClick={handleJoinMeetup}
-            disabled={!isUpcomingMeetup || isActionLoading}
-          >
-            {isUpcomingMeetup ? '报名参加' : '已结束'}
-          </button>
-          <div
-            className="participant-info"
-            onClick={handleViewParticipants}
-            style={{ cursor: 'pointer', color: 'var(--primary)' }}
-            title="点击查看报名人员名单"
-          >
-            {meetup.participant_count || 0}
-            {meetup.max_ppl ? '/' + meetup.max_ppl : ''} 人已报名 👥
-          </div>
-        </div>
-      </div>
+              {meetup.duration && (
+                <Box sx={{ display: 'flex', mb: 2, alignItems: 'center' }}>
+                  <Typography sx={{ mr: 2, minWidth: '30px' }}>⏱️</Typography>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ color: '#666' }}>
+                      活动时长
+                    </Typography>
+                    <Typography>{meetup.duration} 小时</Typography>
+                  </Box>
+                </Box>
+              )}
+
+              {meetup.location && (
+                <Box sx={{ display: 'flex', mb: 2, alignItems: 'center' }}>
+                  <Typography sx={{ mr: 2, minWidth: '30px' }}>📍</Typography>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ color: '#666' }}>
+                      活动地点
+                    </Typography>
+                    <Typography>{meetup.location}</Typography>
+                  </Box>
+                </Box>
+              )}
+
+              {meetup.fee !== null && meetup.fee !== undefined && (
+                <Box sx={{ display: 'flex', mb: 2, alignItems: 'center' }}>
+                  <Typography sx={{ mr: 2, minWidth: '30px' }}>💰</Typography>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ color: '#666' }}>
+                      活动费用
+                    </Typography>
+                    <Typography>
+                      {Number(meetup.fee) > 0 ? `${meetup.fee} 元` : '免费'}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+
+              {(meetup.max_ppl || meetup.max_participants) && (
+                <Box sx={{ display: 'flex', mb: 2, alignItems: 'center' }}>
+                  <Typography sx={{ mr: 2, minWidth: '30px' }}>👥</Typography>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ color: '#666' }}>
+                      人数限制
+                    </Typography>
+                    <Typography>
+                      最多 {meetup.max_ppl || meetup.max_participants} 人
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+
+            {/* 活动介绍 */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" sx={{ mb: 2, color: '#555' }}>
+                活动介绍
+              </Typography>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 1,
+                  bgcolor: '#fafafa',
+                  whiteSpace: 'pre-line',
+                }}
+              >
+                <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
+                  {meetup.description}
+                </Typography>
+              </Paper>
+            </Box>
+
+            {/* 组织者信息 */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" sx={{ mb: 2, color: '#555' }}>
+                组织者信息
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Avatar sx={{ mr: 2, bgcolor: '#ff7f50' }}>
+                  {meetup.creator
+                    ? meetup.creator.charAt(0)
+                    : meetup.organizer.charAt(0)}
+                </Avatar>
+                <Typography variant="h6">
+                  {meetup.creator || meetup.organizer}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* 操作按钮 */}
+            <Box sx={{ mt: 4, textAlign: 'center' }}>
+              <Typography variant="subtitle1" sx={{ mb: 2, color: '#666' }}>
+                {isUpcomingMeetup ? '立即报名参加' : '活动已结束'}
+              </Typography>
+              <Button
+                variant={isUpcomingMeetup ? 'contained' : 'outlined'}
+                onClick={handleJoinMeetup}
+                disabled={!isUpcomingMeetup || isActionLoading}
+                startIcon={
+                  isActionLoading ? <CircularProgress size={16} /> : undefined
+                }
+                sx={{
+                  py: 1.2,
+                  px: 5,
+                  fontSize: '1rem',
+                  textTransform: 'none',
+                  mb: 2,
+                }}
+              >
+                {isUpcomingMeetup ? '报名参加' : '已结束'}
+              </Button>
+              <Button
+                variant="text"
+                onClick={handleViewParticipants}
+                startIcon={<span>👥</span>}
+                sx={{ textTransform: 'none' }}
+              >
+                {meetup.participant_count || 0}
+                {meetup.max_ppl ? `/${meetup.max_ppl}` : ''} 人已报名
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
     );
   };
 
   return (
-    <div className="meetup-detail-page bg-gradient-default">
-      <main>
-        <div className="container">
-          <a href="/meetups" className="back-btn">
-            ← 返回活动列表
-          </a>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ mb: 4 }}>
+          <Button
+            component={Link}
+            to="/meetups"
+            variant="text"
+            startIcon={<span>←</span>}
+            sx={{ textTransform: 'none', color: '#333' }}
+          >
+            返回活动列表
+          </Button>
+        </Box>
 
-          <div className="page-header">
-            <h1 className="page-title">活动详情</h1>
-          </div>
+        <Typography
+          variant="h3"
+          component="h1"
+          sx={{
+            mb: 4,
+            fontWeight: 'bold',
+            textAlign: 'center',
+            color: '#333',
+          }}
+        >
+          活动详情
+        </Typography>
 
-          <div id="meetupContent">
-            {isLoading ? (
-              <div className="loading">正在加载活动详情...</div>
-            ) : error ? (
-              <div className="error">
-                <h3>加载失败</h3>
-                <p>{error}</p>
-                <a
-                  href="/meetups"
-                  style={{ color: 'var(--primary)', textDecoration: 'none' }}
-                >
-                  返回活动列表
-                </a>
-              </div>
-            ) : (
-              renderMeetupDetail()
-            )}
-          </div>
-        </div>
-      </main>
+        {isLoading ? (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              py: 10,
+            }}
+          >
+            <CircularProgress size={60} />
+          </Box>
+        ) : error ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              py: 10,
+            }}
+          >
+            <Alert severity="error" sx={{ mb: 3, maxWidth: 500 }}>
+              {error}
+            </Alert>
+            <Button
+              component={Link}
+              to="/meetups"
+              variant="contained"
+              sx={{ textTransform: 'none' }}
+            >
+              返回活动列表
+            </Button>
+          </Box>
+        ) : (
+          renderMeetupDetail()
+        )}
+      </Container>
 
       {/* 报名确认对话框 */}
-      {showRSVPDialog && (
-        <div className="modal" onClick={() => setShowRSVPDialog(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="modal-close"
-              onClick={() => setShowRSVPDialog(false)}
-            >
-              ×
-            </button>
-
-            <h3 className="modal-title">确认报名</h3>
-
-            <div className="form-group">
-              <label>姓名:</label>
-              <input
-                type="text"
-                value={rsvpForm.name}
-                onChange={(e) =>
-                  setRsvpForm((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="请输入您的姓名"
-                disabled={
-                  submitStatus === 'loading' || submitStatus === 'success'
-                }
-              />
-            </div>
-
-            <div className="form-group">
-              <label>微信号:</label>
-              <input
-                type="text"
-                value={rsvpForm.wechatId}
-                onChange={(e) =>
-                  setRsvpForm((prev) => ({ ...prev, wechatId: e.target.value }))
-                }
-                placeholder="请输入您的微信号"
-                disabled={
-                  submitStatus === 'loading' || submitStatus === 'success'
-                }
-              />
-            </div>
-
-            <div className="modal-actions">
-              <button
-                className="btn-secondary"
-                onClick={() => setShowRSVPDialog(false)}
-                disabled={
-                  submitStatus === 'loading' || submitStatus === 'success'
-                }
-              >
-                取消
-              </button>
-              <button
-                className={`btn-primary ${
-                  submitStatus === 'loading' ? 'btn-loading' : ''
-                } ${submitStatus === 'success' ? 'btn-success' : ''}`}
-                onClick={handleSubmitRSVP}
-                disabled={
-                  submitStatus === 'loading' || submitStatus === 'success'
-                }
-              >
-                {submitStatus === 'loading'
-                  ? '提交中...'
-                  : submitStatus === 'success'
-                  ? '报名成功！'
-                  : '确认报名'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog
+        open={showRSVPDialog}
+        onClose={() => setShowRSVPDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>确认报名</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              label="姓名"
+              value={rsvpForm.name}
+              onChange={(e) =>
+                setRsvpForm((prev) => ({ ...prev, name: e.target.value }))
+              }
+              placeholder="请输入您的姓名"
+              margin="normal"
+              disabled={
+                submitStatus === 'loading' || submitStatus === 'success'
+              }
+            />
+            <TextField
+              fullWidth
+              label="微信号"
+              value={rsvpForm.wechatId}
+              onChange={(e) =>
+                setRsvpForm((prev) => ({ ...prev, wechatId: e.target.value }))
+              }
+              placeholder="请输入您的微信号"
+              margin="normal"
+              disabled={
+                submitStatus === 'loading' || submitStatus === 'success'
+              }
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setShowRSVPDialog(false)}
+            disabled={submitStatus === 'loading' || submitStatus === 'success'}
+          >
+            取消
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmitRSVP}
+            disabled={submitStatus === 'loading' || submitStatus === 'success'}
+            startIcon={
+              submitStatus === 'loading' ? (
+                <CircularProgress size={16} />
+              ) : undefined
+            }
+            color={submitStatus === 'success' ? 'success' : 'primary'}
+          >
+            {submitStatus === 'loading'
+              ? '提交中...'
+              : submitStatus === 'success'
+              ? '报名成功！'
+              : '确认报名'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* 二维码弹窗 */}
-      {showQRModal && meetup?.qr_image_url && (
-        <div className="modal" onClick={() => setShowQRModal(false)}>
-          <div
-            className="modal-content"
-            style={{ textAlign: 'center' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="modal-close"
-              onClick={() => setShowQRModal(false)}
-            >
-              ×
-            </button>
-
-            <h3 className="modal-title">扫码进群</h3>
+      <Dialog
+        open={showQRModal && !!meetup?.qr_image_url}
+        onClose={() => setShowQRModal(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>扫码进群</DialogTitle>
+        <DialogContent sx={{ textAlign: 'center', py: 4 }}>
+          {meetup?.qr_image_url && (
             <img
               src={meetup.qr_image_url}
               alt="群聊二维码"
               style={{
-                maxWidth: '100%',
+                maxWidth: '80%',
                 height: 'auto',
-                borderRadius: 'var(--radius-sm)',
+                borderRadius: 8,
                 marginBottom: '1.5rem',
-                border: '1px solid var(--border)',
+                border: '1px solid #e0e0e0',
               }}
             />
-            <p
-              style={{
-                color: 'var(--text-muted)',
-                marginBottom: '1.5rem',
-                fontSize: '0.95rem',
-              }}
-            >
-              请使用微信扫描二维码加入群聊
-            </p>
-            <button
-              className="btn-primary"
-              onClick={() => setShowQRModal(false)}
-            >
-              关闭
-            </button>
-          </div>
-        </div>
-      )}
+          )}
+          <Typography variant="body1" sx={{ color: '#666', mb: 2 }}>
+            请使用微信扫描二维码加入群聊
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center' }}>
+          <Button
+            variant="contained"
+            onClick={() => setShowQRModal(false)}
+            sx={{ textTransform: 'none' }}
+          >
+            关闭
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* 参与者列表弹窗 */}
-      {showParticipantsModal && (
-        <div className="modal" onClick={() => setShowParticipantsModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="modal-close"
-              onClick={() => setShowParticipantsModal(false)}
-            >
-              ×
-            </button>
-
-            <h3 className="modal-title">报名人员名单</h3>
-            <div
-              style={{
-                maxHeight: '300px',
-                overflowY: 'auto',
-                margin: '1rem 0',
-              }}
-            >
-              {participants.length > 0 ? (
-                participants.map((participant, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      padding: '0.5rem 0',
-                      borderBottom: '1px solid var(--border-light)',
-                    }}
-                  >
-                    {escapeHtml(participant.name)}
-                  </div>
-                ))
-              ) : (
-                <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+      <Dialog
+        open={showParticipantsModal}
+        onClose={() => setShowParticipantsModal(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>报名人员名单</DialogTitle>
+        <DialogContent>
+          <Box sx={{ maxHeight: 300, overflowY: 'auto', mt: 2 }}>
+            {participants.length > 0 ? (
+              participants.map((participant, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    padding: '0.75rem 0',
+                    borderBottom: '1px solid #f0f0f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Avatar sx={{ mr: 2, bgcolor: '#e0e0e0' }}>
+                    {participant.name.charAt(0)}
+                  </Avatar>
+                  <Typography>{participant.name}</Typography>
+                </Box>
+              ))
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" sx={{ color: '#999' }}>
                   暂无报名人员
-                </p>
-              )}
-            </div>
-            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-              <button
-                className="btn-primary"
-                onClick={() => setShowParticipantsModal(false)}
-              >
-                关闭
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center' }}>
+          <Button
+            variant="contained"
+            onClick={() => setShowParticipantsModal(false)}
+            sx={{ textTransform: 'none' }}
+          >
+            关闭
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

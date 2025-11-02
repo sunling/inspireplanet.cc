@@ -2,6 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import {
+  Box,
+  Container,
+  Typography,
+  Paper,
+  Button,
+  TextField,
+  Alert,
+  CircularProgress,
+  useMediaQuery,
+  useTheme,
+  Divider,
+} from '@mui/material';
 
 // 导入渐变字体颜色配置
 const gradientFontColors: Record<string, string> = {
@@ -41,6 +54,9 @@ const CardDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
   const [card, setCard] = useState<CardData | null>(null);
   const [comments, setComments] = useState<CommentData[]>([]);
@@ -337,94 +353,410 @@ const CardDetail: React.FC = () => {
   };
 
   return (
-    <div className="card-detail-page bg-gradient-default">
-      <div className="card-container">
-        <div id="card-container">
-          {isLoading ? (
-            <div className="loading">加载中...</div>
-          ) : error ? (
-            <div className="error-message">{error}</div>
-          ) : (
-            renderCard()
-          )}
-        </div>
-
-        <div className="action-buttons">
-          <button
-            id="download-btn"
-            className="btn btn-blue btn-large"
-            onClick={downloadCard}
-            disabled={downloading || !card}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        py: { xs: 4, sm: 8 },
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      }}
+    >
+      <Container maxWidth="md">
+        {isLoading ? (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '60vh',
+            }}
           >
-            {downloading ? '下载中...' : '下载卡片'}
-          </button>
-
-          {canEdit && (
-            <button
-              id="edit-btn"
-              className="btn btn-pink btn-large"
-              onClick={handleEdit}
+            <CircularProgress size={60} color="inherit" />
+          </Box>
+        ) : error ? (
+          <Box sx={{ mt: 8 }}>
+            <Alert severity="error" sx={{ mb: 4 }}>
+              {error}
+            </Alert>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate('/cards')}
+              sx={{
+                backgroundColor: '#667eea',
+                '&:hover': { backgroundColor: '#5a67d8' },
+              }}
             >
-              编辑卡片
-            </button>
-          )}
-
-          <button
-            id="share-btn"
-            className="btn btn-green btn-large"
-            onClick={() => alert('分享功能已触发')}
-          >
-            分享卡片
-          </button>
-        </div>
-
-        <div className="comments-section">
-          <h2>评论</h2>
-          {renderComments()}
-
-          <div className="comment-form">
-            <h3>添加评论</h3>
-            <div className="form-group">
-              <label htmlFor="commenter-name">姓名</label>
-              <input
-                type="text"
-                id="commenter-name"
-                className="form-input"
-                placeholder="请输入您的姓名"
-                value={commentForm.name}
-                onChange={(e) =>
-                  setCommentForm((prev) => ({ ...prev, name: e.target.value }))
-                }
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="comment-content">评论内容</label>
-              <textarea
-                id="comment-content"
-                className="form-input"
-                rows={4}
-                placeholder="写下您的想法..."
-                value={commentForm.content}
-                onChange={(e) =>
-                  setCommentForm((prev) => ({
-                    ...prev,
-                    content: e.target.value,
-                  }))
-                }
-              ></textarea>
-            </div>
-            <button
-              className="submit-btn btn btn-primary"
-              onClick={handleCommentSubmit}
-              disabled={submittingComment}
+              返回卡片列表
+            </Button>
+          </Box>
+        ) : (
+          <>
+            <Paper
+              elevation={3}
+              sx={{
+                mb: 6,
+                borderRadius: '16px',
+                overflow: 'hidden',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+              }}
             >
-              {submittingComment ? '提交中...' : '提交评论'}
-            </button>
-            <div id="comment-message" className="message hidden"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+              <div className="card-container">
+                <div
+                  id="detail-card"
+                  ref={cardRef}
+                  className={`card ${card?.GradientClass || 'card-gradient-1'}`}
+                  style={{
+                    fontFamily: card?.Font || 'Noto Sans SC, sans-serif',
+                    color: getFontColorForGradient(
+                      card?.GradientClass || 'card-gradient-1'
+                    ),
+                    padding: isMobile ? '24px' : '40px',
+                    minHeight: '300px',
+                    transition: 'transform 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isMobile) {
+                      (e.currentTarget as HTMLDivElement).style.transform =
+                        'translateY(-5px)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isMobile) {
+                      (e.currentTarget as HTMLDivElement).style.transform =
+                        'translateY(0)';
+                    }
+                  }}
+                >
+                  <Box sx={{ mb: 3 }}>
+                    <Typography
+                      variant={isMobile ? 'h5' : 'h4'}
+                      component="h1"
+                      sx={{
+                        fontWeight: 'bold',
+                        mb: 3,
+                        color: getFontColorForGradient(
+                          card?.GradientClass || 'card-gradient-1'
+                        ),
+                      }}
+                    >
+                      {card ? sanitizeContent(card.Title) : ''}
+                    </Typography>
+                    <Box
+                      sx={{
+                        backgroundColor: `${getFontColorForGradient(
+                          card?.GradientClass || 'card-gradient-1'
+                        )}10`,
+                        p: 3,
+                        borderRadius: '8px',
+                        mb: 3,
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      <Typography
+                        variant={isMobile ? 'body1' : 'h6'}
+                        sx={{
+                          color: getFontColorForGradient(
+                            card?.GradientClass || 'card-gradient-1'
+                          ),
+                        }}
+                      >
+                        {sanitizeContent(card?.Quote || '')}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ mb: 3 }}>
+                      <img
+                        src={card?.ImagePath || '/images/mistyblue.png'}
+                        alt={card?.Title || ''}
+                        style={{
+                          width: '100%',
+                          height: 'auto',
+                          borderRadius: '8px',
+                          maxHeight: '400px',
+                          objectFit: 'cover',
+                          transition: isMobile ? 'none' : 'transform 0.5s ease',
+                        }}
+                        onMouseOver={(e) =>
+                          !isMobile &&
+                          (e.currentTarget.style.transform = 'scale(1.05)')
+                        }
+                        onMouseOut={(e) =>
+                          !isMobile &&
+                          (e.currentTarget.style.transform = 'scale(1)')
+                        }
+                      />
+                    </Box>
+                    {card?.Detail && (
+                      <Box sx={{ mt: 4 }}>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            color: getFontColorForGradient(
+                              card?.GradientClass || 'card-gradient-1'
+                            ),
+                            lineHeight: 1.8,
+                          }}
+                        >
+                          {renderMarkdown(card.Detail)}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                  <Box
+                    sx={{
+                      mt: 4,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexDirection: isMobile ? 'column' : 'row',
+                      gap: 2,
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: getFontColorForGradient(
+                          card?.GradientClass || 'card-gradient-1'
+                        ),
+                        opacity: 0.8,
+                      }}
+                    >
+                      {card?.Creator
+                        ? `— ${sanitizeContent(card.Creator)}`
+                        : ''}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: getFontColorForGradient(
+                          card?.GradientClass || 'card-gradient-1'
+                        ),
+                        opacity: 0.8,
+                      }}
+                    >
+                      {card
+                        ? new Date(card.Created).toLocaleDateString('zh-CN')
+                        : ''}
+                    </Typography>
+                  </Box>
+                </div>
+              </div>
+            </Paper>
+
+            <Box
+              sx={{
+                mb: 6,
+                display: 'flex',
+                gap: { xs: 1, sm: 2 },
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+              }}
+            >
+              <Button
+                id="download-btn"
+                variant="contained"
+                disabled={downloading || !card}
+                onClick={downloadCard}
+                sx={{
+                  backgroundColor: '#3182ce',
+                  '&:hover': { backgroundColor: '#2c5aa0' },
+                  py: 1.5,
+                  px: { xs: 3, sm: 4 },
+                  minWidth: { xs: 'auto', sm: '140px' },
+                }}
+              >
+                {downloading ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress size={20} color="inherit" />
+                    下载中...
+                  </Box>
+                ) : (
+                  '下载卡片'
+                )}
+              </Button>
+
+              {canEdit && (
+                <Button
+                  id="edit-btn"
+                  variant="contained"
+                  onClick={handleEdit}
+                  sx={{
+                    backgroundColor: '#e53e3e',
+                    '&:hover': { backgroundColor: '#c53030' },
+                    py: 1.5,
+                    px: { xs: 3, sm: 4 },
+                    minWidth: { xs: 'auto', sm: '140px' },
+                  }}
+                >
+                  编辑卡片
+                </Button>
+              )}
+
+              <Button
+                id="share-btn"
+                variant="contained"
+                onClick={() => alert('分享功能已触发')}
+                sx={{
+                  backgroundColor: '#38a169',
+                  '&:hover': { backgroundColor: '#2f855a' },
+                  py: 1.5,
+                  px: { xs: 3, sm: 4 },
+                  minWidth: { xs: 'auto', sm: '140px' },
+                }}
+              >
+                分享卡片
+              </Button>
+            </Box>
+
+            <Paper
+              elevation={3}
+              sx={{
+                p: { xs: 3, sm: 4 },
+                borderRadius: '16px',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <Typography
+                variant={isMobile ? 'h6' : 'h5'}
+                component="h2"
+                sx={{ mb: 4, color: '#667eea' }}
+              >
+                评论
+              </Typography>
+
+              <Box sx={{ mb: 6 }}>
+                {comments.length === 0 ? (
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{ textAlign: 'center', py: 4 }}
+                  >
+                    暂无评论
+                  </Typography>
+                ) : (
+                  comments.map((comment) => (
+                    <Paper
+                      key={comment.id || comment.created}
+                      elevation={1}
+                      sx={{
+                        p: 3,
+                        mb: 3,
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                        transition: 'box-shadow 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          mb: 1,
+                          flexDirection: isMobile ? 'column' : 'row',
+                          gap: 1,
+                          textAlign: isMobile ? 'center' : 'left',
+                        }}
+                      >
+                        <Typography
+                          variant="subtitle1"
+                          sx={{ fontWeight: 'bold', color: '#667eea' }}
+                        >
+                          {sanitizeContent(comment.name)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {formatCommentDate(comment.created)}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.primary">
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: sanitizeContent(comment.comment).replace(
+                              /\n/g,
+                              '<br>'
+                            ),
+                          }}
+                        />
+                      </Typography>
+                    </Paper>
+                  ))
+                )}
+              </Box>
+
+              <Divider sx={{ mb: 4 }} />
+
+              <Typography variant="h6" sx={{ mb: 3, color: '#667eea' }}>
+                添加评论
+              </Typography>
+
+              <Box>
+                <TextField
+                  fullWidth
+                  label="姓名"
+                  value={commentForm.name}
+                  onChange={(e) =>
+                    setCommentForm((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                  placeholder="请输入您的姓名"
+                  margin="normal"
+                  variant="outlined"
+                  size={isMobile ? 'small' : 'medium'}
+                  sx={{ mb: 2 }}
+                />
+
+                <TextField
+                  fullWidth
+                  label="评论内容"
+                  multiline
+                  rows={isMobile ? 3 : 4}
+                  value={commentForm.content}
+                  onChange={(e) =>
+                    setCommentForm((prev) => ({
+                      ...prev,
+                      content: e.target.value,
+                    }))
+                  }
+                  placeholder="写下您的想法..."
+                  margin="normal"
+                  variant="outlined"
+                  size={isMobile ? 'small' : 'medium'}
+                  sx={{ mb: 3 }}
+                />
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={submittingComment}
+                  onClick={handleCommentSubmit}
+                  fullWidth={isMobile}
+                  sx={{
+                    mt: 3,
+                    backgroundColor: '#667eea',
+                    '&:hover': { backgroundColor: '#5a67d8' },
+                    py: 1.2,
+                  }}
+                >
+                  {submittingComment ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={20} color="inherit" />
+                      提交中...
+                    </Box>
+                  ) : (
+                    '提交评论'
+                  )}
+                </Button>
+              </Box>
+            </Paper>
+          </>
+        )}
+      </Container>
+    </Box>
   );
 };
 

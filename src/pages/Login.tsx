@@ -1,9 +1,26 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  Box,
+  Container,
+  Typography,
+  Paper,
+  Tabs,
+  Tab,
+  TextField,
+  Button,
+  Alert,
+  CircularProgress,
+  useMediaQuery,
+  useTheme,
+  Link,
+} from '@mui/material';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // 从URL参数中获取重定向地址
   const getRedirectUrl = () => {
@@ -153,115 +170,205 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="tab-container">
-        <button
-          className={`tab ${currentMode === 'login' ? 'active' : ''}`}
-          onClick={() => switchTab('login')}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        py: 8,
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Container maxWidth="sm">
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            borderRadius: '12px',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+          }}
         >
-          登录
-        </button>
-        <button
-          className={`tab ${currentMode === 'register' ? 'active' : ''}`}
-          onClick={() => switchTab('register')}
-        >
-          注册
-        </button>
-      </div>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
+              textAlign: 'center',
+              mb: 4,
+              color: '#667eea',
+              fontWeight: 'bold',
+            }}
+          >
+            账户访问
+          </Typography>
 
-      <div className="form-container">
-        {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">{success}</div>}
+          <Tabs
+            value={currentMode}
+            onChange={(_, newValue) => switchTab(newValue)}
+            centered
+            sx={{
+              mb: 4,
+              '& .MuiTab-root': {
+                textTransform: 'none',
+                fontSize: '1.1rem',
+              },
+              '& .Mui-selected': {
+                fontWeight: 'bold',
+                color: '#667eea',
+              },
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#667eea',
+              },
+            }}
+          >
+            <Tab value="login" label="登录" />
+            <Tab value="register" label="注册" />
+          </Tabs>
 
-        <form onSubmit={handleSubmit}>
-          {currentMode === 'register' && (
-            <div className="form-group">
-              <label htmlFor="name">姓名</label>
-              <input
-                type="text"
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
+          {success && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              {success}
+            </Alert>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            {currentMode === 'register' && (
+              <TextField
+                fullWidth
+                margin="normal"
+                label="姓名"
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="请输入您的姓名"
                 required
+                variant="outlined"
+                size={isMobile ? 'small' : 'medium'}
               />
-            </div>
-          )}
+            )}
 
-          {currentMode === 'register' && (
-            <div className="form-group">
-              <label htmlFor="username">用户名</label>
-              <input
-                type="text"
+            {currentMode === 'register' && (
+              <TextField
+                fullWidth
+                margin="normal"
+                label="用户名"
                 id="username"
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
                 placeholder="请输入用户名"
                 required
+                variant="outlined"
+                size={isMobile ? 'small' : 'medium'}
               />
-            </div>
-          )}
+            )}
 
-          <div className="form-group">
-            <label htmlFor="email">邮箱</label>
-            <input
-              type="email"
+            <TextField
+              fullWidth
+              margin="normal"
+              label="邮箱"
               id="email"
               name="email"
+              type="email"
               value={formData.email}
               onChange={handleInputChange}
               placeholder="请输入邮箱地址"
               required
+              variant="outlined"
+              size={isMobile ? 'small' : 'medium'}
             />
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="password">密码</label>
-            <input
-              type="password"
+            <TextField
+              fullWidth
+              margin="normal"
+              label="密码"
               id="password"
               name="password"
+              type="password"
               value={formData.password}
               onChange={handleInputChange}
               placeholder="请输入密码"
               required
+              variant="outlined"
+              size={isMobile ? 'small' : 'medium'}
+              helperText="密码长度至少为6位"
             />
-          </div>
 
-          {currentMode === 'register' && (
-            <div className="form-group">
-              <label htmlFor="wechat">微信号（可选）</label>
-              <input
-                type="text"
+            {currentMode === 'register' && (
+              <TextField
+                fullWidth
+                margin="normal"
+                label="微信号（可选）"
                 id="wechat"
                 name="wechat"
                 value={formData.wechat}
                 onChange={handleInputChange}
                 placeholder="请输入微信号"
+                variant="outlined"
+                size={isMobile ? 'small' : 'medium'}
               />
-            </div>
-          )}
-
-          <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? (
-              <>
-                <span className="loading"></span>处理中...
-              </>
-            ) : currentMode === 'login' ? (
-              '登录'
-            ) : (
-              '注册'
             )}
-          </button>
-        </form>
 
-        <div className="back-link">
-          <a href="/">返回首页</a>
-        </div>
-      </div>
-    </div>
+            <Button
+              fullWidth
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={loading}
+              sx={{
+                mt: 4,
+                py: 1.5,
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                backgroundColor: '#667eea',
+                '&:hover': {
+                  backgroundColor: '#5a67d8',
+                },
+              }}
+            >
+              {loading ? (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1,
+                  }}
+                >
+                  <CircularProgress size={20} color="inherit" />
+                  处理中...
+                </Box>
+              ) : currentMode === 'login' ? (
+                '登录'
+              ) : (
+                '注册'
+              )}
+            </Button>
+          </form>
+
+          <Box sx={{ mt: 4, textAlign: 'center' }}>
+            <Link
+              href="/"
+              variant="body2"
+              sx={{
+                color: '#667eea',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              返回首页
+            </Link>
+          </Box>
+        </Paper>
+      </Container>
+    </Box>
   );
 };
 

@@ -4,6 +4,25 @@ import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
+  Alert,
+  IconButton,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import { ArrowBack } from '@mui/icons-material';
 
 // 导入渐变字体颜色配置
 const gradientFontColors: Record<string, string> = {
@@ -34,6 +53,9 @@ interface CardData {
 const CardEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
   // 表单状态
   const [cardData, setCardData] = useState<CardData>({
@@ -140,199 +162,283 @@ const CardEdit: React.FC = () => {
     const fontColor = getFontColorForGradient(cardData.gradientClass);
 
     return (
-      <div className="card-container">
-        <div
-          className={`card ${cardData.gradientClass}`}
-          style={{ color: fontColor }}
+      <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+        <Paper
+          elevation={3}
+          className={cardData.gradientClass}
+          sx={{
+            color: fontColor,
+            borderRadius: '12px',
+            overflow: 'hidden',
+            maxWidth: isMobile ? '95%' : '100%',
+            width: '100%',
+          }}
         >
-          <div className="card-body">
-            <div className="title" style={{ fontFamily: cardData.font }}>
-              {cardData.title || '标题'}
-            </div>
-            <div
-              className="quote-box"
-              style={{
+          <Box
+            sx={{
+              p: 4,
+              fontFamily: cardData.font,
+            }}
+          >
+            <Typography
+              variant="h4"
+              component="h2"
+              sx={{
+                mb: 2,
+                fontWeight: 'bold',
                 fontFamily: cardData.font,
-                backgroundColor: `${fontColor}10`,
               }}
             >
-              {cardData.quote || '金句'}
-            </div>
-            <img
-              src={cardData.imagePath || '/images/mistyblue.png'}
-              alt={cardData.title || '标题'}
-              style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
-            />
-            <div
-              className="detail-text"
-              style={{ fontFamily: cardData.font }}
+              {cardData.title || '标题'}
+            </Typography>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                mb: 3,
+                backgroundColor: `${fontColor}10`,
+                borderRadius: '8px',
+                fontFamily: cardData.font,
+              }}
+            >
+              <Typography variant="h6" sx={{ fontFamily: cardData.font }}>
+                {cardData.quote || '金句'}
+              </Typography>
+            </Paper>
+            {cardData.imagePath && (
+              <Box
+                component="img"
+                src={cardData.imagePath}
+                alt={cardData.title || '标题'}
+                sx={{
+                  width: '100%',
+                  height: 'auto',
+                  borderRadius: '8px',
+                  mb: 3,
+                }}
+              />
+            )}
+            <Box
+              sx={{ fontFamily: cardData.font }}
               dangerouslySetInnerHTML={{ __html: sanitizedDetail }}
             />
-          </div>
-          <div className="card-footer">
-            <div className="footer" style={{ fontFamily: cardData.font }}>
-              {cardData.creator ? `— ${cardData.creator}` : ''}
-            </div>
-          </div>
-        </div>
-      </div>
+          </Box>
+          <Box
+            sx={{
+              p: 2,
+              textAlign: 'right',
+              borderTop: `1px solid ${fontColor}30`,
+              fontFamily: cardData.font,
+            }}
+          >
+            {cardData.creator && (
+              <Typography variant="body2">— {cardData.creator}</Typography>
+            )}
+          </Box>
+        </Paper>
+      </Box>
     );
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-light)' }}>
-      <div className="header">
-        <button onClick={handleBack} className="back-button">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          返回
-        </button>
-        <h1>✏️ 雕琢你的灵感</h1>
-      </div>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
+      <Container maxWidth="lg">
+        <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+          <IconButton onClick={handleBack} sx={{ mr: 2 }}>
+            <ArrowBack />
+          </IconButton>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+            ✏️ 雕琢你的灵感
+          </Typography>
+        </Box>
 
-      <div className="main-container">
-        <div className="form-container">
-          {loading && id ? (
-            <div className="loading">加载中...</div>
-          ) : error ? (
-            <div className="error-message">{error}</div>
-          ) : (
-            <form id="edit-form" onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="title">标题</label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  placeholder="请输入卡片标题"
-                  value={cardData.title}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
+        <Grid container spacing={4}>
+          {/* 表单部分 */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Paper elevation={2} sx={{ p: 4, borderRadius: 2 }}>
+              {loading && id ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                  <CircularProgress size={48} />
+                </Box>
+              ) : error ? (
+                <Alert severity="error" sx={{ my: 2 }}>
+                  {error}
+                </Alert>
+              ) : (
+                <form id="edit-form" onSubmit={handleSubmit}>
+                  <TextField
+                    fullWidth
+                    label="标题"
+                    id="title"
+                    name="title"
+                    placeholder="请输入卡片标题"
+                    value={cardData.title}
+                    onChange={handleInputChange}
+                    required
+                    margin="normal"
+                  />
 
-              <div className="form-group">
-                <label htmlFor="quote">金句</label>
-                <input
-                  type="text"
-                  id="quote"
-                  name="quote"
-                  placeholder="请输入触动你的金句"
-                  value={cardData.quote}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
+                  <TextField
+                    fullWidth
+                    label="金句"
+                    id="quote"
+                    name="quote"
+                    placeholder="请输入触动你的金句"
+                    value={cardData.quote}
+                    onChange={handleInputChange}
+                    required
+                    margin="normal"
+                  />
 
-              <div className="form-group">
-                <label htmlFor="detail">启发详情</label>
-                <textarea
-                  id="detail"
-                  name="detail"
-                  placeholder="请详细描述这个观点给你带来的启发和你的行动计划"
-                  value={cardData.detail}
-                  onChange={handleInputChange}
-                  required
-                  style={{ minHeight: '120px', resize: 'vertical' }}
-                />
-              </div>
+                  <TextField
+                    fullWidth
+                    label="启发详情"
+                    id="detail"
+                    name="detail"
+                    placeholder="请详细描述这个观点给你带来的启发和你的行动计划"
+                    value={cardData.detail}
+                    onChange={handleInputChange}
+                    required
+                    multiline
+                    rows={6}
+                    margin="normal"
+                  />
 
-              <div className="form-group">
-                <label htmlFor="creator">创作者</label>
-                <input
-                  type="text"
-                  id="creator"
-                  name="creator"
-                  placeholder="请输入创作者名称"
-                  value={cardData.creator}
-                  onChange={handleInputChange}
-                />
-              </div>
+                  <TextField
+                    fullWidth
+                    label="创作者"
+                    id="creator"
+                    name="creator"
+                    placeholder="请输入创作者名称"
+                    value={cardData.creator}
+                    onChange={handleInputChange}
+                    margin="normal"
+                  />
 
-              <div className="form-group">
-                <label htmlFor="gradientClass">背景渐变</label>
-                <select
-                  id="gradientClass"
-                  name="gradientClass"
-                  value={cardData.gradientClass}
-                  onChange={handleInputChange}
-                >
-                  <option value="card-gradient-1">渐变1</option>
-                  <option value="card-gradient-2">渐变2</option>
-                  <option value="card-gradient-3">渐变3</option>
-                  <option value="card-gradient-4">渐变4</option>
-                  <option value="card-gradient-5">渐变5</option>
-                  <option value="card-gradient-6">渐变6</option>
-                  <option value="card-gradient-7">渐变7</option>
-                  <option value="card-gradient-8">渐变8</option>
-                  <option value="card-gradient-9">渐变9</option>
-                  <option value="card-gradient-10">渐变10</option>
-                </select>
-              </div>
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel>背景渐变</InputLabel>
+                    <Select
+                      id="gradientClass"
+                      name="gradientClass"
+                      value={cardData.gradientClass}
+                      label="背景渐变"
+                      onChange={(e) =>
+                        handleInputChange(
+                          e as React.ChangeEvent<
+                            | HTMLInputElement
+                            | HTMLTextAreaElement
+                            | HTMLSelectElement
+                          >
+                        )
+                      }
+                    >
+                      <MenuItem value="card-gradient-1">渐变1</MenuItem>
+                      <MenuItem value="card-gradient-2">渐变2</MenuItem>
+                      <MenuItem value="card-gradient-3">渐变3</MenuItem>
+                      <MenuItem value="card-gradient-4">渐变4</MenuItem>
+                      <MenuItem value="card-gradient-5">渐变5</MenuItem>
+                      <MenuItem value="card-gradient-6">渐变6</MenuItem>
+                      <MenuItem value="card-gradient-7">渐变7</MenuItem>
+                      <MenuItem value="card-gradient-8">渐变8</MenuItem>
+                      <MenuItem value="card-gradient-9">渐变9</MenuItem>
+                      <MenuItem value="card-gradient-10">渐变10</MenuItem>
+                    </Select>
+                  </FormControl>
 
-              <div className="form-group">
-                <label htmlFor="font">字体</label>
-                <select
-                  id="font"
-                  name="font"
-                  value={cardData.font}
-                  onChange={handleInputChange}
-                >
-                  <option value="Noto Sans SC">思源黑体</option>
-                  <option value="Noto Serif SC">思源宋体</option>
-                  <option value="Ma Shan Zheng">马善政楷体</option>
-                  <option value="Inter">Inter</option>
-                  <option value="Playfair Display">Playfair Display</option>
-                  <option value="Montserrat">Montserrat</option>
-                  <option value="Lato">Lato</option>
-                  <option value="Dancing Script">Dancing Script</option>
-                </select>
-              </div>
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel>字体</InputLabel>
+                    <Select
+                      id="font"
+                      name="font"
+                      value={cardData.font}
+                      label="字体"
+                      onChange={(e) =>
+                        handleInputChange(
+                          e as React.ChangeEvent<
+                            | HTMLInputElement
+                            | HTMLTextAreaElement
+                            | HTMLSelectElement
+                          >
+                        )
+                      }
+                    >
+                      <MenuItem value="Noto Sans SC">思源黑体</MenuItem>
+                      <MenuItem value="Noto Serif SC">思源宋体</MenuItem>
+                      <MenuItem value="Ma Shan Zheng">马善政楷体</MenuItem>
+                      <MenuItem value="Inter">Inter</MenuItem>
+                      <MenuItem value="Playfair Display">
+                        Playfair Display
+                      </MenuItem>
+                      <MenuItem value="Montserrat">Montserrat</MenuItem>
+                      <MenuItem value="Lato">Lato</MenuItem>
+                      <MenuItem value="Dancing Script">Dancing Script</MenuItem>
+                    </Select>
+                  </FormControl>
 
-              <div className="form-group">
-                <label htmlFor="imagePath">背景图片</label>
-                <select
-                  id="imagePath"
-                  name="imagePath"
-                  value={cardData.imagePath || ''}
-                  onChange={handleInputChange}
-                >
-                  <option value="">无背景图片</option>
-                </select>
-              </div>
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel>背景图片</InputLabel>
+                    <Select
+                      id="imagePath"
+                      name="imagePath"
+                      value={cardData.imagePath || ''}
+                      label="背景图片"
+                      onChange={(e) =>
+                        handleInputChange(
+                          e as React.ChangeEvent<
+                            | HTMLInputElement
+                            | HTMLTextAreaElement
+                            | HTMLSelectElement
+                          >
+                        )
+                      }
+                    >
+                      <MenuItem value="">无背景图片</MenuItem>
+                    </Select>
+                  </FormControl>
 
-              <div className="action-buttons">
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={handleBack}
-                >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  className="primary-btn"
-                  disabled={loading}
-                >
-                  保存修改
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
+                  <Box
+                    sx={{
+                      mt: 4,
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      gap: 2,
+                    }}
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={handleBack}
+                      size="large"
+                      sx={{ px: 3 }}
+                    >
+                      取消
+                    </Button>
+                    <Button
+                      variant="contained"
+                      type="submit"
+                      disabled={loading}
+                      size="large"
+                      sx={{ px: 4 }}
+                    >
+                      保存修改
+                    </Button>
+                  </Box>
+                </form>
+              )}
+            </Paper>
+          </Grid>
 
-        <div className="preview-container">{renderCardPreview()}</div>
-      </div>
-    </div>
+          {/* 预览部分 */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Paper elevation={2} sx={{ p: 3, borderRadius: 2, height: '100%' }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+                实时预览
+              </Typography>
+              {renderCardPreview()}
+            </Paper>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
   );
 };
 

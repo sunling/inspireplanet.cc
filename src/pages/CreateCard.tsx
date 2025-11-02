@@ -2,6 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  Grid,
+  Avatar,
+  useTheme,
+  useMediaQuery,
+  CircularProgress,
+} from '@mui/material';
 
 // 为每个渐变背景配置合适的字体颜色
 const gradientFontColors: Record<string, string> = {
@@ -59,6 +72,9 @@ interface SearchImageResult {
 const CreateCard: React.FC = () => {
   const navigate = useNavigate();
   const previewRef = useRef<HTMLDivElement>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
   // 卡片数据状态
   const [cardData, setCardData] = useState<CardData>({
@@ -464,166 +480,187 @@ const CreateCard: React.FC = () => {
   ];
 
   return (
-    <div className="create-card-page bg-gradient-default">
-      <div className="container">
-        <div className="main-content">
-          <div className="form">
-            {/* 第一行：标题 */}
-            <div className="form-row">
-              <div className="form-group flex-0-0-120">
-                <label htmlFor="creator">创作者</label>
-                <input
-                  id="creator"
-                  className="form-input"
-                  placeholder="匿名"
-                  value={cardData.Creator}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="form-group flex-1">
-                <label htmlFor="title">标题</label>
-                <input
-                  id="title"
-                  className="form-input"
-                  placeholder="这一刻，我想说..."
-                  value={cardData.Title}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
+      <Container maxWidth="lg">
+        <Box sx={{ mb: 6 }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            gutterBottom
+            align="center"
+            sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}
+          >
+            创建灵感卡片
+          </Typography>
+        </Box>
 
-            {/* 第二行：触动你的观点 */}
-            <div className="form-group">
-              <label htmlFor="quote">
-                触动你的观点
-                <small className="text-muted text-xs">按回车↩︎换行</small>
-              </label>
-              <textarea
-                id="quote"
-                className="form-input"
-                value={cardData.Quote}
-                onChange={handleInputChange}
-                placeholder="写下让你触动的一句话、一段对话、或一个片段..."
-              ></textarea>
-            </div>
-
-            {/* 第三行：你的启发 */}
-            <div className="form-group">
-              <label htmlFor="detail">
-                你的启发
-                <small className="text-muted text-xs">
-                  支持 Markdown 语法，按回车↩︎换行
-                </small>
-              </label>
-              <textarea
-                id="detail"
-                className="form-input min-h-25 resize-vertical"
-                value={cardData.Detail}
-                onChange={handleInputChange}
-                placeholder="写下你的启发和行动吧..."
-              ></textarea>
-              <div
-                id="imageGenerationStatus"
-                className="mt-1 text-sm text-secondary"
-              ></div>
-            </div>
-
-            {/* 第四行：选择背景 */}
-            <div className="form-group">
-              <label>选择背景</label>
-              <div className="gradient-selector" id="gradient-selector">
-                {gradientOptions.map((option) => (
-                  <div
-                    key={option.class}
-                    className={`gradient-option ${
-                      cardData.GradientClass === option.class ? 'selected' : ''
-                    }`}
-                    data-gradient={option.class}
-                    title={option.title}
-                    onClick={() => handleGradientSelect(option.class)}
-                  ></div>
-                ))}
-              </div>
-            </div>
-
-            {/* 图片上传 */}
-            <div className="form-group">
-              <label>添加背景图片</label>
-              <div className="image-upload-section">
-                <input
-                  type="file"
-                  id="bgUpload"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={handleFileUpload}
-                />
-                <button
-                  type="button"
-                  id="uploadBtn"
-                  className="btn btn-secondary"
-                  onClick={() => document.getElementById('bgUpload')?.click()}
-                >
-                  上传图片
-                </button>
-                <button
-                  type="button"
-                  id="searchImagesBtn"
-                  className="btn btn-info ml-2"
-                  onClick={searchImagesFromDetail}
-                  disabled={isSearching}
-                >
-                  {isSearching ? '搜索中...' : '搜索图片'}
-                </button>
-                <div id="fileStatus" className="mt-1 text-sm">
-                  {fileStatus}
+        <Grid container spacing={4}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Paper
+              elevation={3}
+              sx={{ p: 4, borderRadius: 2, bgcolor: 'white' }}
+            >
+              {/* 第一行：标题 */}
+              <div className="form-row">
+                <div className="form-group flex-0-0-120">
+                  <label htmlFor="creator">创作者</label>
+                  <input
+                    id="creator"
+                    className="form-input"
+                    placeholder="匿名"
+                    value={cardData.Creator}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="form-group flex-1">
+                  <label htmlFor="title">标题</label>
+                  <input
+                    id="title"
+                    className="form-input"
+                    placeholder="这一刻，我想说..."
+                    value={cardData.Title}
+                    onChange={handleInputChange}
+                  />
                 </div>
               </div>
 
-              {/* 搜索结果展示 */}
-              {searchImages.length > 0 && (
-                <div className="search-results">
-                  <h4>搜索结果：</h4>
-                  <div className="image-grid" id="imageResults">
-                    {searchImages.map((image, index) => (
-                      <div
-                        key={index}
-                        className={`image-item ${
-                          selectedSearchImage === image.url ? 'selected' : ''
-                        }`}
-                        onClick={() => handleSelectSearchImage(image)}
-                      >
-                        <img src={image.thumb} alt={image.title} />
-                        <div className="image-overlay">{image.description}</div>
-                      </div>
-                    ))}
+              {/* 第二行：触动你的观点 */}
+              <div className="form-group">
+                <label htmlFor="quote">
+                  触动你的观点
+                  <small className="text-muted text-xs">按回车↩︎换行</small>
+                </label>
+                <textarea
+                  id="quote"
+                  className="form-input"
+                  value={cardData.Quote}
+                  onChange={handleInputChange}
+                  placeholder="写下让你触动的一句话、一段对话、或一个片段..."
+                ></textarea>
+              </div>
+
+              {/* 第三行：你的启发 */}
+              <div className="form-group">
+                <label htmlFor="detail">
+                  你的启发
+                  <small className="text-muted text-xs">
+                    支持 Markdown 语法，按回车↩︎换行
+                  </small>
+                </label>
+                <textarea
+                  id="detail"
+                  className="form-input min-h-25 resize-vertical"
+                  value={cardData.Detail}
+                  onChange={handleInputChange}
+                  placeholder="写下你的启发和行动吧..."
+                ></textarea>
+                <div
+                  id="imageGenerationStatus"
+                  className="mt-1 text-sm text-secondary"
+                ></div>
+              </div>
+
+              {/* 第四行：选择背景 */}
+              <div className="form-group">
+                <label>选择背景</label>
+                <div className="gradient-selector" id="gradient-selector">
+                  {gradientOptions.map((option) => (
+                    <div
+                      key={option.class}
+                      className={`gradient-option ${
+                        cardData.GradientClass === option.class
+                          ? 'selected'
+                          : ''
+                      }`}
+                      data-gradient={option.class}
+                      title={option.title}
+                      onClick={() => handleGradientSelect(option.class)}
+                    ></div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 图片上传 */}
+              <div className="form-group">
+                <label>添加背景图片</label>
+                <div className="image-upload-section">
+                  <input
+                    type="file"
+                    id="bgUpload"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleFileUpload}
+                  />
+                  <button
+                    type="button"
+                    id="uploadBtn"
+                    className="btn btn-secondary"
+                    onClick={() => document.getElementById('bgUpload')?.click()}
+                  >
+                    上传图片
+                  </button>
+                  <button
+                    type="button"
+                    id="searchImagesBtn"
+                    className="btn btn-info ml-2"
+                    onClick={searchImagesFromDetail}
+                    disabled={isSearching}
+                  >
+                    {isSearching ? '搜索中...' : '搜索图片'}
+                  </button>
+                  <div id="fileStatus" className="mt-1 text-sm">
+                    {fileStatus}
                   </div>
                 </div>
-              )}
 
-              {searchError && (
-                <div className="error-message mt-1 text-sm text-danger">
-                  {searchError}
-                </div>
-              )}
-            </div>
+                {/* 搜索结果展示 */}
+                {searchImages.length > 0 && (
+                  <div className="search-results">
+                    <h4>搜索结果：</h4>
+                    <div className="image-grid" id="imageResults">
+                      {searchImages.map((image, index) => (
+                        <div
+                          key={index}
+                          className={`image-item ${
+                            selectedSearchImage === image.url ? 'selected' : ''
+                          }`}
+                          onClick={() => handleSelectSearchImage(image)}
+                        >
+                          <img src={image.thumb} alt={image.title} />
+                          <div className="image-overlay">
+                            {image.description}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            <div className="buttons">
-              <button
-                className="primary-btn"
-                onClick={submitCard}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? '提交中...' : '提交到展示区'}
-              </button>
-              <button
-                className="btn btn-secondary"
-                onClick={downloadCardImage}
-                disabled={isDownloading}
-              >
-                {isDownloading ? '下载中...' : '下载卡片'}
-              </button>
-            </div>
-          </div>
+                {searchError && (
+                  <div className="error-message mt-1 text-sm text-danger">
+                    {searchError}
+                  </div>
+                )}
+              </div>
+
+              <div className="buttons">
+                <button
+                  className="primary-btn"
+                  onClick={submitCard}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? '提交中...' : '提交到展示区'}
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={downloadCardImage}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? '下载中...' : '下载卡片'}
+                </button>
+              </div>
+            </Paper>
+          </Grid>
 
           <div
             id="preview"
@@ -676,78 +713,74 @@ const CreateCard: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </Grid>
+      </Container>
 
-        {/* 最新提交的卡片部分 */}
-        <div className="latest-cards-section">
-          <h2>展示区</h2>
-          <div className="carousel-container">
-            <div className="swiper" id="latest-cards-swiper">
-              <div className="swiper-wrapper" id="latest-cards">
-                {carouselCards.map((card, index) => (
-                  <div key={card.id} className="swiper-slide">
+      {/* 最新提交的卡片部分 */}
+      <div className="latest-cards-section">
+        <h2>展示区</h2>
+        <div className="carousel-container">
+          <div className="swiper" id="latest-cards-swiper">
+            <div className="swiper-wrapper" id="latest-cards">
+              {carouselCards.map((card, index) => (
+                <div key={card.id} className="swiper-slide">
+                  <div
+                    className="card-carousel-item"
+                    onClick={() => navigate(`/card-detail?id=${card.id}`)}
+                  >
                     <div
-                      className="card-carousel-item"
-                      onClick={() => navigate(`/card-detail?id=${card.id}`)}
+                      className={`card ${card.GradientClass}`}
+                      style={{
+                        fontFamily: card.Font,
+                        color: getFontColorForGradient(card.GradientClass),
+                      }}
                     >
-                      <div
-                        className={`card ${card.GradientClass}`}
-                        style={{
-                          fontFamily: card.Font,
-                          color: getFontColorForGradient(card.GradientClass),
-                        }}
-                      >
-                        <div className="card-body">
-                          <div className="title">{card.Title}</div>
-                          <div
-                            className="quote-box"
-                            style={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                              color: getFontColorForGradient(
-                                card.GradientClass
-                              ),
-                            }}
-                          >
-                            {card.Quote}
-                          </div>
-                          {card.ImagePath && (
-                            <img
-                              src={card.ImagePath}
-                              alt={card.Title}
-                              style={{ maxWidth: '100%', height: 'auto' }}
-                            />
-                          )}
+                      <div className="card-body">
+                        <div className="title">{card.Title}</div>
+                        <div
+                          className="quote-box"
+                          style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            color: getFontColorForGradient(card.GradientClass),
+                          }}
+                        >
+                          {card.Quote}
                         </div>
-                        <div className="card-footer">
-                          <div
-                            className="footer"
-                            style={{
-                              color: getFontColorForGradient(
-                                card.GradientClass
-                              ),
-                            }}
-                          >
-                            ——作者：{card.Creator}
-                          </div>
+                        {card.ImagePath && (
+                          <img
+                            src={card.ImagePath}
+                            alt={card.Title}
+                            style={{ maxWidth: '100%', height: 'auto' }}
+                          />
+                        )}
+                      </div>
+                      <div className="card-footer">
+                        <div
+                          className="footer"
+                          style={{
+                            color: getFontColorForGradient(card.GradientClass),
+                          }}
+                        >
+                          ——作者：{card.Creator}
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-              <div className="swiper-pagination"></div>
-              <div className="swiper-button-next"></div>
-              <div className="swiper-button-prev"></div>
+                </div>
+              ))}
             </div>
-          </div>
-          <div className="view-all-button-container">
-            <a href="/cards" className="view-all-button">
-              浏览更多灵感
-            </a>
+            <div className="swiper-pagination"></div>
+            <div className="swiper-button-next"></div>
+            <div className="swiper-button-prev"></div>
           </div>
         </div>
+        <div className="view-all-button-container">
+          <a href="/cards" className="view-all-button">
+            浏览更多灵感
+          </a>
+        </div>
       </div>
-    </div>
+    </Box>
   );
 };
 

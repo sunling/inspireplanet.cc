@@ -2,6 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import html2canvas from 'html2canvas';
+import {
+  Box,
+  Container,
+  Typography,
+  Paper,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
+  useMediaQuery,
+  useTheme,
+  Grid,
+} from '@mui/material';
 
 // 导入渐变字体颜色配置
 const gradientFontColors: Record<string, string> = {
@@ -36,6 +51,9 @@ const WeeklyCards: React.FC = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<string>('all');
   const [loading, setLoading] = useState<boolean>(true);
   const [episodes, setEpisodes] = useState<string[]>([]);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
   // 模拟数据
   const mockWeeklyCards: WeeklyCard[] = [
@@ -179,114 +197,303 @@ const WeeklyCards: React.FC = () => {
   });
 
   return (
-    <div className="weekly-cards-page">
-      <div className="weekly-container">
+    <Box
+      sx={{
+        minHeight: '100vh',
+        py: 8,
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      }}
+    >
+      <Container maxWidth="lg">
+        <Typography
+          variant="h3"
+          component="h1"
+          sx={{
+            textAlign: 'center',
+            mb: 6,
+            color: 'white',
+            fontWeight: 'bold',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+          }}
+        >
+          启发星球周刊
+        </Typography>
+
         {/* 期数过滤器 */}
-        <div className="episode-filter">
-          <select
-            id="episode-filter"
-            value={selectedEpisode}
-            onChange={handleEpisodeChange}
+        <Paper
+          elevation={3}
+          sx={{
+            p: 3,
+            mb: 6,
+            borderRadius: '12px',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
           >
-            <option value="all">所有会议</option>
-            {episodes.map((episode) => (
-              <option key={episode} value={episode}>
-                {episode}
-              </option>
-            ))}
-          </select>
-        </div>
+            <Typography variant="h6" sx={{ mb: 2, color: '#667eea' }}>
+              选择期数
+            </Typography>
+            <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
+              <InputLabel id="episode-filter-label">期数</InputLabel>
+              <Select
+                labelId="episode-filter-label"
+                id="episode-filter"
+                value={selectedEpisode}
+                label="期数"
+                onChange={(event) => setSelectedEpisode(event.target.value)}
+                size={isMobile ? 'small' : 'medium'}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: '#667eea33',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#667eea66',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea',
+                    },
+                  },
+                }}
+              >
+                <MenuItem value="all">所有期数</MenuItem>
+                {episodes.map((episode) => (
+                  <MenuItem key={episode} value={episode}>
+                    {episode}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Paper>
 
         {/* 卡片容器 */}
-        <div className="cards-container" id="cards">
-          {loading ? (
-            <div className="loading-indicator">加载中...</div>
-          ) : sortedEpisodes.length === 0 ? (
-            <div className="empty-message">暂无卡片数据</div>
-          ) : (
-            sortedEpisodes.map((episode) => (
-              <div key={episode}>
-                <h2
-                  className="date-heading"
-                  id={`episode-${episode.toLowerCase()}`}
+        {loading ? (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '40vh',
+            }}
+          >
+            <CircularProgress size={60} color="inherit" />
+          </Box>
+        ) : sortedEpisodes.length === 0 ? (
+          <Paper
+            elevation={3}
+            sx={{
+              p: 6,
+              textAlign: 'center',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <Typography variant="h6" color="text.secondary">
+              暂无卡片数据
+            </Typography>
+          </Paper>
+        ) : (
+          <Grid container spacing={4}>
+            {sortedEpisodes.map((episode) => (
+              <Grid size={isMobile ? 12 : 6} key={episode}>
+                <Paper
+                  elevation={2}
+                  sx={{
+                    p: 2,
+                    mb: 3,
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                    textAlign: 'center',
+                  }}
                 >
-                  {episode}
-                </h2>
-                <div
-                  className="date-cards-container"
+                  <Typography
+                    variant="h4"
+                    component="h2"
+                    id={`episode-${episode.toLowerCase()}`}
+                    sx={{
+                      color: 'white',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    {episode}
+                  </Typography>
+                </Paper>
+
+                <Grid
+                  container
+                  spacing={3}
                   id={`episode-container-${episode.toLowerCase()}`}
                 >
-                  {groupedCards[episode].map((card) => (
-                    <div
-                      key={card.id}
-                      className="card-container"
-                      id={`card-container-${card.id}`}
-                    >
-                      <div
-                        className={`card ${card.gradient}`}
-                        id={`card-${card.id}`}
-                        style={{
-                          color: getFontColorForGradient(card.gradient),
-                        }}
-                      >
-                        <div className="card-body">
-                          <div className="title">{card.title}</div>
-                          <div
-                            className="quote-box"
-                            style={{
-                              backgroundColor: `${getFontColorForGradient(
-                                card.gradient
-                              )}10`,
+                  {groupedCards[episode].map((card) => {
+                    const fontColor = getFontColorForGradient(card.gradient);
+                    return (
+                      <Grid size={isMobile ? 12 : 6} key={card.id}>
+                        <Box
+                          sx={{
+                            position: 'relative',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                          }}
+                        >
+                          <Paper
+                            elevation={3}
+                            className={`${card.gradient}`}
+                            id={`card-${card.id}`}
+                            sx={{
+                              height: '100%',
+                              borderRadius: '12px',
+                              overflow: 'hidden',
+                              p: 4,
+                              color: fontColor,
+                              position: 'relative',
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              backdropFilter: 'blur(10px)',
+                              display: 'flex',
+                              flexDirection: 'column',
                             }}
                           >
-                            {card.quote}
-                          </div>
-                          <img
-                            src={card.imageUrl || '/images/mistyblue.png'}
-                            alt={card.title}
-                            style={{
-                              width: '100%',
-                              height: 'auto',
-                              borderRadius: '8px',
+                            <Typography
+                              variant="h5"
+                              component="h3"
+                              sx={{
+                                fontWeight: 'bold',
+                                mb: 2,
+                                color: fontColor,
+                              }}
+                            >
+                              {card.title}
+                            </Typography>
+
+                            <Box
+                              sx={{
+                                backgroundColor: `${fontColor}10`,
+                                p: 2,
+                                borderRadius: '8px',
+                                mb: 3,
+                                fontStyle: 'italic',
+                              }}
+                            >
+                              <Typography
+                                variant="body1"
+                                sx={{ color: fontColor }}
+                              >
+                                {card.quote}
+                              </Typography>
+                            </Box>
+
+                            <Box sx={{ mb: 3 }}>
+                              <img
+                                src={card.imageUrl || '/images/mistyblue.png'}
+                                alt={card.title}
+                                style={{
+                                  width: '100%',
+                                  height: 'auto',
+                                  borderRadius: '8px',
+                                  maxHeight: '200px',
+                                  objectFit: 'cover',
+                                }}
+                              />
+                            </Box>
+
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: fontColor,
+                                lineHeight: 1.6,
+                                mb: 3,
+                                flexGrow: 1,
+                              }}
+                            >
+                              <div
+                                dangerouslySetInnerHTML={{
+                                  __html: DOMPurify.sanitize(card.detail),
+                                }}
+                              />
+                            </Typography>
+
+                            <Box
+                              sx={{
+                                mt: 'auto',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{ color: fontColor, opacity: 0.8 }}
+                              >
+                                — {card.name}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                sx={{ color: fontColor, opacity: 0.8 }}
+                              >
+                                {new Date(card.createdAt).toLocaleDateString(
+                                  'zh-CN'
+                                )}
+                              </Typography>
+                            </Box>
+                          </Paper>
+
+                          <Button
+                            className="download-btn"
+                            onClick={() => handleDownloadCard(card.id)}
+                            title="下载卡片"
+                            sx={{
+                              position: 'absolute',
+                              bottom: 10,
+                              right: 10,
+                              backgroundColor: '#667eea',
+                              '&:hover': { backgroundColor: '#5a67d8' },
+                              minWidth: 'auto',
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '50%',
+                              p: 0,
                             }}
-                          />
-                          <div
-                            className="detail-text"
-                            dangerouslySetInnerHTML={{
-                              __html: DOMPurify.sanitize(card.detail),
-                            }}
-                          />
-                        </div>
-                        <div className="card-footer">
-                          <div className="footer">— {card.name}</div>
-                          <div className="date">
-                            {new Date(card.createdAt).toLocaleDateString(
-                              'zh-CN'
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        className="download-btn"
-                        onClick={() => handleDownloadCard(card.id)}
-                        title="下载卡片"
-                      >
-                        下载
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+                          >
+                            <Typography variant="caption">下载</Typography>
+                          </Button>
+                        </Box>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Grid>
+            ))}
+          </Grid>
+        )}
 
         {/* 返回首页链接 */}
-        <Link to="/" className="back-link">
-          返回首页
-        </Link>
-      </div>
-    </div>
+        <Box sx={{ mt: 8, textAlign: 'center' }}>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/"
+            sx={{
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              color: '#667eea',
+              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
+              py: 1.2,
+              px: 4,
+            }}
+          >
+            返回首页
+          </Button>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 

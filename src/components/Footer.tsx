@@ -1,52 +1,126 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import {
+  Box,
+  Container,
+  Typography,
+  Divider,
+  useMediaQuery,
+  useTheme,
+  IconButton,
+} from '@mui/material';
 
 const Footer: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const footerLinks = [
+    { path: '/cover-editor', label: '横版封面制作' },
+    { path: '/cover-editor-mobile', label: '竖版封面制作' },
+    {
+      url: 'https://github.com/sunling/cards.bysunling.com',
+      label: 'GitHub',
+      isExternal: true,
+    },
+    { path: '/about', label: '关于我们' },
+  ];
+
   return (
-    <footer className="site-footer">
-      <div className="footer-container">
-        <div className="footer-content">
-          <div className="footer-left">
-            <p className="copyright">© 2025 启发星球</p>
-          </div>
+    <Box
+      component="footer"
+      sx={{
+        backgroundColor: '#f5f5f5',
+        padding: { xs: 3, md: 4 },
+        borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+        mt: 8,
+      }}
+    >
+      <Container maxWidth="lg">
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            justifyContent: 'space-between',
+            alignItems: { xs: 'center', md: 'flex-start' },
+            mb: 3,
+          }}
+        >
+          <Box sx={{ mb: { xs: 3, md: 0 } }}>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ fontWeight: 500 }}
+            >
+              © 2025 启发星球
+            </Typography>
+          </Box>
 
-          <div className="footer-right">
-            <div className="footer-links">
-              <Link to="/cover-editor" className="footer-link">
-                横版封面制作
-              </Link>
-              <Link to="/cover-editor-mobile" className="footer-link">
-                竖版封面制作
-              </Link>
-              <a
-                href="https://github.com/sunling/cards.bysunling.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer-link"
-              >
-                <svg
-                  className="github-icon"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                >
-                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-                </svg>
-                GitHub
-              </a>
-              <Link to="/about" className="footer-link">
-                关于我们
-              </Link>
-            </div>
-          </div>
-        </div>
+          <Box>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: { xs: 1, sm: 2 },
+                alignItems: { xs: 'center', sm: 'flex-start' },
+              }}
+            >
+              {footerLinks.map((link, index) => {
+                if (link.isExternal) {
+                  return (
+                    <Box
+                      key={index}
+                      sx={{ display: 'flex', alignItems: 'center' }}
+                    >
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          textDecoration: 'none',
+                          color: theme.palette.text.primary,
+                          fontSize: isMobile ? '0.85rem' : '0.9rem',
+                        }}
+                      >
+                        {link.label}
+                      </a>
+                    </Box>
+                  );
+                }
+                return (
+                  <Link
+                    key={index}
+                    to={link.path!}
+                    style={{
+                      textDecoration: 'none',
+                      color: theme.palette.text.primary,
+                      fontSize: isMobile ? '0.85rem' : '0.9rem',
+                    }}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </Box>
+          </Box>
+        </Box>
 
-        <div className="footer-bottom">
-          <p className="footer-description">启发星球 - 点亮彼此的能量场</p>
-        </div>
-      </div>
-    </footer>
+        <Divider sx={{ mb: 3 }} />
+
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              textAlign: 'center',
+              fontStyle: 'italic',
+              fontSize: isMobile ? '0.8rem' : '0.85rem',
+            }}
+          >
+            启发星球 - 点亮彼此的能量场
+          </Typography>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 
