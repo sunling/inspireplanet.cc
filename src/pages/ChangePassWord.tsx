@@ -162,24 +162,6 @@ const ChangePassWord: React.FC = () => {
     setMessage(null);
 
     try {
-      // 本地开发环境模拟
-      if (
-        window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1'
-      ) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setMessage({
-          text: '密码修改成功！即将跳转到用户中心...',
-          type: 'success',
-        });
-
-        // 2秒后跳转到用户中心
-        setTimeout(() => {
-          navigate('/profile');
-        }, 2000);
-        return;
-      }
-
       // 实际API调用
       const response = await fetch('/.netlify/functions/changePassword', {
         method: 'POST',

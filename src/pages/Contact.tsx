@@ -53,9 +53,14 @@ const Contact: React.FC = () => {
     setShowError(false);
 
     try {
-      // 模拟表单提交
       // 在实际应用中，这里应该发送表单数据到服务器
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await fetch('/.netlify/functions/sendEmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
       console.log('表单数据:', formData);
 

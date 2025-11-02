@@ -2146,12 +2146,25 @@
   dependencies:
     "@types/istanbul-lib-report" "*"
 
+"@types/jsonwebtoken@^9.0.10":
+  version "9.0.10"
+  resolved "https://registry.npmmirror.com/@types/jsonwebtoken/-/jsonwebtoken-9.0.10.tgz#a7932a47177dcd4283b6146f3bd5c26d82647f09"
+  integrity sha512-asx5hIG9Qmf/1oStypjanR7iKTv0gXQ1Ov/jfrX6kS/EO0OFni8orbmGCn0672NHR3kXHwpAwR+B368ZGN/2rA==
+  dependencies:
+    "@types/ms" "*"
+    "@types/node" "*"
+
 "@types/marked@^6.0.0":
   version "6.0.0"
   resolved "https://registry.npmmirror.com/@types/marked/-/marked-6.0.0.tgz#4dbc7df4add578ef87eb6ca2c6927c97b0531abf"
   integrity sha512-jmjpa4BwUsmhxcfsgUit/7A9KbrC48Q0q8KvnY107ogcjGgTFDlIL3RpihNpx2Mu1hM4mdFQjoVc4O6JoGKHsA==
   dependencies:
     marked "*"
+
+"@types/ms@*":
+  version "2.1.0"
+  resolved "https://registry.npmmirror.com/@types/ms/-/ms-2.1.0.tgz#052aa67a48eccc4309d7f0191b7e41434b90bb78"
+  integrity sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==
 
 "@types/node@*", "@types/node@^24.9.2":
   version "24.9.2"

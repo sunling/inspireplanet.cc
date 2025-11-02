@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+
 import {
   Box,
   Container,
@@ -80,22 +79,10 @@ const CardEdit: React.FC = () => {
         setLoading(true);
         // 在实际应用中，这里应该是API调用
         // 模拟API延迟
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        const response = await fetch(`/netlify/functions/fetchCard?id=${id}`);
+        const data = await response.json();
 
-        // 模拟数据
-        const mockCardData: CardData = {
-          id: id || '',
-          title: '如何保持持续学习的动力',
-          quote: '学习不是人生的全部，但学习是人生中最重要的一部分。',
-          detail:
-            '在快节奏的现代生活中，持续学习变得越来越重要。\n\n我认为保持学习动力的关键在于：\n1. 设定明确的学习目标\n2. 将大目标分解为小步骤\n3. 找到学习的内在乐趣\n4. 定期复盘和调整学习方法',
-          creator: '学习爱好者',
-          gradientClass: 'card-gradient-3',
-          font: 'Noto Serif SC',
-          imagePath: '',
-        };
-
-        setCardData(mockCardData);
+        setCardData(data);
         setError('');
       } catch (err) {
         setError('获取卡片数据失败，请稍后重试');

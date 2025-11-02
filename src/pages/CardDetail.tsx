@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
-import { cardAPI, commentAPI } from '../service'; // 导入API服务
+// 移除API服务导入，改为直接调用netlify functions
 import {
   Box,
   Container,
@@ -76,25 +76,39 @@ const CardDetail: React.FC = () => {
   // 加载卡片详情
   const fetchCardById = async (cardId: string) => {
     try {
-      // 使用cardAPI获取卡片详情
-      const response = await cardAPI.fetchCardById(cardId);
+      // 直接调用netlify functions接口获取卡片详情
+      const response = await fetch(
+        `/.netlify/functions/cardsHandler?id=${cardId}`,
+        {
+          method: 'GET',
+        }
+      );
 
-      // 处理不同格式的响应数据
-      if (!response) return null;
+      if (!response.ok) {
+        throw new Error('获取卡片失败：' + response.statusText);
+      }
+
+      const data = await response.json();
+
+      // 处理可能的数组响应，取第一个元素
+      const cardData =
+        Array.isArray(data.records) && data.records.length > 0
+          ? data.records[0]
+          : data;
 
       // 规范化卡片数据格式
       const normalizedCard: CardData = {
-        id: response.id || response._id || '',
-        Title: response.Title || response.title || '未命名卡片',
-        Quote: response.Quote || response.quote || '',
-        Detail: response.Detail || response.detail,
-        ImagePath: response.ImagePath || response.image || response.Upload,
-        Creator: response.Creator || response.creator,
-        Font: response.Font || response.font,
-        GradientClass: response.GradientClass || response.gradient,
+        id: cardData.id || cardData._id || '',
+        Title: cardData.Title || cardData.title || '未命名卡片',
+        Quote: cardData.Quote || cardData.quote || '',
+        Detail: cardData.Detail || cardData.detail,
+        ImagePath: cardData.ImagePath || cardData.image || cardData.Upload,
+        Creator: cardData.Creator || cardData.creator,
+        Font: cardData.Font || cardData.font,
+        GradientClass: cardData.GradientClass || cardData.gradient,
         Created:
-          response.Created || response.created_at || new Date().toISOString(),
-        Username: response.Username || response.username,
+          cardData.Created || cardData.created_at || new Date().toISOString(),
+        Username: cardData.Username || cardData.username,
       };
 
       return normalizedCard;
@@ -107,21 +121,42 @@ const CardDetail: React.FC = () => {
   // 加载评论
   const fetchComments = async (cardId: string) => {
     try {
-      // 使用commentAPI获取评论
-      const response = await commentAPI.fetchComments(cardId);
+      // 直接调用netlify functions接口获取评论，使用encodeURIComponent确保参数正确编码
+      const response = await fetch(
+        `/.netlify/functions/commentsHandler?cardId=${encodeURIComponent(
+          cardId
+        )}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        }
+      );
 
-      // 处理不同格式的响应数据
-      const commentData =
-        response?.records || (response as any)?.comments || [];
+      if (!response.ok) {
+        throw new Error('获取评论失败：' + response.statusText);
+      }
 
-      // 规范化评论数据格式
+      const data = await response.json();
+
+      // 处理多种可能的响应数据格式
+      const commentData = Array.isArray(data)
+        ? data
+        : data?.records || data?.comments || [];
+
+      // 规范化评论数据格式，支持更多可能的字段名
       return commentData.map(
         (comment: any): CommentData => ({
-          id: comment.id || comment._id,
-          name: comment.name || '匿名用户',
-          comment: comment.comment || comment.content || '',
+          id: comment.id || comment._id || comment.ID || '',
+          name: comment.name || comment.creator || '匿名用户',
+          comment: comment.comment || comment.content || comment.Content || '',
           created:
-            comment.created || comment.created_at || new Date().toISOString(),
+            comment.created ||
+            comment.created_at ||
+            comment.Created ||
+            new Date().toISOString(),
         })
       );
     } catch (error) {
@@ -165,8 +200,31 @@ const CardDetail: React.FC = () => {
       setError(null);
 
       try {
-        // 加载卡片详情
-        const cardData = await fetchCardById(id);
+        // 加载卡片详情 - 使用正确的端点和参数，与HTML中的实现保持一致
+        const response = await fetch(
+          `/.netlify/functions/cardsHandler?id=${encodeURIComponent(id)}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`获取卡片失败: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // 处理可能的不同数据格式
+        const cardData = Array.isArray(data)
+          ? data[0]
+          : data.records && data.records[0]
+          ? data.records[0]
+          : data;
+
         if (!cardData) {
           setError('未找到该卡片，可能已被删除或ID无效。');
 
@@ -178,19 +236,66 @@ const CardDetail: React.FC = () => {
             Created: new Date().toISOString(),
           };
           setCard(defaultCard);
-          setIsLoading(false);
           return;
         }
 
-        setCard(cardData);
-        checkEditPermission(cardData);
+        // 规范化卡片数据格式
+        const normalizedCard: CardData = {
+          id: cardData.id || cardData.ID || cardData._id || '',
+          Title: cardData.Title || cardData.title || '未命名卡片',
+          Quote: cardData.Quote || cardData.quote || '',
+          Detail: cardData.Detail || cardData.detail,
+          ImagePath: cardData.ImagePath || cardData.image || cardData.Upload,
+          Creator: cardData.Creator || cardData.creator,
+          Font: cardData.Font || cardData.font,
+          GradientClass:
+            cardData.GradientClass || cardData.gradient || 'card-gradient-1',
+          Created:
+            cardData.Created || cardData.created_at || new Date().toISOString(),
+
+          Username: cardData.Username || cardData.username,
+        };
+
+        setCard(normalizedCard);
+        checkEditPermission(normalizedCard);
 
         // 加载评论
-        const commentsData = await fetchComments(id);
-        setComments(commentsData);
-      } catch (err) {
+        const commentsResponse = await fetch(
+          `/.netlify/functions/commentsHandler?cardId=${encodeURIComponent(
+            id
+          )}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          }
+        );
+
+        if (!commentsResponse.ok) {
+          throw new Error(`获取评论失败: ${commentsResponse.statusText}`);
+        }
+
+        const commentsData = await commentsResponse.json();
+        const commentList =
+          commentsData?.records || commentsData?.comments || [];
+
+        // 规范化评论数据格式
+        const normalizedComments = commentList.map(
+          (comment: any): CommentData => ({
+            id: comment.id || comment._id,
+            name: comment.name || '匿名用户',
+            comment: comment.comment || comment.content || '',
+            created:
+              comment.created || comment.created_at || new Date().toISOString(),
+          })
+        );
+
+        setComments(normalizedComments);
+      } catch (err: any) {
         console.error('加载卡片详情失败:', err);
-        setError('加载失败，请稍后再试。');
+        setError(err.message || '加载失败，请稍后再试。');
 
         // 设置默认卡片数据避免页面渲染错误
         const defaultCard: CardData = {
@@ -250,16 +355,27 @@ const CardDetail: React.FC = () => {
 
     setSubmittingComment(true);
     try {
-      // 使用commentAPI提交评论
-      const response = await commentAPI.createComment({
-        cardId: id,
-        name: commentForm.name,
-        comment: commentForm.content,
+      // 直接调用netlify functions接口提交评论
+      const response = await fetch('/.netlify/functions/commentsHandler', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardId: id,
+          name: commentForm.name,
+          comment: commentForm.content,
+        }),
       });
 
+      if (!response.ok) {
+        throw new Error('提交评论失败：' + response.statusText);
+      }
+
+      const data = await response.json();
+
       // 处理不同格式的响应数据
-      const commentId =
-        response?.data?.id || (response as any)?.id || (response as any)?._id;
+      const commentId = data?.id || data?.data?.id || data?._id;
 
       // 添加新评论
       const newComment: CommentData = {

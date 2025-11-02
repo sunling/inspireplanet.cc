@@ -15,7 +15,79 @@ import {
   useTheme,
   Link,
 } from '@mui/material';
-import { authAPI } from '../service'; // 导入认证API服务
+
+// 定义认证相关接口
+interface AuthResponse {
+  message?: string;
+  user?: {
+    id: string;
+    username: string;
+    email: string;
+    name: string;
+  };
+  token?: string;
+  error?: string;
+}
+
+const authFunctions = {
+  async login(email: string, password: string): Promise<AuthResponse> {
+    try {
+      const response = await fetch(`/.netlify/functions/authHandler`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: 'login',
+          email,
+          password,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      console.error('Login error:', error);
+      throw new Error(error.message || '登录失败，请稍后重试');
+    }
+  },
+
+  async register(data: {
+    name: string;
+    username: string;
+    email: string;
+    password: string;
+    wechat?: string;
+  }): Promise<AuthResponse> {
+    try {
+      const response = await fetch(`/.netlify/functions/authHandler`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: 'register',
+          ...data,
+        }),
+      });
+      debugger;
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      console.error('Register error:', error);
+      throw new Error(error.message || '注册失败，请稍后重试');
+    }
+  },
+};
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -119,20 +191,27 @@ const Login: React.FC = () => {
       let result;
 
       if (currentMode === 'login') {
-        // 使用authAPI进行登录
-        result = await authAPI.login({
-          username: formData.email,
-          password: formData.password,
-        });
+        // 直接调用netlify function进行登录
+        result = await authFunctions.login(formData.email, formData.password);
+
+        // 检查是否有错误信息
+        if (result.error) {
+          throw new Error(result.error);
+        }
       } else {
-        // 使用authAPI进行注册
-        result = await authAPI.register({
+        // 直接调用netlify function进行注册
+        result = await authFunctions.register({
           name: formData.name,
           username: formData.username,
           email: formData.email,
           password: formData.password,
           ...(formData.wechat ? { wechat: formData.wechat } : {}),
         });
+
+        // 检查是否有错误信息
+        if (result.error) {
+          throw new Error(result.error);
+        }
       }
 
       // 保存用户信息和token到localStorage

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { weeklyCardAPI } from '../service';
+
 import { Link } from 'react-router-dom';
 import {
   Box,
@@ -63,22 +63,23 @@ const Home: React.FC = () => {
 
     try {
       // 使用weeklyCardAPI获取最新卡片数据
-      const response = await weeklyCardAPI.fetchLatestWeeklyCards();
+      const response = await fetch('/.netlify/functions/getLatestWeeklyCards');
+      const data = await response.json();
+      const records = data.records || [];
       debugger;
-      const allCards = response?.records || [];
 
       // 转换数据格式以适应页面显示需求
-      const formattedCards: CardData[] = allCards
+      const formattedCards: CardData[] = records
         .map((card: any) => ({
           id: card.id,
           title: card.title || card.name || '未命名卡片',
           quote: card.quote || '',
-          coverUrl: card.imageUrl || '/images/mistyblue.png',
+          coverUrl: card.imagePath || '/images/mistyblue.png',
           author: card.name || '未知作者',
-          date: card.createdAt
-            ? new Date(card.createdAt).toISOString().split('T')[0]
+          date: card.created
+            ? new Date(card.created).toISOString().split('T')[0]
             : '',
-          tags: card.tags || ['启发卡片'],
+          tags: ['启发卡片'],
         }))
         .filter((card: CardData) => card.title && card.quote); // 过滤无效卡片
 
@@ -98,21 +99,8 @@ const Home: React.FC = () => {
             ]
       );
       setIsLoading(false);
-    } catch (err: any) {
-      debugger;
+    } catch (err) {
       console.error('加载卡片错误:', err);
-      // 加载失败时使用默认数据
-      setCards([
-        {
-          id: 'error-1',
-          title: '网络连接失败',
-          quote: '无法连接到服务器，请检查网络连接后重试。',
-          coverUrl: '/images/mistyblue.png',
-          author: '系统提示',
-          date: new Date().toISOString().split('T')[0],
-          tags: ['提示', '网络'],
-        },
-      ]);
       setError('加载卡片失败，请稍后重试');
       setIsLoading(false);
     }

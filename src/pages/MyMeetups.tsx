@@ -83,67 +83,13 @@ const MyMeetups: React.FC = () => {
 
     try {
       // 模拟API调用，实际项目中应该使用真实的API
-      // const response = await fetch('/.netlify/functions/meetupHandler');
-      // const data = await response.json();
+      const response = await fetch('/.netlify/functions/meetupHandler');
+      const data = await response.json();
 
-      // 模拟数据
-      const mockData = {
-        success: true,
-        meetups: [
-          {
-            id: '1',
-            title: '周末读书会 - 分享你的阅读心得',
-            description:
-              '一起讨论最近读过的好书，分享阅读心得和收获。不论你喜欢小说、非虚构还是专业书籍，都欢迎来参加！',
-            type: 'offline',
-            status: 'active',
-            date: '2024-12-20',
-            time: '14:00',
-            location: '北京市朝阳区三里屯咖啡',
-            created_by: currentUser?.username || '',
-            organizer: currentUser?.name || '',
-            participant_count: 12,
-            max_participants: 20,
-          },
-          {
-            id: '2',
-            title: '线上技术分享会 - React新特性探讨',
-            description:
-              '探讨React最新版本的特性和最佳实践，包括Concurrent Mode、自动批处理等新功能的应用场景。',
-            type: 'online',
-            status: 'active',
-            date: '2024-12-15',
-            time: '20:00',
-            location: '腾讯会议',
-            created_by: currentUser?.username || '',
-            organizer: currentUser?.name || '',
-            participant_count: 35,
-          },
-          {
-            id: '3',
-            title: '创业者交流会',
-            description:
-              '为创业者提供一个交流经验、分享资源的平台，讨论创业过程中的挑战和解决方案。',
-            type: 'offline',
-            status: 'active',
-            date: '2024-11-30',
-            time: '18:30',
-            location: '上海市静安区创业空间',
-            created_by: currentUser?.username || '',
-            organizer: currentUser?.name || '',
-            participant_count: 8,
-            max_participants: 15,
-          },
-        ],
-      };
-
-      // 模拟API响应延迟
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      if (mockData.success) {
+      if (data.success) {
         // 过滤出当前用户创建的活动
-        const userMeetups = (mockData.meetups || []).filter(
-          (meetup) =>
+        const userMeetups = (data.meetups || []).filter(
+          (meetup: any) =>
             meetup.created_by === currentUser?.username ||
             meetup.organizer === currentUser?.name
         );

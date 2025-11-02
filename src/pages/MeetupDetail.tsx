@@ -1,4 +1,3 @@
-import { meetupAPI, rsvpAPI } from '../service/index';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
@@ -104,12 +103,29 @@ const MeetupDetail: React.FC = () => {
     setError(null);
 
     try {
-      // 使用meetupAPI获取活动详情
-      const meetupData = await meetupAPI.fetchMeetupById(meetupId);
+      // 使用meetupAPI获取活动详情，使用正确的URL和请求配置
+      const response = await fetch(
+        `/.netlify/functions/meetupHandler?id=${encodeURIComponent(meetupId)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        }
+      );
 
-      if (!meetupData) {
+      if (!response.ok) {
+        throw new Error(`获取活动详情失败: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data) {
         throw new Error('活动不存在');
       }
+
+      const meetupData = data.meetup || {};
 
       // 处理数据格式，确保符合Meetup接口要求
       const processedMeetup: Meetup = {
@@ -147,29 +163,9 @@ const MeetupDetail: React.FC = () => {
       loadParticipants(meetupId);
     } catch (err) {
       console.error('加载活动详情失败:', err);
+    } finally {
       setError('加载活动详情失败，请稍后重试');
 
-      // 设置备用数据，避免页面显示空白
-      const mockMeetup: Meetup = {
-        id: meetupId,
-        title: '技术交流分享会',
-        description:
-          '一起探讨前沿技术发展趋势，分享项目经验和技术心得。无论你是技术专家还是刚入门的学习者，都欢迎参与讨论！',
-        type: 'online',
-        datetime: '2024-02-15T19:00:00',
-        duration: 2,
-        fee: 0,
-        max_ppl: 50,
-        organizer: '张三',
-        contact: 'zhangsan@example.com',
-        qr_image_url: '/images/wechat-sl.jpg',
-        status: 'upcoming',
-        created_at: '2024-01-20T10:00:00Z',
-        participant_count: 25,
-      };
-      setMeetup(mockMeetup);
-      setParticipants([{ name: '王五' }, { name: '赵六' }]);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -178,8 +174,11 @@ const MeetupDetail: React.FC = () => {
   const loadParticipants = async (meetupId: string) => {
     try {
       // 使用rsvpAPI获取参与者列表
-      const response = await rsvpAPI.fetchRSVPs(meetupId);
-      const fetchedParticipants = response.records || [];
+      const response = await fetch(
+        `/netlify/functions/fetchRSVPs?meetupId=${meetupId}`
+      );
+      const fetchedParticipants =
+        (response as { records?: any[] })?.records || [];
 
       // 处理数据格式
       const processedParticipants: Participant[] = fetchedParticipants.map(
@@ -252,7 +251,10 @@ const MeetupDetail: React.FC = () => {
   ): Promise<boolean> => {
     try {
       // 使用rsvpAPI检查是否已报名
-      return await rsvpAPI.checkRSVP(meetupId, wechatId);
+      const response = await fetch(
+        `/netlify/functions/checkRSVP?meetupId=${meetupId}&wechatId=${wechatId}`
+      );
+      return typeof response === 'boolean' ? response : Boolean(response);
     } catch (error) {
       console.error('检查报名状态失败:', error);
       return false;
@@ -272,10 +274,16 @@ const MeetupDetail: React.FC = () => {
 
     try {
       // 使用rsvpAPI提交报名信息
-      await rsvpAPI.createRSVP({
-        meetup_id: meetup.id,
-        wechat_id: rsvpForm.wechatId,
-        name: rsvpForm.name,
+      await fetch('/netlify/functions/createRSVP', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          meetup_id: meetup.id,
+          wechat_id: rsvpForm.wechatId,
+          name: rsvpForm.name,
+        }),
       });
 
       // 模拟成功响应

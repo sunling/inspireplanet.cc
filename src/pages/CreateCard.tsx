@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
-import { cardAPI, imageAPI } from '../service'; // 导入卡片API服务
+// 移除cardAPI和imageAPI导入，改为直接调用netlify functions // 导入卡片API服务
 import {
   Box,
   Container,
@@ -222,9 +222,22 @@ const CreateCard: React.FC = () => {
     setSearchError(null);
 
     try {
-      // 使用imageAPI搜索图片
-      const response = await imageAPI.searchImage(combinedText);
-      const results: SearchImageResult[] = (response.images || []).map(
+      // 直接调用netlify functions接口搜索图片
+      const response = await fetch(
+        `/.netlify/functions/searchImage?query=${encodeURIComponent(
+          combinedText
+        )}`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('搜索图片失败：' + response.statusText);
+      }
+
+      const responseData = await response.json();
+      const results: SearchImageResult[] = (responseData.images || []).map(
         (img: any) => ({
           url: img.url || '',
           thumb: img.thumb || img.url || '',
@@ -372,12 +385,24 @@ const CreateCard: React.FC = () => {
         ImagePath: customImage || selectedSearchImage,
       };
 
-      // 使用cardAPI创建卡片
-      const response = await cardAPI.createCard(submitData);
+      // 直接调用netlify functions接口
+      const response = await fetch('/.netlify/functions/cardsHandler', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submitData),
+      });
+
+      if (!response.ok) {
+        throw new Error('提交失败：' + response.statusText);
+      }
+
+      const data = await response.json();
 
       // 显示成功消息并跳转到卡片详情页
       alert('卡片提交成功！');
-      navigate(`/card-detail/${response.data?.id || ''}`);
+      navigate(`/card-detail/${data.id || ''}`);
     } catch (error: any) {
       console.error('提交卡片失败:', error);
       alert(error.message || '提交失败，请重试');
@@ -389,9 +414,17 @@ const CreateCard: React.FC = () => {
   // 加载最新卡片轮播
   const loadLatestCardsCarousel = async () => {
     try {
-      // 使用cardAPI获取最新卡片
-      const response = await cardAPI.fetchCards();
-      setCarouselCards(response.records || []);
+      // 直接调用netlify functions接口获取卡片
+      const response = await fetch('/.netlify/functions/cardsHandler', {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error('获取卡片失败：' + response.statusText);
+      }
+
+      const data = await response.json();
+      setCarouselCards(data.records || []);
     } catch (error) {
       console.error('加载最新卡片失败:', error);
       // 加载失败时使用备用数据

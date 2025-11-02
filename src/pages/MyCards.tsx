@@ -1,7 +1,6 @@
-import React, { useState, useEffect, JSX } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
-import { cardAPI } from '../service'; // 导入卡片API服务
 import {
   Box,
   Container,
@@ -40,17 +39,16 @@ const getFontColorForGradient = (gradientClass: string): string => {
 };
 
 // 卡片数据类型定义
-interface Card {
+export interface Card {
   id: string;
-  Title: string;
-  Quote: string;
-  Detail?: string;
-  ImagePath?: string;
-  Font: string;
-  Creator: string;
-  Username: string;
-  Created: string;
-  // 其他可能的字段
+  title: string;
+  quote: string;
+  detail?: string;
+  imagePath?: string;
+  font?: string;
+  creator?: string;
+  username?: string;
+  created: string;
 }
 
 // 卡片数据验证结果
@@ -69,7 +67,10 @@ const MyCards: React.FC = () => {
   const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
   // 获取当前登录用户信息
-  const getCurrentUser = (): any => {
+  const getCurrentUser = (): {
+    username?: string;
+    wechatId?: string;
+  } | null => {
     try {
       // 尝试从localStorage获取用户信息，支持多种存储键名
       const userStr =
@@ -99,14 +100,20 @@ const MyCards: React.FC = () => {
     // 清理HTML内容
     const sanitizedCard: Card = {
       id: card.id || '',
-      Title: DOMPurify.sanitize(card.Title),
-      Quote: DOMPurify.sanitize(card.Quote),
-      Detail: card.Detail ? DOMPurify.sanitize(card.Detail) : '',
-      ImagePath: card.ImagePath ? DOMPurify.sanitize(card.ImagePath) : '',
-      Font: DOMPurify.sanitize(card.Font),
-      Creator: DOMPurify.sanitize(card.Creator),
-      Username: DOMPurify.sanitize(card.Username),
-      Created: card.Created || new Date().toISOString(),
+      title: DOMPurify.sanitize(card.title || card.Title),
+      quote: DOMPurify.sanitize(card.quote || card.Quote),
+      detail:
+        card.detail || card.Detail
+          ? DOMPurify.sanitize(card.detail || card.Detail)
+          : undefined,
+      imagePath:
+        card.imagePath || card.ImagePath
+          ? DOMPurify.sanitize(card.imagePath || card.ImagePath)
+          : undefined,
+      font: DOMPurify.sanitize(card.font || card.Font),
+      creator: DOMPurify.sanitize(card.creator || card.Creator),
+      username: DOMPurify.sanitize(card.username || card.Username),
+      created: card.created || card.Created || new Date().toISOString(),
     };
 
     return { isValid: true, sanitizedCard };
@@ -116,8 +123,21 @@ const MyCards: React.FC = () => {
   const fetchCards = async (): Promise<Card[]> => {
     try {
       // 使用cardAPI获取卡片数据，更新方法名和响应格式处理
-      const response = await cardAPI.fetchCards();
-      return response.records || [];
+      const response = await fetch('./netlify/functions/getCards');
+      const records = (response as any)?.records || [];
+      return records.map(
+        (record: any): Card => ({
+          id: record.id || record._id || '',
+          title: record.title || record.Title || '未命名卡片',
+          quote: record.quote || record.Quote || '',
+          detail: record.detail || record.Detail,
+          imagePath: record.imagePath || record.ImagePath || record.imageUrl,
+          font: record.font || record.Font || 'sans-serif',
+          creator: record.creator || record.Creator || '未知作者',
+          username: record.username || record.Username || '',
+          created: record.created || record.Created || new Date().toISOString(),
+        })
+      );
     } catch (e) {
       console.error('获取卡片失败:', e);
       // 错误处理，保持向后兼容性
@@ -126,7 +146,7 @@ const MyCards: React.FC = () => {
   };
 
   // 渲染卡片
-  const renderCarouselCard = (card: Card, index: number): JSX.Element => {
+  const renderCarouselCard = (card: Card, index: number): React.JSX.Element => {
     // 随机选择一个渐变背景
     const gradients = [
       'card-gradient-1',
@@ -142,7 +162,7 @@ const MyCards: React.FC = () => {
     // Quote box背景色
     const quoteBoxBg = 'rgba(255, 255, 255, 0.9)';
     // 最终图片路径，使用默认图片如果没有提供
-    const finalImage = card.ImagePath || '/images/mistyblue.png';
+    const finalImage = card.imagePath || '/images/mistyblue.png';
 
     // 格式化创建日期
     const formatCardDate = (dateString: string): string => {
@@ -165,11 +185,11 @@ const MyCards: React.FC = () => {
           style={{
             cursor: 'pointer',
             color: fontColor,
-            fontFamily: card.Font || 'sans-serif',
+            fontFamily: card.font || 'sans-serif',
           }}
         >
           <div className="card-body">
-            <div className="title">{card.Title}</div>
+            <div className="title">{card.title}</div>
             <div
               className="quote-box"
               style={{
@@ -177,11 +197,11 @@ const MyCards: React.FC = () => {
                 color: fontColor,
               }}
             >
-              {card.Quote}
+              {card.quote}
             </div>
             <img
-              src={finalImage}
-              alt={card.Title}
+              src={card.imagePath || '/images/mistyblue.png'}
+              alt={card.title || '卡片图片'}
               style={{
                 width: '90%',
                 height: 'auto',
@@ -190,18 +210,18 @@ const MyCards: React.FC = () => {
                 margin: '0 20px',
               }}
             />
-            {card.Detail && (
+            {card.detail && (
               <div
                 className="detail-text"
                 dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(card.Detail),
+                  __html: DOMPurify.sanitize(card.detail),
                 }}
               />
             )}
           </div>
           <div className="card-footer">
             <div className="footer" style={{ color: fontColor }}>
-              ——{card.Creator || '匿名'} · {formatCardDate(card.Created)}
+              ——{card.creator || '匿名'} · {formatCardDate(card.created)}
             </div>
           </div>
         </div>
@@ -230,7 +250,7 @@ const MyCards: React.FC = () => {
   const groupCardsByDate = (cards: Card[]): { [key: string]: Card[] } => {
     const grouped: { [key: string]: Card[] } = {};
     cards.forEach((card) => {
-      const date = new Date(card.Created).toDateString();
+      const date = new Date(card.created).toDateString();
       if (!grouped[date]) {
         grouped[date] = [];
       }
@@ -240,7 +260,7 @@ const MyCards: React.FC = () => {
     // 对每个日期内的卡片按时间倒序排列
     Object.keys(grouped).forEach((date) => {
       grouped[date].sort(
-        (a, b) => new Date(b.Created).getTime() - new Date(a.Created).getTime()
+        (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime()
       );
     });
 
@@ -284,33 +304,36 @@ const MyCards: React.FC = () => {
       // 先尝试获取用户卡片，如果失败则获取所有卡片并过滤
       try {
         // 尝试直接获取用户卡片，更新方法名和响应格式处理
-        const response = await cardAPI.fetchUserCards();
+        const response = await fetch('./netlify/functions/getUserCards');
         // 适配不同的响应格式
-        const userCards = response.records || [];
+        const userCards = (response as any).records || [];
 
         // 验证和清理卡片数据
         const myCards = userCards
-          .filter((card: any) => card && card.Title && card.Quote)
+          .filter(
+            (card: any) =>
+              card && (card.title || card.Title) && (card.quote || card.Quote)
+          )
           .map((card: any) => {
             // 适配可能的字段名差异
             const normalizedCard = {
               id: card.id || card._id,
-              Title: card.Title,
-              Quote: card.Quote,
-              Detail: card.Detail,
-              ImagePath: card.ImagePath || card.image,
-              Font: card.Font,
-              Creator: card.Creator || card.creator,
-              Username: card.Username || card.username,
-              Created: card.Created || card.created_at,
+              title: card.title || card.Title,
+              quote: card.quote || card.Quote,
+              detail: card.detail || card.Detail,
+              imagePath: card.imagePath || card.ImagePath || card.image,
+              font: card.font || card.Font,
+              creator: card.creator || card.Creator,
+              username: card.username || card.Username,
+              created: card.created || card.Created || card.created_at,
             };
             return sanitizeAndValidateCard(normalizedCard, [
-              'Font',
-              'Title',
-              'Quote',
-              'Creator',
-              'Username',
-              'Created',
+              'font',
+              'title',
+              'quote',
+              'creator',
+              'username',
+              'created',
             ]);
           })
           .filter((result: ValidationResult) => result.isValid)
@@ -325,18 +348,18 @@ const MyCards: React.FC = () => {
 
         // 备用方案：获取所有卡片并过滤
         const allCards = await fetchCards();
-        const username = currentUser.username || currentUser.email;
+        const username = currentUser.username || currentUser.wechatId || '';
         const myCards = allCards
-          .filter((card) => card.Username === username)
-          .filter((card) => card && card.Title && card.Quote)
+          .filter((card) => card.username === username)
+          .filter((card) => card && card.title && card.quote)
           .map((card) =>
             sanitizeAndValidateCard(card, [
-              'Font',
-              'Title',
-              'Quote',
-              'Creator',
-              'Username',
-              'Created',
+              'font',
+              'title',
+              'quote',
+              'creator',
+              'username',
+              'created',
             ])
           )
           .filter((result) => result.isValid)
@@ -550,7 +573,7 @@ const MyCards: React.FC = () => {
                                   sx={{
                                     p: 3,
                                     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    fontFamily: card.Font || 'sans-serif',
+                                    fontFamily: card.font || 'sans-serif',
                                   }}
                                 >
                                   <Typography
@@ -559,18 +582,18 @@ const MyCards: React.FC = () => {
                                     gutterBottom
                                     sx={{ fontWeight: 'bold' }}
                                   >
-                                    {card.Title}
+                                    {card.title}
                                   </Typography>
                                   <Typography variant="body1" paragraph>
-                                    {card.Quote}
+                                    {card.quote}
                                   </Typography>
-                                  {card.ImagePath && (
+                                  {card.imagePath && (
                                     <Box sx={{ mt: 2, mb: 2 }}>
                                       <CardMedia
                                         component="img"
                                         height="140"
-                                        image={card.ImagePath}
-                                        alt={card.Title}
+                                        image={card.imagePath}
+                                        alt={card.title}
                                         sx={{
                                           borderRadius: 1,
                                           objectFit: 'contain',
@@ -590,13 +613,13 @@ const MyCards: React.FC = () => {
                                       variant="body2"
                                       color="textSecondary"
                                     >
-                                      ——{card.Creator || '匿名'}
+                                      ——{card.creator || '匿名'}
                                     </Typography>
                                     <Typography
                                       variant="caption"
                                       color="textSecondary"
                                     >
-                                      {formatDate(card.Created)}
+                                      {formatDate(card.created)}
                                     </Typography>
                                   </Box>
                                 </Box>

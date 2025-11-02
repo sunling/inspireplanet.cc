@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@types/dompurify": "^3.2.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/marked": "^6.0.0",
     "@types/node": "^24.9.2",
     "@types/react": "^19.2.2",

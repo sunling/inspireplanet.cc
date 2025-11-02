@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
-import { cardAPI, commentAPI } from '../service'; // 导入API服务
+// 使用正确的API调用方式
 import {
   Box,
   Container,
@@ -101,26 +101,51 @@ const Cards: React.FC = () => {
   // 加载卡片数据
   useEffect(() => {
     const loadCards = async () => {
-      debugger;
       try {
         setLoading(true);
         setError(null);
 
-        // 使用cardAPI获取卡片数据
-        const response = await cardAPI.fetchCards();
-        const allCards = response.records || [];
-        setCards(allCards);
+        // 直接调用netlify functions接口获取卡片数据，与HTML中的实现保持一致
+        const response = await fetch(`/.netlify/functions/cardsHandler`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // 包含cookies以支持身份验证
+        });
+
+        if (!response.ok) {
+          throw new Error(`获取卡片失败: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // 确保数据格式正确处理
+        const allCards = Array.isArray(data) ? data : data.records || [];
+
+        // 规范化卡片数据格式
+        const normalizedCards = allCards.map((card: any) => ({
+          id: card.id || card.ID || '',
+          Title: card.Title || '',
+          Quote: card.Quote || '',
+          Detail: card.Detail || '',
+          Creator: card.Creator || '未知',
+          Created: card.Created || new Date().toISOString(),
+          Updated: card.Updated || card.Created || new Date().toISOString(),
+          gradient: card.gradient || 'card-gradient-1', // 确保有默认渐变样式
+        }));
+
+        setCards(normalizedCards);
 
         // 过滤有效卡片
-        const validCards = allCards.filter(
-          (card) => card && card.Title && card.Quote
+        const validCards = normalizedCards.filter(
+          (card: Card) => card && card.Title && card.Quote
         );
 
         // 按日期分组
         const grouped = groupCardsByDate(validCards);
         setGroupedCards(grouped);
       } catch (err: any) {
-        debugger;
         console.error('加载卡片失败:', err);
         setError(err.message || '加载失败，请稍后再试');
 
@@ -218,12 +243,22 @@ const Cards: React.FC = () => {
     }
 
     try {
-      // 使用commentAPI提交评论
-      await commentAPI.createComment({
-        cardId,
-        name,
-        comment,
+      // 直接调用netlify functions接口提交评论
+      const response = await fetch('/.netlify/functions/commentsHandler', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardId,
+          name,
+          comment,
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('提交评论失败：' + response.statusText);
+      }
 
       // 显示成功消息
       alert('评论提交成功！');

@@ -98,32 +98,17 @@ const CoverEditor: React.FC = () => {
     try {
       // 在实际应用中，这里会调用API搜索图片
       // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // 模拟搜索结果
-      const mockImages = [
-        {
-          url: 'https://picsum.photos/id/1/1200/600',
-          thumb: 'https://picsum.photos/id/1/200/200',
-          title: '风景1',
-          description: '山脉风景',
+      const response = await fetch('./netlify/functions/searchImages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          url: 'https://picsum.photos/id/2/1200/600',
-          thumb: 'https://picsum.photos/id/2/200/200',
-          title: '风景2',
-          description: '海滩风景',
-        },
-        {
-          url: 'https://picsum.photos/id/3/1200/600',
-          thumb: 'https://picsum.photos/id/3/200/200',
-          title: '风景3',
-          description: '森林风景',
-        },
-      ];
+        body: JSON.stringify({ query: searchText }),
+      });
+      const data = await response.json();
 
       setSearchQuery(searchText);
-      setSearchImages(mockImages);
+      setSearchImages(data);
       setShowSearchResults(true);
       setSearchStatus('');
     } catch (error) {

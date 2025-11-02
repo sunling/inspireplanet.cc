@@ -5,7 +5,7 @@
 
 [dev]
   publish = "dist"
-  functions = "public/netlify/functions"
+  functions = "src/netlify/functions"
   framework = "vite"
   targetPort = 5173
   port = 8888
