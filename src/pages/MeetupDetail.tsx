@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { meetupAPI, rsvpAPI } from '../service/index';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -103,16 +104,57 @@ const MeetupDetail: React.FC = () => {
     setError(null);
 
     try {
-      // 模拟API调用
-      // 实际环境中应该使用: fetch(`/.netlify/functions/meetupHandler?id=${meetupId}`)
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // 使用meetupAPI获取活动详情
+      const meetupData = await meetupAPI.fetchMeetupById(meetupId);
 
-      // 模拟数据
+      if (!meetupData) {
+        throw new Error('活动不存在');
+      }
+
+      // 处理数据格式，确保符合Meetup接口要求
+      const processedMeetup: Meetup = {
+        id: meetupData.id || meetupData._id,
+        title: meetupData.title || '未命名活动',
+        description: meetupData.description || '',
+        type: (meetupData.type || 'online') as
+          | 'online'
+          | 'offline'
+          | 'culture'
+          | 'outdoor',
+        mode: meetupData.mode as 'online' | 'offline',
+        datetime: meetupData.datetime || new Date().toISOString(),
+        location: meetupData.location,
+        fee: meetupData.fee,
+        max_ppl: meetupData.max_ppl,
+        max_participants: meetupData.max_participants,
+        duration: meetupData.duration,
+        organizer: meetupData.organizer || '未知组织者',
+        creator: meetupData.creator,
+        contact: meetupData.contact || '',
+        qr_image_url: meetupData.qr_image_url,
+        status: (meetupData.status || 'upcoming') as
+          | 'upcoming'
+          | 'ongoing'
+          | 'ended',
+        created_at: meetupData.created_at || new Date().toISOString(),
+        participant_count: meetupData.participant_count || 0,
+        cover: meetupData.cover,
+      };
+
+      setMeetup(processedMeetup);
+
+      // 加载参与者信息
+      loadParticipants(meetupId);
+    } catch (err) {
+      console.error('加载活动详情失败:', err);
+      setError('加载活动详情失败，请稍后重试');
+
+      // 设置备用数据，避免页面显示空白
       const mockMeetup: Meetup = {
         id: meetupId,
         title: '技术交流分享会',
         description:
-          '一起探讨前沿技术发展趋势，分享项目经验和技术心得。无论你是技术专家还是刚入门的学习者，都欢迎参与讨论！\n\n本次活动将涵盖：\n- 前端框架最新进展\n- 后端架构设计\n- DevOps实践\n- AI在软件开发中的应用\n\n欢迎大家积极参与！',
+          '一起探讨前沿技术发展趋势，分享项目经验和技术心得。无论你是技术专家还是刚入门的学习者，都欢迎参与讨论！',
         type: 'online',
         datetime: '2024-02-15T19:00:00',
         duration: 2,
@@ -124,16 +166,9 @@ const MeetupDetail: React.FC = () => {
         status: 'upcoming',
         created_at: '2024-01-20T10:00:00Z',
         participant_count: 25,
-        cover: '/images/tech-meetup.jpg',
       };
-
       setMeetup(mockMeetup);
-
-      // 加载参与者信息
-      loadParticipants(meetupId);
-    } catch (err) {
-      console.error('加载活动详情失败:', err);
-      setError('加载活动详情失败，请稍后重试');
+      setParticipants([{ name: '王五' }, { name: '赵六' }]);
     } finally {
       setIsLoading(false);
     }
@@ -142,22 +177,23 @@ const MeetupDetail: React.FC = () => {
   // 加载参与者信息
   const loadParticipants = async (meetupId: string) => {
     try {
-      // 模拟API调用
-      // 实际环境中应该使用: fetch(`/.netlify/functions/rsvpHandler?meetup_id=${meetupId}`)
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // 使用rsvpAPI获取参与者列表
+      const response = await rsvpAPI.fetchRSVPs(meetupId);
+      const fetchedParticipants = response.records || [];
 
-      // 模拟参与者数据
-      const mockParticipants: Participant[] = [
-        { name: '王五' },
-        { name: '赵六' },
-        { name: '钱七' },
-        { name: '孙八' },
-        { name: '周九' },
-      ];
+      // 处理数据格式
+      const processedParticipants: Participant[] = fetchedParticipants.map(
+        (record: any) => ({
+          name: record.name || '未知用户',
+          wechat_id: record.wechat_id,
+          created_at: record.created_at,
+        })
+      );
 
-      setParticipants(mockParticipants);
+      setParticipants(processedParticipants);
     } catch (err) {
       console.error('加载参与者信息失败:', err);
+      // 出错时不设置错误状态，避免影响主页面显示
     }
   };
 
@@ -215,11 +251,8 @@ const MeetupDetail: React.FC = () => {
     wechatId: string
   ): Promise<boolean> => {
     try {
-      // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      // 模拟返回未报名状态
-      return false;
+      // 使用rsvpAPI检查是否已报名
+      return await rsvpAPI.checkRSVP(meetupId, wechatId);
     } catch (error) {
       console.error('检查报名状态失败:', error);
       return false;
@@ -238,12 +271,12 @@ const MeetupDetail: React.FC = () => {
     setSubmitStatus('loading');
 
     try {
-      const userInfoStr =
-        localStorage.getItem('userInfo') || localStorage.getItem('userData');
-      const userInfo: UserInfo = userInfoStr ? JSON.parse(userInfoStr) : {};
-
-      // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // 使用rsvpAPI提交报名信息
+      await rsvpAPI.createRSVP({
+        meetup_id: meetup.id,
+        wechat_id: rsvpForm.wechatId,
+        name: rsvpForm.name,
+      });
 
       // 模拟成功响应
       setSubmitStatus('success');
@@ -333,10 +366,10 @@ const MeetupDetail: React.FC = () => {
   // 格式化描述文本（支持换行）
   const formatDescription = (text: string) => {
     return text.split('\n').map((line, index) => (
-      <React.Fragment key={index}>
+      <div key={index}>
         {line}
         {index < text.split('\n').length - 1 && <br />}
-      </React.Fragment>
+      </div>
     ));
   };
 

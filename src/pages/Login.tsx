@@ -15,6 +15,7 @@ import {
   useTheme,
   Link,
 } from '@mui/material';
+import { authAPI } from '../service'; // 导入认证API服务
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -115,43 +116,33 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      // 准备发送到服务器的数据
-      const data = {
-        action: currentMode,
-        email: formData.email,
-        password: formData.password,
-      };
+      let result;
 
-      if (currentMode === 'register') {
-        Object.assign(data, {
+      if (currentMode === 'login') {
+        // 使用authAPI进行登录
+        result = await authAPI.login({
+          username: formData.email,
+          password: formData.password,
+        });
+      } else {
+        // 使用authAPI进行注册
+        result = await authAPI.register({
           name: formData.name,
           username: formData.username,
-          wechat: formData.wechat,
+          email: formData.email,
+          password: formData.password,
+          ...(formData.wechat ? { wechat: formData.wechat } : {}),
         });
       }
 
-      // 模拟API调用
-      // 实际环境中应该使用fetch('/.netlify/functions/authHandler', ...)
-      // 这里为了演示，使用模拟数据
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // 模拟网络延迟
-
-      // 模拟成功响应
-      const mockResponse = {
-        user: {
-          id: 'user_123',
-          name: formData.name || '用户',
-          email: formData.email,
-          username: formData.username || 'user123',
-        },
-        token: 'mock_token_123456',
-        message: currentMode === 'login' ? '登录成功' : '注册成功',
-      };
-
       // 保存用户信息和token到localStorage
-      localStorage.setItem('authToken', mockResponse.token);
-      localStorage.setItem('userData', JSON.stringify(mockResponse.user));
+      localStorage.setItem('authToken', result?.token || '');
+      localStorage.setItem('userToken', result?.token || ''); // 兼容旧的token存储键名
+      localStorage.setItem('userData', JSON.stringify(result?.user || {}));
+      localStorage.setItem('userInfo', JSON.stringify(result?.user || {})); // 兼容旧的userInfo存储键名
+      localStorage.setItem('userId', result?.user?.id || ''); // 兼容旧的userId存储
 
-      setSuccess(mockResponse.message);
+      setSuccess(currentMode === 'login' ? '登录成功' : '注册成功');
 
       // 延迟跳转，让用户看到成功消息
       setTimeout(() => {
@@ -161,9 +152,9 @@ const Login: React.FC = () => {
           navigate('/cards');
         }
       }, 800);
-    } catch (err) {
-      console.error('认证错误:', err);
-      setError('网络错误，请检查网络连接后重试');
+    } catch (error: any) {
+      console.error('认证错误:', error);
+      setError(error.message || '网络错误，请检查网络连接后重试');
     } finally {
       setLoading(false);
     }

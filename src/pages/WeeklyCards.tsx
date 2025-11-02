@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import html2canvas from 'html2canvas';
+import { weeklyCardAPI } from '../service'; // 导入API服务
 import {
   Box,
   Container,
@@ -16,6 +17,7 @@ import {
   useMediaQuery,
   useTheme,
   Grid,
+  Alert,
 } from '@mui/material';
 
 // 导入渐变字体颜色配置
@@ -55,61 +57,24 @@ const WeeklyCards: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
-  // 模拟数据
-  const mockWeeklyCards: WeeklyCard[] = [
-    {
-      id: '1',
-      episode: 'EP24',
-      name: '张三',
-      title: '每周思考：创新与坚持',
-      quote: '创新是成功的关键，但坚持才是胜利的保证。',
-      detail:
-        '本周我们讨论了如何在日常工作中保持创新思维，同时培养坚持不懈的精神。创新能够帮助我们找到新的解决方案，而坚持则能让我们将这些方案变为现实。',
-      gradient: 'card-gradient-1',
-      createdAt: '2023-10-01T08:00:00Z',
-      updatedAt: '2023-10-01T08:00:00Z',
-    },
-    {
-      id: '2',
-      episode: 'EP24',
-      name: '李四',
-      title: '团队协作的力量',
-      quote: '一个人可以走得很快，但一群人可以走得更远。',
-      detail:
-        '团队协作能够汇集不同的想法和技能，创造出超越个人能力的成果。通过有效的沟通和协作，我们能够解决更复杂的问题。',
-      gradient: 'card-gradient-2',
-      createdAt: '2023-10-01T09:00:00Z',
-      updatedAt: '2023-10-01T09:00:00Z',
-    },
-    {
-      id: '3',
-      episode: 'EP23',
-      name: '王五',
-      title: '成长型思维',
-      quote: '挑战不是阻碍，而是成长的机会。',
-      detail:
-        '拥有成长型思维的人相信能力可以通过努力和学习来发展。面对困难时，他们不会轻易放弃，而是将其视为提升自己的机会。',
-      gradient: 'card-gradient-3',
-      createdAt: '2023-09-24T10:00:00Z',
-      updatedAt: '2023-09-24T10:00:00Z',
-    },
-  ];
+  // 定义错误状态
+  const [error, setError] = useState<string | null>(null);
 
   // 加载卡片数据
   useEffect(() => {
     const loadWeeklyCards = async () => {
       try {
         setLoading(true);
-        // 模拟API调用延迟
-        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        // 使用模拟数据
-        setCards(mockWeeklyCards);
-        setFilteredCards(mockWeeklyCards);
+        // 使用weeklyCardAPI获取每周卡片数据
+        const response = await weeklyCardAPI.fetchWeeklyCards();
+        const allCards = response?.records || [];
+        setCards(allCards);
+        setFilteredCards(allCards);
 
         // 提取所有唯一的期数
         const uniqueEpisodes = Array.from(
-          new Set(mockWeeklyCards.map((card) => card.episode))
+          new Set(allCards.map((card) => card.episode))
         ).sort((a, b) => {
           // 按期数降序排序
           return (
@@ -117,8 +82,60 @@ const WeeklyCards: React.FC = () => {
           );
         });
         setEpisodes(uniqueEpisodes);
-      } catch (error) {
+      } catch (error: any) {
         console.error('加载周刊卡片失败:', error);
+
+        // 加载失败时使用备用数据
+        const fallbackCards: WeeklyCard[] = [
+          {
+            id: '1',
+            episode: 'EP24',
+            name: '张三',
+            title: '每周思考：创新与坚持',
+            quote: '创新是成功的关键，但坚持才是胜利的保证。',
+            detail:
+              '本周我们讨论了如何在日常工作中保持创新思维，同时培养坚持不懈的精神。创新能够帮助我们找到新的解决方案，而坚持则能让我们将这些方案变为现实。',
+            gradient: 'card-gradient-1',
+            createdAt: '2023-10-01T08:00:00Z',
+            updatedAt: '2023-10-01T08:00:00Z',
+          },
+          {
+            id: '2',
+            episode: 'EP24',
+            name: '李四',
+            title: '团队协作的力量',
+            quote: '一个人可以走得很快，但一群人可以走得更远。',
+            detail:
+              '团队协作能够汇集不同的想法和技能，创造出超越个人能力的成果。通过有效的沟通和协作，我们能够解决更复杂的问题。',
+            gradient: 'card-gradient-2',
+            createdAt: '2023-10-01T09:00:00Z',
+            updatedAt: '2023-10-01T09:00:00Z',
+          },
+          {
+            id: '3',
+            episode: 'EP23',
+            name: '王五',
+            title: '成长型思维',
+            quote: '挑战不是阻碍，而是成长的机会。',
+            detail:
+              '拥有成长型思维的人相信能力可以通过努力和学习来发展。面对困难时，他们不会轻易放弃，而是将其视为提升自己的机会。',
+            gradient: 'card-gradient-3',
+            createdAt: '2023-09-24T10:00:00Z',
+            updatedAt: '2023-09-24T10:00:00Z',
+          },
+        ];
+
+        setCards(fallbackCards);
+        setFilteredCards(fallbackCards);
+
+        const uniqueEpisodes = Array.from(
+          new Set(fallbackCards.map((card) => card.episode))
+        ).sort((a, b) => {
+          return (
+            parseInt(b.replace(/\D/g, '')) - parseInt(a.replace(/\D/g, ''))
+          );
+        });
+        setEpisodes(uniqueEpisodes);
       } finally {
         setLoading(false);
       }
@@ -405,10 +422,9 @@ const WeeklyCards: React.FC = () => {
                               />
                             </Box>
 
-                            <Typography
-                              variant="body2"
+                            <Box
                               sx={{
-                                color: fontColor,
+                                fontSize: '1rem',
                                 lineHeight: 1.6,
                                 mb: 3,
                                 flexGrow: 1,
@@ -419,7 +435,7 @@ const WeeklyCards: React.FC = () => {
                                   __html: DOMPurify.sanitize(card.detail),
                                 }}
                               />
-                            </Typography>
+                            </Box>
 
                             <Box
                               sx={{

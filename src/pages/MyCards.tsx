@@ -1,6 +1,7 @@
 import React, { useState, useEffect, JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
+import { cardAPI } from '../service'; // 导入卡片API服务
 import {
   Box,
   Container,
@@ -70,7 +71,9 @@ const MyCards: React.FC = () => {
   // 获取当前登录用户信息
   const getCurrentUser = (): any => {
     try {
-      const userStr = localStorage.getItem('userData');
+      // 尝试从localStorage获取用户信息，支持多种存储键名
+      const userStr =
+        localStorage.getItem('userInfo') || localStorage.getItem('userData');
       if (userStr) {
         return JSON.parse(userStr);
       }
@@ -112,38 +115,13 @@ const MyCards: React.FC = () => {
   // 获取卡片数据
   const fetchCards = async (): Promise<Card[]> => {
     try {
-      // 在实际应用中，这里应该调用API获取卡片数据
-      // 这里使用模拟数据
-      const response = await fetch('/.netlify/functions/getCards');
-      if (!response.ok) {
-        throw new Error('获取卡片数据失败');
-      }
-      return await response.json();
+      // 使用cardAPI获取卡片数据，更新方法名和响应格式处理
+      const response = await cardAPI.fetchCards();
+      return response.records || [];
     } catch (e) {
       console.error('获取卡片失败:', e);
-      // 返回模拟数据
-      return [
-        {
-          id: '1',
-          Title: '生活的艺术',
-          Quote: '生活不是等待暴风雨过去，而是学会在雨中跳舞。',
-          Detail: '每个人的生活都会遇到困难和挑战，关键是我们如何面对。',
-          Font: 'font-serif',
-          Creator: '张三',
-          Username: 'zhangsan',
-          Created: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          Title: '梦想的力量',
-          Quote: '世界会向那些有目标和远见的人让路。',
-          Detail: '有了明确的目标，就有了前进的方向。',
-          Font: 'font-sans',
-          Creator: '张三',
-          Username: 'zhangsan',
-          Created: new Date(Date.now() - 86400000).toISOString(), // 昨天
-        },
-      ];
+      // 错误处理，保持向后兼容性
+      return [];
     }
   };
 
@@ -302,37 +280,76 @@ const MyCards: React.FC = () => {
         return;
       }
 
-      // 获取所有卡片
-      const allCards = await fetchCards();
+      // 使用cardAPI获取用户自己的卡片
+      // 先尝试获取用户卡片，如果失败则获取所有卡片并过滤
+      try {
+        // 尝试直接获取用户卡片，更新方法名和响应格式处理
+        const response = await cardAPI.fetchUserCards();
+        // 适配不同的响应格式
+        const userCards = response.records || [];
 
-      if (!allCards || allCards.length === 0) {
-        setCards([]);
-        setLoading(false);
-        return;
+        // 验证和清理卡片数据
+        const myCards = userCards
+          .filter((card: any) => card && card.Title && card.Quote)
+          .map((card: any) => {
+            // 适配可能的字段名差异
+            const normalizedCard = {
+              id: card.id || card._id,
+              Title: card.Title,
+              Quote: card.Quote,
+              Detail: card.Detail,
+              ImagePath: card.ImagePath || card.image,
+              Font: card.Font,
+              Creator: card.Creator || card.creator,
+              Username: card.Username || card.username,
+              Created: card.Created || card.created_at,
+            };
+            return sanitizeAndValidateCard(normalizedCard, [
+              'Font',
+              'Title',
+              'Quote',
+              'Creator',
+              'Username',
+              'Created',
+            ]);
+          })
+          .filter((result: ValidationResult) => result.isValid)
+          .map((result: ValidationResult) => result.sanitizedCard!);
+
+        setCards(myCards);
+      } catch (userCardsError) {
+        console.warn(
+          '获取用户卡片失败，尝试获取所有卡片并过滤:',
+          userCardsError
+        );
+
+        // 备用方案：获取所有卡片并过滤
+        const allCards = await fetchCards();
+        const username = currentUser.username || currentUser.email;
+        const myCards = allCards
+          .filter((card) => card.Username === username)
+          .filter((card) => card && card.Title && card.Quote)
+          .map((card) =>
+            sanitizeAndValidateCard(card, [
+              'Font',
+              'Title',
+              'Quote',
+              'Creator',
+              'Username',
+              'Created',
+            ])
+          )
+          .filter((result) => result.isValid)
+          .map((result) => result.sanitizedCard!);
+
+        setCards(myCards);
       }
-
-      // 过滤出当前用户创建的卡片
-      const username = currentUser.username || currentUser.email;
-      const myCards = allCards
-        .filter((card) => card.Username === username)
-        .filter((card) => card && card.Title && card.Quote)
-        .map((card) =>
-          sanitizeAndValidateCard(card, [
-            'Font',
-            'Title',
-            'Quote',
-            'Creator',
-            'Username',
-            'Created',
-          ])
-        )
-        .filter((result) => result.isValid)
-        .map((result) => result.sanitizedCard!);
-
-      setCards(myCards);
     } catch (err) {
       console.error('加载卡片失败:', err);
       setError('加载失败，请稍后再试');
+
+      // 设置空数组作为备用，避免渲染错误
+      setCards([]);
     } finally {
       setLoading(false);
     }

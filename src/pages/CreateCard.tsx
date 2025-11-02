@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import { cardAPI, imageAPI } from '../service'; // 导入卡片API服务
 import {
   Box,
   Container,
@@ -107,12 +108,14 @@ const CreateCard: React.FC = () => {
   useEffect(() => {
     const checkUserLoginAndFillCreator = () => {
       try {
-        const userData = localStorage.getItem('userData');
+        // 支持多种用户数据存储键名
+        const userData =
+          localStorage.getItem('userInfo') || localStorage.getItem('userData');
         if (userData) {
           const user = JSON.parse(userData);
           setCardData((prev) => ({
             ...prev,
-            Creator: user.name || user.username || '匿名用户',
+            Creator: user.name || user.username || user.email || '匿名用户',
             Username: user.username || user.email,
           }));
         }
@@ -219,50 +222,17 @@ const CreateCard: React.FC = () => {
     setSearchError(null);
 
     try {
-      // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // 模拟图片搜索结果
-      const mockImages: SearchImageResult[] = [
-        {
-          url: 'https://picsum.photos/id/1005/800/500',
-          thumb: 'https://picsum.photos/id/1005/200/120',
-          title: '自然风景',
-          description: '宁静的自然风景',
-        },
-        {
-          url: 'https://picsum.photos/id/1015/800/500',
-          thumb: 'https://picsum.photos/id/1015/200/120',
-          title: '山川河流',
-          description: '壮观的山川河流',
-        },
-        {
-          url: 'https://picsum.photos/id/1025/800/500',
-          thumb: 'https://picsum.photos/id/1025/200/120',
-          title: '日出日落',
-          description: '美丽的日出日落',
-        },
-        {
-          url: 'https://picsum.photos/id/1035/800/500',
-          thumb: 'https://picsum.photos/id/1035/200/120',
-          title: '城市风光',
-          description: '现代化城市风光',
-        },
-        {
-          url: 'https://picsum.photos/id/1045/800/500',
-          thumb: 'https://picsum.photos/id/1045/200/120',
-          title: '星空夜景',
-          description: '梦幻的星空夜景',
-        },
-        {
-          url: 'https://picsum.photos/id/1055/800/500',
-          thumb: 'https://picsum.photos/id/1055/200/120',
-          title: '海洋波浪',
-          description: '浩瀚的海洋波浪',
-        },
-      ];
-
-      setSearchImages(mockImages);
+      // 使用imageAPI搜索图片
+      const response = await imageAPI.searchImage(combinedText);
+      const results: SearchImageResult[] = (response.images || []).map(
+        (img: any) => ({
+          url: img.url || '',
+          thumb: img.thumb || img.url || '',
+          title: img.title || '搜索结果图片',
+          description: img.description || img.alt || '',
+        })
+      );
+      setSearchImages(results);
     } catch (error) {
       console.error('搜索图片失败:', error);
       setSearchError('搜索图片失败，请重试');
@@ -402,21 +372,15 @@ const CreateCard: React.FC = () => {
         ImagePath: customImage || selectedSearchImage,
       };
 
-      // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // 模拟成功响应
-      const mockResponse = {
-        id: `card_${Date.now()}`,
-        success: true,
-      };
+      // 使用cardAPI创建卡片
+      const response = await cardAPI.createCard(submitData);
 
       // 显示成功消息并跳转到卡片详情页
       alert('卡片提交成功！');
-      navigate(`/card-detail/${mockResponse.id}`);
-    } catch (error) {
+      navigate(`/card-detail/${response.data?.id || ''}`);
+    } catch (error: any) {
       console.error('提交卡片失败:', error);
-      alert('提交失败，请重试');
+      alert(error.message || '提交失败，请重试');
     } finally {
       setIsSubmitting(false);
     }
@@ -425,11 +389,13 @@ const CreateCard: React.FC = () => {
   // 加载最新卡片轮播
   const loadLatestCardsCarousel = async () => {
     try {
-      // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // 模拟卡片数据
-      const mockCards: CarouselCardData[] = [
+      // 使用cardAPI获取最新卡片
+      const response = await cardAPI.fetchCards();
+      setCarouselCards(response.records || []);
+    } catch (error) {
+      console.error('加载最新卡片失败:', error);
+      // 加载失败时使用备用数据
+      const fallbackCards: CarouselCardData[] = [
         {
           id: '1',
           Title: '生命的意义',
@@ -456,10 +422,7 @@ const CreateCard: React.FC = () => {
           GradientClass: 'card-gradient-3',
         },
       ];
-
-      setCarouselCards(mockCards);
-    } catch (error) {
-      console.error('加载最新卡片失败:', error);
+      setCarouselCards(fallbackCards);
     }
   };
 

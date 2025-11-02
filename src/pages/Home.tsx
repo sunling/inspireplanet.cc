@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { weeklyCardAPI } from '../service';
 import { Link } from 'react-router-dom';
 import {
   Box,
@@ -61,48 +62,59 @@ const Home: React.FC = () => {
     setError(null);
 
     try {
-      // 这里应该调用API获取卡片数据
-      // 现在使用模拟数据
-      const mockCards: CardData[] = [
-        {
-          id: '1',
-          title: '生命的意义',
-          quote:
-            '生命的意义不在于你呼吸了多少次，而在于有多少个让你屏住呼吸的时刻。',
-          coverUrl: '/images/MorningRunlight.png',
-          author: '匿名用户',
-          date: '2024-01-15',
-          tags: ['人生感悟', '哲理'],
-        },
-        {
-          id: '2',
-          title: '创新思维',
-          quote: '创新不是推翻一切，而是在现有基础上看到新的可能性。',
-          coverUrl: '/images/mistyblue.png',
-          author: '李小明',
-          date: '2024-01-14',
-          tags: ['创新', '思维'],
-        },
-        {
-          id: '3',
-          title: '坚持不懈',
-          quote: '成功的秘诀在于即使看不到希望，也依然选择坚持。',
-          coverUrl: '/images/MistyMorningOnaCountryRoad.png',
-          author: '王小红',
-          date: '2024-01-13',
-          tags: ['坚持', '成功'],
-        },
-      ];
+      // 使用weeklyCardAPI获取最新卡片数据
+      const response = await weeklyCardAPI.fetchLatestWeeklyCards();
+      debugger;
+      const allCards = response?.records || [];
 
-      // 模拟网络延迟
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // 转换数据格式以适应页面显示需求
+      const formattedCards: CardData[] = allCards
+        .map((card: any) => ({
+          id: card.id,
+          title: card.title || card.name || '未命名卡片',
+          quote: card.quote || '',
+          coverUrl: card.imageUrl || '/images/mistyblue.png',
+          author: card.name || '未知作者',
+          date: card.createdAt
+            ? new Date(card.createdAt).toISOString().split('T')[0]
+            : '',
+          tags: card.tags || ['启发卡片'],
+        }))
+        .filter((card: CardData) => card.title && card.quote); // 过滤无效卡片
 
-      setCards(mockCards);
+      setCards(
+        formattedCards.length > 0
+          ? formattedCards
+          : [
+              {
+                id: 'fallback-1',
+                title: '欢迎来到启发星球',
+                quote: '在这里，我们一起探索思想的边界，发现生活的灵感。',
+                coverUrl: '/images/mistyblue.png',
+                author: '启发星球',
+                date: new Date().toISOString().split('T')[0],
+                tags: ['欢迎', '灵感'],
+              },
+            ]
+      );
       setIsLoading(false);
-    } catch (err) {
+    } catch (err: any) {
+      debugger;
+      console.error('加载卡片错误:', err);
+      // 加载失败时使用默认数据
+      setCards([
+        {
+          id: 'error-1',
+          title: '网络连接失败',
+          quote: '无法连接到服务器，请检查网络连接后重试。',
+          coverUrl: '/images/mistyblue.png',
+          author: '系统提示',
+          date: new Date().toISOString().split('T')[0],
+          tags: ['提示', '网络'],
+        },
+      ]);
       setError('加载卡片失败，请稍后重试');
       setIsLoading(false);
-      console.error('加载卡片错误:', err);
     }
   };
 

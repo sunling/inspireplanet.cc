@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import { cardAPI, commentAPI } from '../service'; // 导入API服务
 import {
   Box,
   Container,
@@ -75,27 +76,28 @@ const CardDetail: React.FC = () => {
   // 加载卡片详情
   const fetchCardById = async (cardId: string) => {
     try {
-      // 模拟API调用
-      // 实际环境中应该使用: fetch(`${getBaseUrl()}/.netlify/functions/cardsHandler?id=${cardId}`)
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // 使用cardAPI获取卡片详情
+      const response = await cardAPI.fetchCardById(cardId);
 
-      // 模拟数据
-      const mockCard: CardData = {
-        id: cardId,
-        Title: '生命的意义',
-        Quote:
-          '生命的意义不在于你呼吸了多少次，而在于有多少个让你屏住呼吸的时刻。',
-        Detail:
-          '每一个让你心动的瞬间，都是生命赋予你的珍贵礼物。\n\n保持对生活的热爱，珍惜每一个美好的时刻。',
-        ImagePath: '/public/images/MorningRunlight.png',
-        Creator: '匿名用户',
-        Font: 'Noto Sans SC',
-        GradientClass: 'card-gradient-1',
-        Created: new Date().toISOString(),
-        Username: 'user123',
+      // 处理不同格式的响应数据
+      if (!response) return null;
+
+      // 规范化卡片数据格式
+      const normalizedCard: CardData = {
+        id: response.id || response._id || '',
+        Title: response.Title || response.title || '未命名卡片',
+        Quote: response.Quote || response.quote || '',
+        Detail: response.Detail || response.detail,
+        ImagePath: response.ImagePath || response.image || response.Upload,
+        Creator: response.Creator || response.creator,
+        Font: response.Font || response.font,
+        GradientClass: response.GradientClass || response.gradient,
+        Created:
+          response.Created || response.created_at || new Date().toISOString(),
+        Username: response.Username || response.username,
       };
 
-      return mockCard;
+      return normalizedCard;
     } catch (error) {
       console.error('获取卡片失败:', error);
       return null;
@@ -105,26 +107,23 @@ const CardDetail: React.FC = () => {
   // 加载评论
   const fetchComments = async (cardId: string) => {
     try {
-      // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      // 使用commentAPI获取评论
+      const response = await commentAPI.fetchComments(cardId);
 
-      // 模拟评论数据
-      const mockComments: CommentData[] = [
-        {
-          id: '1',
-          name: '张三',
-          comment: '写得真好，很有启发！',
-          created: new Date(Date.now() - 3600000).toISOString(), // 1小时前
-        },
-        {
-          id: '2',
-          name: '李四',
-          comment: '这句话让我重新思考了生命的意义。',
-          created: new Date(Date.now() - 7200000).toISOString(), // 2小时前
-        },
-      ];
+      // 处理不同格式的响应数据
+      const commentData =
+        response?.records || (response as any)?.comments || [];
 
-      return mockComments;
+      // 规范化评论数据格式
+      return commentData.map(
+        (comment: any): CommentData => ({
+          id: comment.id || comment._id,
+          name: comment.name || '匿名用户',
+          comment: comment.comment || comment.content || '',
+          created:
+            comment.created || comment.created_at || new Date().toISOString(),
+        })
+      );
     } catch (error) {
       console.error('获取评论失败:', error);
       return [];
@@ -134,7 +133,9 @@ const CardDetail: React.FC = () => {
   // 检查用户是否可以编辑卡片
   const checkEditPermission = (cardData: CardData) => {
     try {
-      const userData = localStorage.getItem('userData');
+      // 支持多种用户数据存储键名
+      const userData =
+        localStorage.getItem('userInfo') || localStorage.getItem('userData');
       if (!userData) {
         setCanEdit(false);
         return;
@@ -161,11 +162,22 @@ const CardDetail: React.FC = () => {
       }
 
       setIsLoading(true);
+      setError(null);
+
       try {
         // 加载卡片详情
         const cardData = await fetchCardById(id);
         if (!cardData) {
           setError('未找到该卡片，可能已被删除或ID无效。');
+
+          // 设置默认卡片数据避免页面渲染错误
+          const defaultCard: CardData = {
+            id: id,
+            Title: '卡片未找到',
+            Quote: '该卡片可能已被删除或ID无效',
+            Created: new Date().toISOString(),
+          };
+          setCard(defaultCard);
           setIsLoading(false);
           return;
         }
@@ -179,6 +191,15 @@ const CardDetail: React.FC = () => {
       } catch (err) {
         console.error('加载卡片详情失败:', err);
         setError('加载失败，请稍后再试。');
+
+        // 设置默认卡片数据避免页面渲染错误
+        const defaultCard: CardData = {
+          id: id,
+          Title: '加载失败',
+          Quote: '卡片加载过程中发生错误',
+          Created: new Date().toISOString(),
+        };
+        setCard(defaultCard);
       } finally {
         setIsLoading(false);
       }
@@ -229,12 +250,20 @@ const CardDetail: React.FC = () => {
 
     setSubmittingComment(true);
     try {
-      // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // 使用commentAPI提交评论
+      const response = await commentAPI.createComment({
+        cardId: id,
+        name: commentForm.name,
+        comment: commentForm.content,
+      });
+
+      // 处理不同格式的响应数据
+      const commentId =
+        response?.data?.id || (response as any)?.id || (response as any)?._id;
 
       // 添加新评论
       const newComment: CommentData = {
-        id: Date.now().toString(),
+        id: commentId,
         name: commentForm.name,
         comment: commentForm.content,
         created: new Date().toISOString(),
@@ -246,9 +275,9 @@ const CardDetail: React.FC = () => {
       setCommentForm({ name: '', content: '' });
 
       alert('评论提交成功！');
-    } catch (error) {
+    } catch (error: any) {
       console.error('提交评论失败:', error);
-      alert('评论提交失败，请稍后再试');
+      alert(error.message || '评论提交失败，请稍后再试');
     } finally {
       setSubmittingComment(false);
     }
@@ -344,7 +373,14 @@ const CardDetail: React.FC = () => {
               </span>
             </div>
             <div className="comment-body">
-              {sanitizeContent(comment.comment).replace(/\n/g, '<br>')}
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeContent(comment.comment).replace(
+                    /\n/g,
+                    '<br>'
+                  ),
+                }}
+              />
             </div>
           </div>
         ))}

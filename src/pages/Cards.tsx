@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
+import { cardAPI, commentAPI } from '../service'; // 导入API服务
 import {
   Box,
   Container,
@@ -92,70 +93,71 @@ const Cards: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
-  // 模拟数据
-  const mockCards: Card[] = [
-    {
-      id: '1',
-      Title: '创新思维',
-      Quote: '创新是成功的关键',
-      Detail: '创新能够帮助我们找到新的解决方案，开拓新的市场机会。',
-      Creator: '张三',
-      Created: new Date().toISOString(),
-      gradient: 'card-gradient-1',
-    },
-    {
-      id: '2',
-      Title: '团队协作',
-      Quote: '一个人可以走得很快，但一群人可以走得更远',
-      Detail: '团队协作能够汇集不同的想法和技能，创造出超越个人能力的成果。',
-      Creator: '李四',
-      Created: new Date().toISOString(),
-      gradient: 'card-gradient-2',
-    },
-    {
-      id: '3',
-      Title: '成长型思维',
-      Quote: '挑战不是阻碍，而是成长的机会',
-      Detail: '拥有成长型思维的人相信能力可以通过努力和学习来发展。',
-      Creator: '王五',
-      Created: new Date(Date.now() - 86400000).toISOString(), // 昨天
-      gradient: 'card-gradient-3',
-    },
-    {
-      id: '4',
-      Title: '持续学习',
-      Quote: '活到老，学到老',
-      Detail: '在快速变化的世界中，持续学习是保持竞争力的关键。',
-      Creator: '赵六',
-      Created: new Date(Date.now() - 86400000).toISOString(), // 昨天
-      gradient: 'card-gradient-4',
-    },
-  ];
+  // 定义卡片接口扩展，添加gradient属性
+  interface CardWithGradient extends Card {
+    gradient?: string;
+  }
 
   // 加载卡片数据
   useEffect(() => {
     const loadCards = async () => {
+      debugger;
       try {
         setLoading(true);
         setError(null);
 
-        // 模拟API调用延迟
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // 使用模拟数据
-        setCards(mockCards);
+        // 使用cardAPI获取卡片数据
+        const response = await cardAPI.fetchCards();
+        const allCards = response.records || [];
+        setCards(allCards);
 
         // 过滤有效卡片
-        const validCards = mockCards.filter(
+        const validCards = allCards.filter(
           (card) => card && card.Title && card.Quote
         );
 
         // 按日期分组
         const grouped = groupCardsByDate(validCards);
         setGroupedCards(grouped);
-      } catch (err) {
+      } catch (err: any) {
+        debugger;
         console.error('加载卡片失败:', err);
-        setError('加载失败，请稍后再试');
+        setError(err.message || '加载失败，请稍后再试');
+
+        // 加载失败时使用备用数据
+        const fallbackCards = [
+          {
+            id: '1',
+            Title: '创新思维',
+            Quote: '创新是成功的关键',
+            Detail: '创新能够帮助我们找到新的解决方案，开拓新的市场机会。',
+            Creator: '张三',
+            Created: new Date().toISOString(),
+            gradient: 'card-gradient-1',
+          },
+          {
+            id: '2',
+            Title: '团队协作',
+            Quote: '一个人可以走得很快，但一群人可以走得更远',
+            Detail:
+              '团队协作能够汇集不同的想法和技能，创造出超越个人能力的成果。',
+            Creator: '李四',
+            Created: new Date().toISOString(),
+            gradient: 'card-gradient-2',
+          },
+          {
+            id: '3',
+            Title: '成长型思维',
+            Quote: '挑战不是阻碍，而是成长的机会',
+            Detail: '拥有成长型思维的人相信能力可以通过努力和学习来发展。',
+            Creator: '王五',
+            Created: new Date(Date.now() - 86400000).toISOString(), // 昨天
+            gradient: 'card-gradient-3',
+          },
+        ];
+        setCards(fallbackCards);
+        const grouped = groupCardsByDate(fallbackCards);
+        setGroupedCards(grouped);
       } finally {
         setLoading(false);
       }
@@ -216,14 +218,18 @@ const Cards: React.FC = () => {
     }
 
     try {
-      // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // 使用commentAPI提交评论
+      await commentAPI.createComment({
+        cardId,
+        name,
+        comment,
+      });
 
       // 显示成功消息
       alert('评论提交成功！');
-    } catch (err) {
+    } catch (err: any) {
       console.error('提交评论失败:', err);
-      alert('提交评论失败，请稍后再试');
+      alert(err.message || '提交评论失败，请稍后再试');
     }
   };
 
