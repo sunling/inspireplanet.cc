@@ -92,19 +92,8 @@ const Meetups: React.FC = () => {
     setError(null);
 
     try {
-      // 获取活动列表 - 使用基础URL和正确的请求配置
-      const response = await fetch(`/.netlify/functions/meetupHandler`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error(`加载活动失败: ${response.statusText}`);
-      }
-
+      // 获取活动列表
+      const response = await fetch('/.netlify/functions/meetupHandler');
       const data = await response.json();
       setMeetups(data.meetups || []);
       setFilteredMeetups(data.meetups || []);
