@@ -33,7 +33,7 @@ function getEnvVars(): EnvVars {
     }
 
     // 兜底方案
-    console.warn('环境变量不可用，使用空值');
+    console.error('获取环境变量出错！');
     return {
       SUPABASE_URL: '',
       SUPABASE_ANON_KEY: '',

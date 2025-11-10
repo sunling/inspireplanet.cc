@@ -1,18 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Box,
-  Container,
-  Typography,
-  Divider,
-  useMediaQuery,
-  useTheme,
-  IconButton,
-} from '@mui/material';
+import { Box, Container, Typography, Divider } from '@mui/material';
+import { useResponsive } from '../hooks/useResponsive';
 
 const Footer: React.FC = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { isMobile, theme } = useResponsive();
 
   const footerLinks = [
     { path: '/cover-editor', label: '横版封面制作' },

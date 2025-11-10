@@ -16,8 +16,6 @@ root.render(
   </React.StrictMode>
 );
 
-// 可选：添加全局错误处理
-
 // 全局错误处理
 window.addEventListener('error', (event) => {
   console.error('全局错误:', event.error);

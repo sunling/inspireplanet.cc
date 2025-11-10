@@ -1,3 +1,6 @@
+import { sanitizeInput } from '../../utils/helper';
+import { NetlifyEvent } from '../types/http';
+
 // 定义数据接口
 export interface SearchRequest {
   text: string;
@@ -21,36 +24,6 @@ export interface SearchResponse {
   images: ImageResult[];
   error?: string;
   details?: any;
-}
-
-export interface NetlifyEvent {
-  httpMethod: string;
-  body?: string;
-  headers?: Record<string, string>;
-  queryStringParameters?: Record<string, string>;
-}
-
-/**
- * 清理输入字符串，防止XSS攻击
- * @param input 输入字符串
- * @param maxLength 最大长度
- * @returns 清理后的字符串
- */
-function sanitizeInput(
-  input: string | null | undefined,
-  maxLength: number = 200
-): string {
-  if (!input) return '';
-
-  // Remove HTML tags
-  let sanitized = input.replace(/<[^>]*>?/gm, '');
-
-  // Limit length
-  if (sanitized.length > maxLength) {
-    sanitized = sanitized.substring(0, maxLength);
-  }
-
-  return sanitized.trim();
 }
 
 export async function handler(
@@ -97,7 +70,7 @@ export async function handler(
     }
 
     // 使用processImageSearch函数处理搜索逻辑
-    return await processImageSearch(sanitizeInput(text), orientation);
+    return await processImageSearch(sanitizeInput(text, 200), orientation);
   } catch (error: any) {
     console.error('Handler error:', error);
     return {

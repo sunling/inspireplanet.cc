@@ -1,0 +1,257 @@
+// 导入http工具
+import { AuthResponse, Card, WeeklyCard, WeeklyCardResponse } from '../types';
+import { ApiResponse } from '../types/http';
+import { http } from './http';
+
+// 从http.ts导出所有内容
+export * from './http';
+
+// API端点定义 - 按功能模块分组
+export const API_MAP = {
+  // 认证相关
+  AUTH: {
+    LOGIN: '/auth',
+    REGISTER: '/auth',
+    VERIFY_TOKEN: '/auth',
+    CHANGE_PASSWORD: '/changePassword',
+  },
+
+  // 卡片相关
+  CARDS: {
+    ROOT: '/cards',
+    GET: '/cards',
+    GET_USER_CARDS: '/getUserCards',
+    FETCH: '/fetchCard',
+    UPLOAD: '/uploadCard',
+  },
+
+  // 图片相关
+  IMAGES: {
+    UPLOAD: '/upload-image',
+    SEARCH: '/search-image',
+  },
+
+  // 每周卡片
+  WEEKLY_CARDS: {
+    FETCH: '/week-cards',
+    UPLOAD: '/upload-card',
+    GET_LATEST: '/weekly-card-latest',
+  },
+
+  // 评论相关
+  COMMENTS: {
+    ROOT: '/comments',
+  },
+
+  // 会议相关
+  MEETUPS: {
+    ROOT: '/meetup',
+    RSVP: '/rsvp',
+    CREATE_RSVP: '/rsvp',
+  },
+
+  // 工作坊相关
+  WORKSHOP: {
+    REGISTER: '/workshopHandler',
+  },
+
+  // 联系我们
+  CONTACT: {
+    SEND_EMAIL: '/sendEmail',
+  },
+};
+
+// 组织API请求
+export const api = {
+  // 认证相关API
+  auth: {
+    login: async (
+      email: string,
+      password: string
+    ): Promise<ApiResponse<AuthResponse>> => {
+      return http.post<AuthResponse>(API_MAP.AUTH.LOGIN, {
+        action: 'login',
+        email,
+        password,
+      });
+    },
+
+    register: async (data: {
+      name: string;
+      username: string;
+      email: string;
+      password: string;
+      wechat?: string;
+    }): Promise<ApiResponse<AuthResponse>> => {
+      return http.post<AuthResponse>(API_MAP.AUTH.REGISTER, {
+        action: 'register',
+        ...data,
+      });
+    },
+
+    verifyToken: async (): Promise<ApiResponse<AuthResponse>> => {
+      return http.post<AuthResponse>(API_MAP.AUTH.VERIFY_TOKEN, {
+        action: 'verify',
+      });
+    },
+
+    changePassword: async (data: {
+      email: string;
+      oldPassword: string;
+      newPassword: string;
+    }): Promise<ApiResponse<{ success: boolean }>> => {
+      return http.post<{ success: boolean }>(
+        API_MAP.AUTH.CHANGE_PASSWORD,
+        data
+      );
+    },
+  },
+
+  // 卡片相关API
+  cards: {
+    getAll: async (): Promise<ApiResponse<Card[]>> => {
+      return http.get<Card[]>(API_MAP.CARDS.GET);
+    },
+
+    getById: async (id: string): Promise<ApiResponse<Card>> => {
+      return http.get<Card>(API_MAP.CARDS.FETCH, { id });
+    },
+
+    getUserCards: async (): Promise<ApiResponse<Card[]>> => {
+      return http.get<Card[]>(API_MAP.CARDS.GET_USER_CARDS);
+    },
+
+    create: async (cardData: Partial<Card>): Promise<ApiResponse<Card>> => {
+      return http.post<Card>(API_MAP.CARDS.ROOT, cardData);
+    },
+
+    update: async (
+      id: string,
+      cardData: Partial<Card>
+    ): Promise<ApiResponse<Card>> => {
+      return http.put<Card>(API_MAP.CARDS.ROOT, {
+        id,
+        ...cardData,
+      });
+    },
+
+    delete: async (id: string): Promise<ApiResponse<{ success: boolean }>> => {
+      return http.delete<{ success: boolean }>(API_MAP.CARDS.ROOT, {
+        id,
+      });
+    },
+  },
+
+  // 每周卡片API
+  weeklyCards: {
+    getAll: async (): Promise<ApiResponse<WeeklyCard[]>> => {
+      return http.get<WeeklyCard[]>(API_MAP.WEEKLY_CARDS.FETCH);
+    },
+
+    getLatest: async (): Promise<ApiResponse<WeeklyCardResponse>> => {
+      return http.get<WeeklyCardResponse>(API_MAP.WEEKLY_CARDS.GET_LATEST);
+    },
+  },
+
+  // 评论相关API
+  comments: {
+    getByCardId: async (cardId: string): Promise<ApiResponse<Comment[]>> => {
+      return http.get<Comment[]>(API_MAP.COMMENTS.ROOT, {
+        cardId,
+      });
+    },
+
+    create: async (data: {
+      cardId: string;
+      name: string;
+      comment: string;
+    }): Promise<ApiResponse<Comment>> => {
+      return http.post<Comment>(API_MAP.COMMENTS.ROOT, data);
+    },
+  },
+
+  // 会议相关API
+  meetups: {
+    getAll: async (): Promise<ApiResponse<any[]>> => {
+      return http.get<any[]>(API_MAP.MEETUPS.ROOT);
+    },
+
+    getById: async (id: string): Promise<ApiResponse<any>> => {
+      return http.get<any>(API_MAP.MEETUPS.ROOT, { id });
+    },
+
+    create: async (meetupData: any): Promise<ApiResponse<any>> => {
+      return http.post<any>(API_MAP.MEETUPS.ROOT, meetupData);
+    },
+
+    update: async (id: string, meetupData: any): Promise<ApiResponse<any>> => {
+      return http.put<any>(API_MAP.MEETUPS.ROOT, {
+        id,
+        ...meetupData,
+      });
+    },
+
+    delete: async (id: string): Promise<ApiResponse<{ success: boolean }>> => {
+      return http.delete<{ success: boolean }>(API_MAP.MEETUPS.ROOT, {
+        id,
+      });
+    },
+  },
+
+  // RSVP相关API
+  rsvp: {
+    create: async (rsvpData: any) => {
+      const response = await http.post<any>('/createRSVP', rsvpData);
+      return response;
+    },
+
+    getByMeetupId: async (meetupId: string) => {
+      const response = await http.get<any[]>('/rsvpHandler', { meetupId });
+      return response;
+    },
+  },
+
+  // 图片相关API
+  images: {
+    upload: async (
+      base64Image: string
+    ): Promise<ApiResponse<{ imageUrl: string }>> => {
+      return http.post<{ imageUrl: string }>(API_MAP.IMAGES.UPLOAD, {
+        base64Image,
+      });
+    },
+
+    search: async (
+      text: string,
+      orientation?: string
+    ): Promise<ApiResponse<any[]>> => {
+      return http.post<any[]>(API_MAP.IMAGES.SEARCH, {
+        text,
+        orientation,
+      });
+    },
+  },
+
+  // 工作坊相关API
+  workshop: {
+    register: async (
+      registrationData: any
+    ): Promise<ApiResponse<{ success: boolean }>> => {
+      return http.post<{ success: boolean }>(
+        API_MAP.WORKSHOP.REGISTER,
+        registrationData
+      );
+    },
+  },
+
+  // 联系我们API
+  contact: {
+    sendEmail: async (data: {
+      name: string;
+      email: string;
+      message: string;
+    }): Promise<ApiResponse<{ success: boolean }>> => {
+      return http.post<{ success: boolean }>(API_MAP.CONTACT.SEND_EMAIL, data);
+    },
+  },
+};

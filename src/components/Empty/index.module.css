@@ -1,0 +1,20 @@
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  min-height: 200px;
+}
+
+.empty-message {
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.empty-description {
+  color: #666;
+  max-width: 400px;
+}

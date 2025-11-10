@@ -5,8 +5,6 @@ import {
   SpeedDial,
   SpeedDialIcon,
   SpeedDialAction,
-  useMediaQuery,
-  useTheme,
   Tooltip,
 } from '@mui/material';
 import {
@@ -17,6 +15,7 @@ import {
   Share,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useResponsive } from '../../hooks/useResponsive';
 
 interface FloatingActionsProps {
   showCopyLink?: boolean;
@@ -32,8 +31,7 @@ const FloatingActions: React.FC<FloatingActionsProps> = ({
   onShare,
 }) => {
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { isMobile } = useResponsive();
   const [open, setOpen] = React.useState(false);
 
   const handleCreateCard = () => {

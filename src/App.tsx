@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-// 导入全局样式
-import '/public/styles/main.css';
-import '/public/styles/utility.css';
-import '/public/styles/card-common.css';
-import '/public/styles/card-gradients.css';
-import '/public/styles/page-specific.css'; // 添加缺失的CSS文件
+
+import '@/styles/index.css';
 
 import Header from './components/Header';
 import Footer from './components/Footer';

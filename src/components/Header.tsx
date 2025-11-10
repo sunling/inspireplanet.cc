@@ -13,9 +13,8 @@ import {
   Box,
   Menu,
   MenuItem,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
+import { useResponsive } from '../hooks/useResponsive';
 import {
   Menu as MenuIcon,
   ExpandMore as ChevronDown,
@@ -45,8 +44,7 @@ const Header: React.FC<HeaderProps> = ({
     null
   );
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { isMobile } = useResponsive();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleMenuToggle = () => {
@@ -127,6 +125,7 @@ const Header: React.FC<HeaderProps> = ({
             alt="启发星球"
             style={{ width: 32, height: 32, marginRight: 8 }}
           />
+
           <Typography variant="h6" color="primary">
             启发星球
           </Typography>
@@ -157,7 +156,7 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <AppBar
       position="static"
-      elevation={3}
+      elevation={1}
       sx={{ backgroundColor: '#fff', color: '#333' }}
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
@@ -191,7 +190,10 @@ const Header: React.FC<HeaderProps> = ({
               <Typography
                 variant="h6"
                 component="div"
-                sx={{ fontWeight: 'bold' }}
+                sx={{
+                  fontWeight: 'bold',
+                  display: { xs: 'none', sm: 'block' },
+                }}
               >
                 启发星球
               </Typography>
