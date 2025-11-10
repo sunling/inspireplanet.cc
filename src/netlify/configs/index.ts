@@ -1,5 +1,13 @@
 // 导入http工具
-import { AuthResponse, Card, WeeklyCard, WeeklyCardResponse } from '../types';
+import {
+  AuthResponse,
+  CardItem,
+  WeeklyCard,
+  WeeklyCardResponse,
+  Comment,
+  Meetup,
+  Workshop,
+} from '../types';
 import { ApiResponse } from '../types/http';
 import { http } from './http';
 
@@ -13,29 +21,29 @@ export const API_MAP = {
     LOGIN: '/auth',
     REGISTER: '/auth',
     VERIFY_TOKEN: '/auth',
-    CHANGE_PASSWORD: '/changePassword',
+    CHANGE_PASSWORD: '/auth', // 修改为/auth，通过action区分操作
   },
 
   // 卡片相关
   CARDS: {
     ROOT: '/cards',
     GET: '/cards',
-    GET_USER_CARDS: '/getUserCards',
-    FETCH: '/fetchCard',
+    GET_USER_CARDS: '/cards', // 修改为/cards，通过query参数区分
+    FETCH: '/cards', // 修改为/cards，通过query参数区分
     UPLOAD: '/uploadCard',
   },
 
   // 图片相关
   IMAGES: {
-    UPLOAD: '/upload-image',
-    SEARCH: '/search-image',
+    UPLOAD: '/uploadImage', // 修改为驼峰命名，与函数名对应
+    SEARCH: '/searchImage', // 修改为驼峰命名，与函数名对应
   },
 
   // 每周卡片
   WEEKLY_CARDS: {
-    FETCH: '/week-cards',
-    UPLOAD: '/upload-card',
-    GET_LATEST: '/weekly-card-latest',
+    FETCH: '/weeklyCards', // 修改为驼峰命名，与函数名对应
+    UPLOAD: '/uploadCard',
+    GET_LATEST: '/weeklyCardLatest', // 修改为驼峰命名，与函数名对应
   },
 
   // 评论相关
@@ -47,15 +55,14 @@ export const API_MAP = {
   MEETUPS: {
     ROOT: '/meetup',
     RSVP: '/rsvp',
-    CREATE_RSVP: '/rsvp',
   },
 
   // 工作坊相关
   WORKSHOP: {
-    REGISTER: '/workshopHandler',
+    REGISTER: '/workshop', // 修改为/workshop，与函数名对应
   },
 
-  // 联系我们
+  // 联系我们 - 注意：没有对应的Netlify函数，可能需要创建
   CONTACT: {
     SEND_EMAIL: '/sendEmail',
   },
@@ -109,27 +116,31 @@ export const api = {
 
   // 卡片相关API
   cards: {
-    getAll: async (): Promise<ApiResponse<Card[]>> => {
-      return http.get<Card[]>(API_MAP.CARDS.GET);
+    getAll: async (): Promise<ApiResponse<{ records: CardItem[] }>> => {
+      return http.get<{ records: CardItem[] }>(API_MAP.CARDS.GET);
     },
 
-    getById: async (id: string): Promise<ApiResponse<Card>> => {
-      return http.get<Card>(API_MAP.CARDS.FETCH, { id });
+    getById: async (
+      id: string
+    ): Promise<ApiResponse<{ records: CardItem[] }>> => {
+      return http.get<{ records: CardItem[] }>(API_MAP.CARDS.FETCH, { id });
     },
 
-    getUserCards: async (): Promise<ApiResponse<Card[]>> => {
-      return http.get<Card[]>(API_MAP.CARDS.GET_USER_CARDS);
+    getUserCards: async (): Promise<ApiResponse<CardItem[]>> => {
+      return http.get<CardItem[]>(API_MAP.CARDS.GET_USER_CARDS);
     },
 
-    create: async (cardData: Partial<Card>): Promise<ApiResponse<Card>> => {
-      return http.post<Card>(API_MAP.CARDS.ROOT, cardData);
+    create: async (
+      cardData: Partial<CardItem>
+    ): Promise<ApiResponse<CardItem>> => {
+      return http.post<CardItem>(API_MAP.CARDS.ROOT, cardData);
     },
 
     update: async (
       id: string,
-      cardData: Partial<Card>
-    ): Promise<ApiResponse<Card>> => {
-      return http.put<Card>(API_MAP.CARDS.ROOT, {
+      cardData: Partial<CardItem>
+    ): Promise<ApiResponse<CardItem>> => {
+      return http.put<CardItem>(API_MAP.CARDS.ROOT, {
         id,
         ...cardData,
       });
@@ -155,8 +166,10 @@ export const api = {
 
   // 评论相关API
   comments: {
-    getByCardId: async (cardId: string): Promise<ApiResponse<Comment[]>> => {
-      return http.get<Comment[]>(API_MAP.COMMENTS.ROOT, {
+    getByCardId: async (
+      cardId: string
+    ): Promise<ApiResponse<{ comments: Comment[] }>> => {
+      return http.get<{ comments: Comment[] }>(API_MAP.COMMENTS.ROOT, {
         cardId,
       });
     },
@@ -172,20 +185,25 @@ export const api = {
 
   // 会议相关API
   meetups: {
-    getAll: async (): Promise<ApiResponse<any[]>> => {
-      return http.get<any[]>(API_MAP.MEETUPS.ROOT);
+    getAll: async (): Promise<ApiResponse<Meetup[]>> => {
+      return http.get<Meetup[]>(API_MAP.MEETUPS.ROOT);
     },
 
-    getById: async (id: string): Promise<ApiResponse<any>> => {
-      return http.get<any>(API_MAP.MEETUPS.ROOT, { id });
+    getById: async (id: string): Promise<ApiResponse<Meetup>> => {
+      return http.get<Meetup>(API_MAP.MEETUPS.ROOT, { id });
     },
 
-    create: async (meetupData: any): Promise<ApiResponse<any>> => {
-      return http.post<any>(API_MAP.MEETUPS.ROOT, meetupData);
+    create: async (
+      meetupData: Partial<Meetup>
+    ): Promise<ApiResponse<Meetup>> => {
+      return http.post<Meetup>(API_MAP.MEETUPS.ROOT, meetupData);
     },
 
-    update: async (id: string, meetupData: any): Promise<ApiResponse<any>> => {
-      return http.put<any>(API_MAP.MEETUPS.ROOT, {
+    update: async (
+      id: string,
+      meetupData: Partial<Meetup>
+    ): Promise<ApiResponse<Meetup>> => {
+      return http.put<Meetup>(API_MAP.MEETUPS.ROOT, {
         id,
         ...meetupData,
       });
@@ -200,14 +218,14 @@ export const api = {
 
   // RSVP相关API
   rsvp: {
-    create: async (rsvpData: any) => {
-      const response = await http.post<any>('/createRSVP', rsvpData);
-      return response;
+    create: async (rsvpData: any): Promise<ApiResponse<any>> => {
+      return http.post<any>(API_MAP.MEETUPS.RSVP, rsvpData);
     },
 
-    getByMeetupId: async (meetupId: string) => {
-      const response = await http.get<any[]>('/rsvpHandler', { meetupId });
-      return response;
+    getByMeetupId: async (meetupId: string): Promise<ApiResponse<any[]>> => {
+      return http.get<any[]>(API_MAP.MEETUPS.RSVP, {
+        meetupId,
+      });
     },
   },
 
@@ -235,7 +253,7 @@ export const api = {
   // 工作坊相关API
   workshop: {
     register: async (
-      registrationData: any
+      registrationData: Partial<Workshop>
     ): Promise<ApiResponse<{ success: boolean }>> => {
       return http.post<{ success: boolean }>(
         API_MAP.WORKSHOP.REGISTER,

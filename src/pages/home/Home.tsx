@@ -5,12 +5,12 @@ import { Container, Button } from '@mui/material';
 import { useResponsive } from '../../hooks/useResponsive';
 import { ChevronRight, Star } from '@mui/icons-material';
 import Carousel from '../../components/Carousel';
-import Error from '../../components/Error/index';
 import Empty from '../../components/Empty/index';
 import Loading from '../../components/Loading/index';
 import { api } from '../../netlify/configs';
-import { CardData, WeeklyCard } from '../../netlify/types/index';
+import { WeeklyCard } from '../../netlify/types/index';
 import styles from './home.module.css';
+import ErrorCard from '../../components/ErrorCard/index';
 
 const Home: React.FC = () => {
   const [cards, setCards] = useState<WeeklyCard[]>([]);
@@ -30,7 +30,7 @@ const Home: React.FC = () => {
       const records = response?.data?.records || [];
 
       const formattedCards: WeeklyCard[] = records.filter(
-        (card: CardData) => card.title && card.quote
+        (card: WeeklyCard) => card.title && card.quote
       ); // 过滤无效卡片
 
       setCards(formattedCards);
@@ -55,7 +55,7 @@ const Home: React.FC = () => {
 
     if (error) {
       return (
-        <Error
+        <ErrorCard
           message={error}
           description="请稍后重试或检查网络连接"
           onRetry={fetchLatestCards}

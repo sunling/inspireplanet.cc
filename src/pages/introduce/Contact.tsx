@@ -7,12 +7,12 @@ import {
   Button,
   Grid,
 } from '@mui/material';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
 import { Link as RouterLink } from 'react-router-dom';
-import { api } from '../netlify/configs';
-import Error from '../components/Error';
-import { useResponsive } from '../hooks/useResponsive';
+import { api } from '../../netlify/configs';
+import Error from '../../components/ErrorCard';
+import { useResponsive } from '../../hooks/useResponsive';
 
 interface FormData {
   name: string;

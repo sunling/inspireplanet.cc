@@ -112,7 +112,7 @@ class HttpClient {
       const textResponse = await response.text().catch(() => '');
       return Promise.reject({
         success: false,
-        code: -1,
+        statusCode: -1,
         error: 'Invalid response format',
         details: { text: textResponse },
       });
@@ -127,7 +127,7 @@ class HttpClient {
 
       return Promise.reject({
         success: false,
-        code: -1,
+        statusCode: -1,
         error: errorMessage,
         details: data,
       });
@@ -135,7 +135,7 @@ class HttpClient {
 
     // 统一响应格式
     return Promise.resolve({
-      code: 200,
+      statusCode: 200,
       success: true,
       data: data.data || data,
       message: data.message,
@@ -201,7 +201,7 @@ class HttpClient {
       console.error('HTTP Request Error:', error);
       return {
         success: false,
-        code: -1,
+        statusCode: -1,
         error: error.message || 'Network error',
         details: error,
       };

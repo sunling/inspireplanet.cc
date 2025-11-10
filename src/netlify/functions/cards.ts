@@ -1,8 +1,6 @@
 import { supabase } from '../../database/supabase';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
 import { CardData } from '../types/index';
-import dotenv from 'dotenv';
-dotenv.config();
 
 // 定义数据库卡片记录接口
 export interface CardRecord {

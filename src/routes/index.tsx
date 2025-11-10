@@ -3,7 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 // 导入主组件和工具组件
 import App from '../App';
-import Error from '../components/Error/index';
+import Error from '../components/ErrorCard/index';
 import Loading from '../components/Loading/index';
 
 // 错误边界组件

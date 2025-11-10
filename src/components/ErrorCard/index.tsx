@@ -9,7 +9,7 @@ interface ErrorProps {
   retryText?: string;
 }
 
-const Error: React.FC<ErrorProps> = ({
+const ErrorCard: React.FC<ErrorProps> = ({
   message = '加载失败',
   description = '数据加载出现错误',
   onRetry,
@@ -34,4 +34,4 @@ const Error: React.FC<ErrorProps> = ({
   );
 };
 
-export default Error;
+export default ErrorCard;

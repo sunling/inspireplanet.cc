@@ -2,6 +2,7 @@
 import { supabase } from '../../database/supabase';
 import { getCommonHttpHeader } from '../../utils/http';
 import { NetlifyContext, NetlifyEvent } from '../types/http';
+import { WeeklyCard, WeeklyCardResponse } from '../types';
 
 export async function handler(
   event: NetlifyEvent,
@@ -70,6 +71,7 @@ export async function handler(
       headers,
       body: JSON.stringify({
         error: 'Internal Server Error',
+        success: false,
         records: [],
         message: error instanceof Error ? error.message : String(error),
       } as WeeklyCardResponse),

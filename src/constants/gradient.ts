@@ -33,7 +33,7 @@ export const gradientFontColors: Record<string, string> = {
 };
 
 // 定义卡片渐变样式映射
-const gradientStyles: Record<string, React.CSSProperties> = {
+export const gradientStyles: Record<string, React.CSSProperties> = {
   'card-gradient-1': {
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
   },

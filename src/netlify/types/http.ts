@@ -35,7 +35,7 @@ export interface NetlifyContext {
 
 // 定义通用API响应接口
 export interface ApiResponse<T = any> {
-  code: number;
+  statusCode: number;
   success: boolean;
   data?: T;
   error?: string;

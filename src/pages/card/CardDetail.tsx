@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
-import { api } from '../netlify/configs';
-import { CardData, CommentData } from '../netlify/types/index';
-import { getFontColorForGradient } from '../constants/gradient';
+
 import {
   Box,
   Container,
@@ -13,11 +11,15 @@ import {
   Button,
   TextField,
   Divider,
+  CircularProgress,
 } from '@mui/material';
-import useResponsive from '../hooks/useResponsive';
-import Error from '../components/Error';
-import Loading from '../components/Loading';
-import Empty from '../components/Empty';
+import useResponsive from '@/hooks/useResponsive';
+import { CardItem, Comment } from '@/netlify/types';
+import { api } from '@/netlify/configs';
+import { getFontColorForGradient } from '@/constants/gradient';
+import Loading from '@/components/Loading';
+import Empty from '@/components/Empty';
+import ErrorCard from '@/components/ErrorCard';
 
 const CardDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,9 +27,9 @@ const CardDetail: React.FC = () => {
   const cardRef = useRef<HTMLDivElement>(null);
   const { isMobile, isTablet } = useResponsive();
 
-  const [card, setCard] = useState<CardData | null>(null);
-  const [comments, setComments] = useState<CommentData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [card, setCard] = useState<CardItem | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canEdit, setCanEdit] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -42,45 +44,40 @@ const CardDetail: React.FC = () => {
   // 加载卡片详情
   const fetchCardById = async (cardId: string) => {
     try {
-      // 直接调用netlify functions接口获取卡片详情
-      const response = await fetch(
-        `/.netlify/functions/cardsHandler?id=${cardId}`,
-        {
-          method: 'GET',
-        }
-      );
+      setIsLoading(true);
+      setError(null);
+      // 使用统一API封装获取卡片详情
+      const response = await api.cards.getById(cardId);
 
-      if (!response.ok) {
-        throw new Error('获取卡片失败：' + response.statusText);
+      console.log('加载卡片详情返回', response);
+
+      if (!response.success || !response.data?.records?.length) {
+        throw new Error('获取卡片失败：' + (response.error || '未知错误'));
       }
 
-      const data = await response.json();
-
-      // 处理可能的数组响应，取第一个元素
-      const cardData =
-        Array.isArray(data.records) && data.records.length > 0
-          ? data.records[0]
-          : data;
+      const cardData = response.data.records[0];
 
       // 规范化卡片数据格式
-      const normalizedCard: CardData = {
-        id: cardData.id || cardData._id || '',
+      const normalizedCard: CardItem = {
+        id: cardData.id || '',
         title: cardData.title || '未命名卡片',
         quote: cardData.quote || '',
         detail: cardData.detail,
-        imagePath: cardData.imagePath || cardData.image || cardData.upload,
+        imagePath: cardData.imagePath || cardData.upload,
         creator: cardData.creator,
         font: cardData.font,
-        gradientClass: cardData.gradientClass,
-        created:
-          cardData.created || cardData.created_at || new Date().toISOString(),
-        username: cardData.username || cardData.Username,
+        gradientClass: cardData.gradientClass || 'card-gradient-1',
+        created: cardData.created || new Date().toISOString(),
+        username: cardData.username || cardData.creator,
       };
 
-      return normalizedCard;
+      setCard(normalizedCard);
     } catch (error) {
       console.error('获取卡片失败:', error);
+      setError('获取卡片详情失败');
       return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -89,23 +86,26 @@ const CardDetail: React.FC = () => {
     try {
       // 使用统一的api对象获取评论
       const response = await api.comments.getByCardId(cardId);
+      console.log('fetchComments返回', fetchComments);
 
-      if (!response.success) {
+      if (!response.success || !response.data?.comments?.length) {
         throw new Error('获取评论失败：' + (response.error || '未知错误'));
       }
 
-      const commentData = response.data || [];
+      const commentData = response.data?.comments || [];
 
       // 规范化评论数据格式，支持更多可能的字段名
-      return commentData.map(
-        (comment: any): CommentData => ({
-          id: comment.id || comment._id || comment.ID || '',
+      const list = commentData.map(
+        (comment: any): Comment => ({
+          id: comment.id,
           name: comment.name || comment.creator || '匿名用户',
-          comment: comment.comment || comment.content || comment.Content || '',
-          created:
-            comment.created || comment.created_at || new Date().toISOString(),
+          comment: comment.comment || comment.content || '',
+          created: comment.created || new Date().toISOString(),
+          cardId: comment.cardId || cardId, // 确保cardId存在
+          createdAt: comment.comment.created || new Date().toISOString(),
         })
       );
+      setComments(list);
     } catch (error) {
       console.error('获取评论失败:', error);
       return [];
@@ -113,7 +113,7 @@ const CardDetail: React.FC = () => {
   };
 
   // 检查用户是否可以编辑卡片
-  const checkEditPermission = (cardData: CardData) => {
+  const checkEditPermission = (cardData: CardItem) => {
     try {
       // 支持多种用户数据存储键名
       const userData =
@@ -139,124 +139,13 @@ const CardDetail: React.FC = () => {
     const initPage = async () => {
       if (!id) {
         setError('未找到卡片ID，请返回卡片列表页面重试。');
-        setIsLoading(false);
+
         return;
       }
 
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        // 加载卡片详情 - 使用正确的端点和参数，与HTML中的实现保持一致
-        const response = await fetch(
-          `/.netlify/functions/cardsHandler?id=${encodeURIComponent(id)}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`获取卡片失败: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        // 处理可能的不同数据格式
-        const cardData = Array.isArray(data)
-          ? data[0]
-          : data.records && data.records[0]
-          ? data.records[0]
-          : data;
-
-        if (!cardData) {
-          setError('未找到该卡片，可能已被删除或ID无效。');
-
-          // 设置默认卡片数据避免页面渲染错误
-          const defaultCard: CardData = {
-            id: id,
-            Title: '卡片未找到',
-            Quote: '该卡片可能已被删除或ID无效',
-            Created: new Date().toISOString(),
-          };
-          setCard(defaultCard);
-          return;
-        }
-
-        // 规范化卡片数据格式
-        const normalizedCard: CardData = {
-          id: cardData.id || cardData.ID || cardData._id || '',
-          title: cardData.title || '未命名卡片',
-          quote: cardData.quote || '',
-          detail: cardData.detail,
-          imagePath: cardData.imagePath || cardData.image || cardData.upload,
-          creator: cardData.creator,
-          font: cardData.font,
-          gradientClass: cardData.gradientClass || 'card-gradient-1',
-          created:
-            cardData.created || cardData.created_at || new Date().toISOString(),
-
-          Username: cardData.Username || cardData.username,
-        };
-
-        setCard(normalizedCard);
-        checkEditPermission(normalizedCard);
-
-        // 加载评论
-        const commentsResponse = await fetch(
-          `/.netlify/functions/commentsHandler?cardId=${encodeURIComponent(
-            id
-          )}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          }
-        );
-
-        if (!commentsResponse.ok) {
-          throw new Error(`获取评论失败: ${commentsResponse.statusText}`);
-        }
-
-        const commentsData = await commentsResponse.json();
-        const commentList =
-          commentsData?.records || commentsData?.comments || [];
-
-        // 规范化评论数据格式
-        const normalizedComments = commentList.map(
-          (comment: any): CommentData => ({
-            id: comment.id || comment._id,
-            name: comment.name || comment.Name || '匿名用户',
-            comment:
-              comment.comment || comment.content || comment.Comment || '',
-            created:
-              comment.created || comment.created_at || new Date().toISOString(),
-          })
-        );
-
-        setComments(normalizedComments);
-      } catch (err: any) {
-        console.error('加载卡片详情失败:', err);
-        setError(err.message || '加载失败，请稍后再试。');
-
-        // 设置默认卡片数据避免页面渲染错误
-        const defaultCard: CardData = {
-          id: id,
-          Title: '加载失败',
-          Quote: '卡片加载过程中发生错误',
-          Created: new Date().toISOString(),
-        };
-        setCard(defaultCard);
-      } finally {
-        setIsLoading(false);
-      }
+      fetchCardById(id);
+      fetchComments(id);
     };
-
     initPage();
   }, [id]);
 
@@ -289,7 +178,7 @@ const CardDetail: React.FC = () => {
   // 提交评论
   const handleCommentSubmit = async () => {
     if (!commentForm.name.trim()) {
-      alert('请输入您的名字');
+      alert('请输入您的姓名');
       return;
     }
 
@@ -298,11 +187,16 @@ const CardDetail: React.FC = () => {
       return;
     }
 
-    if (!id) return;
+    if (!id) {
+      alert('卡片ID无效');
+      return;
+    }
 
     setSubmittingComment(true);
+
     try {
-      // 使用统一的api对象提交评论
+      // 使用统一API封装提交评论
+      console.log('正在提交评论...');
       const response = await api.comments.create({
         cardId: id,
         name: commentForm.name,
@@ -310,29 +204,26 @@ const CardDetail: React.FC = () => {
       });
 
       if (!response.success) {
-        throw new Error(response.error || '提交评论失败');
+        throw new Error('提交评论失败：' + (response.error || '未知错误'));
       }
 
-      // 处理不同格式的响应数据
-      const commentId = response.data?.id || response.data?._id;
+      if (!response.data) {
+        return;
+      }
 
-      // 添加新评论
-      const newComment: CommentData = {
-        id: commentId,
-        name: commentForm.name,
-        comment: commentForm.content,
-        created: new Date().toISOString(),
-      };
+      // 创建新评论对象
+      const newComment: Comment = response.data;
 
-      setComments((prev) => [newComment, ...prev]);
+      // 更新评论列表
+      setComments([...comments, newComment]);
 
       // 重置表单
       setCommentForm({ name: '', content: '' });
 
       alert('评论提交成功！');
     } catch (error: any) {
-      console.error('提交评论失败:', error);
-      alert(error.message || '评论提交失败，请稍后再试');
+      console.error('提交评论失败:', error.message || error);
+      alert('提交评论失败，请稍后重试');
     } finally {
       setSubmittingComment(false);
     }
@@ -340,107 +231,48 @@ const CardDetail: React.FC = () => {
 
   // 格式化日期
   const formatCommentDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return `${date.getFullYear()}年${
-      date.getMonth() + 1
-    }月${date.getDate()}日 ${date.getHours()}:${String(
-      date.getMinutes()
-    ).padStart(2, '0')}`;
+    try {
+      if (!dateString) return '日期未知';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return '日期未知';
+      }
+      return `${date.getFullYear()}年${
+        date.getMonth() + 1
+      }月${date.getDate()}日 ${date.getHours()}:${String(
+        date.getMinutes()
+      ).padStart(2, '0')}`;
+    } catch (e) {
+      console.error('日期格式化错误:', e);
+      return '日期未知';
+    }
   };
 
   // 清理和处理内容
-  const sanitizeContent = (content: string | undefined) => {
+  const sanitizeContent = (content: string | undefined | null) => {
     if (!content) return '';
-    return DOMPurify.sanitize(content);
+    try {
+      return DOMPurify.sanitize(String(content));
+    } catch (e) {
+      console.error('内容净化错误:', e);
+      return String(content);
+    }
   };
 
   // 处理Markdown内容
-  const renderMarkdown = (text: string | undefined) => {
+  const renderMarkdown = (text: string | undefined | null) => {
     if (!text) return '';
-    marked.setOptions({ breaks: true });
-    const html = marked.parse(sanitizeContent(text));
-    return <div dangerouslySetInnerHTML={{ __html: html as string }} />;
-  };
-
-  // 渲染卡片内容
-  const renderCard = () => {
-    if (!card) return null;
-    const gradientClass = card.gradientClass || 'card-gradient-1';
-    const fontColor = getFontColorForGradient(gradientClass);
-
-    return (
-      <div className="card-container">
-        <div
-          id="detail-card"
-          ref={cardRef}
-          className={`card ${gradientClass}`}
-          style={{
-            fontFamily: card.font || 'Noto Sans SC, sans-serif',
-            color: fontColor,
-          }}
-        >
-          <div className="card-body">
-            <div className="title">{sanitizeContent(card.Title)}</div>
-            <div
-              className="quote-box"
-              style={{ backgroundColor: `${fontColor}10` }}
-            >
-              {sanitizeContent(card.Quote)}
-            </div>
-            <img
-              src={card.imagePath || '/images/mistyblue.png'}
-              alt={card.title}
-              style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
-            />
-            {card.Detail && (
-              <div className="detail-text">{renderMarkdown(card.Detail)}</div>
-            )}
-          </div>
-          <div className="card-footer">
-            <div className="footer">
-              {card.creator ? `— ${sanitizeContent(card.creator)}` : ''}
-            </div>
-            <div className="date">
-              {new Date(card.Created).toLocaleDateString('zh-CN')}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // 渲染评论列表
-  const renderComments = () => {
-    if (comments.length === 0) {
-      return <div className="no-comments">暂无评论</div>;
+    try {
+      marked.setOptions({ breaks: true });
+      const html = marked.parse(sanitizeContent(text));
+      return (
+        <Fragment>
+          <p dangerouslySetInnerHTML={{ __html: html as string }} />
+        </Fragment>
+      );
+    } catch (e) {
+      return <Fragment>{sanitizeContent(text)}</Fragment>;
     }
-
-    return (
-      <div className="comments-container">
-        {comments.map((comment) => (
-          <div key={comment.id || comment.created} className="comment">
-            <div className="comment-header">
-              <span className="comment-author">
-                {sanitizeContent(comment.name)}
-              </span>
-              <span className="comment-date">
-                {formatCommentDate(comment.created)}
-              </span>
-            </div>
-            <div className="comment-body">
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: sanitizeContent(comment.comment).replace(
-                    /\n/g,
-                    '<br>'
-                  ),
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
   };
 
   return (
@@ -453,16 +285,14 @@ const CardDetail: React.FC = () => {
     >
       <Container maxWidth="md">
         {isLoading ? (
-          <Loading message="加载卡片中..." size="large" color="inherit" />
+          <Loading message="加载卡片中..." />
         ) : error ? (
           <section style={{ marginTop: '2rem' }}>
-            <Error 
+            <ErrorCard
               message="加载失败"
               description={error}
               onRetry={() => {
-                setIsLoading(true);
-                setError(null);
-                loadCardData();
+                window.location.reload();
               }}
               retryText="重试"
             />
@@ -476,7 +306,7 @@ const CardDetail: React.FC = () => {
                 }}
               >
                 返回卡片列表
-              </Button
+              </Button>
             </Box>
           </section>
         ) : (
@@ -578,6 +408,7 @@ const CardDetail: React.FC = () => {
                     </Box>
                     {card?.detail && (
                       <Box sx={{ mt: 4 }}>
+                        {/* todo */}
                         <Typography
                           variant="body1"
                           sx={{
@@ -717,7 +548,7 @@ const CardDetail: React.FC = () => {
 
               <Box sx={{ mb: 6 }}>
                 {comments.length === 0 ? (
-                  <Empty message="暂无评论" description="快来分享您的想法吧" /
+                  <Empty message="暂无评论" description="快来分享您的想法吧" />
                 ) : (
                   comments.map((comment) => (
                     <Paper
@@ -825,11 +656,7 @@ const CardDetail: React.FC = () => {
                     py: 1.2,
                   }}
                 >
-                  {submittingComment ? (
-                    '提交中...'
-                  ) : (
-                    '提交评论'
-                  )}
+                  {submittingComment ? '提交中...' : '提交评论'}
                 </Button>
               </Box>
             </Paper>

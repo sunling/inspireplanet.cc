@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { api, http } from '../netlify/configs';
+import { api, http } from '../../netlify/configs';
 import {
   Box,
   Container,
@@ -22,11 +22,11 @@ import {
 } from '@mui/material';
 import useResponsive from '../hooks/useResponsive';
 
-import Error from '../components/Error';
-import Loading from '../components/Loading';
-import Empty from '../components/Empty';
-import { Meetup } from '../netlify/types/index';
-import { isUpcoming, formatTime, formatDate } from '../utils';
+import Error from '../../components/ErrorCard';
+import Loading from '../../components/Loading';
+import Empty from '../../components/Empty';
+import { Meetup } from '../../netlify/types/index';
+import { isUpcoming, formatTime, formatDate } from '../../utils';
 
 const Meetups: React.FC = () => {
   const navigate = useNavigate();

@@ -28,3 +28,18 @@ export function sanitizeInput(
 
   return sanitized;
 }
+
+// 按日期分组卡片
+export const groupCardsByDate = (cards: any[]): Record<string, any[]> => {
+  const grouped: Record<string, any[]> = {};
+
+  cards.forEach((card) => {
+    const date = new Date(card.created || '').toDateString();
+    if (!grouped[date]) {
+      grouped[date] = [];
+    }
+    grouped[date].push(card);
+  });
+
+  return grouped;
+};

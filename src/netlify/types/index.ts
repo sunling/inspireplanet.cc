@@ -1,7 +1,7 @@
 export * from './http';
 
 // 卡片数据接口 - 统一所有卡片相关的类型
-export interface CardData {
+export interface CardItem {
   id: string;
   title: string;
   quote: string;
@@ -123,19 +123,6 @@ export interface SearchImageResponse {
   }>;
 }
 
-// 定义常用数据类型
-export interface Card {
-  id: string;
-  title: string;
-  content: string;
-  category: string;
-  imageUrl?: string;
-  author?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  // 移除任意属性以增强类型安全
-}
-
 export interface Comment {
   id: string;
   cardId: string;
@@ -155,4 +142,26 @@ export interface AuthResponse {
     [key: string]: any;
   };
   [key: string]: any;
+}
+
+export interface Workshop {
+  id: string;
+  title: string;
+  description: string;
+  type: 'online' | 'offline' | 'culture' | 'outdoor';
+  mode?: 'online' | 'offline';
+  datetime: string;
+  location?: string;
+  fee: string | number | null | undefined;
+  max_ppl?: number;
+  max_participants?: number;
+  duration?: number;
+  organizer: string;
+  creator?: string;
+  contact: string;
+  qr_image_url?: string;
+  status: 'upcoming' | 'ongoing' | 'ended';
+  created_at: string;
+  participant_count: number;
+  cover?: string;
 }
