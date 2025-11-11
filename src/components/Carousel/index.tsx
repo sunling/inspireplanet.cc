@@ -30,7 +30,7 @@ const Carousel: React.FC<CarouselProps> = ({
   items,
   height = '400px',
   autoPlay = true,
-  autoPlayInterval = 5000,
+  autoPlayInterval = 4000,
   showIndicators = true,
   showPlayButton = true,
   className = '',

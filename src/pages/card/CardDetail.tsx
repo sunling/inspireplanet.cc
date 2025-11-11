@@ -20,12 +20,14 @@ import { getFontColorForGradient } from '@/constants/gradient';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
 import ErrorCard from '@/components/ErrorCard';
+import useSnackbar from '@/hooks/useSnackbar';
 
 const CardDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
   const { isMobile, isTablet } = useResponsive();
+  const { showSnackbar, SnackbarComponent } = useSnackbar();
 
   const [card, setCard] = useState<CardItem | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -52,7 +54,9 @@ const CardDetail: React.FC = () => {
       console.log('加载卡片详情返回', response);
 
       if (!response.success || !response.data?.records?.length) {
-        throw new Error('获取卡片失败：' + (response.error || '未知错误'));
+        const text = '获取卡片失败：' + (response.error || '未知错误');
+        showSnackbar.error(text);
+        return;
       }
 
       const cardData = response.data.records[0];
@@ -74,7 +78,9 @@ const CardDetail: React.FC = () => {
       setCard(normalizedCard);
     } catch (error) {
       console.error('获取卡片失败:', error);
+      const text = '获取卡片失败';
       setError('获取卡片详情失败');
+      showSnackbar.error(text);
       return null;
     } finally {
       setIsLoading(false);
@@ -89,7 +95,9 @@ const CardDetail: React.FC = () => {
       console.log('fetchComments返回', fetchComments);
 
       if (!response.success || !response.data?.comments?.length) {
-        throw new Error('获取评论失败：' + (response.error || '未知错误'));
+        const text = '获取评论失败：' + (response.error || '未知错误');
+        showSnackbar.error(text);
+        return;
       }
 
       const commentData = response.data?.comments || [];
@@ -108,6 +116,8 @@ const CardDetail: React.FC = () => {
       setComments(list);
     } catch (error) {
       console.error('获取评论失败:', error);
+      showSnackbar.error('获取评论失败');
+
       return [];
     }
   };
@@ -138,7 +148,10 @@ const CardDetail: React.FC = () => {
   useEffect(() => {
     const initPage = async () => {
       if (!id) {
-        setError('未找到卡片ID，请返回卡片列表页面重试。');
+        const text = '未找到卡片ID，请返回卡片列表页面重试。';
+        setError(text);
+
+        showSnackbar.error(text);
 
         return;
       }
@@ -178,17 +191,18 @@ const CardDetail: React.FC = () => {
   // 提交评论
   const handleCommentSubmit = async () => {
     if (!commentForm.name.trim()) {
-      alert('请输入您的姓名');
+      showSnackbar.warning('请输入您的姓名');
       return;
     }
 
     if (!commentForm.content.trim()) {
-      alert('请输入评论内容');
+      showSnackbar.warning('请输入评论内容');
       return;
     }
 
     if (!id) {
-      alert('卡片ID无效');
+      alert('');
+      showSnackbar.warning('卡片ID无效');
       return;
     }
 
@@ -204,7 +218,9 @@ const CardDetail: React.FC = () => {
       });
 
       if (!response.success) {
-        throw new Error('提交评论失败：' + (response.error || '未知错误'));
+        const text = '提交评论失败：' + (response.error || '未知错误');
+        showSnackbar.warning(text);
+        return;
       }
 
       if (!response.data) {
@@ -220,10 +236,11 @@ const CardDetail: React.FC = () => {
       // 重置表单
       setCommentForm({ name: '', content: '' });
 
-      alert('评论提交成功！');
+      showSnackbar.success('评论提交成功！');
     } catch (error: any) {
       console.error('提交评论失败:', error.message || error);
-      alert('提交评论失败，请稍后重试');
+
+      showSnackbar.error('提交评论失败，请稍后重试');
     } finally {
       setSubmittingComment(false);
     }
@@ -265,9 +282,10 @@ const CardDetail: React.FC = () => {
     try {
       marked.setOptions({ breaks: true });
       const html = marked.parse(sanitizeContent(text));
+      // console.log('html', html);
       return (
         <Fragment>
-          <p dangerouslySetInnerHTML={{ __html: html as string }} />
+          <span dangerouslySetInnerHTML={{ __html: html as string }} />
         </Fragment>
       );
     } catch (e) {
@@ -587,7 +605,7 @@ const CardDetail: React.FC = () => {
                         </Typography>
                       </Box>
                       <Typography variant="body2" color="text.primary">
-                        <div
+                        <span
                           dangerouslySetInnerHTML={{
                             __html: sanitizeContent(
                               comment.comment || comment.created
@@ -663,6 +681,7 @@ const CardDetail: React.FC = () => {
           </>
         )}
       </Container>
+      <SnackbarComponent />
     </Box>
   );
 };

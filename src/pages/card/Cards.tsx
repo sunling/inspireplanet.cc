@@ -6,8 +6,6 @@ import {
   Typography,
   Button,
   TextField,
-  CircularProgress,
-  Alert,
   Grid,
   Card,
 } from '@mui/material';
@@ -21,6 +19,7 @@ import { groupCardsByDate } from '@/utils/helper';
 import Loading from '@/components/Loading';
 import ErrorCard from '@/components/ErrorCard';
 import Empty from '@/components/Empty';
+import useSnackbar from '@/hooks/useSnackbar';
 
 const Cards: React.FC = () => {
   const [cards, setCards] = useState<CardItem[]>([]);
@@ -29,6 +28,7 @@ const Cards: React.FC = () => {
   const [groupedCards, setGroupedCards] = useState<Record<string, any[]>>({});
   const navigate = useNavigate();
   const { isMobile, isMedium } = useResponsive();
+  const { showSnackbar, SnackbarComponent } = useSnackbar();
 
   const loadCards = async () => {
     try {
@@ -41,6 +41,7 @@ const Cards: React.FC = () => {
 
       if (!response.success) {
         setError('接口请求失败');
+        showSnackbar.error('接口请求失败');
       }
 
       let allCards = response.data?.records || [];
@@ -56,7 +57,9 @@ const Cards: React.FC = () => {
       const grouped = groupCardsByDate(validCards);
       setGroupedCards(grouped);
     } catch (err: any) {
-      setError(err.message || '加载失败，请稍后再试');
+      const text = err.message || '加载失败，请稍后再试';
+      setError(text);
+      showSnackbar.error(text);
     } finally {
       setLoading(false);
     }
@@ -79,7 +82,7 @@ const Cards: React.FC = () => {
     comment: string
   ) => {
     if (!name.trim() || !comment.trim()) {
-      alert('请填写姓名和评论内容');
+      showSnackbar.warning('请填写姓名和评论内容');
       return;
     }
 
@@ -93,15 +96,18 @@ const Cards: React.FC = () => {
 
       // 检查响应状态并显示相应消息
       if (response.success) {
-        alert(response.message || '评论提交成功！');
-        // 可以在这里添加刷新评论列表的逻辑
+        const text = response.message || '评论提交成功！';
+        showSnackbar.success(text);
+        // todo:可以在这里添加刷新评论列表的逻辑
       } else {
         console.error('提交评论失败:', response.error);
-        alert(response.error || '提交评论失败，请稍后再试');
+        const text = response.error || '提交评论失败，请稍后再试';
+        showSnackbar.error(text);
       }
     } catch (err: any) {
       console.error('提交评论异常:', err);
-      alert('提交评论时发生错误，请稍后再试');
+      const text = '提交评论时发生错误，请稍后再试';
+      showSnackbar.error(text);
     }
   };
 
@@ -306,8 +312,8 @@ const Cards: React.FC = () => {
           )}
 
           <Button
-            variant="outlined"
-            color="inherit"
+            variant="contained"
+            color="success"
             size={isMobile ? 'small' : 'medium'}
             onClick={(e) => {
               e.stopPropagation();
@@ -393,6 +399,7 @@ const Cards: React.FC = () => {
           )}
         </Box>
       </Container>
+      <SnackbarComponent />
     </Box>
   );
 };
