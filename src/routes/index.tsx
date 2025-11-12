@@ -110,7 +110,7 @@ const router = createBrowserRouter(
 
         // 受保护路由
         { path: 'create-card', element: createProtectedRoute(<CreateCard />) },
-        { path: 'my-cards', element: createProtectedRoute(MyCards) },
+        { path: 'my-cards', element: createProtectedRoute(<MyCards />) },
         { path: 'card-edit/:id', element: createProtectedRoute(<CardEdit />) },
         {
           path: 'create-meetup',
