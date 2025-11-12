@@ -1,33 +1,4 @@
-/* 卡片创建页面样式 */
-
-/* 渐变选择器样式 */
-.gradient-selector {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.gradient-option {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid #ddd;
-}
-
-.gradient-option:hover {
-  transform: scale(1.1);
-}
-
-.gradient-option.selected {
-  border-color: #1976d2;
-  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
-}
-
-/* 渐变背景样式 */
-.gradient1 {
+.card-gradient-1 {
   background-image: linear-gradient(
     to right top,
     rgba(209, 107, 165, 0.4),
@@ -44,8 +15,7 @@
     rgba(95, 251, 241, 0.35)
   ) !important;
 }
-
-.gradient2 {
+.card-gradient-2 {
   background-image: linear-gradient(
     to right top,
     rgba(255, 126, 95, 0.4),
@@ -62,8 +32,7 @@
     rgba(255, 255, 255, 0.35)
   ) !important;
 }
-
-.gradient3 {
+.card-gradient-3 {
   background-image: linear-gradient(
     to right top,
     rgba(107, 33, 168, 0.4),
@@ -80,8 +49,7 @@
     rgba(255, 204, 220, 0.35)
   ) !important;
 }
-
-.gradient4 {
+.card-gradient-4 {
   background-image: linear-gradient(
     to right top,
     rgba(0, 201, 255, 0.4),
@@ -98,8 +66,7 @@
     rgba(11, 0, 255, 0.35)
   ) !important;
 }
-
-.gradient5 {
+.card-gradient-5 {
   background-image: linear-gradient(
     to right top,
     rgba(249, 197, 44, 0.4),
@@ -117,7 +84,7 @@
   ) !important;
 }
 
-.gradient6 {
+.card-gradient-6 {
   background-image: linear-gradient(
     to right top,
     rgba(168, 255, 120, 0.4),
@@ -135,7 +102,7 @@
   ) !important;
 }
 
-.gradient7 {
+.card-gradient-7 {
   background-image: linear-gradient(
     to right top,
     rgba(255, 138, 0, 0.4),
@@ -153,7 +120,8 @@
   ) !important;
 }
 
-.gradient8 {
+/* 新增平静柔和的渐变背景 */
+.card-gradient-8 {
   background-image: linear-gradient(
     to right top,
     rgba(240, 248, 255, 0.4),
@@ -166,8 +134,7 @@
     rgba(170, 210, 220, 0.15)
   ) !important;
 }
-
-.gradient9 {
+.card-gradient-9 {
   background-image: linear-gradient(
     to right top,
     rgba(248, 250, 252, 0.4),
@@ -180,8 +147,7 @@
     rgba(148, 163, 184, 0.15)
   ) !important;
 }
-
-.gradient10 {
+.card-gradient-10 {
   background-image: linear-gradient(
     to right top,
     rgba(254, 252, 232, 0.4),
@@ -194,8 +160,7 @@
     rgba(120, 53, 15, 0.15)
   ) !important;
 }
-
-.gradient11 {
+.card-gradient-11 {
   background-image: linear-gradient(
     to right top,
     rgba(240, 253, 244, 0.4),
@@ -208,8 +173,7 @@
     rgba(21, 128, 61, 0.15)
   ) !important;
 }
-
-.gradient12 {
+.card-gradient-12 {
   background-image: linear-gradient(
     to right top,
     rgba(253, 244, 255, 0.4),
@@ -222,8 +186,7 @@
     rgba(124, 58, 237, 0.15)
   ) !important;
 }
-
-.gradient13 {
+.card-gradient-13 {
   background-image: linear-gradient(
     to right top,
     rgba(255, 251, 235, 0.4),
@@ -236,8 +199,7 @@
     rgba(154, 52, 18, 0.15)
   ) !important;
 }
-
-.gradient14 {
+.card-gradient-14 {
   background-image: linear-gradient(
     to right top,
     rgba(248, 250, 252, 0.4),
@@ -249,223 +211,4 @@
     rgba(71, 85, 105, 0.1),
     rgba(51, 65, 85, 0.15)
   ) !important;
-}
-
-/* 表单行样式 */
-.form-row {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-/* 搜索结果样式 */
-.search-results {
-  margin-top: 16px;
-  padding: 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  background-color: #fafafa;
-}
-
-.image-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.image-item {
-  position: relative;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.image-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.image-item.selected {
-  border-color: #ff7f50;
-  box-shadow: 0 0 0 2px rgba(255, 127, 80, 0.2);
-}
-
-.image-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  padding: 4px 8px;
-  font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* 主内容样式 */
-.main-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 30px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  padding: 30px;
-  margin-bottom: 40px;
-  position: relative;
-  overflow: hidden;
-  align-items: flex-start;
-}
-
-/* 按钮样式 */
-.primary-button {
-  background-color: #ff7f50;
-  color: #fff;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 16px;
-  text-decoration: none;
-  transition: transform 0.2s, background-color 0.2s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  border: none;
-  cursor: pointer;
-}
-
-.primary-button:hover {
-  background-color: #ff9966;
-  transform: scale(1.05);
-}
-
-.secondary-button {
-  background-color: #f5f5f5;
-  color: #333;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 16px;
-  text-decoration: none;
-  transition: transform 0.2s, background-color 0.2s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e0e0;
-  cursor: pointer;
-}
-
-.secondary-button:hover {
-  background-color: #e0e0e0;
-  transform: scale(1.05);
-}
-
-/* 上传按钮样式 */
-.upload-button {
-  background-color: #4a6fa5;
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: transform 0.2s, background-color 0.2s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  border: none;
-  cursor: pointer;
-}
-
-.upload-button:hover {
-  background-color: #5a7fb5;
-  transform: scale(1.05);
-}
-
-.view-all-button-container {
-  text-align: center;
-  margin-top: 20px;
-}
-
-.view-all-button {
-  display: inline-block;
-  background-color: #ff7f50;
-  color: #fff;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 16px;
-  text-decoration: none;
-  transition: transform 0.2s, background-color 0.2s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-.view-all-button:hover {
-  background-color: #ff9966;
-  transform: scale(1.05);
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .main-content {
-    flex-direction: column;
-    padding: 20px;
-  }
-
-  .form-row {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .gradient-selector {
-    grid-template-columns: repeat(14, 1fr);
-  }
-
-  .image-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .card-preview {
-    width: 100%;
-    min-height: 400px;
-  }
-
-  .carousel-card-wrapper {
-    max-width: 90%;
-  }
-}
-
-@media (max-width: 480px) {
-  .gradient-selector {
-    grid-template-columns: repeat(5, 1fr);
-  }
-
-  .image-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* 动画效果 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fadeIn {
-  animation: fadeIn 0.5s ease-in;
-}
-
-.fadeInDown {
-  animation: fadeInDown 0.5s ease-in;
 }

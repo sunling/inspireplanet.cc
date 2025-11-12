@@ -165,3 +165,17 @@ export interface Workshop {
   participant_count: number;
   cover?: string;
 }
+
+export interface Credit {
+  name: string;
+  username: string;
+  link: string;
+}
+
+export interface SearchImageItem {
+  url: string;
+  thumb: string;
+  title: string;
+  description: string;
+  credits: Credit;
+}

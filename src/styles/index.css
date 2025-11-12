@@ -1,4 +1,5 @@
-@import './card-gradients.css';
+@import './card-bg.css';
+@import 'select-bg.css';
 
 html {
   background-color: #fafafa;

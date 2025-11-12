@@ -26,9 +26,11 @@ import {
 import { useResponsive } from '@/hooks/useResponsive';
 
 import { gradientOptions, getFontColorForGradient } from '@/constants/gradient';
-import { CardItem, SearchImageResult } from '@/netlify/types';
+import { CardItem, SearchImageItem, SearchImageResult } from '@/netlify/types';
 import { CarouselItem } from '@/components/Carousel';
 import Carousel from '@/components/Carousel';
+import InspireCard from '@/components/InspireCard';
+import { getBaseUrl } from '@/utils/http';
 import styles from './index.module.css';
 import useSnackbar from '@/hooks/useSnackbar';
 
@@ -53,7 +55,7 @@ const CreateCard: React.FC = () => {
   });
 
   // 轮播卡片状态
-  const [carouselCards, setCarouselCards] = useState<CarouselItem[]>([]);
+  const [carouselCards, setCarouselCards] = useState<CardItem[]>([]);
 
   // 图片相关状态
   const [customImage, setCustomImage] = useState<string>('');
@@ -119,7 +121,7 @@ const CreateCard: React.FC = () => {
     if (!file) return;
 
     if (!file.type.match('image.*')) {
-      showSnackbar('请上传有效的图片文件', 'error');
+      showSnackbar.error('请上传有效的图片文件');
       return;
     }
 
@@ -131,7 +133,7 @@ const CreateCard: React.FC = () => {
       setFileStatus(`已上传: ${file.name}`);
     };
     reader.onerror = () => {
-      showSnackbar('图片读取失败', 'error');
+      showSnackbar.error('图片读取失败');
       setFileStatus('上传失败');
     };
     reader.readAsDataURL(file);
@@ -144,8 +146,14 @@ const CreateCard: React.FC = () => {
 
   // 处理搜索图片
   const searchImagesFromDetail = async () => {
-    if (!cardData?.detail) {
-      showSnackbar('请先填写你的启发内容', 'info');
+    // 获取所有相关字段的内容
+    const titleText = cardData?.title || '';
+    const quoteText = cardData?.quote || '';
+    const detailText = cardData?.detail || '';
+
+    // 检查至少有一个字段有内容
+    if (!titleText && !quoteText && !detailText) {
+      showSnackbar.info('请先输入标题、引用或启发内容');
       return;
     }
 
@@ -154,44 +162,42 @@ const CreateCard: React.FC = () => {
     setShowSearchResults(false);
 
     try {
-      // 构建搜索查询
-      const query = (cardData?.detail || '').substring(0, 50); // 使用前50个字符作为搜索词
+      // 组合所有字段的内容进行搜索
+      const combinedText = [titleText, quoteText, detailText]
+        .filter((text) => text.trim())
+        .join(' ');
+
+      // 限制搜索查询长度
+      const query = combinedText.substring(0, 200); // 增加搜索词长度限制
       setSearchQuery(query);
 
-      // 这里应该调用搜索图片的API
-      // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // 调用真实的图片搜索API
+      const response = await api.images.search(query);
+      console.log('搜索图片响应:', response);
+      if (!response.success) {
+        showSnackbar.error(response.error || '搜索图片失败');
+      }
 
-      // 模拟搜索结果
-      const mockResults: SearchImageResult[] = [
-        {
-          url: 'https://images.unsplash.com/photo-1504639725590-34d0984388bd',
-          thumb:
-            'https://images.unsplash.com/photo-1504639725590-34d0984388bd?auto=format&fit=crop&q=80&w=200',
-          title: '自然风景',
-          description: '美丽的自然风光',
-        },
-        {
-          url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e',
-          thumb:
-            'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=200',
-          title: '山川河流',
-          description: '壮观的山川河流景色',
-        },
-        {
-          url: 'https://images.unsplash.com/photo-1518837695005-2083093ee35b',
-          thumb:
-            'https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&q=80&w=200',
-          title: '日出日落',
-          description: '美丽的日出日落景象',
-        },
-      ];
+      if (response.data?.images?.length) {
+        // 格式化搜索结果为SearchImageResult类型
+        const formattedResults: SearchImageResult[] = response.data.images.map(
+          (item: SearchImageItem) => ({
+            url: item.url || '',
+            thumb: item.thumb || item.url || '',
+            title: item.title || '图片',
+            description: item.description || '相关图片',
+          })
+        );
 
-      setSearchImages(mockResults);
-      setShowSearchResults(true);
+        setSearchImages(formattedResults);
+        setShowSearchResults(true);
+      } else {
+        showSnackbar.error(response.error || '搜索图片失败');
+      }
     } catch (error) {
       console.error('搜索图片失败:', error);
       setSearchError('搜索图片失败，请稍后重试');
+      showSnackbar.error('搜索图片失败，请稍后重试');
     } finally {
       setIsSearching(false);
     }
@@ -201,7 +207,6 @@ const CreateCard: React.FC = () => {
   const handleSelectSearchImage = (image: SearchImageResult) => {
     setSelectedSearchImage(image.url);
     setCustomImage('');
-    setShowSearchResults(false);
   };
 
   // 下载卡片图片
@@ -241,10 +246,10 @@ const CreateCard: React.FC = () => {
       link.click();
       document.body.removeChild(link);
 
-      showSnackbar('卡片下载成功', 'success');
+      showSnackbar.success('卡片下载成功');
     } catch (error) {
       console.error('下载卡片失败:', error);
-      showSnackbar('下载卡片失败，请稍后重试', 'error');
+      showSnackbar.error('下载卡片失败，请稍后重试');
     } finally {
       setIsDownloading(false);
     }
@@ -254,11 +259,11 @@ const CreateCard: React.FC = () => {
   const submitCard = async () => {
     // 验证必填字段
     if (!cardData.title.trim()) {
-      showSnackbar('请输入标题', 'warning');
+      showSnackbar.warning('请输入标题');
       return;
     }
     if (!cardData.quote.trim()) {
-      showSnackbar('请输入触动你的观点', 'warning');
+      showSnackbar.warning('请输入触动你的观点');
       return;
     }
 
@@ -275,7 +280,7 @@ const CreateCard: React.FC = () => {
       const response = await api.cards.create(cardToSubmit);
 
       if (response.success) {
-        showSnackbar('卡片提交成功！', 'success');
+        showSnackbar.success('卡片提交成功！');
         // 重置表单
         resetForm();
         // 重新加载轮播卡片
@@ -285,7 +290,7 @@ const CreateCard: React.FC = () => {
       }
     } catch (error) {
       console.error('提交卡片失败:', error);
-      showSnackbar('提交失败，请稍后重试', 'error');
+      showSnackbar.error('提交失败，请稍后重试');
     } finally {
       setIsSubmitting(false);
     }
@@ -311,41 +316,16 @@ const CreateCard: React.FC = () => {
       console.log('api.cards.getAll()', response);
 
       if (!response.success) {
-        throw new Error(response.error || '获取卡片失败');
+        showSnackbar.error('获取卡片失败');
         return;
       }
+      const list = response.data?.records || [];
 
-      setCarouselCards(
-        (response.data || []).map((card: any) => ({
-          id: card.id,
-          title: card.title,
-          quote: card.quote,
-          imagePath: card.imagePath,
-          creator: card.creator,
-          font: card.font,
-          gradientClass: card.gradientClass,
-          episode: '',
-          name: card.creator || '匿名',
-          detail: card.detail || '',
-          created: card.created,
-        }))
-      );
+      setCarouselCards(list);
     } catch (error) {
       console.error('加载最新卡片失败:', error);
-      // 使用备用数据
-      const fallbackCards: CarouselItem[] = [
-        {
-          id: '1',
-          title: '生命的意义',
-          quote:
-            '生命的意义不在于你呼吸了多少次，而在于有多少个让你屏住呼吸的时刻。',
-          episode: '',
-          name: '张三',
-          detail: '',
-          created: new Date().toISOString(),
-        },
-      ];
-      setCarouselCards(fallbackCards);
+
+      setCarouselCards([]);
     }
   };
 
@@ -355,8 +335,6 @@ const CreateCard: React.FC = () => {
         <Box sx={{ mb: 6 }}>
           <Typography
             variant="h4"
-            component="h1"
-            gutterBottom
             align="center"
             sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}
           >
@@ -364,251 +342,251 @@ const CreateCard: React.FC = () => {
           </Typography>
         </Box>
 
-        <Box className={styles.mainContent}>
-          <Grid container spacing={4} sx={{ width: '100%' }}>
-            <Grid sx={{ xs: 12, md: 6 }}>
-              <Paper
-                elevation={3}
-                sx={{ p: 4, borderRadius: 2, bgcolor: 'white' }}
-              >
-                {/* 第一行：标题 */}
-                <Box className={styles.formRow} sx={{ gap: 2, mb: 3 }}>
-                  <FormControl fullWidth sx={{ flex: '0 0 120px' }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      创作者
-                    </Typography>
-                    <TextField
-                      id="creator"
-                      placeholder="匿名"
-                      value={cardData.creator}
-                      onChange={handleInputChange}
-                      variant="outlined"
-                      fullWidth
-                      size="small"
+        <Box className={styles['main-content']}>
+          <Grid
+            container
+            spacing={4}
+            sx={{
+              width: '100%',
+              borderRadius: 2,
+              bgcolor: 'white',
+              p: 4,
+            }}
+          >
+            <Grid size={{ xs: 12, md: 6 }}>
+              {/* 第一行：标题 */}
+              <Box className={styles['form-row']} sx={{ gap: 2, mb: 3 }}>
+                <FormControl fullWidth>
+                  <Typography variant="subtitle2" gutterBottom>
+                    创作者
+                  </Typography>
+                  <TextField
+                    id="creator"
+                    placeholder="匿名"
+                    value={cardData.creator}
+                    onChange={handleInputChange}
+                    variant="outlined"
+                    fullWidth
+                    size="small"
+                  />
+                </FormControl>
+                <FormControl fullWidth>
+                  <Typography variant="subtitle2" gutterBottom>
+                    标题
+                  </Typography>
+                  <TextField
+                    id="title"
+                    placeholder="这一刻，我想说..."
+                    value={cardData.title}
+                    onChange={handleInputChange}
+                    variant="outlined"
+                    fullWidth
+                    size="small"
+                  />
+                </FormControl>
+              </Box>
+
+              {/* 第二行：触动你的观点 */}
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  触动你的观点
+                  <Typography
+                    variant="caption"
+                    sx={{ color: 'text.secondary', ml: 1 }}
+                  >
+                    按回车↩︎换行
+                  </Typography>
+                </Typography>
+                <TextField
+                  id="quote"
+                  placeholder="写下让你触动的一句话、一段对话、或一个片段..."
+                  value={cardData.quote}
+                  onChange={handleInputChange}
+                  variant="outlined"
+                  fullWidth
+                  multiline
+                  rows={3}
+                />
+              </FormControl>
+
+              {/* 第三行：你的启发 */}
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  你的启发
+                  <Typography
+                    variant="caption"
+                    sx={{ color: 'text.secondary', ml: 1 }}
+                  >
+                    支持 Markdown 语法，按回车↩︎换行
+                  </Typography>
+                </Typography>
+                <TextField
+                  id="detail"
+                  placeholder="写下你的启发和行动吧..."
+                  value={cardData.detail}
+                  onChange={handleInputChange}
+                  variant="outlined"
+                  fullWidth
+                  multiline
+                  rows={5}
+                />
+              </FormControl>
+
+              {/* 第四行：选择背景 */}
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  选择背景
+                </Typography>
+                <Box className={`${styles['gradient-selector']} card`}>
+                  {gradientOptions.map((option) => (
+                    <div
+                      key={option.class}
+                      data-gradient={option.class}
+                      className={`${styles['gradient-option']}  gradient-option`}
+                      title={option.title}
+                      onClick={() => handleGradientSelect(option.class)}
                     />
-                  </FormControl>
-                  <FormControl fullWidth>
-                    <Typography variant="subtitle2" gutterBottom>
-                      标题
-                    </Typography>
-                    <TextField
-                      id="title"
-                      placeholder="这一刻，我想说..."
-                      value={cardData.title}
-                      onChange={handleInputChange}
-                      variant="outlined"
-                      fullWidth
-                      size="small"
-                    />
-                  </FormControl>
+                  ))}
                 </Box>
+              </FormControl>
 
-                {/* 第二行：触动你的观点 */}
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    触动你的观点
-                    <Typography
-                      variant="caption"
-                      sx={{ color: 'text.secondary', ml: 1 }}
-                    >
-                      按回车↩︎换行
-                    </Typography>
-                  </Typography>
-                  <TextField
-                    id="quote"
-                    placeholder="写下让你触动的一句话、一段对话、或一个片段..."
-                    value={cardData.quote}
-                    onChange={handleInputChange}
-                    variant="outlined"
-                    fullWidth
-                    multiline
-                    rows={3}
+              {/* 图片上传 */}
+              <FormControl fullWidth sx={{ mb: 4 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  添加背景图片
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 1 }}>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleFileUpload}
                   />
-                </FormControl>
-
-                {/* 第三行：你的启发 */}
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    你的启发
-                    <Typography
-                      variant="caption"
-                      sx={{ color: 'text.secondary', ml: 1 }}
-                    >
-                      支持 Markdown 语法，按回车↩︎换行
-                    </Typography>
-                  </Typography>
-                  <TextField
-                    id="detail"
-                    placeholder="写下你的启发和行动吧..."
-                    value={cardData.detail}
-                    onChange={handleInputChange}
-                    variant="outlined"
-                    fullWidth
-                    multiline
-                    rows={5}
-                  />
-                </FormControl>
-
-                {/* 第四行：选择背景 */}
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    选择背景
-                  </Typography>
-                  <Box className={styles.gradientSelector} sx={{ gap: 1 }}>
-                    {gradientOptions.map((option) => (
-                      <div
-                        key={option.class}
-                        className={`${styles.gradientOption} ${
-                          cardData.gradientClass === option.class
-                            ? styles.selected
-                            : ''
-                        }`}
-                        style={{
-                          background: option.gradient,
-                        }}
-                        title={option.title}
-                        onClick={() => handleGradientSelect(option.class)}
-                      />
-                    ))}
-                  </Box>
-                </FormControl>
-
-                {/* 图片上传 */}
-                <FormControl fullWidth sx={{ mb: 4 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    添加背景图片
-                  </Typography>
-                  <Box
-                    sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 1 }}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={handleFileUpload}
-                    />
-                    <Button
-                      variant="outlined"
-                      className={styles.secondaryButton}
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      📷 选择本地图片
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      className={styles.uploadButton}
-                      onClick={searchImagesFromDetail}
-                      disabled={isSearching}
-                    >
-                      {isSearching ? (
-                        <CircularProgress size={20} sx={{ mr: 1 }} />
-                      ) : null}
-                      搜索图片
-                    </Button>
-                  </Box>
-                  {fileStatus && (
-                    <Typography variant="caption" color="text.secondary">
-                      {fileStatus}
-                    </Typography>
-                  )}
-                </FormControl>
-
-                {/* 搜索结果展示 */}
-                {showSearchResults && searchImages.length > 0 && (
-                  <Box
-                    sx={{
-                      mb: 4,
-                      p: 2,
-                      border: '1px solid #e0e0e0',
-                      borderRadius: 1,
-                    }}
-                    className={styles.searchResults}
-                  >
-                    <Typography variant="subtitle2" gutterBottom>
-                      搜索结果: {searchQuery}
-                    </Typography>
-                    <Box className={styles.imageGrid}>
-                      {searchImages.map((image, index) => (
-                        <Box
-                          key={index}
-                          className={`${styles.imageItem} ${
-                            selectedSearchImage === image.url
-                              ? styles.selected
-                              : ''
-                          }`}
-                          onClick={() => handleSelectSearchImage(image)}
-                        >
-                          <img
-                            src={image.thumb}
-                            alt={image.title}
-                            style={{
-                              width: '100%',
-                              height: 'auto',
-                              display: 'block',
-                            }}
-                          />
-                          <Box className={styles.imageOverlay}>
-                            <Typography variant="caption">
-                              {image.description}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      ))}
-                    </Box>
-                  </Box>
-                )}
-
-                {searchError && (
-                  <Typography variant="body2" color="error" sx={{ mb: 3 }}>
-                    {searchError}
-                  </Typography>
-                )}
-
-                <Box
-                  sx={{
-                    display: 'flex',
-                    gap: 2,
-                    justifyContent: 'center',
-                    mt: 3,
-                  }}
-                >
                   <Button
-                    className={styles.primaryButton}
-                    onClick={submitCard}
-                    disabled={isSubmitting}
-                    sx={{ px: 4 }}
+                    variant="outlined"
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    {isSubmitting ? (
+                    📷 选择本地图片
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={searchImagesFromDetail}
+                    disabled={isSearching}
+                  >
+                    {isSearching ? (
                       <CircularProgress
                         size={20}
                         color="inherit"
                         sx={{ mr: 1 }}
                       />
                     ) : null}
-                    提交到展示区
-                  </Button>
-                  <Button
-                    className={styles.secondaryButton}
-                    onClick={downloadCardImage}
-                    disabled={isDownloading}
-                  >
-                    {isDownloading ? (
-                      <CircularProgress size={20} sx={{ mr: 1 }} />
-                    ) : null}
-                    下载卡片
+                    搜索图片
                   </Button>
                 </Box>
-              </Paper>
+                {fileStatus && (
+                  <Typography variant="caption" color="text.secondary">
+                    {fileStatus}
+                  </Typography>
+                )}
+              </FormControl>
+
+              {/* 搜索结果展示 */}
+              {showSearchResults && searchImages.length > 0 && (
+                <Box
+                  sx={{
+                    mb: 4,
+                    p: 2,
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 1,
+                  }}
+                  className={styles.searchResults}
+                >
+                  <Typography variant="subtitle2" gutterBottom>
+                    搜索结果: {searchQuery}
+                  </Typography>
+                  <Box className={styles['image-grid']}>
+                    {searchImages.map((image, index) => (
+                      <Box
+                        key={index}
+                        className={`${styles['image-item']} ${
+                          selectedSearchImage === image.url
+                            ? styles.selected
+                            : ''
+                        }`}
+                        onClick={() => handleSelectSearchImage(image)}
+                      >
+                        <img
+                          src={image.thumb}
+                          alt={image.title}
+                          style={{
+                            width: '100%',
+                            height: 'auto',
+                            display: 'block',
+                          }}
+                        />
+                        <Box className={styles['image-overlay']}>
+                          <Typography variant="caption">
+                            {image.description}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              {searchError && (
+                <Typography variant="body2" color="error" sx={{ mb: 3 }}>
+                  {searchError}
+                </Typography>
+              )}
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 2,
+                  justifyContent: 'center',
+                  mt: 3,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  onClick={submitCard}
+                  disabled={isSubmitting}
+                  sx={{ px: 4 }}
+                >
+                  {isSubmitting ? (
+                    <CircularProgress
+                      size={20}
+                      color="inherit"
+                      sx={{ mr: 1 }}
+                    />
+                  ) : null}
+                  提交到展示区
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={downloadCardImage}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? (
+                    <CircularProgress
+                      size={20}
+                      color="inherit"
+                      sx={{ mr: 1 }}
+                    />
+                  ) : null}
+                  下载卡片
+                </Button>
+              </Box>
             </Grid>
 
-            <Grid sx={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box id="preview" ref={previewRef} className={styles.cardPreview}>
                 {/* 卡片预览 */}
                 <MuiCard
-                  className={`card ${
-                    styles[cardData.gradientClass.replace('card-', '')] || ''
-                  }`}
+                  className={`card ${cardData.gradientClass}`}
                   sx={{
                     width: '100%',
                     maxWidth: '400px',
@@ -619,13 +597,15 @@ const CreateCard: React.FC = () => {
                     background:
                       gradientOptions.find(
                         (g) => g.class === cardData.gradientClass
-                      )?.gradient || '#f5f5f5',
+                      )?.class || '#f5f5f5',
                   }}
                 >
                   <CardContent
                     sx={{
                       flexGrow: 1,
-                      color: getFontColorForGradient(cardData.gradientClass),
+                      color: getFontColorForGradient(
+                        cardData?.gradientClass || ''
+                      ),
                     }}
                   >
                     <Typography
@@ -648,7 +628,7 @@ const CreateCard: React.FC = () => {
                         variant="body1"
                         sx={{
                           color: getFontColorForGradient(
-                            cardData.gradientClass
+                            cardData?.gradientClass || ''
                           ),
                         }}
                       >
@@ -672,7 +652,7 @@ const CreateCard: React.FC = () => {
                       <Box
                         sx={{
                           color: getFontColorForGradient(
-                            cardData.gradientClass
+                            cardData?.gradientClass || ''
                           ),
                           '& *': {
                             color: 'inherit !important',
@@ -680,7 +660,9 @@ const CreateCard: React.FC = () => {
                         }}
                         dangerouslySetInnerHTML={{
                           __html: DOMPurify.sanitize(
-                            marked.parse(cardData.detail)
+                            cardData.detail
+                              ? marked.parse(cardData.detail).toString()
+                              : ''
                           ),
                         }}
                       />
@@ -689,7 +671,9 @@ const CreateCard: React.FC = () => {
                   <CardActions
                     sx={{
                       justifyContent: 'center',
-                      color: getFontColorForGradient(cardData.gradientClass),
+                      color: getFontColorForGradient(
+                        cardData?.gradientClass || ''
+                      ),
                     }}
                   >
                     <Typography variant="body2">
@@ -705,22 +689,42 @@ const CreateCard: React.FC = () => {
         {/* 最新提交的卡片部分 */}
         {carouselCards.length > 0 && (
           <Box className={styles.latestCardsSection}>
-            <Typography variant="h5" component="h2" gutterBottom align="center">
+            <Typography
+              variant="h5"
+              component="h2"
+              gutterBottom
+              align="center"
+              sx={{ color: '#1976d2' }}
+            >
               展示区
             </Typography>
-            <Box className={styles.carouselContainer}>
-              <Carousel
-                items={carouselCards}
-                height="400px"
-                autoPlay={true}
-                showIndicators={true}
-                showPlayButton={true}
-              />
+
+            <Box className={styles['image-grid']}>
+              {carouselCards.slice(0, 3).map((item) => (
+                <InspireCard
+                  key={item.id || Math.random()}
+                  card={{
+                    id: item.id || '',
+                    title: item.title || '这一刻，我想说...',
+                    quote: item.quote || '',
+                    detail: item.detail || '',
+                    imagePath: item.imagePath || '',
+                    gradientClass: item.gradientClass || '',
+                    creator: item.creator || '',
+                    created: item.created || new Date().toISOString(),
+                    font: item.font || 'sans-serif',
+                  }}
+                  canComment={false} // 轮播区域不需要评论功能
+                  onCardClick={(id) => navigate(`/card/detail/${id}`)}
+                  onSubmitComment={() => {}}
+                />
+              ))}
             </Box>
-            <Box className={styles.viewAllButtonContainer}>
+
+            <Box className={styles['view-all-button-container']}>
               <a
                 href="/cards"
-                className={styles.viewAllButton}
+                className={styles['view-all-button']}
                 onClick={(e) => {
                   e.preventDefault();
                   navigate('/cards');

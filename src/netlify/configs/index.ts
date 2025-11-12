@@ -7,6 +7,7 @@ import {
   Comment,
   Meetup,
   Workshop,
+  SearchImageItem,
 } from '../types';
 import { ApiResponse } from '../types/http';
 import { http } from './http';
@@ -242,11 +243,14 @@ export const api = {
     search: async (
       text: string,
       orientation?: string
-    ): Promise<ApiResponse<any[]>> => {
-      return http.post<any[]>(API_MAP.IMAGES.SEARCH, {
-        text,
-        orientation,
-      });
+    ): Promise<ApiResponse<{ query: string; images: SearchImageItem[] }>> => {
+      return http.post<{ query: string; images: SearchImageItem[] }>(
+        API_MAP.IMAGES.SEARCH,
+        {
+          text,
+          orientation,
+        }
+      );
     },
   },
 
