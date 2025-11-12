@@ -14,21 +14,28 @@ import {
   MenuItem,
   CircularProgress,
   Grid,
-  Alert,
 } from '@mui/material';
+import useResponsive from '@/hooks/useResponsive';
 
+import { getFontColorForGradient } from '@/constants/gradient';
+import { WeeklyCard } from '@/netlify/types';
+import { api } from '@/netlify/configs';
+import { useGlobalSnackbar } from '@/context/app';
+import Empty from '@/components/Empty';
+import Loading from '@/components/Loading';
 
-
-
-
+export interface WeeklyCardItem extends WeeklyCard {
+  gradient: string;
+}
 
 const WeeklyCards: React.FC = () => {
-  const [cards, setCards] = useState<WeeklyCard[]>([]);
-  const [filteredCards, setFilteredCards] = useState<WeeklyCard[]>([]);
+  const [cards, setCards] = useState<WeeklyCardItem[]>([]);
+  const [filteredCards, setFilteredCards] = useState<WeeklyCardItem[]>([]);
   const [selectedEpisode, setSelectedEpisode] = useState<string>('all');
   const [loading, setLoading] = useState<boolean>(true);
   const [episodes, setEpisodes] = useState<string[]>([]);
   const { isMobile, isMedium } = useResponsive();
+  const showSnackbar = useGlobalSnackbar();
 
   // 定义错误状态
   const [error, setError] = useState<string | null>(null);
@@ -41,21 +48,21 @@ const WeeklyCards: React.FC = () => {
         setError(null);
 
         // 使用统一API封装获取周刊卡片数据
-        const data = await api.weeklyCards.getAll();
-        const allCards = data.records || [];
+        const res = await api.weeklyCards.getAll();
+        console.log('获取到的周刊卡片数据:', res);
+
+        if (!res.success) {
+          setError('获取周刊卡片数据失败');
+          showSnackbar.error('获取周刊卡片数据失败');
+          return;
+        }
+
+        const allCards = res?.data?.records || [];
 
         // 规范化卡片数据格式
-        const normalizedCards = allCards.map((card: any) => ({
-          id: card.id || '',
-          episode: card.Episode || '',
-          name: card.Name || '',
-          title: card.title || '',
-          quote: card.quote || '',
-          detail: card.detail || '',
-          imageUrl: card.imagePath || ''
+        const normalizedCards = allCards.map((card: WeeklyCard) => ({
+          ...card,
           gradient: 'card-gradient-1', // 默认渐变样式
-          createdAt: card.created || new Date().toISOString(),
-        updatedAt: card.created || new Date().toISOString(),
         }));
 
         setCards(normalizedCards);
@@ -70,6 +77,8 @@ const WeeklyCards: React.FC = () => {
           const numB = parseInt((b as string).replace(/\D/g, ''));
           return numB - numA;
         });
+
+        console.log('uniqueEpisodes:', uniqueEpisodes);
         setEpisodes(uniqueEpisodes as string[]);
       } catch (error: any) {
         console.error('加载周刊卡片失败:', error);
@@ -132,14 +141,9 @@ const WeeklyCards: React.FC = () => {
     }
   };
 
-  // 处理期数选择变化
-  const handleEpisodeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedEpisode(e.target.value);
-  };
-
   // 按期数分组卡片
   const groupedCards = filteredCards.reduce(
-    (groups: Record<string, WeeklyCard[]>, card) => {
+    (groups: Record<string, WeeklyCardItem[]>, card) => {
       const episode = card.episode;
       if (!groups[episode]) {
         groups[episode] = [];
@@ -160,7 +164,7 @@ const WeeklyCards: React.FC = () => {
       sx={{
         minHeight: '100vh',
         py: 8,
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #a9dafa 0%, #667eea 100%)',
       }}
     >
       <Container maxWidth="lg">
@@ -235,42 +239,19 @@ const WeeklyCards: React.FC = () => {
 
         {/* 卡片容器 */}
         {loading ? (
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '40vh',
-            }}
-          >
-            <CircularProgress size={60} color="inherit" />
-          </Box>
+          <Loading size={60} />
         ) : sortedEpisodes.length === 0 ? (
-          <Paper
-            elevation={3}
-            sx={{
-              p: 6,
-              textAlign: 'center',
-              borderRadius: '12px',
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            <Typography variant="h6" color="text.secondary">
-              暂无卡片数据
-            </Typography>
-          </Paper>
+          <Empty message="暂无卡片数据"></Empty>
         ) : (
           <Grid container spacing={4}>
             {sortedEpisodes.map((episode) => (
-              <Grid size={{ xs: 12, md: 6 }} key={episode}>
+              <Grid key={episode} size={{ xs: 12 }}>
                 <Paper
                   elevation={2}
                   sx={{
                     p: 2,
                     mb: 3,
                     borderRadius: '8px',
-                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
                     textAlign: 'center',
                   }}
                 >
@@ -279,7 +260,6 @@ const WeeklyCards: React.FC = () => {
                     component="h2"
                     id={`episode-${episode.toLowerCase()}`}
                     sx={{
-                      color: 'white',
                       fontWeight: 'bold',
                     }}
                   >
@@ -295,7 +275,7 @@ const WeeklyCards: React.FC = () => {
                   {groupedCards[episode].map((card) => {
                     const fontColor = getFontColorForGradient(card.gradient);
                     return (
-                      <Grid key={card.id}>
+                      <Grid key={card.id} size={{ xs: 12, md: 6 }}>
                         <Box
                           sx={{
                             position: 'relative',
@@ -306,7 +286,6 @@ const WeeklyCards: React.FC = () => {
                         >
                           <Paper
                             elevation={3}
-                            className={`${card.gradient}`}
                             id={`card-${card.id}`}
                             sx={{
                               height: '100%',
@@ -352,7 +331,7 @@ const WeeklyCards: React.FC = () => {
 
                             <Box sx={{ mb: 3 }}>
                               <img
-                                src={card.imageUrl || '/images/mistyblue.png'}
+                                src={card.imagePath || '/images/mistyblue.png'}
                                 alt={card.title}
                                 style={{
                                   width: '100%',
@@ -397,7 +376,7 @@ const WeeklyCards: React.FC = () => {
                                 variant="caption"
                                 sx={{ color: fontColor, opacity: 0.8 }}
                               >
-                                {new Date(card.createdAt).toLocaleDateString(
+                                {new Date(card.created).toLocaleDateString(
                                   'zh-CN'
                                 )}
                               </Typography>
@@ -418,6 +397,7 @@ const WeeklyCards: React.FC = () => {
                               width: '36px',
                               height: '36px',
                               borderRadius: '50%',
+                              color: 'white',
                               p: 0,
                             }}
                           >

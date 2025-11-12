@@ -10,8 +10,8 @@ import { formatDate } from '@/utils';
 import Loading from '@/components/Loading';
 import ErrorCard from '@/components/ErrorCard';
 import Empty from '@/components/Empty';
-import useSnackbar from '@/hooks/useSnackbar';
 import InspireCard from '@/components/InspireCard';
+import { useGlobalSnackbar } from '@/context/app';
 
 const Cards: React.FC = () => {
   const [cards, setCards] = useState<CardItem[]>([]);
@@ -20,7 +20,7 @@ const Cards: React.FC = () => {
   const [groupedCards, setGroupedCards] = useState<Record<string, any[]>>({});
   const navigate = useNavigate();
   const { isMobile, isMedium } = useResponsive();
-  const { showSnackbar, SnackbarComponent } = useSnackbar();
+  const showSnackbar = useGlobalSnackbar();
 
   const loadCards = async () => {
     try {
@@ -177,7 +177,6 @@ const Cards: React.FC = () => {
           )}
         </Box>
       </Container>
-      <SnackbarComponent />
     </Box>
   );
 };

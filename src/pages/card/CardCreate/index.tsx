@@ -9,35 +9,24 @@ import {
   Typography,
   TextField,
   Button,
-  Paper,
   Grid,
-  Avatar,
   CircularProgress,
   useTheme,
   FormControl,
-  FormHelperText,
   Card as MuiCard,
   CardContent,
   CardActions,
-  InputAdornment,
-  Snackbar,
-  Alert,
 } from '@mui/material';
-import { useResponsive } from '@/hooks/useResponsive';
 
 import { gradientOptions, getFontColorForGradient } from '@/constants/gradient';
 import { CardItem, SearchImageItem, SearchImageResult } from '@/netlify/types';
-import { CarouselItem } from '@/components/Carousel';
-import Carousel from '@/components/Carousel';
 import InspireCard from '@/components/InspireCard';
-import { getBaseUrl } from '@/utils/http';
 import styles from './index.module.css';
 import useSnackbar from '@/hooks/useSnackbar';
 
 const CreateCard: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const { isMobile, isTablet } = useResponsive();
   const { showSnackbar, SnackbarComponent } = useSnackbar();
   const previewRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);

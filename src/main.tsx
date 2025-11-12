@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 
 import routes from './routes';
+import { AppProvider } from './context/app'; // 导入AppProvider
 
 // 创建根元素并渲染应用
 const root = ReactDOM.createRoot(
@@ -12,7 +13,10 @@ const root = ReactDOM.createRoot(
 // 渲染应用
 root.render(
   <React.StrictMode>
-    <RouterProvider router={routes} />
+    {/* 包裹AppProvider，提供全局Context */}
+    <AppProvider>
+      <RouterProvider router={routes} />
+    </AppProvider>
   </React.StrictMode>
 );
 

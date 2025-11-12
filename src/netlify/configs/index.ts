@@ -156,8 +156,8 @@ export const api = {
 
   // 每周卡片API
   weeklyCards: {
-    getAll: async (): Promise<ApiResponse<WeeklyCard[]>> => {
-      return http.get<WeeklyCard[]>(API_MAP.WEEKLY_CARDS.FETCH);
+    getAll: async (): Promise<ApiResponse<{ records: WeeklyCard[] }>> => {
+      return http.get<{ records: WeeklyCard[] }>(API_MAP.WEEKLY_CARDS.FETCH);
     },
 
     getLatest: async (): Promise<ApiResponse<WeeklyCardResponse>> => {
