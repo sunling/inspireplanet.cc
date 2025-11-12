@@ -113,7 +113,7 @@ const Cards: React.FC = () => {
 
   // 卡片组件
   const CardComponent: React.FC<{
-    card: any;
+    card: CardItem;
     onCardClick: (id: string) => void;
     onSubmitComment: (id: string, name: string, comment: string) => void;
   }> = ({ card, onCardClick, onSubmitComment }) => {
@@ -123,9 +123,10 @@ const Cards: React.FC = () => {
 
     // 获取字体颜色和渐变样式
     const fontColor = getFontColorForGradient(
-      card.gradient || 'card-gradient-1'
+      card.gradientClass || 'card-gradient-1'
     );
-    const gradientStyle = gradientStyles[card.gradient || 'card-gradient-1'];
+    const gradientStyle =
+      gradientStyles[card.gradientClass || 'card-gradient-1'];
     // Quote box背景色
     const quoteBoxBg = 'rgba(255, 255, 255, 0.9)';
     // 最终图片路径，使用默认图片如果没有提供
@@ -166,6 +167,7 @@ const Cards: React.FC = () => {
             position: 'relative',
             overflow: 'hidden',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            ...gradientStyle,
           }}
         >
           {/* 卡片图片 */}
@@ -193,7 +195,7 @@ const Cards: React.FC = () => {
               {card.title}
             </Typography>
             <Typography variant="caption" sx={{ opacity: 0.8 }}>
-              {formatCardDate(card.createdAt || card.created || '')}
+              {formatCardDate(card.created || '')}
             </Typography>
           </Box>
 
@@ -208,7 +210,7 @@ const Cards: React.FC = () => {
             }}
           >
             <Typography variant="body1" sx={{ fontStyle: 'italic' }}>
-              "{card.content || card.quote}"
+              "{card.quote || ''}"
             </Typography>
           </Box>
 
@@ -220,10 +222,10 @@ const Cards: React.FC = () => {
           )}
 
           {/* 卡片创作者 */}
-          {card.author && (
+          {card.creator && (
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 'medium' }}>
-                — {card.author}
+                — {card.creator}
               </Typography>
             </Box>
           )}
@@ -339,7 +341,7 @@ const Cards: React.FC = () => {
       sx={{
         minHeight: '100vh',
         padding: 2,
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: '#f7f8f9',
       }}
     >
       <Container maxWidth="lg">
@@ -360,7 +362,7 @@ const Cards: React.FC = () => {
                     variant="h4"
                     sx={{
                       mb: 4,
-                      color: 'white',
+                      color: '#4a6fa5',
                       fontWeight: 'bold',
                       textAlign: 'center',
                       textShadow: '0 2px 4px rgba(0,0,0,0.3)',

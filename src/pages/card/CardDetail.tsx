@@ -53,13 +53,17 @@ const CardDetail: React.FC = () => {
 
       console.log('加载卡片详情返回', response);
 
-      if (!response.success || !response.data?.records?.length) {
+      if (!response.success) {
         const text = '获取卡片失败：' + (response.error || '未知错误');
         showSnackbar.error(text);
         return;
       }
 
-      const cardData = response.data.records[0];
+      if (!response.data?.records?.length) {
+        return;
+      }
+
+      const cardData = response?.data?.records[0];
 
       // 规范化卡片数据格式
       const normalizedCard: CardItem = {
@@ -92,9 +96,9 @@ const CardDetail: React.FC = () => {
     try {
       // 使用统一的api对象获取评论
       const response = await api.comments.getByCardId(cardId);
-      console.log('fetchComments返回', fetchComments);
+      console.log('fetchComments返回', response);
 
-      if (!response.success || !response.data?.comments?.length) {
+      if (!response.success) {
         const text = '获取评论失败：' + (response.error || '未知错误');
         showSnackbar.error(text);
         return;
@@ -163,21 +167,118 @@ const CardDetail: React.FC = () => {
   }, [id]);
 
   // 下载卡片为图片
-  const downloadCard = async () => {
-    if (!cardRef.current) return;
+  const handleDownloadCard = async () => {
+    if (!card) {
+      showSnackbar.error('卡片数据加载失败，无法下载');
+      return;
+    }
 
-    setDownloading(true);
     try {
-      // 实际环境中应该使用html2canvas库来实现下载功能
-      // 这里模拟下载过程
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      setDownloading(true);
 
-      alert('卡片下载成功！');
+      // 导入downloadCard函数
+      const { downloadCard: utilsDownloadCard } = await import('@/utils/share');
+
+      // 使用cardRef获取DOM元素
+      const cardElement =
+        document.getElementById('detail-card') || cardRef.current;
+
+      if (!cardElement) {
+        showSnackbar.error('找不到卡片元素，下载失败');
+        return;
+      }
+
+      // 执行下载
+      const success = await utilsDownloadCard(
+        cardElement,
+        `inspiration-${
+          card.title?.replace(/[^\w\u4e00-\u9fa5]/g, '-') || 'card'
+        }`
+      );
+
+      if (success) {
+        showSnackbar.success('图片下载成功！');
+      } else {
+        showSnackbar.error('图片下载失败，请稍后重试');
+      }
     } catch (error) {
-      console.error('下载失败:', error);
-      alert('下载失败，请重试');
+      console.error('下载过程中出错:', error);
+      showSnackbar.error('下载过程中发生错误，请稍后重试');
     } finally {
       setDownloading(false);
+    }
+  };
+
+  // 分享卡片
+  const handleShare = async () => {
+    if (!card) {
+      showSnackbar.error('卡片数据加载失败，无法分享');
+      return;
+    }
+    // 获取分享按钮元素
+    const shareButton = document.getElementById('share-btn');
+    if (!shareButton) {
+      showSnackbar.error('找不到分享按钮');
+      return;
+    }
+
+    // 保存原始按钮文本
+    const originalText = shareButton.textContent;
+
+    try {
+      // 更新按钮状态
+      shareButton.textContent = '📱 生成卡片中...';
+      (shareButton as HTMLButtonElement).disabled = true;
+
+      // 导入shareToWechat函数
+      const { shareToWechat } = await import('@/utils/share');
+
+      // 使用cardRef获取DOM元素
+      const cardElement =
+        document.getElementById('detail-card') || cardRef.current;
+      if (!cardElement) {
+        showSnackbar.error('找不到卡片元素，分享失败');
+        // 恢复按钮状态
+        shareButton.textContent = originalText;
+        (shareButton as HTMLButtonElement).disabled = false;
+        return;
+      }
+
+      // 准备分享数据
+      const shareData = {
+        title: `${card.title || '启发时刻卡片'} - by ${
+          card.creator || '匿名用户'
+        }`,
+        desc:
+          card.quote?.length > 50
+            ? card.quote.substring(0, 50) + '...'
+            : card.quote || '分享一个触动我的观点',
+        link: window.location.href,
+      };
+
+      // 执行分享
+      const success = await shareToWechat({
+        cardElement,
+        shareButton,
+        shareData,
+        downloadFileName: `inspiration-${
+          card.title?.replace(/[^\w\u4e00-\u9fa5]/g, '-') || 'card'
+        }`,
+      });
+
+      if (success) {
+        showSnackbar.success('卡片生成成功，请保存图片后分享！');
+      } else {
+        showSnackbar.error('分享失败，请稍后重试');
+      }
+    } catch (error) {
+      console.error('分享过程中出错:', error);
+      showSnackbar.error('分享过程中发生错误，请稍后重试');
+      // 恢复按钮状态
+    } finally {
+      // 恢复按钮状态
+      shareButton.textContent = originalText;
+      (shareButton as HTMLButtonElement).disabled = false;
     }
   };
 
@@ -298,7 +399,7 @@ const CardDetail: React.FC = () => {
       sx={{
         minHeight: '100vh',
         py: { xs: 4, sm: 8 },
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: '#eff3fb',
       }}
     >
       <Container maxWidth="md">
@@ -495,7 +596,8 @@ const CardDetail: React.FC = () => {
                 id="download-btn"
                 variant="contained"
                 disabled={downloading || !card}
-                onClick={downloadCard}
+                loading={downloading}
+                onClick={handleDownloadCard}
                 sx={{
                   backgroundColor: '#3182ce',
                   '&:hover': { backgroundColor: '#2c5aa0' },
@@ -504,14 +606,7 @@ const CardDetail: React.FC = () => {
                   minWidth: { xs: 'auto', sm: '140px' },
                 }}
               >
-                {downloading ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CircularProgress size={20} color="inherit" />
-                    下载中...
-                  </Box>
-                ) : (
-                  '下载卡片'
-                )}
+                下载卡片
               </Button>
 
               {canEdit && (
@@ -534,7 +629,7 @@ const CardDetail: React.FC = () => {
               <Button
                 id="share-btn"
                 variant="contained"
-                onClick={() => alert('分享功能已触发')}
+                onClick={() => handleShare()}
                 sx={{
                   backgroundColor: '#38a169',
                   '&:hover': { backgroundColor: '#2f855a' },

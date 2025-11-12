@@ -41,7 +41,8 @@ const ErrorBoundary: React.FC<{ children?: React.ReactNode }> = ({
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const isAuthenticated = !!localStorage.getItem('token');
+  const isAuthenticated = !!localStorage.getItem('authToken');
+  console.log('isAuthenticated', isAuthenticated);
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
@@ -62,7 +63,7 @@ const About = lazy(() => import('../pages/introduce/About'));
 const Contact = lazy(() => import('../pages/introduce/Contact'));
 const Login = lazy(() => import('../pages/auth/Login'));
 const Cards = lazy(() => import('../pages/card/Cards'));
-const CreateCard = lazy(() => import('../pages/card/CreateCard'));
+const CreateCard = lazy(() => import('../pages/card/CardCreate'));
 const MyCards = lazy(() => import('../pages/personal/MyCards'));
 const Meetups = lazy(() => import('../pages/activity/Meetups'));
 const WeeklyCards = lazy(() => import('../pages/card/WeeklyCards'));

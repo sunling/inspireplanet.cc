@@ -12,27 +12,18 @@ import {
   Alert,
   CircularProgress,
   Link,
+  FormControl,
+  FormHelperText,
 } from '@mui/material';
-import { api } from '../netlify/configs';
-import { useResponsive } from '../hooks/useResponsive';
-
-// 定义认证相关接口
-interface AuthResponse {
-  message?: string;
-  user?: {
-    id: string;
-    username: string;
-    email: string;
-    name: string;
-  };
-  token?: string;
-  error?: string;
-}
+import useResponsive from '@/hooks/useResponsive';
+import { api } from '@/netlify/configs';
+import useSnackbar from '@/hooks/useSnackbar';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isMobile } = useResponsive();
+  const { showSnackbar, SnackbarComponent } = useSnackbar();
 
   // 从URL参数中获取重定向地址
   const getRedirectUrl = () => {
@@ -49,14 +40,19 @@ const Login: React.FC = () => {
     password: '',
     wechat: '',
   });
+  const [formErrors, setFormErrors] = useState<{
+    name?: string;
+    username?: string;
+    email?: string;
+    password?: string;
+  }>({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   // 切换登录/注册模式
   const switchTab = (mode: 'login' | 'register') => {
     setCurrentMode(mode);
-    setError('');
+    setFormErrors({});
     setSuccess('');
   };
 
@@ -64,63 +60,76 @@ const Login: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // 清除对应字段的错误信息
+    if (formErrors[name as keyof typeof formErrors]) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [name]: undefined,
+      }));
+    }
   };
 
-  // 表单验证
-  const validateForm = () => {
-    // 清除之前的消息
-    setError('');
-    setSuccess('');
+  // 表单验证 - 使用MUI的表单验证方式
+  const validateForm = (): boolean => {
+    const errors: typeof formErrors = {};
+    let isValid = true;
 
     // 验证邮箱
     if (!formData.email) {
-      setError('请输入邮箱地址');
-      return false;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError('请输入有效的邮箱地址');
-      return false;
+      errors.email = '请输入邮箱地址';
+      isValid = false;
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        errors.email = '请输入有效的邮箱地址';
+        isValid = false;
+      }
     }
 
     // 验证密码
     if (!formData.password) {
-      setError('请输入密码');
-      return false;
-    }
-
-    if (formData.password.length < 6) {
-      setError('密码长度至少为6位');
-      return false;
+      errors.password = '请输入密码';
+      isValid = false;
+    } else if (formData.password.length < 6) {
+      errors.password = '密码长度至少为6位';
+      isValid = false;
     }
 
     // 注册模式下的额外验证
     if (currentMode === 'register') {
       if (!formData.name) {
-        setError('请输入姓名');
-        return false;
+        errors.name = '请输入姓名';
+        isValid = false;
       }
 
       if (!formData.username) {
-        setError('请输入用户名');
-        return false;
-      }
-
-      if (formData.username.length < 3) {
-        setError('用户名长度至少为3位');
-        return false;
+        errors.username = '请输入用户名';
+        isValid = false;
+      } else if (formData.username.length < 3) {
+        errors.username = '用户名长度至少为3位';
+        isValid = false;
       }
     }
 
-    return true;
+    setFormErrors(errors);
+    return isValid;
   };
 
   // 处理表单提交
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 清除之前的成功消息
+    setSuccess('');
+
     if (!validateForm()) {
+      // 滚动到第一个错误字段
+      const firstErrorField = Object.keys(formErrors)[0];
+      if (firstErrorField) {
+        const element = document.getElementById(firstErrorField);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -151,7 +160,6 @@ const Login: React.FC = () => {
       // 保存用户信息和token到localStorage
       const { token, user } = response.data || {};
       localStorage.setItem('authToken', token || '');
-      localStorage.setItem('userToken', token || ''); // 兼容旧的token存储键名
       localStorage.setItem('userData', JSON.stringify(user || {}));
       localStorage.setItem('userInfo', JSON.stringify(user || {})); // 兼容旧的userInfo存储键名
       localStorage.setItem('userId', user?.id || ''); // 兼容旧的userId存储
@@ -168,7 +176,7 @@ const Login: React.FC = () => {
       }, 800);
     } catch (error: any) {
       console.error('认证错误:', error);
-      setError(error.message || '网络错误，请检查网络连接后重试');
+      showSnackbar.error(error.message || '网络错误，请检查网络连接后重试');
     } finally {
       setLoading(false);
     }
@@ -231,11 +239,6 @@ const Login: React.FC = () => {
             <Tab value="register" label="注册" />
           </Tabs>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
           {success && (
             <Alert severity="success" sx={{ mb: 3 }}>
               {success}
@@ -244,67 +247,84 @@ const Login: React.FC = () => {
 
           <form onSubmit={handleSubmit}>
             {currentMode === 'register' && (
-              <TextField
-                fullWidth
-                margin="normal"
-                label="姓名"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="请输入您的姓名"
-                required
-                variant="outlined"
-                size={isMobile ? 'small' : 'medium'}
-              />
+              <FormControl fullWidth margin="normal" error={!!formErrors.name}>
+                <TextField
+                  label="姓名"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="请输入您的姓名"
+                  required
+                  variant="outlined"
+                  size={isMobile ? 'small' : 'medium'}
+                />
+                {formErrors.name && (
+                  <FormHelperText>{formErrors.name}</FormHelperText>
+                )}
+              </FormControl>
             )}
 
             {currentMode === 'register' && (
-              <TextField
+              <FormControl
                 fullWidth
                 margin="normal"
-                label="用户名"
-                id="username"
-                name="username"
-                value={formData.username}
+                error={!!formErrors.username}
+              >
+                <TextField
+                  label="用户名"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  placeholder="请输入用户名"
+                  required
+                  variant="outlined"
+                  size={isMobile ? 'small' : 'medium'}
+                />
+                {formErrors.username && (
+                  <FormHelperText>{formErrors.username}</FormHelperText>
+                )}
+              </FormControl>
+            )}
+
+            <FormControl fullWidth margin="normal" error={!!formErrors.email}>
+              <TextField
+                label="邮箱"
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
                 onChange={handleInputChange}
-                placeholder="请输入用户名"
+                placeholder="请输入邮箱地址"
                 required
                 variant="outlined"
                 size={isMobile ? 'small' : 'medium'}
               />
-            )}
+              {formErrors.email && (
+                <FormHelperText>{formErrors.email}</FormHelperText>
+              )}
+            </FormControl>
 
-            <TextField
+            <FormControl
               fullWidth
               margin="normal"
-              label="邮箱"
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              placeholder="请输入邮箱地址"
-              required
-              variant="outlined"
-              size={isMobile ? 'small' : 'medium'}
-            />
-
-            <TextField
-              fullWidth
-              margin="normal"
-              label="密码"
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder="请输入密码"
-              required
-              variant="outlined"
-              size={isMobile ? 'small' : 'medium'}
-              helperText="密码长度至少为6位"
-            />
+              error={!!formErrors.password}
+            >
+              <TextField
+                label="密码"
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="请输入密码"
+                required
+                variant="outlined"
+                size={isMobile ? 'small' : 'medium'}
+                helperText={formErrors.password || '密码长度至少为6位'}
+              />
+            </FormControl>
 
             {currentMode === 'register' && (
               <TextField
@@ -372,6 +392,7 @@ const Login: React.FC = () => {
             </Link>
           </Box>
         </Paper>
+        <SnackbarComponent />
       </Container>
     </Box>
   );
