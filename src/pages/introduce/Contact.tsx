@@ -13,6 +13,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { api } from '../../netlify/configs';
 import Error from '../../components/ErrorCard';
 import { useResponsive } from '../../hooks/useResponsive';
+import { useGlobalSnackbar } from '@/context/app';
 
 interface FormData {
   name: string;
@@ -26,6 +27,7 @@ const Contact: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
+  const showSnackbar = useGlobalSnackbar();
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -62,7 +64,7 @@ const Contact: React.FC = () => {
         // 显示成功消息
         setShowSuccess(true);
       } else {
-        throw new Error(response.error || '发送失败');
+        showSnackbar.error(response.error || '发送失败');
       }
 
       // 重置表单
@@ -102,8 +104,8 @@ const Contact: React.FC = () => {
       <Header isAuthenticated={false} userName="" onLogout={() => {}} />
 
       <Container maxWidth="md" sx={{ flex: 1, py: { xs: 4, md: 8 } }}>
-        <article
-          style={{
+        <Box
+          sx={{
             borderRadius: '16px',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
             overflow: 'hidden',
@@ -112,8 +114,8 @@ const Contact: React.FC = () => {
             padding: { xs: '1.5rem', md: '2rem' },
           }}
         >
-          <section
-            style={{
+          <Box
+            sx={{
               textAlign: 'center',
               marginBottom: { xs: '2rem', md: '3rem' },
             }}
@@ -132,9 +134,9 @@ const Contact: React.FC = () => {
             <p style={{ color: 'var(--text-light)', fontSize: '1.25rem' }}>
               我们期待听到您的声音
             </p>
-          </section>
+          </Box>
 
-          <section style={{ marginBottom: { xs: '2.5rem', md: '4rem' } }}>
+          <Box sx={{ marginBottom: { xs: '2.5rem', md: '4rem' } }}>
             <h2
               style={{
                 color: 'var(--text)',
@@ -317,7 +319,7 @@ const Contact: React.FC = () => {
                 </Grid>
               </Grid>
             </form>
-          </section>
+          </Box>
 
           <section>
             <h2
@@ -413,7 +415,7 @@ const Contact: React.FC = () => {
               </p>
             </div>
           </section>
-        </article>
+        </Box>
       </Container>
 
       <Footer />
