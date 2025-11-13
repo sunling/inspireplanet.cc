@@ -90,7 +90,6 @@ const CreateMeetup: React.FC = () => {
   const [dragover, setDragover] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [qrPreview, setQrPreview] = useState('');
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<FormErrors>({});
 
   // 初始化默认日期
@@ -142,13 +141,6 @@ const CreateMeetup: React.FC = () => {
   // 处理表单提交
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-
-    // 标记所有字段为已触摸
-    const allTouched = Object.keys(formValues).reduce((acc, key) => {
-      acc[key] = true;
-      return acc;
-    }, {} as Record<string, boolean>);
-    setTouched(allTouched);
 
     // 验证表单
     const validationErrors = validateForm(formValues);
@@ -258,10 +250,7 @@ const CreateMeetup: React.FC = () => {
         ...prev,
         qrImageUrl: '请上传图片文件',
       }));
-      setTouched((prev) => ({
-        ...prev,
-        qrImageUrl: true,
-      }));
+
       return;
     }
 
@@ -271,10 +260,7 @@ const CreateMeetup: React.FC = () => {
         ...prev,
         qrImageUrl: '图片大小不能超过5MB',
       }));
-      setTouched((prev) => ({
-        ...prev,
-        qrImageUrl: true,
-      }));
+
       return;
     }
 
@@ -317,86 +303,14 @@ const CreateMeetup: React.FC = () => {
     }
   };
 
-  // 最简单的表单字段组件，确保中文输入正常工作
-  const FormField = ({
-    name,
-    label,
-    type = 'text',
-    required = false,
-    placeholder = '',
-    multiline = false,
-    select = false,
-  }: {
-    name: keyof MeetupData;
-    label: string;
-    type?: string;
-    required?: boolean;
-    placeholder?: string;
-    multiline?: boolean;
-    select?: boolean;
-  }) => {
-    // 获取当前字段的错误信息
-    const fieldError = touched[name] ? errors[name] : undefined;
-
-    // 最简单的onChange处理函数
-    const handleChange = (
-      event: React.ChangeEvent<
-        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      >
-    ) => {
-      const { name: fieldName, value } = event.target;
-      setFormValues((prev) => ({ ...prev, [fieldName]: value }));
-    };
-
-    // 最简单的onBlur处理函数
-    const handleBlur = (
-      event: React.FocusEvent<
-        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      >
-    ) => {
-      const { name: fieldName } = event.target;
-      setTouched((prev) => ({ ...prev, [fieldName]: true }));
-    };
-
-    return (
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
-          {label}
-        </Typography>
-        <TextField
-          fullWidth
-          id={name}
-          name={name}
-          type={type}
-          value={formValues[name]}
-          onChange={handleChange}
-          required={required}
-          placeholder={placeholder}
-          multiline={multiline}
-          minRows={multiline ? 4 : 1}
-          error={!!fieldError}
-          helperText={fieldError}
-          select={select}
-          size={isMobile ? 'small' : 'medium'}
-          // 只保留最基本的配置
-        >
-          {select && [
-            <MenuItem key="empty" value="">
-              选择活动类型
-            </MenuItem>,
-            <MenuItem key="online" value="online">
-              线上活动
-            </MenuItem>,
-            <MenuItem key="offline" value="offline">
-              线下活动
-            </MenuItem>,
-            <MenuItem key="hybrid" value="hybrid">
-              线上线下结合
-            </MenuItem>,
-          ]}
-        </TextField>
-      </Box>
-    );
+  // 处理输入变化
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    setFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -428,20 +342,68 @@ const CreateMeetup: React.FC = () => {
             <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>
               基本信息
             </Typography>
-            <FormField
-              name="title"
-              label="活动标题"
-              required
-              placeholder="输入活动标题"
-            />
-            <FormField
-              name="description"
-              label="活动描述"
-              required
-              placeholder="详细描述活动内容、目标和亮点"
-              multiline
-            />
-            <FormField name="type" label="活动类型" required select />
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                活动标题
+              </Typography>
+              <TextField
+                fullWidth
+                id="title"
+                name="title"
+                type="text"
+                value={formValues.title}
+                onChange={handleInputChange}
+                required
+                placeholder="输入活动标题"
+                size={isMobile ? 'small' : 'medium'}
+              />
+            </Box>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                活动描述
+              </Typography>
+              <TextField
+                fullWidth
+                id="description"
+                name="description"
+                type="text"
+                value={formValues.description}
+                onChange={handleInputChange}
+                required
+                placeholder="详细描述活动内容、目标和亮点"
+                multiline
+                minRows={4}
+                size={isMobile ? 'small' : 'medium'}
+              />
+            </Box>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                活动类型
+              </Typography>
+              <TextField
+                fullWidth
+                id="type"
+                name="type"
+                value={formValues.type}
+                onChange={handleInputChange}
+                required
+                select
+                size={isMobile ? 'small' : 'medium'}
+              >
+                <MenuItem key="empty" value="">
+                  选择活动类型
+                </MenuItem>
+                <MenuItem key="online" value="online">
+                  线上活动
+                </MenuItem>
+                <MenuItem key="offline" value="offline">
+                  线下活动
+                </MenuItem>
+                <MenuItem key="hybrid" value="hybrid">
+                  线上线下结合
+                </MenuItem>
+              </TextField>
+            </Box>
           </Box>
 
           {/* 时间地点 */}
@@ -454,12 +416,21 @@ const CreateMeetup: React.FC = () => {
               </Typography>
             </Box>
             <CardContent>
-              <FormField
-                name="datetime"
-                label="活动时间"
-                type="datetime-local"
-                required
-              />
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                  活动时间
+                </Typography>
+                <TextField
+                  fullWidth
+                  id="datetime"
+                  name="datetime"
+                  type="datetime-local"
+                  value={formValues.datetime}
+                  onChange={handleInputChange}
+                  required
+                  size={isMobile ? 'small' : 'medium'}
+                />
+              </Box>
 
               <Box sx={{ mb: 3 }}>
                 <Typography
@@ -495,28 +466,56 @@ const CreateMeetup: React.FC = () => {
 
               <Grid container spacing={2} sx={{ mb: 3 }}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormField
-                    name="location"
-                    label="活动地点"
-                    placeholder="线下活动请填写具体地址，线上活动可填写平台名称"
-                  />
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                      活动地点
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      id="location"
+                      name="location"
+                      type="text"
+                      value={formValues.location}
+                      onChange={handleInputChange}
+                      placeholder="线下活动请填写具体地址，线上活动可填写平台名称"
+                      size={isMobile ? 'small' : 'medium'}
+                    />
+                  </Box>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormField
-                    name="duration"
-                    label="活动时长（小时）"
-                    type="number"
-                    placeholder="例如：2"
-                  />
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                      活动时长（小时）
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      id="duration"
+                      name="duration"
+                      type="number"
+                      value={formValues.duration}
+                      onChange={handleInputChange}
+                      placeholder="例如：2"
+                      size={isMobile ? 'small' : 'medium'}
+                    />
+                  </Box>
                 </Grid>
               </Grid>
 
-              <FormField
-                name="maxParticipants"
-                label="最大参与人数"
-                type="number"
-                placeholder="不限制可留空"
-              />
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                  最大参与人数
+                </Typography>
+                <TextField
+                  fullWidth
+                  id="maxParticipants"
+                  name="maxParticipants"
+                  type="number"
+                  value={formValues.maxParticipants}
+                  onChange={handleInputChange}
+                  placeholder="不限制可留空"
+                  size={isMobile ? 'small' : 'medium'}
+                />
+              </Box>
             </CardContent>
           </Card>
 
@@ -532,18 +531,38 @@ const CreateMeetup: React.FC = () => {
             <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>
               联系方式
             </Typography>
-            <FormField
-              name="organizer"
-              label="组织者姓名"
-              required
-              placeholder="您的姓名"
-            />
-            <FormField
-              name="contact"
-              label="微信号"
-              required
-              placeholder="请输入微信号"
-            />
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                组织者姓名
+              </Typography>
+              <TextField
+                fullWidth
+                id="organizer"
+                name="organizer"
+                type="text"
+                value={formValues.organizer}
+                onChange={handleInputChange}
+                required
+                placeholder="您的姓名"
+                size={isMobile ? 'small' : 'medium'}
+              />
+            </Box>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                微信号
+              </Typography>
+              <TextField
+                fullWidth
+                id="contact"
+                name="contact"
+                type="text"
+                value={formValues.contact}
+                onChange={handleInputChange}
+                required
+                placeholder="请输入微信号"
+                size={isMobile ? 'small' : 'medium'}
+              />
+            </Box>
 
             <Box sx={{ mb: 3 }}>
               <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
@@ -612,15 +631,6 @@ const CreateMeetup: React.FC = () => {
                   </>
                 )}
               </Box>
-              {touched.qrImageUrl && errors.qrImageUrl && (
-                <Typography
-                  variant="caption"
-                  color="error"
-                  sx={{ mt: 1, display: 'block' }}
-                >
-                  {errors.qrImageUrl}
-                </Typography>
-              )}
             </Box>
           </Box>
 
