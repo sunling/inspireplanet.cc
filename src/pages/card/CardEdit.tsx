@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
-import { api } from '../netlify/configs';
-import { CardData } from '../netlify/types/index';
 
 import {
   Box,
@@ -20,24 +18,23 @@ import {
   CircularProgress,
   Alert,
   IconButton,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 
-import { getFontColorForGradient } from '../constants/gradient';
-
-
+import { api } from '@/netlify/configs';
+import { CardItem } from '@/netlify/types';
+import { useGlobalSnackbar } from '@/context/app';
+import { getFontColorForGradient } from '@/constants/gradient';
+import useResponsive from '@/hooks/useResponsive';
 
 const CardEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
+  const showSnackbar = useGlobalSnackbar();
+  const { isMobile } = useResponsive();
 
   // 表单状态
-  const [cardData, setCardData] = useState<CardData>({
+  const [cardData, setCardData] = useState<CardItem>({
     id: id || '',
     title: '',
     quote: '',
@@ -46,6 +43,7 @@ const CardEdit: React.FC = () => {
     gradientClass: 'card-gradient-1',
     font: 'Noto Sans SC',
     imagePath: '',
+    created: new Date().toISOString(),
   });
 
   // UI状态
@@ -56,12 +54,15 @@ const CardEdit: React.FC = () => {
   useEffect(() => {
     const fetchCardData = async () => {
       try {
+        if (!id) return;
         setLoading(true);
         // 使用统一的api对象获取卡片数据
         const response = await api.cards.getById(id);
-        
-        if (response.success && response.data) {
-          const data = response.data;
+        if (!response.success) {
+          showSnackbar.error('获取卡片失败');
+        }
+
+        const data = response.data?.records[0];
 
         if (data && typeof data === 'object') {
           setCardData(data);
@@ -130,7 +131,7 @@ const CardEdit: React.FC = () => {
     const sanitizedDetail = DOMPurify.sanitize(markdownHtml, {
       ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li'],
     });
-    const fontColor = getFontColorForGradient(cardData.gradientClass);
+    const fontColor = getFontColorForGradient(cardData.gradientClass!);
 
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
@@ -212,7 +213,7 @@ const CardEdit: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'var(--bg-light)', py: 4 }}>
       <Container maxWidth="lg">
         <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
           <IconButton onClick={handleBack} sx={{ mr: 2 }}>

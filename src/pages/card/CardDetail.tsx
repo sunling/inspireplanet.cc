@@ -20,14 +20,14 @@ import { getFontColorForGradient } from '@/constants/gradient';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
 import ErrorCard from '@/components/ErrorCard';
-import useSnackbar from '@/hooks/useSnackbar';
+import { useGlobalSnackbar } from '@/context/app';
 
 const CardDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
-  const { isMobile, isTablet } = useResponsive();
-  const { showSnackbar, SnackbarComponent } = useSnackbar();
+  const { isMobile } = useResponsive();
+  const showSnackbar = useGlobalSnackbar();
 
   const [card, setCard] = useState<CardItem | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -420,7 +420,7 @@ const CardDetail: React.FC = () => {
                 variant="contained"
                 onClick={() => navigate('/cards')}
                 sx={{
-                  backgroundColor: '#667eea',
+                  backgroundColor: 'var(--primary)',
                   '&:hover': { backgroundColor: '#5a67d8' },
                 }}
               >
@@ -654,7 +654,7 @@ const CardDetail: React.FC = () => {
               <Typography
                 variant={isMobile ? 'h6' : 'h5'}
                 component="h2"
-                sx={{ mb: 4, color: '#667eea' }}
+                sx={{ mb: 4, color: 'var(--primary)' }}
               >
                 评论
               </Typography>
@@ -691,7 +691,7 @@ const CardDetail: React.FC = () => {
                       >
                         <Typography
                           variant="subtitle1"
-                          sx={{ fontWeight: 'bold', color: '#667eea' }}
+                          sx={{ fontWeight: 'bold', color: 'var(--primary)' }}
                         >
                           {sanitizeContent(comment.name || comment.Name)}
                         </Typography>
@@ -715,7 +715,7 @@ const CardDetail: React.FC = () => {
 
               <Divider sx={{ mb: 4 }} />
 
-              <Typography variant="h6" sx={{ mb: 3, color: '#667eea' }}>
+              <Typography variant="h6" sx={{ mb: 3, color: 'var(--primary)' }}>
                 添加评论
               </Typography>
 
@@ -764,7 +764,6 @@ const CardDetail: React.FC = () => {
                   fullWidth={isMobile}
                   sx={{
                     mt: 3,
-                    backgroundColor: '#667eea',
                     '&:hover': { backgroundColor: '#5a67d8' },
                     py: 1.2,
                   }}
@@ -776,7 +775,6 @@ const CardDetail: React.FC = () => {
           </>
         )}
       </Container>
-      <SnackbarComponent />
     </Box>
   );
 };

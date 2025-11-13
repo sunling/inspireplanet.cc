@@ -152,7 +152,7 @@ export async function downloadCard(
       logging: false,
       useCORS: true,
       allowTaint: false,
-      backgroundColor: '#ffffff',
+      backgroundColor: 'white',
       imageTimeout: 10000,
       removeContainer: true,
       width: clone.offsetWidth,

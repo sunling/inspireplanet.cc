@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { api } from '../netlify/configs';
+
 import {
   Box,
   Container,
@@ -15,6 +15,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { api } from '@/netlify/configs';
 
 // 创建自定义主题
 const theme = createTheme({
@@ -27,11 +28,11 @@ const theme = createTheme({
     },
     background: {
       default: '#f8f9fa',
-      paper: '#ffffff',
+      paper: 'white',
     },
     text: {
-      primary: '#333333',
-      secondary: '#666666',
+      primary: 'var(--text)',
+      secondary: 'var(--text-light)',
     },
   },
   components: {
@@ -105,7 +106,8 @@ const ActSignup: React.FC = () => {
 
     try {
       // 使用统一的api对象提交报名信息
-      const response = await api.workshop.register(formData);
+      // todo:修正类型
+      const response = await api.workshop.register(formData as any);
 
       if (response.success) {
         setSubmissionSuccess(true);

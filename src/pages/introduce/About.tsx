@@ -1,11 +1,9 @@
 import React from 'react';
-import { Container, Grid, Link } from '@mui/material';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
-import { useResponsive } from '../../hooks/useResponsive';
+import { Container, Grid } from '@mui/material';
+import useResponsive from '@/hooks/useResponsive';
 
 const About: React.FC = () => {
-  const { isMobile, isMedium } = useResponsive();
+  const { isMobile } = useResponsive();
 
   return (
     <div
@@ -187,7 +185,7 @@ const About: React.FC = () => {
                 <article
                   style={{
                     padding: '1.5rem',
-                    height: '100%',
+                    height: '70%',
                     backgroundColor: 'rgba(255, 255, 255, 0.8)',
                     borderRadius: '8px',
                     border: '1px solid rgba(0,0,0,0.05)',

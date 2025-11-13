@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { api } from '../netlify/configs';
+import React, { useState, useRef } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import {
@@ -18,18 +18,15 @@ import {
   Card,
   CardMedia,
   CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from '@mui/material';
-import { useResponsive } from '../hooks/useResponsive';
+import useResponsive from '@/hooks/useResponsive';
+import { api } from '@/netlify/configs';
+import { useGlobalSnackbar } from '@/context/app';
 
 const CoverEditorMobile: React.FC = () => {
-  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverPreviewRef = useRef<HTMLDivElement>(null);
-  const { isMobile, isMedium } = useResponsive();
+  const { isMobile } = useResponsive();
 
   // 状态管理
   const [title, setTitle] = useState<string>('启发星球');
@@ -46,6 +43,7 @@ const CoverEditorMobile: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchImages, setSearchImages] = useState<any[]>([]);
   const [searching, setSearching] = useState<boolean>(false);
+  const showSnackbar = useGlobalSnackbar();
 
   // 字体选项
   const fontOptions = [
@@ -96,22 +94,24 @@ const CoverEditorMobile: React.FC = () => {
     try {
       // 在实际应用中，这里会调用API搜索图片
 
-      const response = await api.images.search({
-        query: searchText
-      });
+      const response = await api.images.search(searchText, 'landscape');
+      if (!response.success) {
+        showSnackbar.error('查询图片失败');
+        return;
+      }
+
+      const data = response.data?.images || [];
 
       setSearchQuery(searchText);
-        setSearchImages(data);
-        setShowSearchResults(true);
-        setSearchStatus('');
-      } else {
-        throw new Error(response.error || '搜索失败');
-      }
+      setSearchImages(data);
+      setShowSearchResults(true);
+      setSearchStatus('');
     } catch (error) {
       console.error('搜索图片失败:', error);
       setSearchStatus(
         `搜索失败: ${error instanceof Error ? error.message : '未知错误'}`
       );
+      showSnackbar.error('查询图片失败');
     } finally {
       setSearching(false);
     }
@@ -185,7 +185,13 @@ const CoverEditorMobile: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: { xs: 3, md: 6 } }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'var(--bg-light)',
+        py: { xs: 3, md: 6 },
+      }}
+    >
       <Container maxWidth="lg">
         <Typography
           variant="h4"
@@ -363,7 +369,10 @@ const CoverEditorMobile: React.FC = () => {
                     }}
                   >
                     <CircularProgress size={20} sx={{ mr: 1 }} />
-                    <Typography variant="body2" sx={{ color: '#666' }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: 'var(--text-light)' }}
+                    >
                       {searchStatus}
                     </Typography>
                   </Box>
@@ -385,7 +394,7 @@ const CoverEditorMobile: React.FC = () => {
                   sx={{
                     mt: 3,
                     p: 2,
-                    border: '1px solid #e0e0e0',
+                    border: '1px solid rgba(0, 0, 0, 0.05)',
                     borderRadius: 1,
                     bgcolor: '#fafafa',
                   }}
@@ -518,6 +527,7 @@ const CoverEditorMobile: React.FC = () => {
                         fontSize: { xs: '1.8rem', sm: '2rem' },
                         textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                         mb: layout === 'center' ? 2 : 3,
+                        fontFamily,
                       }}
                     >
                       {formatTitle(title)}
@@ -532,6 +542,7 @@ const CoverEditorMobile: React.FC = () => {
                         py: 1,
                         borderRadius: 1,
                         display: 'inline-block',
+                        fontFamily,
                       }}
                     >
                       {formatKeywords(keywords)}

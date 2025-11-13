@@ -17,13 +17,13 @@ import {
 } from '@mui/material';
 import useResponsive from '@/hooks/useResponsive';
 import { api } from '@/netlify/configs';
-import useSnackbar from '@/hooks/useSnackbar';
+import { useGlobalSnackbar } from '@/context/app';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isMobile } = useResponsive();
-  const { showSnackbar, SnackbarComponent } = useSnackbar();
+  const showSnackbar = useGlobalSnackbar();
 
   // 从URL参数中获取重定向地址
   const getRedirectUrl = () => {
@@ -187,7 +187,7 @@ const Login: React.FC = () => {
       sx={{
         minHeight: '100vh',
         py: 8,
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'var(--gradient-primary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -209,7 +209,7 @@ const Login: React.FC = () => {
             sx={{
               textAlign: 'center',
               mb: 4,
-              color: '#667eea',
+              color: 'var(--primary)',
               fontWeight: 'bold',
             }}
           >
@@ -228,10 +228,10 @@ const Login: React.FC = () => {
               },
               '& .Mui-selected': {
                 fontWeight: 'bold',
-                color: '#667eea',
+                color: 'var(--primary)',
               },
               '& .MuiTabs-indicator': {
-                backgroundColor: '#667eea',
+                backgroundColor: 'var(--primary)',
               },
             }}
           >
@@ -352,7 +352,7 @@ const Login: React.FC = () => {
                 py: 1.5,
                 fontSize: '1rem',
                 fontWeight: 'bold',
-                backgroundColor: '#667eea',
+                backgroundColor: 'var(--primary)',
                 '&:hover': {
                   backgroundColor: '#5a67d8',
                 },
@@ -383,7 +383,7 @@ const Login: React.FC = () => {
               href="/"
               variant="body2"
               sx={{
-                color: '#667eea',
+                color: 'var(--primary)',
                 textDecoration: 'none',
                 '&:hover': { textDecoration: 'underline' },
               }}
@@ -392,7 +392,6 @@ const Login: React.FC = () => {
             </Link>
           </Box>
         </Paper>
-        <SnackbarComponent />
       </Container>
     </Box>
   );

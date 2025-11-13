@@ -155,9 +155,9 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <AppBar
-      position="static"
+      position="sticky"
       elevation={1}
-      sx={{ backgroundColor: '#fff', color: '#333' }}
+      sx={{ backgroundColor: 'white', color: 'var(--text)' }}
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>

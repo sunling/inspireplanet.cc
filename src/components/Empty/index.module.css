@@ -15,6 +15,6 @@
 }
 
 .empty-description {
-  color: #666;
+  color: var(--text-light);
   max-width: 400px;
 }

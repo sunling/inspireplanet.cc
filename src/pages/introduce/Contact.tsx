@@ -129,7 +129,7 @@ const Contact: React.FC = () => {
             >
               联系我们
             </h1>
-            <p style={{ color: '#666', fontSize: '1.25rem' }}>
+            <p style={{ color: 'var(--text-light)', fontSize: '1.25rem' }}>
               我们期待听到您的声音
             </p>
           </section>
@@ -137,7 +137,7 @@ const Contact: React.FC = () => {
           <section style={{ marginBottom: { xs: '2.5rem', md: '4rem' } }}>
             <h2
               style={{
-                color: '#333',
+                color: 'var(--text)',
                 marginBottom: '1.5rem',
                 paddingBottom: '1rem',
                 borderBottom: '2px solid #ffefea',
@@ -322,7 +322,7 @@ const Contact: React.FC = () => {
           <section>
             <h2
               style={{
-                color: '#333',
+                color: 'var(--text)',
                 marginBottom: '1.5rem',
                 paddingBottom: '1rem',
                 borderBottom: '2px solid #ffefea',

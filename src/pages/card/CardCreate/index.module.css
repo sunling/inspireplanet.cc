@@ -264,7 +264,7 @@
 .search-results {
   margin-top: 16px;
   padding: 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 8px;
   background-color: #fafafa;
 }
@@ -327,7 +327,7 @@
 /* 按钮样式 */
 .primary-button {
   background-color: #ff7f50;
-  color: #fff;
+  color: white;
   padding: 10px 20px;
   border-radius: 8px;
   font-size: 16px;
@@ -344,27 +344,27 @@
 }
 
 .secondary-button {
-  background-color: #f5f5f5;
-  color: #333;
+  background-color: var(--bg-light);
+  color: var(--text);
   padding: 10px 20px;
   border-radius: 8px;
   font-size: 16px;
   text-decoration: none;
   transition: transform 0.2s, background-color 0.2s;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e0e0;
+  border: 1px solid rgba(0, 0, 0, 0.05);
   cursor: pointer;
 }
 
 .secondary-button:hover {
-  background-color: #e0e0e0;
+  background-color: var(--text-lighter);
   transform: scale(1.05);
 }
 
 /* 上传按钮样式 */
 .upload-button {
   background-color: #4a6fa5;
-  color: #fff;
+  color: white;
   padding: 8px 16px;
   border-radius: 8px;
   font-size: 14px;
@@ -387,7 +387,7 @@
 .view-all-button {
   display: inline-block;
   background-color: #ff7f50;
-  color: #fff;
+  color: white;
   padding: 10px 20px;
   border-radius: 8px;
   font-size: 16px;

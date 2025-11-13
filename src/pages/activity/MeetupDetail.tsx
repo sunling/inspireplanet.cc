@@ -21,6 +21,7 @@ import {
   useTheme,
   Paper,
   CircularProgress,
+  Card,
 } from '@mui/material';
 
 import ErrorCard from '../../components/ErrorCard';
@@ -327,10 +328,14 @@ const MeetupDetail: React.FC = () => {
 
   // 显示二维码弹窗
   const showQRCode = (qrImageUrl: string) => {
-    setMeetup((prev: Meetup) => ({
-      ...prev,
-      qr_image_url: qrImageUrl,
-    }));
+    setMeetup((prev) => {
+      return prev
+        ? {
+            ...prev,
+            qr_image_url: qrImageUrl,
+          }
+        : null;
+    });
     setShowQRModal(true);
   };
 
@@ -414,8 +419,8 @@ const MeetupDetail: React.FC = () => {
             </Typography>
 
             {/* 基本信息 */}
-            <section
-              style={{
+            <Card
+              sx={{
                 marginBottom: '1.5rem',
                 padding: '1rem',
                 backgroundColor: '#f8f9fa',
@@ -432,53 +437,7 @@ const MeetupDetail: React.FC = () => {
                 基本信息
               </h2>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <span
-                  style={{
-                    marginRight: '0.75rem',
-                    minWidth: '30px',
-                    display: 'inline-block',
-                  }}
-                >
-                  📅
-                </span>
-                <strong
-                  style={{
-                    color: '#666',
-                    display: 'block',
-                    fontSize: '0.875rem',
-                    marginBottom: '0.25rem',
-                  }}
-                >
-                  活动日期
-                </strong>
-                <span>{formattedDate}</span>
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <span
-                  style={{
-                    marginRight: '0.75rem',
-                    minWidth: '30px',
-                    display: 'inline-block',
-                  }}
-                >
-                  🕐
-                </span>
-                <strong
-                  style={{
-                    color: '#666',
-                    display: 'block',
-                    fontSize: '0.875rem',
-                    marginBottom: '0.25rem',
-                  }}
-                >
-                  活动时间
-                </strong>
-                <span>{formattedTime}</span>
-              </div>
-
-              {meetup.duration && (
+              <Box sx={{ background: '#edebeb', p: 3 }}>
                 <div style={{ marginBottom: '1rem' }}>
                   <span
                     style={{
@@ -487,23 +446,21 @@ const MeetupDetail: React.FC = () => {
                       display: 'inline-block',
                     }}
                   >
-                    ⏱️
+                    📅
                   </span>
                   <strong
                     style={{
-                      color: '#666',
+                      color: 'var(--text-light)',
                       display: 'block',
                       fontSize: '0.875rem',
                       marginBottom: '0.25rem',
                     }}
                   >
-                    活动时长
+                    活动日期
                   </strong>
-                  <span>{meetup.duration} 小时</span>
+                  <span>{formattedDate}</span>
                 </div>
-              )}
 
-              {meetup.location && (
                 <div style={{ marginBottom: '1rem' }}>
                   <span
                     style={{
@@ -512,79 +469,129 @@ const MeetupDetail: React.FC = () => {
                       display: 'inline-block',
                     }}
                   >
-                    📍
+                    🕐
                   </span>
                   <strong
                     style={{
-                      color: '#666',
+                      color: 'var(--text-light)',
                       display: 'block',
                       fontSize: '0.875rem',
                       marginBottom: '0.25rem',
                     }}
                   >
-                    活动地点
+                    活动时间
                   </strong>
-                  <span>{meetup.location}</span>
+                  <span>{formattedTime}</span>
                 </div>
-              )}
 
-              {meetup.fee != null && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <span
-                    style={{
-                      marginRight: '0.75rem',
-                      minWidth: '30px',
-                      display: 'inline-block',
-                    }}
-                  >
-                    💰
-                  </span>
-                  <strong
-                    style={{
-                      color: '#666',
-                      display: 'block',
-                      fontSize: '0.875rem',
-                      marginBottom: '0.25rem',
-                    }}
-                  >
-                    活动费用
-                  </strong>
-                  <span>
-                    {Number(meetup.fee) > 0 ? `${meetup.fee} 元` : '免费'}
-                  </span>
-                </div>
-              )}
+                {meetup.duration && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <span
+                      style={{
+                        marginRight: '0.75rem',
+                        minWidth: '30px',
+                        display: 'inline-block',
+                      }}
+                    >
+                      ⏱️
+                    </span>
+                    <strong
+                      style={{
+                        color: 'var(--text-light)',
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        marginBottom: '0.25rem',
+                      }}
+                    >
+                      活动时长
+                    </strong>
+                    <span>{meetup.duration} 小时</span>
+                  </div>
+                )}
 
-              {(meetup.max_ppl || meetup.max_participants) && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <span
-                    style={{
-                      marginRight: '0.75rem',
-                      minWidth: '30px',
-                      display: 'inline-block',
-                    }}
-                  >
-                    👥
-                  </span>
-                  <strong
-                    style={{
-                      color: '#666',
-                      display: 'block',
-                      fontSize: '0.875rem',
-                      marginBottom: '0.25rem',
-                    }}
-                  >
-                    人数限制
-                  </strong>
-                  <span>
-                    最多 {meetup.max_ppl || meetup.max_participants} 人
-                  </span>
-                </div>
-              )}
-            </section>
+                {meetup.location && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <span
+                      style={{
+                        marginRight: '0.75rem',
+                        minWidth: '30px',
+                        display: 'inline-block',
+                      }}
+                    >
+                      📍
+                    </span>
+                    <strong
+                      style={{
+                        color: 'var(--text-light)',
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        marginBottom: '0.25rem',
+                      }}
+                    >
+                      活动地点
+                    </strong>
+                    <span>{meetup.location}</span>
+                  </div>
+                )}
+
+                {meetup.fee != null && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <span
+                      style={{
+                        marginRight: '0.75rem',
+                        minWidth: '30px',
+                        display: 'inline-block',
+                      }}
+                    >
+                      💰
+                    </span>
+                    <strong
+                      style={{
+                        color: 'var(--text-light)',
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        marginBottom: '0.25rem',
+                      }}
+                    >
+                      活动费用
+                    </strong>
+                    <span>
+                      {Number(meetup.fee) > 0 ? `${meetup.fee} 元` : '免费'}
+                    </span>
+                  </div>
+                )}
+
+                {(meetup.max_ppl || meetup.max_participants) && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <span
+                      style={{
+                        marginRight: '0.75rem',
+                        minWidth: '30px',
+                        display: 'inline-block',
+                      }}
+                    >
+                      👥
+                    </span>
+                    <strong
+                      style={{
+                        color: 'var(--text-light)',
+                        display: 'block',
+                        fontSize: '0.875rem',
+                        marginBottom: '0.25rem',
+                      }}
+                    >
+                      人数限制
+                    </strong>
+                    <span>
+                      最多 {meetup.max_ppl || meetup.max_participants} 人
+                    </span>
+                  </div>
+                )}
+              </Box>
+            </Card>
 
             {/* 活动介绍 */}
-            <Box sx={{ mb: 4, p: 0, borderRadius: 1 }} component="section">
+            <Card sx={{ mb: 4, borderRadius: '8px', padding: '1rem' }}>
               <Typography variant="h6" sx={{ mb: 2, color: '#555' }}>
                 活动介绍
               </Typography>
@@ -592,17 +599,17 @@ const MeetupDetail: React.FC = () => {
                 sx={{
                   p: 3,
                   borderRadius: 1,
-                  bgcolor: '#fafafa',
+                  bgcolor: '#edebeb',
                   whiteSpace: 'pre-line',
                   lineHeight: 1.8,
                 }}
               >
                 {meetup.description}
               </Box>
-            </Box>
+            </Card>
 
             {/* 组织者信息 */}
-            <Box sx={{ mb: 4 }} component="section">
+            <Card sx={{ mb: 4, padding: '1rem', borderRadius: '8px' }}>
               <Typography variant="h6" sx={{ mb: 2, color: '#555' }}>
                 组织者信息
               </Typography>
@@ -610,7 +617,7 @@ const MeetupDetail: React.FC = () => {
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  bgcolor: '#fafafa',
+                  bgcolor: '#edebeb',
                   p: 3,
                   borderRadius: 1,
                 }}
@@ -624,11 +631,11 @@ const MeetupDetail: React.FC = () => {
                   {meetup.creator || meetup.organizer}
                 </Typography>
               </Box>
-            </Box>
+            </Card>
 
             {/* 操作按钮 */}
             <Box sx={{ mt: 4, textAlign: 'center' }}>
-              <Typography variant="subtitle1" sx={{ mb: 2, color: '#666' }}>
+              <Typography variant="subtitle1" sx={{ mb: 2, color: 'var(--text-light)' }}>
                 {isUpcomingMeetup ? '立即报名参加' : '活动已结束'}
               </Typography>
               <Button
@@ -778,11 +785,11 @@ const MeetupDetail: React.FC = () => {
                 height: 'auto',
                 borderRadius: 8,
                 marginBottom: '1.5rem',
-                border: '1px solid #e0e0e0',
+                border: '1px solid rgba(0, 0, 0, 0.05)',
               }}
             />
           )}
-          <Typography variant="body1" sx={{ color: '#666', mb: 2 }}>
+          <Typography variant="body1" sx={{ color: 'var(--text-light)', mb: 2 }}>
             请使用微信扫描二维码加入群聊
           </Typography>
         </DialogContent>
@@ -818,7 +825,7 @@ const MeetupDetail: React.FC = () => {
                     alignItems: 'center',
                   }}
                 >
-                  <Avatar sx={{ mr: 2, bgcolor: '#e0e0e0' }}>
+                  <Avatar sx={{ mr: 2, bgcolor: 'var(--text-lighter)' }}>
                     {participant.name.charAt(0)}
                   </Avatar>
                   <Typography>{participant.name}</Typography>

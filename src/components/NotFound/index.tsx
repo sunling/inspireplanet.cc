@@ -31,7 +31,7 @@ const NotFound: React.FC = () => {
           fontSize: isMobile ? '8rem' : isMedium ? '10rem' : '14rem',
           lineHeight: 1,
           marginBottom: '1rem',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'var(--gradient-primary)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           textShadow: '3px 3px 6px rgba(0,0,0,0.1)',
@@ -76,7 +76,7 @@ const NotFound: React.FC = () => {
             fontSize: { xs: '0.875rem', sm: '1rem' },
             textTransform: 'none',
             fontWeight: 500,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'var(--gradient-primary)',
             '&:hover': {
               background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
               boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',

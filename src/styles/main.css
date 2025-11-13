@@ -1,11 +1,11 @@
 /* ===== CSS VARIABLES & THEME ===== */
 :root {
-  --bg-light: #FFF9F0;
-  --primary: #FF7F50;
-  --primary-dark: #FF5A36;
-  --accent: #FFA07A;
-  --accent-light: #FFB6C1;
-  --accent-lighter: #FFE4E1;
+  --bg-light: #fff9f0;
+  --primary: #ff7f50;
+  --primary-dark: #ff5a36;
+  --accent: #ffa07a;
+  --accent-light: #ffb6c1;
+  --accent-lighter: #ffe4e1;
   --text: #333333;
   --text-light: #666666;
   --text-lighter: #868e96;
@@ -15,23 +15,36 @@
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
-  --font-sans: 'Inter', 'Noto Sans SC', 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  --font-sans: 'Inter', 'Noto Sans SC', 'PingFang SC', -apple-system,
+    BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
   --font-serif: 'Playfair Display', 'Noto Serif SC', serif;
   --font-mono: 'Ma Shan Zheng', cursive;
-  
+
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, var(--primary), var(--accent));
-  --gradient-accent: linear-gradient(135deg, var(--accent-light), var(--accent-lighter), #F0E68C);
+  --gradient-accent: linear-gradient(
+    135deg,
+    var(--accent-light),
+    var(--accent-lighter),
+    #f0e68c
+  );
   --gradient-bg: linear-gradient(135deg, #f9f9f9, #e0eafc);
-  --gradient-header: linear-gradient(135deg, var(--accent-light), var(--accent-lighter), #F0E68C, #E0FFFF, #DDA0DD);
-  
+  --gradient-header: linear-gradient(
+    135deg,
+    var(--accent-light),
+    var(--accent-lighter),
+    #f0e68c,
+    #e0ffff,
+    #dda0dd
+  );
+
   /* Common Gradients */
   --gradient-blue: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --gradient-pink: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   --gradient-green: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
   --gradient-warm: linear-gradient(135deg, #ffb6c1, #ffe4e1, #f0e68c);
   --gradient-warm-hover: linear-gradient(135deg, #ff91a4, #ffd1d4, #ede066);
-  
+
   /* Spacing */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
@@ -271,13 +284,19 @@ button {
 }
 
 button:hover {
-  background: linear-gradient(135deg, #FFD1DC, #F5DEB3, #B0E0E6);
+  background: linear-gradient(135deg, #ffd1dc, #f5deb3, #b0e0e6);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(255, 182, 193, 0.4);
 }
 
 .primary-btn {
-  background: linear-gradient(135deg, #FF91A4, #FFB6C1, #FFE4B5, #98FB98) !important;
+  background: linear-gradient(
+    135deg,
+    #ff91a4,
+    #ffb6c1,
+    #ffe4b5,
+    #98fb98
+  ) !important;
   color: #fff !important;
   font-weight: 700;
   box-shadow: 0 6px 20px rgba(255, 145, 164, 0.4);
@@ -292,7 +311,12 @@ button:hover {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
   transition: left 0.5s;
 }
 
@@ -301,13 +325,19 @@ button:hover {
 }
 
 .primary-btn:hover {
-  background: linear-gradient(135deg, #FF69B4, #FF91A4, #FFD700, #90EE90) !important;
+  background: linear-gradient(
+    135deg,
+    #ff69b4,
+    #ff91a4,
+    #ffd700,
+    #90ee90
+  ) !important;
   transform: translateY(-3px) scale(1.02);
   box-shadow: 0 8px 25px rgba(255, 105, 180, 0.5);
 }
 
 .upload-btn {
-  background: linear-gradient(135deg, #F5F5F5, #E6E6FA, #F0F8FF);
+  background: linear-gradient(135deg, #f5f5f5, #e6e6fa, #f0f8ff);
   color: #666;
   border: 1px solid rgba(221, 160, 221, 0.3);
   box-shadow: 0 3px 8px rgba(221, 160, 221, 0.2);
@@ -316,7 +346,7 @@ button:hover {
 }
 
 .upload-btn:hover {
-  background: linear-gradient(135deg, #E6E6FA, #D8BFD8, #E0E6FF);
+  background: linear-gradient(135deg, #e6e6fa, #d8bfd8, #e0e6ff);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(221, 160, 221, 0.3);
 }
@@ -352,10 +382,10 @@ button:hover {
 }
 
 /* Important field labels */
-label[for="title"],
-label[for="quote"],
-label[for="detail"],
-label[for="creator"] {
+label[for='title'],
+label[for='quote'],
+label[for='detail'],
+label[for='creator'] {
   font-size: 15px !important;
   font-weight: 700 !important;
   color: #2c3e50 !important;
@@ -363,10 +393,10 @@ label[for="creator"] {
 }
 
 /* Required field indicators */
-label[for="title"]::after,
-label[for="quote"]::after,
-label[for="detail"]::after {
-  content: " *";
+label[for='title']::after,
+label[for='quote']::after,
+label[for='detail']::after {
+  content: ' *';
   color: #e74c3c;
   font-weight: bold;
 }
@@ -407,12 +437,12 @@ label[for="detail"]::after {
   font-size: 15px;
   padding: 12px;
   line-height: 1.5;
-  border-color: #B0C4DE;
+  border-color: #b0c4de;
   box-shadow: 0 1px 4px rgba(176, 196, 222, 0.1);
 }
 
 #creator {
-  border-color: #B0C4DE;
+  border-color: #b0c4de;
   box-shadow: 0 1px 4px rgba(176, 196, 222, 0.1);
 }
 
@@ -436,7 +466,7 @@ label[for="detail"]::after {
 
 .form-input::placeholder,
 .form-input::-webkit-input-placeholder {
-  color: #6c757d;
+  color: var(--text-lighter);
   opacity: 0.7;
 }
 
@@ -482,10 +512,10 @@ label[for="detail"]::after {
 .loading-placeholder {
   width: 100%;
   height: 200px;
-  background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
-              linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
-              linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
-              linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+  background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+    linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+    linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
   border-radius: 12px;
@@ -914,7 +944,7 @@ label[for="detail"]::after {
 
 .form-input::placeholder,
 .form-textarea::placeholder {
-  color: #888;
+  color: var(--text-lighter);
   opacity: 0.7;
 }
 
@@ -960,162 +990,361 @@ label[for="detail"]::after {
 }
 
 /* 为每个渐变选项添加对应的背景 */
-.gradient-option[data-gradient="card-gradient-1"] {
-  background-image: linear-gradient(to right top,
-      rgba(209, 107, 165, 0.8), rgba(199, 119, 185, 0.7), rgba(186, 131, 202, 0.6),
-      rgba(170, 143, 216, 0.5), rgba(154, 154, 225, 0.4), rgba(138, 167, 236, 0.3),
-      rgba(121, 179, 244, 0.2), rgba(105, 191, 248, 0.3), rgba(82, 207, 254, 0.4),
-      rgba(65, 223, 255, 0.5), rgba(70, 238, 250, 0.6), rgba(95, 251, 241, 0.7));
+.gradient-option[data-gradient='card-gradient-1'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(209, 107, 165, 0.8),
+    rgba(199, 119, 185, 0.7),
+    rgba(186, 131, 202, 0.6),
+    rgba(170, 143, 216, 0.5),
+    rgba(154, 154, 225, 0.4),
+    rgba(138, 167, 236, 0.3),
+    rgba(121, 179, 244, 0.2),
+    rgba(105, 191, 248, 0.3),
+    rgba(82, 207, 254, 0.4),
+    rgba(65, 223, 255, 0.5),
+    rgba(70, 238, 250, 0.6),
+    rgba(95, 251, 241, 0.7)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-2"] {
-  background-image: linear-gradient(to right top,
-      rgba(255, 126, 95, 0.8), rgba(255, 140, 109, 0.7), rgba(255, 154, 124, 0.6),
-      rgba(255, 168, 138, 0.5), rgba(255, 182, 153, 0.4), rgba(255, 194, 168, 0.3),
-      rgba(255, 206, 184, 0.2), rgba(255, 217, 199, 0.3), rgba(255, 229, 215, 0.4),
-      rgba(255, 242, 231, 0.5), rgba(255, 254, 250, 0.6), rgba(255, 255, 255, 0.7));
+.gradient-option[data-gradient='card-gradient-2'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(255, 126, 95, 0.8),
+    rgba(255, 140, 109, 0.7),
+    rgba(255, 154, 124, 0.6),
+    rgba(255, 168, 138, 0.5),
+    rgba(255, 182, 153, 0.4),
+    rgba(255, 194, 168, 0.3),
+    rgba(255, 206, 184, 0.2),
+    rgba(255, 217, 199, 0.3),
+    rgba(255, 229, 215, 0.4),
+    rgba(255, 242, 231, 0.5),
+    rgba(255, 254, 250, 0.6),
+    rgba(255, 255, 255, 0.7)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-3"] {
-  background-image: linear-gradient(to right top,
-      rgba(107, 33, 168, 0.8), rgba(134, 47, 178, 0.7), rgba(160, 61, 189, 0.6),
-      rgba(186, 76, 200, 0.5), rgba(211, 91, 211, 0.4), rgba(227, 108, 217, 0.3),
-      rgba(242, 125, 223, 0.2), rgba(255, 141, 229, 0.3), rgba(255, 157, 226, 0.4),
-      rgba(255, 172, 223, 0.5), rgba(255, 188, 221, 0.6), rgba(255, 204, 220, 0.7));
+.gradient-option[data-gradient='card-gradient-3'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(107, 33, 168, 0.8),
+    rgba(134, 47, 178, 0.7),
+    rgba(160, 61, 189, 0.6),
+    rgba(186, 76, 200, 0.5),
+    rgba(211, 91, 211, 0.4),
+    rgba(227, 108, 217, 0.3),
+    rgba(242, 125, 223, 0.2),
+    rgba(255, 141, 229, 0.3),
+    rgba(255, 157, 226, 0.4),
+    rgba(255, 172, 223, 0.5),
+    rgba(255, 188, 221, 0.6),
+    rgba(255, 204, 220, 0.7)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-4"] {
-  background-image: linear-gradient(to right top,
-      rgba(0, 201, 255, 0.8), rgba(0, 179, 255, 0.7), rgba(0, 156, 255, 0.6),
-      rgba(0, 130, 255, 0.5), rgba(0, 100, 255, 0.4), rgba(0, 89, 255, 0.3),
-      rgba(0, 77, 255, 0.2), rgba(0, 63, 255, 0.3), rgba(0, 49, 255, 0.4),
-      rgba(0, 32, 255, 0.5), rgba(0, 12, 255, 0.6), rgba(11, 0, 255, 0.7));
+.gradient-option[data-gradient='card-gradient-4'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(0, 201, 255, 0.8),
+    rgba(0, 179, 255, 0.7),
+    rgba(0, 156, 255, 0.6),
+    rgba(0, 130, 255, 0.5),
+    rgba(0, 100, 255, 0.4),
+    rgba(0, 89, 255, 0.3),
+    rgba(0, 77, 255, 0.2),
+    rgba(0, 63, 255, 0.3),
+    rgba(0, 49, 255, 0.4),
+    rgba(0, 32, 255, 0.5),
+    rgba(0, 12, 255, 0.6),
+    rgba(11, 0, 255, 0.7)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-5"] {
-  background-image: linear-gradient(to right top,
-      rgba(249, 197, 44, 0.8), rgba(246, 182, 47, 0.7), rgba(242, 168, 51, 0.6),
-      rgba(238, 153, 55, 0.5), rgba(233, 139, 60, 0.4), rgba(227, 126, 65, 0.3),
-      rgba(221, 113, 70, 0.2), rgba(215, 100, 76, 0.3), rgba(207, 86, 79, 0.4),
-      rgba(198, 73, 82, 0.5), rgba(188, 60, 84, 0.6), rgba(178, 48, 86, 0.7));
+.gradient-option[data-gradient='card-gradient-5'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(249, 197, 44, 0.8),
+    rgba(246, 182, 47, 0.7),
+    rgba(242, 168, 51, 0.6),
+    rgba(238, 153, 55, 0.5),
+    rgba(233, 139, 60, 0.4),
+    rgba(227, 126, 65, 0.3),
+    rgba(221, 113, 70, 0.2),
+    rgba(215, 100, 76, 0.3),
+    rgba(207, 86, 79, 0.4),
+    rgba(198, 73, 82, 0.5),
+    rgba(188, 60, 84, 0.6),
+    rgba(178, 48, 86, 0.7)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-6"] {
-  background-image: linear-gradient(to right top,
-      rgba(168, 255, 120, 0.8), rgba(159, 245, 120, 0.7), rgba(150, 235, 120, 0.6),
-      rgba(141, 225, 120, 0.5), rgba(132, 215, 120, 0.4), rgba(124, 208, 120, 0.3),
-      rgba(116, 201, 120, 0.2), rgba(108, 194, 120, 0.3), rgba(99, 186, 121, 0.4),
-      rgba(90, 179, 121, 0.5), rgba(81, 172, 122, 0.6), rgba(72, 165, 122, 0.7));
+.gradient-option[data-gradient='card-gradient-6'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(168, 255, 120, 0.8),
+    rgba(159, 245, 120, 0.7),
+    rgba(150, 235, 120, 0.6),
+    rgba(141, 225, 120, 0.5),
+    rgba(132, 215, 120, 0.4),
+    rgba(124, 208, 120, 0.3),
+    rgba(116, 201, 120, 0.2),
+    rgba(108, 194, 120, 0.3),
+    rgba(99, 186, 121, 0.4),
+    rgba(90, 179, 121, 0.5),
+    rgba(81, 172, 122, 0.6),
+    rgba(72, 165, 122, 0.7)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-7"] {
-  background-image: linear-gradient(to right top,
-      rgba(255, 138, 0, 0.8), rgba(255, 122, 26, 0.7), rgba(255, 105, 42, 0.6),
-      rgba(255, 86, 55, 0.5), rgba(255, 63, 67, 0.4), rgba(255, 54, 76, 0.3),
-      rgba(255, 44, 85, 0.2), rgba(255, 33, 94, 0.3), rgba(255, 26, 106, 0.4),
-      rgba(255, 23, 118, 0.5), rgba(255, 26, 131, 0.6), rgba(249, 37, 144, 0.7));
+.gradient-option[data-gradient='card-gradient-7'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(255, 138, 0, 0.8),
+    rgba(255, 122, 26, 0.7),
+    rgba(255, 105, 42, 0.6),
+    rgba(255, 86, 55, 0.5),
+    rgba(255, 63, 67, 0.4),
+    rgba(255, 54, 76, 0.3),
+    rgba(255, 44, 85, 0.2),
+    rgba(255, 33, 94, 0.3),
+    rgba(255, 26, 106, 0.4),
+    rgba(255, 23, 118, 0.5),
+    rgba(255, 26, 131, 0.6),
+    rgba(249, 37, 144, 0.7)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-8"] {
-  background-image: linear-gradient(to right top,
-      rgba(240, 248, 255, 0.8), rgba(230, 240, 250, 0.7), rgba(220, 235, 245, 0.6),
-      rgba(210, 230, 240, 0.5), rgba(200, 225, 235, 0.4), rgba(190, 220, 230, 0.3),
-      rgba(180, 215, 225, 0.2), rgba(170, 210, 220, 0.3));
+.gradient-option[data-gradient='card-gradient-8'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(240, 248, 255, 0.8),
+    rgba(230, 240, 250, 0.7),
+    rgba(220, 235, 245, 0.6),
+    rgba(210, 230, 240, 0.5),
+    rgba(200, 225, 235, 0.4),
+    rgba(190, 220, 230, 0.3),
+    rgba(180, 215, 225, 0.2),
+    rgba(170, 210, 220, 0.3)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-9"] {
-  background-image: linear-gradient(to right top,
-      rgba(248, 250, 252, 0.8), rgba(241, 245, 249, 0.7), rgba(234, 240, 246, 0.6),
-      rgba(226, 232, 240, 0.5), rgba(203, 213, 225, 0.4), rgba(186, 200, 214, 0.3),
-      rgba(169, 187, 203, 0.2), rgba(148, 163, 184, 0.3));
+.gradient-option[data-gradient='card-gradient-9'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(248, 250, 252, 0.8),
+    rgba(241, 245, 249, 0.7),
+    rgba(234, 240, 246, 0.6),
+    rgba(226, 232, 240, 0.5),
+    rgba(203, 213, 225, 0.4),
+    rgba(186, 200, 214, 0.3),
+    rgba(169, 187, 203, 0.2),
+    rgba(148, 163, 184, 0.3)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-10"] {
-  background-image: linear-gradient(to right top,
-      rgba(254, 252, 232, 0.8), rgba(253, 246, 178, 0.7), rgba(252, 211, 77, 0.6),
-      rgba(245, 158, 11, 0.5), rgba(217, 119, 6, 0.4), rgba(180, 83, 9, 0.3),
-      rgba(146, 64, 14, 0.2), rgba(120, 53, 15, 0.3));
+.gradient-option[data-gradient='card-gradient-10'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(254, 252, 232, 0.8),
+    rgba(253, 246, 178, 0.7),
+    rgba(252, 211, 77, 0.6),
+    rgba(245, 158, 11, 0.5),
+    rgba(217, 119, 6, 0.4),
+    rgba(180, 83, 9, 0.3),
+    rgba(146, 64, 14, 0.2),
+    rgba(120, 53, 15, 0.3)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-11"] {
-  background-image: linear-gradient(to right top,
-      rgba(240, 253, 244, 0.8), rgba(220, 252, 231, 0.7), rgba(187, 247, 208, 0.6),
-      rgba(134, 239, 172, 0.5), rgba(74, 222, 128, 0.4), rgba(34, 197, 94, 0.3),
-      rgba(22, 163, 74, 0.2), rgba(21, 128, 61, 0.3));
+.gradient-option[data-gradient='card-gradient-11'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(240, 253, 244, 0.8),
+    rgba(220, 252, 231, 0.7),
+    rgba(187, 247, 208, 0.6),
+    rgba(134, 239, 172, 0.5),
+    rgba(74, 222, 128, 0.4),
+    rgba(34, 197, 94, 0.3),
+    rgba(22, 163, 74, 0.2),
+    rgba(21, 128, 61, 0.3)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-12"] {
-  background-image: linear-gradient(to right top,
-      rgba(253, 244, 255, 0.8), rgba(250, 232, 255, 0.7), rgba(243, 232, 255, 0.6),
-      rgba(233, 213, 255, 0.5), rgba(196, 181, 253, 0.4), rgba(167, 139, 250, 0.3),
-      rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.3));
+.gradient-option[data-gradient='card-gradient-12'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(253, 244, 255, 0.8),
+    rgba(250, 232, 255, 0.7),
+    rgba(243, 232, 255, 0.6),
+    rgba(233, 213, 255, 0.5),
+    rgba(196, 181, 253, 0.4),
+    rgba(167, 139, 250, 0.3),
+    rgba(139, 92, 246, 0.2),
+    rgba(124, 58, 237, 0.3)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-13"] {
-  background-image: linear-gradient(to right top,
-      rgba(255, 251, 235, 0.8), rgba(254, 243, 199, 0.7), rgba(253, 230, 138, 0.6),
-      rgba(252, 211, 77, 0.5), rgba(245, 158, 11, 0.4), rgba(217, 119, 6, 0.3),
-      rgba(194, 65, 12, 0.2), rgba(154, 52, 18, 0.3));
+.gradient-option[data-gradient='card-gradient-13'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(255, 251, 235, 0.8),
+    rgba(254, 243, 199, 0.7),
+    rgba(253, 230, 138, 0.6),
+    rgba(252, 211, 77, 0.5),
+    rgba(245, 158, 11, 0.4),
+    rgba(217, 119, 6, 0.3),
+    rgba(194, 65, 12, 0.2),
+    rgba(154, 52, 18, 0.3)
+  );
 }
 
-.gradient-option[data-gradient="card-gradient-14"] {
-  background-image: linear-gradient(to right top,
-      rgba(248, 250, 252, 0.8), rgba(241, 245, 249, 0.7), rgba(226, 232, 240, 0.6),
-      rgba(203, 213, 225, 0.5), rgba(148, 163, 184, 0.4), rgba(100, 116, 139, 0.3),
-      rgba(71, 85, 105, 0.2), rgba(51, 65, 85, 0.3));
+.gradient-option[data-gradient='card-gradient-14'] {
+  background-image: linear-gradient(
+    to right top,
+    rgba(248, 250, 252, 0.8),
+    rgba(241, 245, 249, 0.7),
+    rgba(226, 232, 240, 0.6),
+    rgba(203, 213, 225, 0.5),
+    rgba(148, 163, 184, 0.4),
+    rgba(100, 116, 139, 0.3),
+    rgba(71, 85, 105, 0.2),
+    rgba(51, 65, 85, 0.3)
+  );
 }
 
 /* ===== UTILITY CLASSES ===== */
-.text-center { text-align: center; }
-.text-left { text-align: left; }
-.text-right { text-align: right; }
+.text-center {
+  text-align: center;
+}
+.text-left {
+  text-align: left;
+}
+.text-right {
+  text-align: right;
+}
 
-.mb-0 { margin-bottom: 0; }
-.mb-sm { margin-bottom: var(--spacing-sm); }
-.mb-md { margin-bottom: var(--spacing-md); }
-.mb-lg { margin-bottom: var(--spacing-lg); }
-.mb-xl { margin-bottom: var(--spacing-xl); }
+.mb-0 {
+  margin-bottom: 0;
+}
+.mb-sm {
+  margin-bottom: var(--spacing-sm);
+}
+.mb-md {
+  margin-bottom: var(--spacing-md);
+}
+.mb-lg {
+  margin-bottom: var(--spacing-lg);
+}
+.mb-xl {
+  margin-bottom: var(--spacing-xl);
+}
 
-.mt-0 { margin-top: 0; }
-.mt-sm { margin-top: var(--spacing-sm); }
-.mt-md { margin-top: var(--spacing-md); }
-.mt-lg { margin-top: var(--spacing-lg); }
-.mt-xl { margin-top: var(--spacing-xl); }
+.mt-0 {
+  margin-top: 0;
+}
+.mt-sm {
+  margin-top: var(--spacing-sm);
+}
+.mt-md {
+  margin-top: var(--spacing-md);
+}
+.mt-lg {
+  margin-top: var(--spacing-lg);
+}
+.mt-xl {
+  margin-top: var(--spacing-xl);
+}
 
-.p-0 { padding: 0; }
-.p-sm { padding: var(--spacing-sm); }
-.p-md { padding: var(--spacing-md); }
-.p-lg { padding: var(--spacing-lg); }
-.p-xl { padding: var(--spacing-xl); }
+.p-0 {
+  padding: 0;
+}
+.p-sm {
+  padding: var(--spacing-sm);
+}
+.p-md {
+  padding: var(--spacing-md);
+}
+.p-lg {
+  padding: var(--spacing-lg);
+}
+.p-xl {
+  padding: var(--spacing-xl);
+}
 
-.d-flex { display: flex; }
-.d-grid { display: grid; }
-.d-block { display: block; }
-.d-none { display: none; }
+.d-flex {
+  display: flex;
+}
+.d-grid {
+  display: grid;
+}
+.d-block {
+  display: block;
+}
+.d-none {
+  display: none;
+}
 
-.justify-center { justify-content: center; }
-.justify-between { justify-content: space-between; }
-.justify-end { justify-content: flex-end; }
+.justify-center {
+  justify-content: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.justify-end {
+  justify-content: flex-end;
+}
 
-.align-center { align-items: center; }
-.align-start { align-items: flex-start; }
-.align-end { align-items: flex-end; }
+.align-center {
+  align-items: center;
+}
+.align-start {
+  align-items: flex-start;
+}
+.align-end {
+  align-items: flex-end;
+}
 
-.gap-sm { gap: var(--spacing-sm); }
-.gap-md { gap: var(--spacing-md); }
-.gap-lg { gap: var(--spacing-lg); }
-.gap-xl { gap: var(--spacing-xl); }
+.gap-sm {
+  gap: var(--spacing-sm);
+}
+.gap-md {
+  gap: var(--spacing-md);
+}
+.gap-lg {
+  gap: var(--spacing-lg);
+}
+.gap-xl {
+  gap: var(--spacing-xl);
+}
 
-.w-full { width: 100%; }
-.h-full { height: 100%; }
+.w-full {
+  width: 100%;
+}
+.h-full {
+  height: 100%;
+}
 
-.rounded { border-radius: var(--radius); }
-.rounded-sm { border-radius: var(--radius-sm); }
-.rounded-lg { border-radius: var(--radius-lg); }
+.rounded {
+  border-radius: var(--radius);
+}
+.rounded-sm {
+  border-radius: var(--radius-sm);
+}
+.rounded-lg {
+  border-radius: var(--radius-lg);
+}
 
-.shadow { box-shadow: var(--shadow); }
-.shadow-md { box-shadow: var(--shadow-md); }
-.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow {
+  box-shadow: var(--shadow);
+}
+.shadow-md {
+  box-shadow: var(--shadow-md);
+}
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
 
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 768px) {

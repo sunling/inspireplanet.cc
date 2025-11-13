@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import { getCurrentUser } from '@/utils';
 
 interface PasswordRequirements {
   length: boolean;
@@ -163,6 +164,7 @@ const ChangePassWord: React.FC = () => {
     setMessage(null);
 
     try {
+      const currentUser = getCurrentUser() || {};
       // 使用统一的api对象修改密码
       const response = await api.auth.changePassword({
         email: currentUser?.email || '',
@@ -250,11 +252,11 @@ const ChangePassWord: React.FC = () => {
             <Box sx={{ textAlign: 'center', mb: 4 }}>
               <Typography
                 variant="h4"
-                sx={{ fontWeight: 600, mb: 1, color: '#333' }}
+                sx={{ fontWeight: 600, mb: 1, color: 'var(--text)' }}
               >
                 修改密码
               </Typography>
-              <Typography variant="body2" sx={{ color: '#666' }}>
+              <Typography variant="body2" sx={{ color: 'var(--text-light)' }}>
                 为了账户安全，请设置一个强密码
               </Typography>
             </Box>
@@ -433,7 +435,7 @@ const ChangePassWord: React.FC = () => {
               onClick={() => navigate('/profile')}
               sx={{
                 mt: 3,
-                color: '#666',
+                color: 'var(--text-light)',
                 '&:hover': {
                   color: '#ff7f50',
                   bgcolor: 'transparent',
@@ -465,7 +467,7 @@ const PasswordRequirement: React.FC<PasswordRequirementProps> = ({
       display: 'flex',
       alignItems: 'center',
       mb: 1,
-      color: met ? '#28a745' : '#666',
+      color: met ? '#28a745' : 'var(--text-light)',
     }}
   >
     <Box

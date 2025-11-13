@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef } from 'react';
 import { api } from '../../netlify/configs';
 import html2canvas from 'html2canvas';
 import {
@@ -14,25 +13,16 @@ import {
   FormControl,
   Grid,
   Paper,
-  useMediaQuery,
-  useTheme,
   CircularProgress,
   Card,
   CardMedia,
   CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from '@mui/material';
+import { useGlobalSnackbar } from '@/context/app';
 
 const CoverEditor: React.FC = () => {
-  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverPreviewRef = useRef<HTMLDivElement>(null);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
   // 状态管理
   const [title, setTitle] = useState<string>('启发星球');
@@ -49,6 +39,7 @@ const CoverEditor: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchImages, setSearchImages] = useState<any[]>([]);
   const [searching, setSearching] = useState<boolean>(false);
+  const showSnackbar = useGlobalSnackbar();
 
   // 字体选项
   const fontOptions = [
@@ -98,19 +89,18 @@ const CoverEditor: React.FC = () => {
 
     try {
       // 使用统一的api对象搜索图片
-      const response = await api.images.search({
-        query: searchText,
-      });
-
-      if (response.success) {
-        const data = response.data;
-        setSearchQuery(searchText);
-        setSearchImages(data);
-        setShowSearchResults(true);
-        setSearchStatus('');
-      } else {
-        throw new Error(response.error || '搜索失败');
+      const response = await api.images.search(searchText, 'landscape');
+      if (!response.success) {
+        showSnackbar.error('查询图片失败');
+        return;
       }
+
+      const data = response.data?.images || [];
+
+      setSearchQuery(searchText);
+      setSearchImages(data);
+      setShowSearchResults(true);
+      setSearchStatus('');
 
       setSearchQuery(searchText);
       setSearchImages(data);
@@ -194,7 +184,7 @@ const CoverEditor: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'var(--bg-light)', py: 4 }}>
       <Container maxWidth="lg">
         <Typography
           variant="h4"
@@ -203,7 +193,7 @@ const CoverEditor: React.FC = () => {
             mb: 4,
             textAlign: 'center',
             fontWeight: 'bold',
-            color: '#333',
+            color: 'var(--text)',
           }}
         >
           封面编辑器
@@ -226,9 +216,6 @@ const CoverEditor: React.FC = () => {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="输入封面标题..."
                 margin="normal"
-                InputProps={{
-                  sx: { fontFamily: fontFamily },
-                }}
               />
               <Typography
                 variant="caption"
@@ -317,7 +304,11 @@ const CoverEditor: React.FC = () => {
                     {uploadStatus && (
                       <Typography
                         variant="caption"
-                        sx={{ mt: 1, display: 'block', color: '#666' }}
+                        sx={{
+                          mt: 1,
+                          display: 'block',
+                          color: 'var(--text-light)',
+                        }}
                       >
                         {uploadStatus}
                       </Typography>
@@ -344,7 +335,7 @@ const CoverEditor: React.FC = () => {
                     sx={{
                       ml: 1,
                       display: 'inline',
-                      color: '#666',
+                      color: 'var(--text-light)',
                       ...(searching && { fontWeight: 'bold' }),
                     }}
                   >
@@ -359,7 +350,7 @@ const CoverEditor: React.FC = () => {
                   sx={{
                     mt: 3,
                     p: 2,
-                    border: '1px solid #e0e0e0',
+                    border: '1px solid rgba(0, 0, 0, 0.05)',
                     borderRadius: 1,
                   }}
                 >
@@ -463,6 +454,7 @@ const CoverEditor: React.FC = () => {
                         mb: 2,
                         textAlign: layout === 'left' ? 'left' : 'center',
                         wordBreak: 'break-word',
+                        fontFamily: fontFamily,
                       }}
                     >
                       {formatTitle(title)}
@@ -473,6 +465,7 @@ const CoverEditor: React.FC = () => {
                       sx={{
                         opacity: 0.9,
                         textAlign: layout === 'left' ? 'left' : 'center',
+                        fontFamily: fontFamily,
                       }}
                     >
                       {formatKeywords(keywords)}

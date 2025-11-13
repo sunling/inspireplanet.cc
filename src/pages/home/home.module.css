@@ -17,8 +17,8 @@
 .section-title {
   margin-bottom: 0.5rem;
   font-weight: 700;
-  color: #667eea;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  color: var(--primary);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -43,13 +43,13 @@
   text-transform: none;
   font-weight: 600;
   font-size: 1rem;
-  background-color: #667eea;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  background-color: var(--primary);
+  box-shadow: 0 4px 15px rgba(255, 127, 80, 0.3);
   transition: all 0.3s ease;
 }
 
 .view-all-button:hover {
-  background-color: #5a67d8;
+  background-color: var(--primary-dark);
 }
 
 /* 移动端样式调整 */

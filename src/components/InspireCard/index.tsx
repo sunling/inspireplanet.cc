@@ -7,6 +7,7 @@ import useResponsive from '@/hooks/useResponsive';
 
 interface InspireCardProps {
   card: CardItem;
+  canComment?: boolean;
   onCardClick: (id: string) => void;
   onSubmitComment: (id: string, name: string, comment: string) => void;
 }
@@ -14,9 +15,10 @@ interface InspireCardProps {
 const InspireCard: React.FC<InspireCardProps> = ({
   card,
   onCardClick,
+  canComment = true,
   onSubmitComment,
 }) => {
-  const [showCommentForm, setShowCommentForm] = useState<boolean>(false);
+  const [showCommentForm, setShowCommentForm] = useState<boolean>(canComment);
   const [commentName, setCommentName] = useState<string>('');
   const [commentText, setCommentText] = useState<string>('');
   const { isMobile } = useResponsive();
@@ -107,9 +109,9 @@ const InspireCard: React.FC<InspireCardProps> = ({
           sx={{
             backgroundColor: quoteBoxBg,
             padding: 2,
-            borderRadius: '4px',
+            borderRadius: 'var(--radius-sm)',
             mb: 2,
-            color: '#333',
+            color: 'var(--text)',
           }}
         >
           <Typography variant="body1" sx={{ fontStyle: 'italic' }}>
@@ -147,7 +149,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: 2,
+          padding: 'var(--spacing-md)',
           opacity: 0,
           '&:hover': {
             opacity: 1,
@@ -178,7 +180,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
           >
             <Typography
               variant="subtitle2"
-              sx={{ mb: 1, color: '#333', fontWeight: 'bold' }}
+              sx={{ mb: 1, color: 'var(--text)', fontWeight: 'bold' }}
             >
               添加评论
             </Typography>

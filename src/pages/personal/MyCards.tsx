@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/netlify/configs';
 import { CardItem } from '@/netlify/types';
-import { getFontColorForGradient } from '@/constants/gradient';
-import { formatDate } from '@/utils';
+import { formatDate, getCurrentUser } from '@/utils';
 import DOMPurify from 'dompurify';
 import {
   Box,
@@ -15,7 +14,6 @@ import {
   Button,
   Grid,
   Paper,
-  CircularProgress,
   Chip,
   Divider,
 } from '@mui/material';
@@ -35,27 +33,8 @@ const MyCards: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { isMobile, isMedium } = useResponsive();
+  const { isMobile } = useResponsive();
   const showSnackbar = useGlobalSnackbar();
-
-  // 获取当前登录用户信息
-  const getCurrentUser = (): {
-    username?: string;
-    wechatId?: string;
-  } | null => {
-    try {
-      // 尝试从localStorage获取用户信息，支持多种存储键名
-      const userStr =
-        localStorage.getItem('userInfo') || localStorage.getItem('userData');
-      if (userStr) {
-        return JSON.parse(userStr);
-      }
-      return null;
-    } catch (e) {
-      console.error('解析用户信息失败:', e);
-      return null;
-    }
-  };
 
   // 清理和验证卡片数据
   const sanitizeAndValidateCard = (
@@ -175,7 +154,7 @@ const MyCards: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
+      <Box sx={{ minHeight: '100vh', bgcolor: 'var(--bg-light)', py: 4 }}>
         <Container maxWidth="lg">
           <Loading />
         </Container>
@@ -185,7 +164,7 @@ const MyCards: React.FC = () => {
 
   if (error) {
     return (
-      <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
+      <Box sx={{ minHeight: '100vh', bgcolor: 'var(--bg-light)', py: 4 }}>
         <Container maxWidth="lg">
           <Typography
             variant="h6"
@@ -201,7 +180,7 @@ const MyCards: React.FC = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'var(--bg-light)', py: 4 }}>
       <Container maxWidth="lg">
         <Typography
           variant="h4"

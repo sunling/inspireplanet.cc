@@ -29,7 +29,7 @@ import { isUpcoming, formatTime, formatDate } from '../../utils';
 
 const Meetups: React.FC = () => {
   const navigate = useNavigate();
-  const { showSnackbar } = useGlobalSnackbar();
+  const showSnackbar = useGlobalSnackbar();
 
   const [meetups, setMeetups] = useState<Meetup[]>([]);
   const [filteredMeetups, setFilteredMeetups] = useState<Meetup[]>([]);
@@ -84,7 +84,7 @@ const Meetups: React.FC = () => {
       const response = await api.meetups.getAll();
       console.log('loadMeetups 响应', response);
       if (!response.success) {
-        showSnackbar.console.error('查询会议列表失败');
+        showSnackbar.error('查询会议列表失败');
         return;
       }
       const meetups = response.data?.meetups || [];
@@ -162,7 +162,7 @@ const Meetups: React.FC = () => {
       // 检查是否已经报名
       try {
         // 使用统一的API检查RSVP状态
-        const isRSVPed = await checkRSVPStatus(meetupId, user.wechat_id || '');
+        const isRSVPed = await checkRSVPStatus(meetupId);
 
         if (isRSVPed) {
           if (qrImageUrl) {
@@ -193,18 +193,12 @@ const Meetups: React.FC = () => {
   };
 
   // 检查RSVP状态
-  const checkRSVPStatus = async (
-    meetupId: string,
-    wechatId: string
-  ): Promise<boolean> => {
+  const checkRSVPStatus = async (meetupId: string): Promise<boolean> => {
     try {
       // 使用统一的http客户端检查RSVP状态
+      const response = await api.rsvp.getByMeetupId(meetupId);
 
-      const response = await http.get('/netlify/functions/checkRSVP', {
-        meetupId,
-        wechatId,
-      });
-      return response.success && response.data.rsvps.length > 0;
+      return response.success && (response?.data?.rsvps || []).length > 0;
     } catch (error) {
       console.error('检查报名状态失败:', error);
       return false;
@@ -603,7 +597,7 @@ const Meetups: React.FC = () => {
 
         <Box id="meetupsContainer">
           {isLoading ? (
-            <Loading message="正在加载活动..." />
+            <Loading message="正在加载活动..." size={40} />
           ) : error ? (
             <ErrorCard
               message={error}

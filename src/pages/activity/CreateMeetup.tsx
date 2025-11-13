@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -9,10 +9,10 @@ import {
   Card,
   CardContent,
   Grid,
+  MenuItem,
 } from '@mui/material';
 import useResponsive from '../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../context/app';
-import { http } from '@/netlify/configs/http';
 import { api } from '@/netlify/configs';
 
 interface MeetupData {
@@ -28,6 +28,60 @@ interface MeetupData {
   qrImageUrl: string;
 }
 
+interface FormErrors {
+  [key: string]: string | undefined;
+}
+
+// 格式化日期时间为datetime-local格式
+const formatDateTimeLocal = (date: Date): string => {
+  const [year, month, day, hours, minutes] = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+    String(date.getHours()).padStart(2, '0'),
+    String(date.getMinutes()).padStart(2, '0'),
+  ];
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+// 从localStorage获取用户信息
+const getCurrentUser = () => {
+  try {
+    const userInfo = localStorage.getItem('userInfo');
+    return userInfo ? JSON.parse(userInfo) : null;
+  } catch (error) {
+    console.error('解析用户信息失败:', error);
+    return null;
+  }
+};
+
+// 快捷日期时间配置
+const quickTimeOptions = {
+  tomorrow: { label: '明天 19:00', config: { days: 1, hours: 19 } },
+  'next-week': {
+    label: '下周六 14:00',
+    config: {
+      days: (now: { getDay: () => number }) => (6 - now.getDay() + 7) % 7 || 7,
+      hours: 14,
+    },
+  },
+  'next-sunday': {
+    label: '下周日 10:00',
+    config: {
+      days: (now: { getDay: () => number }) => (7 - now.getDay()) % 7 || 7,
+      hours: 10,
+    },
+  },
+  weekend: {
+    label: '本周末 19:00',
+    config: {
+      days: (now: { getDay: () => number }) =>
+        now.getDay() === 0 ? 6 : now.getDay() === 6 ? 7 : 6 - now.getDay(),
+      hours: 19,
+    },
+  },
+};
+
 const CreateMeetup: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
@@ -36,225 +90,223 @@ const CreateMeetup: React.FC = () => {
   const [dragover, setDragover] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [qrPreview, setQrPreview] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
 
-  const [meetupData, setMeetupData] = useState<MeetupData>({
+  // 初始化默认日期
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(19, 0, 0, 0);
+
+  // 使用React状态管理表单数据
+  const [formValues, setFormValues] = useState<MeetupData>({
     title: '',
     description: '',
     type: '',
-    datetime: '',
+    datetime: formatDateTimeLocal(tomorrow),
     location: '',
     duration: '',
     maxParticipants: '',
-    organizer: '',
+    organizer: getCurrentUser()?.name || '',
     contact: '',
     qrImageUrl: '',
   });
 
-  // 初始化表单
-  useEffect(() => {
-    // 设置默认活动时间为明天19:00
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(19, 0, 0, 0);
+  // 表单验证函数
+  const validateForm = (values: MeetupData): FormErrors => {
+    const newErrors: FormErrors = {};
 
-    setMeetupData((prev) => ({
-      ...prev,
-      datetime: formatDateTimeLocal(tomorrow),
-    }));
-    checkUserLoginAndFillOrganizer();
-  }, []);
+    // 必填字段验证
+    if (!values.title.trim()) newErrors.title = '此字段为必填项';
+    if (!values.description.trim()) newErrors.description = '此字段为必填项';
+    if (!values.type) newErrors.type = '此字段为必填项';
+    if (!values.datetime) newErrors.datetime = '此字段为必填项';
+    if (!values.organizer.trim()) newErrors.organizer = '此字段为必填项';
+    if (!values.contact.trim()) newErrors.contact = '此字段为必填项';
+    if (!values.qrImageUrl) newErrors.qrImageUrl = '请上传活动群二维码';
 
-  // 从localStorage获取用户信息
-  const checkUserLoginAndFillOrganizer = () => {
+    // 日期时间验证
+    if (values.datetime && new Date(values.datetime) <= new Date()) {
+      newErrors.datetime = '活动时间必须是未来时间';
+    }
+
+    return newErrors;
+  };
+
+  // 检查表单是否有效
+  const isFormValid = (): boolean => {
+    const validationErrors = validateForm(formValues);
+    return Object.keys(validationErrors).length === 0;
+  };
+
+  // 处理表单提交
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    // 标记所有字段为已触摸
+    const allTouched = Object.keys(formValues).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+    setTouched(allTouched);
+
+    // 验证表单
+    const validationErrors = validateForm(formValues);
+    setErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
+    setSubmitLoading(true);
     try {
-      const userInfo = localStorage.getItem('userInfo');
-      if (userInfo) {
-        const user = JSON.parse(userInfo);
-        if (user.name) {
-          setMeetupData((prev) => ({ ...prev, organizer: user.name }));
-        }
+      // 上传二维码图片
+      const qrImageUrl = await uploadQRImage(formValues.qrImageUrl);
+      if (!qrImageUrl) return;
+
+      // 准备活动数据
+      const localDateTime = new Date(formValues.datetime);
+      const user = getCurrentUser();
+
+      const submitData = {
+        ...formValues,
+        datetime: localDateTime.toISOString(),
+        duration: formValues.duration ? parseFloat(formValues.duration) : null,
+        maxParticipants: formValues.maxParticipants
+          ? parseInt(formValues.maxParticipants)
+          : null,
+        qrImageUrl,
+        createdBy: user?.username || user?.email || null,
+      };
+
+      // 提交活动数据
+      const response = await api.meetups.create(submitData as any);
+
+      if (!response.success) {
+        showSnackbar.error(response.error || '发布失败');
+        return;
       }
+
+      showSnackbar.success('活动发布成功！');
+      setTimeout(() => navigate('/meetups'), 3000);
     } catch (error) {
-      console.error('解析用户信息失败:', error);
+      showSnackbar.error(
+        '发布失败: ' + (error instanceof Error ? error.message : '未知错误')
+      );
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
-  // 格式化日期时间为datetime-local格式
-  const formatDateTimeLocal = (date: Date): string => {
-    const [year, month, day, hours, minutes] = [
-      date.getFullYear(),
-      String(date.getMonth() + 1).padStart(2, '0'),
-      String(date.getDate()).padStart(2, '0'),
-      String(date.getHours()).padStart(2, '0'),
-      String(date.getMinutes()).padStart(2, '0'),
-    ];
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
+  // 所有表单字段的处理逻辑现在已在FormField组件内部使用useCallback实现，确保函数引用稳定并优化中文输入法支持
 
   // 处理快捷日期时间选择
   const handleQuickDateTimeSelect = (type: string) => {
     const now = new Date();
     const result = new Date();
+    const option = quickTimeOptions[type as keyof typeof quickTimeOptions];
 
-    switch (type) {
-      case 'tomorrow':
-        result.setDate(now.getDate() + 1);
-        result.setHours(19, 0, 0, 0);
-        break;
-      case 'next-week':
-        const daysUntilNextSaturday = (6 - now.getDay() + 7) % 7 || 7;
-        result.setDate(now.getDate() + daysUntilNextSaturday);
-        result.setHours(14, 0, 0, 0);
-        break;
-      case 'next-sunday':
-        const daysUntilNextSunday = (7 - now.getDay()) % 7 || 7;
-        result.setDate(now.getDate() + daysUntilNextSunday);
-        result.setHours(10, 0, 0, 0);
-        break;
-      case 'weekend':
-        const dayOfWeek = now.getDay();
-        if (dayOfWeek === 0) result.setDate(now.getDate() + 6); // 下周六
-        else if (dayOfWeek === 6) result.setDate(now.getDate() + 7); // 下周日
-        else result.setDate(now.getDate() + (6 - dayOfWeek)); // 本周六
-        result.setHours(19, 0, 0, 0);
-        break;
-      default:
-        return;
+    if (option) {
+      const days =
+        typeof option.config.days === 'function'
+          ? option.config.days(now)
+          : option.config.days;
+
+      result.setDate(now.getDate() + days);
+      result.setHours(option.config.hours, 0, 0, 0);
+
+      setFormValues((prev) => ({
+        ...prev,
+        datetime: formatDateTimeLocal(result),
+      }));
+
+      // 清除datetime字段的错误
+      if (errors.datetime) {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.datetime;
+          return newErrors;
+        });
+      }
     }
-
-    setMeetupData((prev) => ({
-      ...prev,
-      datetime: formatDateTimeLocal(result),
-    }));
   };
 
   // 检查当前选中的日期时间是否匹配某个快捷选项
   const isQuickDateTimeActive = (type: string): boolean => {
     const now = new Date();
     const result = new Date();
+    const option = quickTimeOptions[type as keyof typeof quickTimeOptions];
 
-    switch (type) {
-      case 'tomorrow':
-        result.setDate(now.getDate() + 1);
-        result.setHours(19, 0, 0, 0);
-        break;
-      case 'next-week':
-        const daysUntilNextSaturday = (6 - now.getDay() + 7) % 7 || 7;
-        result.setDate(now.getDate() + daysUntilNextSaturday);
-        result.setHours(14, 0, 0, 0);
-        break;
-      case 'next-sunday':
-        const daysUntilNextSunday = (7 - now.getDay()) % 7 || 7;
-        result.setDate(now.getDate() + daysUntilNextSunday);
-        result.setHours(10, 0, 0, 0);
-        break;
-      case 'weekend':
-        const dayOfWeek = now.getDay();
-        if (dayOfWeek === 0) result.setDate(now.getDate() + 6);
-        else if (dayOfWeek === 6) result.setDate(now.getDate() + 7);
-        else result.setDate(now.getDate() + (6 - dayOfWeek));
-        result.setHours(19, 0, 0, 0);
-        break;
-      default:
-        return false;
+    if (option) {
+      const days =
+        typeof option.config.days === 'function'
+          ? option.config.days(now)
+          : option.config.days;
+
+      result.setDate(now.getDate() + days);
+      result.setHours(option.config.hours, 0, 0, 0);
+      return formValues.datetime === formatDateTimeLocal(result);
     }
-
-    return meetupData.datetime === formatDateTimeLocal(result);
-  };
-
-  // 处理表单输入变化
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setMeetupData((prev) => ({ ...prev, [name]: value }));
-
-    // 清除对应字段的错误信息
-    if (errors[name]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
+    return false;
   };
 
   // 处理二维码文件
   const handleQRFile = (file: File) => {
+    // 验证文件类型
     if (!file.type.startsWith('image/')) {
-      setErrors((prev) => ({ ...prev, qr: '请上传图片文件' }));
+      setErrors((prev) => ({
+        ...prev,
+        qrImageUrl: '请上传图片文件',
+      }));
+      setTouched((prev) => ({
+        ...prev,
+        qrImageUrl: true,
+      }));
       return;
     }
 
+    // 验证文件大小
     if (file.size > 5 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, qr: '图片大小不能超过5MB' }));
+      setErrors((prev) => ({
+        ...prev,
+        qrImageUrl: '图片大小不能超过5MB',
+      }));
+      setTouched((prev) => ({
+        ...prev,
+        qrImageUrl: true,
+      }));
       return;
     }
 
+    // 读取文件并设置预览
     const reader = new FileReader();
     reader.onload = (e) => {
       if (e.target?.result) {
         const base64Image = e.target.result as string;
         setQrPreview(base64Image);
-        setMeetupData((prev) => ({ ...prev, qrImageUrl: base64Image }));
-
-        // 清除错误信息
-        if (errors.qr) {
-          setErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors.qr;
-            return newErrors;
-          });
-        }
+        setFormValues((prev) => ({
+          ...prev,
+          qrImageUrl: base64Image,
+        }));
+        // 清除错误
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.qrImageUrl;
+          return newErrors;
+        });
       }
     };
     reader.readAsDataURL(file);
-  };
-
-  // 表单验证
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    const {
-      title,
-      description,
-      type,
-      datetime,
-      organizer,
-      contact,
-      qrImageUrl,
-    } = meetupData;
-
-    // 验证必填字段
-    if (!title.trim()) newErrors.title = '此字段为必填项';
-    if (!description.trim()) newErrors.description = '此字段为必填项';
-    if (!type) newErrors.type = '此字段为必填项';
-    if (!datetime) newErrors.datetime = '此字段为必填项';
-    if (!organizer.trim()) newErrors.organizer = '此字段为必填项';
-    if (!contact.trim()) newErrors.contact = '此字段为必填项';
-    if (!qrImageUrl) newErrors.qr = '请上传活动群二维码';
-
-    // 验证日期时间不能是过去
-    if (datetime && new Date(datetime) <= new Date()) {
-      newErrors.datetime = '活动时间必须是未来时间';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   // 上传二维码图片
   const uploadQRImage = async (base64Image: string): Promise<string> => {
     try {
       const response = await api.images.upload(base64Image);
-
       if (!response.success) {
-        showSnackbar.error(response.error || '上传二维码失败');
+        showSnackbar.error('上传二维码失败');
         return '';
       }
-
       return response.data?.imageUrl || '';
     } catch (error) {
       console.error('上传二维码失败:', error);
@@ -265,60 +317,7 @@ const CreateMeetup: React.FC = () => {
     }
   };
 
-  // 提交表单
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    setSubmitLoading(true);
-
-    try {
-      // 上传二维码图片
-      const qrImageUrl = await uploadQRImage(meetupData.qrImageUrl);
-
-      // 准备活动数据
-      const localDateTime = new Date(meetupData.datetime);
-      const userInfo = localStorage.getItem('userInfo');
-      const user = userInfo ? JSON.parse(userInfo) : null;
-
-      const submitData = {
-        ...meetupData,
-        datetime: localDateTime.toISOString(),
-        duration: meetupData.duration ? parseFloat(meetupData.duration) : null,
-        maxParticipants: meetupData.maxParticipants
-          ? parseInt(meetupData.maxParticipants)
-          : null,
-        qrImageUrl,
-        createdBy: user?.username || user?.email || null,
-      };
-
-      // 提交活动数据
-      const response = await http.post(
-        '/.netlify/functions/meetupHandler',
-        submitData
-      );
-
-      if (response.success) {
-        showSnackbar.success('活动发布成功！');
-
-        // 重置表单并跳转
-        setTimeout(() => {
-          navigate('/meetups');
-        }, 3000);
-      } else {
-        throw new Error(response.error || '发布失败');
-      }
-    } catch (error) {
-      showSnackbar.error(
-        '发布失败: ' + (error instanceof Error ? error.message : '未知错误')
-      );
-    } finally {
-      setSubmitLoading(false);
-    }
-  };
-
-  // 表单字段组件
+  // 最简单的表单字段组件，确保中文输入正常工作
   const FormField = ({
     name,
     label,
@@ -327,56 +326,79 @@ const CreateMeetup: React.FC = () => {
     placeholder = '',
     multiline = false,
     select = false,
-  }) => (
-    <Box sx={{ mb: 3 }}>
-      <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
-        {label}
-      </Typography>
-      <TextField
-        fullWidth
-        id={name}
-        name={name}
-        type={type}
-        value={meetupData[name]}
-        onChange={handleInputChange}
-        required={required}
-        placeholder={placeholder}
-        multiline={multiline}
-        minRows={multiline ? 4 : 1}
-        error={!!errors[name]}
-        helperText={errors[name]}
-        select={select}
-        size={isMobile ? 'small' : 'medium'}
-        SelectProps={
-          select
-            ? {
-                native: true,
-              }
-            : undefined
-        }
-        sx={{
-          '& .MuiOutlinedInput-root': {
-            '&:hover fieldset': {
-              borderColor: '#ff7f50',
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: '#ff7f50',
-              boxShadow: '0 0 0 3px rgba(255, 127, 80, 0.1)',
-            },
-          },
-        }}
+  }: {
+    name: keyof MeetupData;
+    label: string;
+    type?: string;
+    required?: boolean;
+    placeholder?: string;
+    multiline?: boolean;
+    select?: boolean;
+  }) => {
+    // 获取当前字段的错误信息
+    const fieldError = touched[name] ? errors[name] : undefined;
+
+    // 最简单的onChange处理函数
+    const handleChange = (
+      event: React.ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
       >
-        {select && (
-          <>
-            <option value="">选择活动类型</option>
-            <option value="online">线上活动</option>
-            <option value="offline">线下活动</option>
-            <option value="hybrid">线上线下结合</option>
-          </>
-        )}
-      </TextField>
-    </Box>
-  );
+    ) => {
+      const { name: fieldName, value } = event.target;
+      setFormValues((prev) => ({ ...prev, [fieldName]: value }));
+    };
+
+    // 最简单的onBlur处理函数
+    const handleBlur = (
+      event: React.FocusEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >
+    ) => {
+      const { name: fieldName } = event.target;
+      setTouched((prev) => ({ ...prev, [fieldName]: true }));
+    };
+
+    return (
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+          {label}
+        </Typography>
+        <TextField
+          fullWidth
+          id={name}
+          name={name}
+          type={type}
+          value={formValues[name]}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          required={required}
+          placeholder={placeholder}
+          multiline={multiline}
+          minRows={multiline ? 4 : 1}
+          error={!!fieldError}
+          helperText={fieldError}
+          select={select}
+          size={isMobile ? 'small' : 'medium'}
+          // 只保留最基本的配置
+        >
+          {select && [
+            <MenuItem key="empty" value="">
+              选择活动类型
+            </MenuItem>,
+            <MenuItem key="online" value="online">
+              线上活动
+            </MenuItem>,
+            <MenuItem key="offline" value="offline">
+              线下活动
+            </MenuItem>,
+            <MenuItem key="hybrid" value="hybrid">
+              线上线下结合
+            </MenuItem>,
+          ]}
+        </TextField>
+      </Box>
+    );
+  };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -400,9 +422,8 @@ const CreateMeetup: React.FC = () => {
             sx={{
               mb: 4,
               p: 3,
-              bgcolor: '#f8f9fa',
               borderRadius: 1,
-              borderLeft: '4px solid #ff7f50',
+              boxShadow: 1,
             }}
           >
             <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>
@@ -428,8 +449,8 @@ const CreateMeetup: React.FC = () => {
           <Card
             sx={{ mb: 4, boxShadow: 1, borderRadius: 2, overflow: 'hidden' }}
           >
-            <Box sx={{ bgcolor: '#ff7f50', p: 2 }}>
-              <Typography variant="h6" color="white" fontWeight="bold">
+            <Box sx={{ p: 2 }}>
+              <Typography variant="h6" fontWeight="bold">
                 时间地点
               </Typography>
             </Box>
@@ -450,43 +471,26 @@ const CreateMeetup: React.FC = () => {
                   快捷选择：
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {['tomorrow', 'next-week', 'next-sunday', 'weekend'].map(
-                    (type) => (
-                      <Button
-                        key={type}
-                        variant={
-                          isQuickDateTimeActive(type) ? 'contained' : 'outlined'
-                        }
-                        size="small"
-                        onClick={() => handleQuickDateTimeSelect(type)}
-                        sx={{
-                          minWidth: isMobile ? 'auto' : '120px',
-                          backgroundColor: isQuickDateTimeActive(type)
-                            ? '#ff7f50'
-                            : 'transparent',
-                          borderColor: '#ff7f50',
-                          color: isQuickDateTimeActive(type)
-                            ? 'white'
-                            : '#ff7f50',
-                          '&:hover': {
-                            backgroundColor: isQuickDateTimeActive(type)
-                              ? '#e66942'
-                              : 'rgba(255, 127, 80, 0.05)',
-                            borderColor: '#e66942',
-                          },
-                        }}
-                      >
-                        {
-                          {
-                            tomorrow: '明天 19:00',
-                            'next-week': '下周六 14:00',
-                            'next-sunday': '下周日 10:00',
-                            weekend: '本周末 19:00',
-                          }[type]
-                        }
-                      </Button>
-                    )
-                  )}
+                  {Object.entries(quickTimeOptions).map(([type, option]) => (
+                    <Button
+                      key={type}
+                      variant={
+                        isQuickDateTimeActive(type) ? 'contained' : 'outlined'
+                      }
+                      size="small"
+                      onClick={() => handleQuickDateTimeSelect(type)}
+                      sx={{
+                        minWidth: isMobile ? 'auto' : '120px',
+                        backgroundColor: isQuickDateTimeActive(type)
+                          ? 'blue'
+                          : 'transparent',
+                        borderColor: 'blue',
+                        color: isQuickDateTimeActive(type) ? 'white' : 'blue',
+                      }}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
                 </Box>
               </Box>
 
@@ -522,9 +526,8 @@ const CreateMeetup: React.FC = () => {
             sx={{
               mb: 4,
               p: 3,
-              bgcolor: '#f8f9fa',
               borderRadius: 1,
-              borderLeft: '4px solid #ff7f50',
+              boxShadow: 1,
             }}
           >
             <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>
@@ -547,7 +550,7 @@ const CreateMeetup: React.FC = () => {
               <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
                 活动群二维码
               </Typography>
-              <div
+              <Box
                 className={`qr-upload ${dragover ? 'dragover' : ''}`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => {
@@ -561,17 +564,19 @@ const CreateMeetup: React.FC = () => {
                   if (e.dataTransfer.files.length > 0)
                     handleQRFile(e.dataTransfer.files[0]);
                 }}
-                style={{
+                sx={{
                   border: '2px dashed #ddd',
-                  borderRadius: 4,
+                  borderRadius: 1,
                   padding: '2rem',
                   textAlign: 'center',
                   cursor: 'pointer',
-                  borderColor: dragover ? '#ff7f50' : '#ddd',
                   backgroundColor: dragover
                     ? 'rgba(255, 127, 80, 0.05)'
                     : 'transparent',
                   transition: 'all 0.2s',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 127, 80, 0.05)',
+                  },
                 }}
               >
                 <input
@@ -586,32 +591,35 @@ const CreateMeetup: React.FC = () => {
                   style={{ display: 'none' }}
                 />
                 {qrPreview ? (
-                  <img
+                  <Box
+                    component="img"
                     src={qrPreview}
                     alt="二维码预览"
-                    style={{
+                    sx={{
                       maxWidth: '200px',
                       maxHeight: '200px',
                       margin: '0 auto',
-                      borderRadius: 4,
+                      borderRadius: 1,
                     }}
                   />
                 ) : (
                   <>
-                    <p style={{ marginBottom: '0.5rem' }}>点击上传群二维码</p>
-                    <p style={{ color: '#999', fontSize: '0.875rem' }}>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      点击上传群二维码
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
                       支持拖拽上传，JPG/PNG格式
-                    </p>
+                    </Typography>
                   </>
                 )}
-              </div>
-              {errors.qr && (
+              </Box>
+              {touched.qrImageUrl && errors.qrImageUrl && (
                 <Typography
                   variant="caption"
                   color="error"
                   sx={{ mt: 1, display: 'block' }}
                 >
-                  {errors.qr}
+                  {errors.qrImageUrl}
                 </Typography>
               )}
             </Box>
@@ -621,10 +629,8 @@ const CreateMeetup: React.FC = () => {
             type="submit"
             variant="contained"
             fullWidth
-            disabled={submitLoading}
+            disabled={submitLoading || !isFormValid()}
             sx={{
-              bgcolor: '#ff7f50',
-              '&:hover': { bgcolor: '#e66942' },
               py: 1.5,
               fontSize: '1.1rem',
               fontWeight: 600,

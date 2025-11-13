@@ -22,12 +22,12 @@ import { gradientOptions, getFontColorForGradient } from '@/constants/gradient';
 import { CardItem, SearchImageItem, SearchImageResult } from '@/netlify/types';
 import InspireCard from '@/components/InspireCard';
 import styles from './index.module.css';
-import useSnackbar from '@/hooks/useSnackbar';
+import { useGlobalSnackbar } from '@/context/app';
 
 const CreateCard: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const { showSnackbar, SnackbarComponent } = useSnackbar();
+  const showSnackbar = useGlobalSnackbar();
   const previewRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -319,7 +319,7 @@ const CreateCard: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'var(--bg-light)', py: 4 }}>
       <Container maxWidth="lg">
         <Box sx={{ mb: 6 }}>
           <Typography
@@ -486,8 +486,8 @@ const CreateCard: React.FC = () => {
                   sx={{
                     mb: 4,
                     p: 2,
-                    border: '1px solid #e0e0e0',
-                    borderRadius: 1,
+                    border: '1px solid rgba(0, 0, 0, 0.05)',
+                    borderRadius: 'var(--radius)',
                   }}
                   className={styles.searchResults}
                 >
@@ -586,7 +586,7 @@ const CreateCard: React.FC = () => {
                     background:
                       gradientOptions.find(
                         (g) => g.class === cardData.gradientClass
-                      )?.class || '#f5f5f5',
+                      )?.class || 'var(--bg-light)',
                   }}
                 >
                   <CardContent
@@ -609,7 +609,7 @@ const CreateCard: React.FC = () => {
                       sx={{
                         bgcolor: 'rgba(255, 255, 255, 0.9)',
                         p: 2,
-                        borderRadius: 1,
+                        borderRadius: 'var(--radius-sm)',
                         mb: 2,
                       }}
                     >
@@ -704,7 +704,7 @@ const CreateCard: React.FC = () => {
                     font: item.font || 'sans-serif',
                   }}
                   canComment={false} // 轮播区域不需要评论功能
-                  onCardClick={(id) => navigate(`/card/detail/${id}`)}
+                  onCardClick={(id) => navigate(`/card-detail/${id}`)}
                   onSubmitComment={() => {}}
                 />
               ))}
@@ -725,7 +725,6 @@ const CreateCard: React.FC = () => {
           </Box>
         )}
       </Container>
-      <SnackbarComponent />
     </Box>
   );
 };

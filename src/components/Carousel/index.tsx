@@ -183,7 +183,7 @@ const Carousel: React.FC<CarouselProps> = ({
           <div className={styles[`${direction}-carousel-action`]}>
             <IconButton
               className={styles['carousel-arrow-left']}
-              sx={{ color: '#667eea' }}
+              sx={{ color: 'var(--primary)' }}
               onClick={prevSlide}
               aria-label="上一张"
             >
@@ -193,7 +193,7 @@ const Carousel: React.FC<CarouselProps> = ({
             <IconButton
               className={styles['carousel-arrow-right']}
               onClick={nextSlide}
-              sx={{ color: '#667eea' }}
+              sx={{ color: 'var(--primary)' }}
               aria-label="下一张"
             >
               <ArrowForwardIosIcon fontSize="small" />
