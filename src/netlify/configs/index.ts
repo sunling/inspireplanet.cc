@@ -8,6 +8,7 @@ import {
   Meetup,
   Workshop,
   SearchImageItem,
+  Participant,
 } from '../types';
 import { ApiResponse } from '../types/http';
 import { http } from './http';
@@ -186,12 +187,14 @@ export const api = {
 
   // 会议相关API
   meetups: {
-    getAll: async (): Promise<ApiResponse<Meetup[]>> => {
-      return http.get<Meetup[]>(API_MAP.MEETUPS.ROOT);
+    getAll: async (): Promise<ApiResponse<{ meetups: Meetup[] }>> => {
+      return http.get<{ meetups: Meetup[] }>(API_MAP.MEETUPS.ROOT);
     },
 
-    getById: async (id: string): Promise<ApiResponse<Meetup>> => {
-      return http.get<Meetup>(API_MAP.MEETUPS.ROOT, { id });
+    getById: async (
+      id: string
+    ): Promise<ApiResponse<{ meetups: Meetup[] }>> => {
+      return http.get<{ meetups: Meetup[] }>(API_MAP.MEETUPS.ROOT, { id });
     },
 
     create: async (
@@ -223,8 +226,10 @@ export const api = {
       return http.post<any>(API_MAP.MEETUPS.RSVP, rsvpData);
     },
 
-    getByMeetupId: async (meetupId: string): Promise<ApiResponse<any[]>> => {
-      return http.get<any[]>(API_MAP.MEETUPS.RSVP, {
+    getByMeetupId: async (
+      meetupId: string
+    ): Promise<ApiResponse<{ rsvps: Participant[] }>> => {
+      return http.get<{ rsvps: Participant[] }>(API_MAP.MEETUPS.RSVP, {
         meetupId,
       });
     },

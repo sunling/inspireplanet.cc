@@ -40,7 +40,7 @@ export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
-  details?: any;
+  detail?: string;
 }
 
 // 定义请求配置接口

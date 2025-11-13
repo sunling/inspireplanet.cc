@@ -7,18 +7,16 @@ import useResponsive from '@/hooks/useResponsive';
 
 interface InspireCardProps {
   card: CardItem;
-  canComment?: boolean; // 是否允许评论
   onCardClick: (id: string) => void;
   onSubmitComment: (id: string, name: string, comment: string) => void;
 }
 
 const InspireCard: React.FC<InspireCardProps> = ({
   card,
-  canComment = true,
   onCardClick,
   onSubmitComment,
 }) => {
-  const [showCommentForm, setShowCommentForm] = useState<boolean>(canComment);
+  const [showCommentForm, setShowCommentForm] = useState<boolean>(false);
   const [commentName, setCommentName] = useState<string>('');
   const [commentText, setCommentText] = useState<string>('');
   const { isMobile } = useResponsive();

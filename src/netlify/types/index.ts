@@ -69,7 +69,6 @@ export interface Meetup {
   mode?: 'online' | 'offline';
   datetime: string;
   location?: string;
-  fee: string | number | null | undefined;
   max_ppl?: number;
   max_participants?: number;
   duration?: number;
@@ -77,14 +76,22 @@ export interface Meetup {
   creator?: string;
   contact: string;
   qr_image_url?: string;
-  status: 'upcoming' | 'ongoing' | 'ended';
+  status: 'upcoming' | 'ongoing' | 'ended' | 'active';
   created_at: string;
   participant_count: number;
   cover?: string;
+  wechat_id?: string;
+  user_id?: string;
+  qrcode?: string;
+  // todo: 会议费用,目前未看到接口返回
+  fee?: string | number | null | undefined;
 }
 
 // 参与者接口
 export interface Participant {
+  id?: string;
+  meetup_id?: string;
+  username?: string;
   name: string;
   wechat_id?: string;
   created_at?: string;
