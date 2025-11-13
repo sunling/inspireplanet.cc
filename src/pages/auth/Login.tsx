@@ -352,7 +352,6 @@ const Login: React.FC = () => {
                 py: 1.5,
                 fontSize: '1rem',
                 fontWeight: 'bold',
-                backgroundColor: 'var(--primary)',
                 '&:hover': {
                   backgroundColor: '#5a67d8',
                 },
@@ -383,7 +382,7 @@ const Login: React.FC = () => {
               href="/"
               variant="body2"
               sx={{
-                color: 'var(--primary)',
+                color: 'blue',
                 textDecoration: 'none',
                 '&:hover': { textDecoration: 'underline' },
               }}

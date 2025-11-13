@@ -370,7 +370,6 @@ const CreateMeetup: React.FC = () => {
           type={type}
           value={formValues[name]}
           onChange={handleChange}
-          onBlur={handleBlur}
           required={required}
           placeholder={placeholder}
           multiline={multiline}
