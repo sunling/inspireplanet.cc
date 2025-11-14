@@ -128,14 +128,9 @@ const CreateMeetup: React.FC = () => {
     if (values.datetime && new Date(values.datetime) <= new Date()) {
       newErrors.datetime = '活动时间必须是未来时间';
     }
+    setErrors(newErrors);
 
     return newErrors;
-  };
-
-  // 检查表单是否有效
-  const isFormValid = (): boolean => {
-    const validationErrors = validateForm(formValues);
-    return Object.keys(validationErrors).length === 0;
   };
 
   // 处理表单提交
@@ -250,6 +245,7 @@ const CreateMeetup: React.FC = () => {
         ...prev,
         qrImageUrl: '请上传图片文件',
       }));
+      showSnackbar.error('请上传图片文件');
 
       return;
     }
@@ -260,6 +256,8 @@ const CreateMeetup: React.FC = () => {
         ...prev,
         qrImageUrl: '图片大小不能超过5MB',
       }));
+
+      showSnackbar.error('图片大小不能超过5MB');
 
       return;
     }
@@ -329,7 +327,7 @@ const CreateMeetup: React.FC = () => {
           快速创建活动，连接志同道合的朋友
         </Typography>
 
-        <form onSubmit={handleSubmit}>
+        <form>
           {/* 基本信息 */}
           <Box
             sx={{
@@ -352,6 +350,8 @@ const CreateMeetup: React.FC = () => {
                 name="title"
                 type="text"
                 value={formValues.title}
+                helperText={errors['title']}
+                error={!!errors['title']}
                 onChange={handleInputChange}
                 required
                 placeholder="输入活动标题"
@@ -369,6 +369,8 @@ const CreateMeetup: React.FC = () => {
                 type="text"
                 value={formValues.description}
                 onChange={handleInputChange}
+                error={!!errors['description']}
+                helperText={errors['description']}
                 required
                 placeholder="详细描述活动内容、目标和亮点"
                 multiline
@@ -386,6 +388,8 @@ const CreateMeetup: React.FC = () => {
                 name="type"
                 value={formValues.type}
                 onChange={handleInputChange}
+                error={!!errors['type']}
+                helperText={errors['type']}
                 required
                 select
                 size={isMobile ? 'small' : 'medium'}
@@ -425,6 +429,8 @@ const CreateMeetup: React.FC = () => {
                   id="datetime"
                   name="datetime"
                   type="datetime-local"
+                  error={!!errors['datetime']}
+                  helperText={errors['datetime']}
                   value={formValues.datetime}
                   onChange={handleInputChange}
                   required
@@ -475,6 +481,8 @@ const CreateMeetup: React.FC = () => {
                       id="location"
                       name="location"
                       type="text"
+                      error={!!errors['location']}
+                      helperText={errors['location']}
                       value={formValues.location}
                       onChange={handleInputChange}
                       placeholder="线下活动请填写具体地址，线上活动可填写平台名称"
@@ -540,6 +548,8 @@ const CreateMeetup: React.FC = () => {
                 id="organizer"
                 name="organizer"
                 type="text"
+                error={!!errors['organizer']}
+                helperText={errors['organizer']}
                 value={formValues.organizer}
                 onChange={handleInputChange}
                 required
@@ -556,6 +566,8 @@ const CreateMeetup: React.FC = () => {
                 id="contact"
                 name="contact"
                 type="text"
+                error={!!errors['contact']}
+                helperText={errors['contact']}
                 value={formValues.contact}
                 onChange={handleInputChange}
                 required
@@ -583,7 +595,9 @@ const CreateMeetup: React.FC = () => {
                     handleQRFile(e.dataTransfer.files[0]);
                 }}
                 sx={{
-                  border: '2px dashed #ddd',
+                  border: !!errors['qrImageUrl']
+                    ? '2px dashed #d32f2f'
+                    : '2px dashed #ddd',
                   borderRadius: 1,
                   padding: '2rem',
                   textAlign: 'center',
@@ -623,7 +637,7 @@ const CreateMeetup: React.FC = () => {
                 ) : (
                   <>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      点击上传群二维码
+                      请点击上传群二维码
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       支持拖拽上传，JPG/PNG格式
@@ -638,7 +652,8 @@ const CreateMeetup: React.FC = () => {
             type="submit"
             variant="contained"
             fullWidth
-            disabled={submitLoading || !isFormValid()}
+            disabled={submitLoading}
+            onClick={handleSubmit}
             sx={{
               py: 1.5,
               fontSize: '1.1rem',

@@ -117,7 +117,7 @@ const Cards: React.FC = () => {
       sx={{
         minHeight: '100vh',
         padding: 2,
-        background: '#f7f8f9',
+        background: '#f8f8fa',
       }}
     >
       <Container maxWidth="lg">
@@ -137,15 +137,20 @@ const Cards: React.FC = () => {
                   <Typography
                     variant="h4"
                     sx={{
-                      mb: 4,
+                      mb: '0.5rem',
                       color: '#4a6fa5',
                       fontWeight: 'bold',
                       textAlign: 'center',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                     }}
                   >
                     {formatDate(date)}
                   </Typography>
+                  <hr
+                    style={{
+                      marginBottom: '1rem',
+                      color: '#4a6fa5',
+                    }}
+                  ></hr>
                   <Grid
                     container
                     spacing={4}

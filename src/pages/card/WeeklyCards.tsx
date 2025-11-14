@@ -12,12 +12,14 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress,
   Grid,
 } from '@mui/material';
 import useResponsive from '@/hooks/useResponsive';
 
-import { getFontColorForGradient } from '@/constants/gradient';
+import {
+  getFontColorForGradient,
+  getRandomGradientClass,
+} from '@/constants/gradient';
 import { WeeklyCard } from '@/netlify/types';
 import { api } from '@/netlify/configs';
 import { useGlobalSnackbar } from '@/context/app';
@@ -164,7 +166,7 @@ const WeeklyCards: React.FC = () => {
       sx={{
         minHeight: '100vh',
         py: 8,
-        background: 'linear-gradient(135deg, #a9dafa 0%, #667eea 100%)',
+        background: '#fff9f0',
       }}
     >
       <Container maxWidth="lg">
@@ -174,7 +176,7 @@ const WeeklyCards: React.FC = () => {
           sx={{
             textAlign: 'center',
             mb: 6,
-            color: 'white',
+            color: '#4a6fa5',
             fontWeight: 'bold',
             textShadow: '0 2px 4px rgba(0,0,0,0.3)',
           }}
@@ -184,7 +186,7 @@ const WeeklyCards: React.FC = () => {
 
         {/* 期数过滤器 */}
         <Paper
-          elevation={3}
+          elevation={1}
           sx={{
             p: 3,
             mb: 6,
@@ -241,31 +243,24 @@ const WeeklyCards: React.FC = () => {
         {loading ? (
           <Loading size={60} />
         ) : sortedEpisodes.length === 0 ? (
-          <Empty message="暂无卡片数据"></Empty>
+          <Empty message="暂无卡片数据" />
         ) : (
           <Grid container spacing={4}>
             {sortedEpisodes.map((episode) => (
               <Grid key={episode} size={{ xs: 12 }}>
-                <Paper
-                  elevation={2}
+                <Typography
+                  variant="h4"
+                  component="h2"
+                  id={`episode-${episode.toLowerCase()}`}
                   sx={{
-                    p: 2,
-                    mb: 3,
-                    borderRadius: '8px',
-                    textAlign: 'center',
+                    fontWeight: 'bold',
+                    marginBottom: '0.5rem',
+                    color: '#4a6fa5',
                   }}
                 >
-                  <Typography
-                    variant="h4"
-                    component="h2"
-                    id={`episode-${episode.toLowerCase()}`}
-                    sx={{
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {episode}
-                  </Typography>
-                </Paper>
+                  {episode}
+                </Typography>
+                <hr style={{ marginBottom: '1.5rem', background: '#4a6fa5' }} />
 
                 <Grid
                   container
@@ -274,6 +269,7 @@ const WeeklyCards: React.FC = () => {
                 >
                   {groupedCards[episode].map((card) => {
                     const fontColor = getFontColorForGradient(card.gradient);
+                    const randomGradientClass = getRandomGradientClass();
                     return (
                       <Grid key={card.id} size={{ xs: 12, md: 6 }}>
                         <Box
@@ -285,8 +281,9 @@ const WeeklyCards: React.FC = () => {
                           }}
                         >
                           <Paper
-                            elevation={3}
+                            elevation={1}
                             id={`card-${card.id}`}
+                            className={randomGradientClass}
                             sx={{
                               height: '100%',
                               borderRadius: '12px',
@@ -294,7 +291,7 @@ const WeeklyCards: React.FC = () => {
                               p: 4,
                               color: fontColor,
                               position: 'relative',
-                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+
                               backdropFilter: 'blur(10px)',
                               display: 'flex',
                               flexDirection: 'column',
@@ -392,12 +389,16 @@ const WeeklyCards: React.FC = () => {
                               bottom: 10,
                               right: 10,
                               backgroundColor: '#667eea',
-                              '&:hover': { backgroundColor: '#5a67d8' },
+                              '&:hover': {
+                                backgroundColor: '#5a67d8',
+                                opacity: '1',
+                              },
                               minWidth: 'auto',
                               width: '36px',
                               height: '36px',
                               borderRadius: '50%',
                               color: 'white',
+                              opacity: '0.5',
                               p: 0,
                             }}
                           >

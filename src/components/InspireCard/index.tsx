@@ -27,14 +27,12 @@ const InspireCard: React.FC<InspireCardProps> = ({
   const fontColor = getFontColorForGradient(
     card.gradientClass || 'card-gradient-1'
   );
-  const gradientStyle =
-    gradientStyles[card.gradientClass || 'card-gradient-1'] || {};
+  const gradientClass = card.gradientClass || 'card-gradient-1';
 
   // Quote box背景色
   const quoteBoxBg = 'rgba(255, 255, 255, 0.9)';
 
-  // 最终图片路径，使用默认图片如果没有提供
-  const finalImage = card.imagePath || '/images/mistyblue.png';
+  const finalImage = card.imagePath;
 
   // 格式化创建日期
   const formatCardDate = (dateString: string): string => {
@@ -63,6 +61,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
       onClick={() => onCardClick(card.id)}
     >
       <Card
+        className={gradientClass}
         sx={{
           color: fontColor,
           fontFamily: 'sans-serif',
@@ -72,7 +71,6 @@ const InspireCard: React.FC<InspireCardProps> = ({
           position: 'relative',
           overflow: 'hidden',
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          ...gradientStyle,
         }}
       >
         {/* 卡片图片 */}
