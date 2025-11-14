@@ -178,7 +178,6 @@ const WeeklyCards: React.FC = () => {
             mb: 6,
             color: '#4a6fa5',
             fontWeight: 'bold',
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
           }}
         >
           启发星球周刊
@@ -254,13 +253,14 @@ const WeeklyCards: React.FC = () => {
                   id={`episode-${episode.toLowerCase()}`}
                   sx={{
                     fontWeight: 'bold',
-                    marginBottom: '0.5rem',
-                    color: '#4a6fa5',
+                    paddingBottom: '1rem',
+                    marginBottom: '1.5rem',
+                    color: '#667eea',
+                    borderBottom: '1px solid #667eea',
                   }}
                 >
                   {episode}
                 </Typography>
-                <hr style={{ marginBottom: '1.5rem', background: '#4a6fa5' }} />
 
                 <Grid
                   container

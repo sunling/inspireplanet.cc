@@ -1,5 +1,6 @@
 @import './card-bg.css';
 @import 'select-bg.css';
+@import './main.css';
 
 html {
   background-color: #fafafa;

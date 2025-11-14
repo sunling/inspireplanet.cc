@@ -425,7 +425,10 @@ const Meetups: React.FC = () => {
                         <Typography variant="body2" sx={{ mr: 1 }}>
                           📍
                         </Typography>
-                        <Typography variant="body2">
+                        <Typography
+                          variant="body2"
+                          sx={{ wordBreak: 'break-all' }}
+                        >
                           {meetup.location}
                         </Typography>
                       </Box>
@@ -439,6 +442,7 @@ const Meetups: React.FC = () => {
                       display: '-webkit-box',
                       WebkitLineClamp: 3,
                       WebkitBoxOrient: 'vertical',
+                      wordBreak: 'break-all',
                       overflow: 'hidden',
                     }}
                   >

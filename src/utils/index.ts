@@ -91,6 +91,7 @@ export const getCurrentUser = (): {
   username?: string;
   wechatId?: string;
   email?: string;
+  name?: string;
 } | null => {
   try {
     // 尝试从localStorage获取用户信息，支持多种存储键名

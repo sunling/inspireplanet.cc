@@ -68,9 +68,9 @@ const FloatingActions: React.FC<FloatingActionsProps> = ({
           direction="up"
           FabProps={{
             sx: {
-              bgcolor: '#1976d2',
+              bgcolor: '#ff7f50',
               '&:hover': {
-                bgcolor: '#1565c0',
+                bgcolor: '##ffa07a',
               },
             },
           }}
@@ -109,9 +109,9 @@ const FloatingActions: React.FC<FloatingActionsProps> = ({
             aria-label={action.name}
             onClick={action.onClick}
             sx={{
-              bgcolor: index === 0 ? '#1976d2' : '#7b1fa2',
+              bgcolor: index === 0 ? '#667eea' : '#ff7f50',
               '&:hover': {
-                bgcolor: index === 0 ? '#1565c0' : '#6a1b9a',
+                bgcolor: index === 0 ? '#ff7f50' : '#ff5a36',
               },
             }}
           >

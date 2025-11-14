@@ -30,7 +30,7 @@ const Carousel: React.FC<CarouselProps> = ({
   items,
   height = '400px',
   autoPlay = true,
-  autoPlayInterval = 4000,
+  autoPlayInterval = 3000,
   showIndicators = true,
   showPlayButton = true,
   className = '',
@@ -223,13 +223,9 @@ const Carousel: React.FC<CarouselProps> = ({
                       key={index}
                       className={styles['indicate-icon']}
                       sx={{
-                        backgroundColor: isActive
-                          ? '#3f51b5'
-                          : 'rgba(0, 0, 0, 0.2)',
+                        backgroundColor: isActive ? '#ff5a36' : '#ffb6c1',
                         '&:hover': {
-                          backgroundColor: isActive
-                            ? '#303f9f'
-                            : 'rgba(0, 0, 0, 0.3)',
+                          backgroundColor: '#ff5a36',
                         },
                       }}
                       size="small"

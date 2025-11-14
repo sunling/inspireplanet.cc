@@ -5,6 +5,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import App from '../App';
 import Error from '../components/ErrorCard/index';
 import Loading from '../components/Loading/index';
+import MyMeetups from '@/pages/personal/MyMeetups';
 
 // 错误边界组件
 const ErrorBoundary: React.FC<{ children?: React.ReactNode }> = ({
@@ -90,6 +91,7 @@ const router = createBrowserRouter(
         // 公开路由
         { index: true, element: createLazyRoute(<Home />) },
         { path: 'about', element: createLazyRoute(<About />) },
+        { path: 'home', element: createLazyRoute(<Home />) },
         { path: 'contact', element: createLazyRoute(<Contact />) },
         { path: 'login', element: createLazyRoute(<Login />) },
         { path: 'cards', element: createLazyRoute(<Cards />) },
@@ -116,7 +118,7 @@ const router = createBrowserRouter(
           path: 'create-meetup',
           element: createProtectedRoute(<CreateMeetup />),
         },
-        { path: 'my-meetups', element: createProtectedRoute(<Meetups />) },
+        { path: 'my-meetups', element: createProtectedRoute(<MyMeetups />) },
         {
           path: 'change-password',
           element: createProtectedRoute(<ChangePassWord />),

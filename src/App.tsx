@@ -5,6 +5,26 @@ import '@/styles/index.css';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
+import FloatingActions from './components/FloatingActions';
+
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      light: '#ffa07a',
+      main: '#ff7f50',
+      dark: '#ff5a36',
+      contrastText: '#fff',
+    },
+    secondary: {
+      light: '#ff7961',
+      main: '#f44336',
+      dark: '#ba000d',
+      contrastText: '#000',
+    },
+  },
+});
 
 const App: React.FC = () => {
   // 用户认证状态
@@ -44,20 +64,24 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
-      {/* 头部组件 */}
-      <Header
-        isAuthenticated={isAuthenticated}
-        userName={userName}
-        onLogout={handleLogout}
-      />
+      <ThemeProvider theme={theme}>
+        {/* 头部组件 */}
+        <Header
+          isAuthenticated={isAuthenticated}
+          userName={userName}
+          onLogout={handleLogout}
+        />
 
-      {/* 主内容区域 - 使用Outlet渲染子路由 */}
-      <main className="main-content">
-        <Outlet />
-      </main>
+        {/* 主内容区域 - 使用Outlet渲染子路由 */}
+        <main className="main-content">
+          <Outlet />
+        </main>
 
-      {/* 底部组件 */}
-      <Footer />
+        <FloatingActions />
+
+        {/* 底部组件 */}
+        <Footer />
+      </ThemeProvider>
     </div>
   );
 };

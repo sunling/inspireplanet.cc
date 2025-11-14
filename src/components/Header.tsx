@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
@@ -44,8 +44,14 @@ const Header: React.FC<HeaderProps> = ({
     null
   );
   const navigate = useNavigate();
+  const location = useLocation();
   const { isMobile } = useResponsive();
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // 判断当前路由是否匹配
+  const isActiveRoute = (path: string): boolean => {
+    return location.pathname === path;
+  };
 
   const handleMenuToggle = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -70,6 +76,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const navItems = [
+    { path: '/home', label: '首页', icon: <Home fontSize="small" /> },
     { path: '/create-card', label: '创建卡片', icon: <Add fontSize="small" /> },
     {
       path: '/cards',
@@ -108,6 +115,8 @@ const Header: React.FC<HeaderProps> = ({
             display: { xs: 'none', md: 'flex' },
             textTransform: 'none',
             fontSize: '0.9rem',
+            fontWeight: isActiveRoute(item.path) ? 'bold' : 'normal',
+            color: isActiveRoute(item.path) ? '#ff7f50' : 'inherit',
           }}
         >
           {item.label}
@@ -116,6 +125,7 @@ const Header: React.FC<HeaderProps> = ({
     </>
   );
 
+  // 移动端导航
   const renderMobileMenu = () => (
     <Drawer anchor="left" open={isMenuOpen} onClose={handleMenuToggle}>
       <Box sx={{ width: 250, padding: 2 }}>
@@ -131,19 +141,27 @@ const Header: React.FC<HeaderProps> = ({
           </Typography>
         </Box>
         <List>
-          <ListItem component={Link} to="/" onClick={handleMenuClick}>
-            <Home fontSize="small" sx={{ mr: 2 }} />
-            <ListItemText primary="首页" />
-          </ListItem>
           {navItems.map((item) => (
             <ListItem
               key={item.path}
               component={Link}
               to={item.path}
               onClick={handleMenuClick}
+              sx={{
+                color: isActiveRoute(item.path) ? '#ff7f50' : 'grey',
+                backgroundColor: isActiveRoute(item.path)
+                  ? '#fff9f0'
+                  : 'transparent',
+                '&:hover': {
+                  backgroundColor: '#fff9f0',
+                },
+                borderLeft: isActiveRoute(item.path)
+                  ? '4px solid #fff9f0'
+                  : 'none',
+              }}
             >
               {item.icon}
-              <ListItemText primary={item.label} />
+              <ListItemText primary={item.label} sx={{ pl: 1 }} />
             </ListItem>
           ))}
         </List>
@@ -216,7 +234,7 @@ const Header: React.FC<HeaderProps> = ({
               variant="contained"
               component={Link}
               to="/login"
-              sx={{ ml: 2, backgroundColor: '#1976d2' }}
+              sx={{ ml: 2, backgroundColor: '#ff7f50' }}
             >
               登录
             </Button>

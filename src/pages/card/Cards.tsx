@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Container, Typography, Grid } from '@mui/material';
 
-import { CardItem } from '@/netlify/types';
 import useResponsive from '@/hooks/useResponsive';
 import { api } from '@/netlify/configs';
 import { groupCardsByDate } from '@/utils/helper';
@@ -14,7 +13,6 @@ import InspireCard from '@/components/InspireCard';
 import { useGlobalSnackbar } from '@/context/app';
 
 const Cards: React.FC = () => {
-  const [cards, setCards] = useState<CardItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [groupedCards, setGroupedCards] = useState<Record<string, any[]>>({});
@@ -37,8 +35,6 @@ const Cards: React.FC = () => {
       }
 
       let allCards = response.data?.records || [];
-
-      setCards(allCards as any);
 
       // 过滤有效卡片
       const validCards = allCards.filter(
@@ -135,22 +131,18 @@ const Cards: React.FC = () => {
               .map((date) => (
                 <Box key={date} sx={{ mb: 8 }}>
                   <Typography
-                    variant="h4"
+                    variant="h5"
                     sx={{
-                      mb: '0.5rem',
+                      mb: '1.5rem',
+                      pb: '0.5rem',
                       color: '#4a6fa5',
-                      fontWeight: 'bold',
-                      textAlign: 'center',
+                      textAlign: 'left',
+                      borderBottom: '1px solid #7aa6e7',
                     }}
                   >
                     {formatDate(date)}
                   </Typography>
-                  <hr
-                    style={{
-                      marginBottom: '1rem',
-                      color: '#4a6fa5',
-                    }}
-                  ></hr>
+
                   <Grid
                     container
                     spacing={4}

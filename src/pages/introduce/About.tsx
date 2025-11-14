@@ -11,31 +11,31 @@ const About: React.FC = () => {
         minHeight: '100vh',
         paddingTop: '2rem',
         paddingBottom: '2rem',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: '#fff9f0',
       }}
     >
       <Container maxWidth="md">
         <header
           style={{
             textAlign: 'center',
-            marginBottom: '5rem',
-            color: 'white',
+            marginBottom: '1rem',
+            color: '#ff7f50',
           }}
         >
-          <h1
+          <h2
             style={{
               fontWeight: 'bold',
-              marginBottom: '1.5rem',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+              marginBottom: '1rem',
               fontSize: isMobile ? '2rem' : '2.5rem',
             }}
           >
             关于启发星球
-          </h1>
+          </h2>
           <p
             style={{
               opacity: 0.9,
               fontStyle: 'italic',
+              color: '#666666',
               fontSize: isMobile ? '1.125rem' : '1.5rem',
               margin: 0,
             }}
@@ -57,7 +57,7 @@ const About: React.FC = () => {
           <h2
             style={{
               marginBottom: '2rem',
-              color: '#667eea',
+              color: '#ff5a36',
               fontWeight: 'bold',
               textAlign: 'center',
               fontSize: isMobile ? '1.75rem' : '2rem',
@@ -88,7 +88,7 @@ const About: React.FC = () => {
           <h2
             style={{
               marginBottom: '2rem',
-              color: '#667eea',
+              color: '#ff5a36',
               fontWeight: 'bold',
               textAlign: 'center',
               fontSize: isMobile ? '1.75rem' : '2rem',
@@ -106,7 +106,7 @@ const About: React.FC = () => {
                 gap: '0.5rem',
               }}
             >
-              <span style={{ color: '#667eea', fontWeight: 'bold' }}>•</span>
+              <span style={{ color: '#ff5a36', fontWeight: 'bold' }}>•</span>
               创造一个分享智慧和感悟的开放社区
             </li>
             <li
@@ -117,7 +117,7 @@ const About: React.FC = () => {
                 gap: '0.5rem',
               }}
             >
-              <span style={{ color: '#667eea', fontWeight: 'bold' }}>•</span>
+              <span style={{ color: '#ff5a36', fontWeight: 'bold' }}>•</span>
               鼓励深度思考和有意义的交流
             </li>
             <li
@@ -128,13 +128,13 @@ const About: React.FC = () => {
                 gap: '0.5rem',
               }}
             >
-              <span style={{ color: '#667eea', fontWeight: 'bold' }}>•</span>
+              <span style={{ color: '#ff5a36', fontWeight: 'bold' }}>•</span>
               通过美学设计，让思想传递更加生动有力
             </li>
             <li
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
             >
-              <span style={{ color: '#667eea', fontWeight: 'bold' }}>•</span>
+              <span style={{ color: '#ff5a36', fontWeight: 'bold' }}>•</span>
               连接志同道合的人，共同成长
             </li>
           </ul>
@@ -153,7 +153,7 @@ const About: React.FC = () => {
           <h2
             style={{
               marginBottom: '2rem',
-              color: '#667eea',
+              color: '#ff5a36',
               fontWeight: 'bold',
               textAlign: 'center',
               fontSize: isMobile ? '1.75rem' : '2rem',
@@ -185,7 +185,7 @@ const About: React.FC = () => {
                 <article
                   style={{
                     padding: '1.5rem',
-                    height: '70%',
+                    height: '90%',
                     backgroundColor: 'rgba(255, 255, 255, 0.8)',
                     borderRadius: '8px',
                     border: '1px solid rgba(0,0,0,0.05)',
@@ -206,7 +206,7 @@ const About: React.FC = () => {
                   <h3
                     style={{
                       marginBottom: '1rem',
-                      color: '#667eea',
+                      color: '#ff5a36',
                       fontWeight: 'bold',
                       fontSize: '1.25rem',
                       margin: 0,
@@ -235,7 +235,7 @@ const About: React.FC = () => {
           <h2
             style={{
               marginBottom: '2rem',
-              color: '#667eea',
+              color: '#ff5a36',
               fontWeight: 'bold',
               textAlign: 'center',
               fontSize: isMobile ? '1.75rem' : '2rem',
@@ -257,13 +257,13 @@ const About: React.FC = () => {
               padding: '1.5rem',
               backgroundColor: 'rgba(102, 126, 234, 0.1)',
               borderRadius: '8px',
-              borderLeft: '4px solid #667eea',
+              borderLeft: '4px solid #ff5a36',
             }}
           >
             <h3
               style={{
                 marginBottom: '1rem',
-                color: '#667eea',
+                color: '#ff5a36',
                 fontWeight: 'bold',
                 fontSize: '1.25rem',
                 margin: 0,
@@ -285,7 +285,7 @@ const About: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
-                  color: '#667eea',
+                  color: '#ff5a36',
                   textDecoration: 'none',
                 }}
                 onMouseEnter={(e) =>
