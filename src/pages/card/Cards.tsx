@@ -119,7 +119,7 @@ const Cards: React.FC = () => {
       <Container maxWidth="lg">
         <Box id="cards-content" sx={{ py: 4 }}>
           {loading ? (
-            <Loading />
+            <Loading size={40} />
           ) : error ? (
             <ErrorCard />
           ) : Object.keys(groupedCards).length === 0 ? (
