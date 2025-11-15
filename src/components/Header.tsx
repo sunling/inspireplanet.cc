@@ -26,6 +26,7 @@ import {
   Info,
   AccountCircle,
   Logout,
+  Image as ImageIcon,
 } from '@mui/icons-material';
 
 interface HeaderProps {
@@ -41,6 +42,9 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
+  const [coverMenuAnchor, setCoverMenuAnchor] = useState<null | HTMLElement>(
     null
   );
   const navigate = useNavigate();
@@ -63,6 +67,19 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleUserMenuClose = () => {
     setUserMenuAnchor(null);
+  };
+
+  const handleCoverMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setCoverMenuAnchor(event.currentTarget);
+  };
+
+  const handleCoverMenuClose = () => {
+    setCoverMenuAnchor(null);
+  };
+
+  const handleCoverMenuClick = (path: string) => {
+    navigate(path);
+    handleCoverMenuClose();
   };
 
   const handleLogout = () => {
@@ -101,6 +118,17 @@ const Header: React.FC<HeaderProps> = ({
     { path: '/about', label: '关于我们', icon: <Info fontSize="small" /> },
   ];
 
+  const coverMenuItems = [
+    {
+      path: '/cover-editor',
+      label: '横屏封面',
+    },
+    {
+      path: '/cover-editor-mobile',
+      label: '竖屏封面',
+    },
+  ];
+
   const renderNavLinks = () => (
     <>
       {navItems.map((item) => (
@@ -122,6 +150,49 @@ const Header: React.FC<HeaderProps> = ({
           {item.label}
         </Button>
       ))}
+
+      {/* 封面制作下拉菜单 */}
+      <>
+        <Button
+          color="inherit"
+          startIcon={<ImageIcon fontSize="small" />}
+          endIcon={<ChevronDown fontSize="small" />}
+          onClick={handleCoverMenuOpen}
+          sx={{
+            marginLeft: 1,
+            boxShadow: 'none',
+            display: { xs: 'none', md: 'flex' },
+            textTransform: 'none',
+            fontSize: '0.9rem',
+            fontWeight: coverMenuItems.some((item) => isActiveRoute(item.path))
+              ? 'bold'
+              : 'normal',
+            color: coverMenuItems.some((item) => isActiveRoute(item.path))
+              ? '#ff7f50'
+              : 'inherit',
+          }}
+        >
+          封面制作
+        </Button>
+        <Menu
+          anchorEl={coverMenuAnchor}
+          open={Boolean(coverMenuAnchor)}
+          onClose={handleCoverMenuClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        >
+          {coverMenuItems.map((item) => (
+            <MenuItem
+              key={item.path}
+              component={Link}
+              to={item.path}
+              onClick={() => handleCoverMenuClick(item.path)}
+            >
+              <ListItemText primary={item.label} sx={{ pl: 1 }} />
+            </MenuItem>
+          ))}
+        </Menu>
+      </>
     </>
   );
 
@@ -161,6 +232,47 @@ const Header: React.FC<HeaderProps> = ({
               }}
             >
               {item.icon}
+              <ListItemText primary={item.label} sx={{ pl: 1 }} />
+            </ListItem>
+          ))}
+
+          {/* 移动端封面制作菜单组 */}
+          <ListItem
+            sx={{
+              color: coverMenuItems.some((item) => isActiveRoute(item.path))
+                ? '#ff7f50'
+                : 'grey',
+              backgroundColor: coverMenuItems.some((item) =>
+                isActiveRoute(item.path)
+              )
+                ? '#fff9f0'
+                : 'transparent',
+              borderLeft: coverMenuItems.some((item) =>
+                isActiveRoute(item.path)
+              )
+                ? '4px solid #fff9f0'
+                : 'none',
+            }}
+          >
+            <ListItemText primary="封面制作" sx={{ pl: 1 }} />
+          </ListItem>
+          {coverMenuItems.map((item) => (
+            <ListItem
+              key={item.path}
+              component={Link}
+              to={item.path}
+              onClick={handleMenuClick}
+              sx={{
+                pl: 5,
+                color: isActiveRoute(item.path) ? '#ff7f50' : 'grey',
+                backgroundColor: isActiveRoute(item.path)
+                  ? '#fff9f0'
+                  : 'transparent',
+                '&:hover': {
+                  backgroundColor: '#fff9f0',
+                },
+              }}
+            >
               <ListItemText primary={item.label} sx={{ pl: 1 }} />
             </ListItem>
           ))}
@@ -234,7 +346,7 @@ const Header: React.FC<HeaderProps> = ({
               variant="contained"
               component={Link}
               to="/login"
-              sx={{ ml: 2, backgroundColor: '#ff7f50' }}
+              sx={{ ml: 2, backgroundColor: '#ff7f50', boxShadow: 'none' }}
             >
               登录
             </Button>
@@ -245,7 +357,7 @@ const Header: React.FC<HeaderProps> = ({
                 onClick={handleUserMenuOpen}
                 startIcon={<AccountCircle />}
                 endIcon={<ChevronDown fontSize="small" />}
-                sx={{ ml: 2, textTransform: 'none' }}
+                sx={{ ml: 2, textTransform: 'none', boxShadow: 'none' }}
               >
                 {userName}
               </Button>

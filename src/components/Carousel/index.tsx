@@ -28,7 +28,7 @@ export interface CarouselProps {
 
 const Carousel: React.FC<CarouselProps> = ({
   items,
-  height = '400px',
+  height = '480px',
   autoPlay = true,
   autoPlayInterval = 3000,
   showIndicators = true,
@@ -44,8 +44,8 @@ const Carousel: React.FC<CarouselProps> = ({
   // 响应式高度计算
   const getResponsiveHeight = useCallback(() => {
     if (typeof height === 'number') {
-      if (isMobile) return `${Math.min(height, 320)}px`;
-      if (isTablet) return `${Math.min(height, 400)}px`;
+      if (isMobile) return `${Math.min(height, 400)}px`;
+      if (isTablet) return `${Math.min(height, 520)}px`;
       return `${height}px`;
     }
     return height;

@@ -7,5 +7,5 @@ html {
 }
 
 .main-content {
-  min-height: 600px;
+  min-height: clamp(640px, 68vh, 100vh);
 }
