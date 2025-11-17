@@ -377,7 +377,7 @@ const Meetups: React.FC = () => {
                 }}
               >
                 <CardContent
-                  onClick={() => navigate(`/meetup-detail/${meetup.id}`)}
+                  onClick={() => navigate(`/meetup-detail?id=${meetup.id}`)}
                 >
                   <Box
                     sx={{
@@ -482,7 +482,7 @@ const Meetups: React.FC = () => {
                     variant="outlined"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/meetup-detail/${meetup.id}`);
+                      navigate(`/meetup-detail?id=${meetup.id}`);
                     }}
                   >
                     查看详情

@@ -239,8 +239,8 @@ export const api = {
   images: {
     upload: async (
       base64Image: string
-    ): Promise<ApiResponse<{ imageUrl: string }>> => {
-      return http.post<{ imageUrl: string }>(API_MAP.IMAGES.UPLOAD, {
+    ): Promise<ApiResponse<{ url: string }>> => {
+      return http.post<{ url: string }>(API_MAP.IMAGES.UPLOAD, {
         base64Image,
       });
     },

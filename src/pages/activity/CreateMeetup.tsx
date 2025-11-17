@@ -287,11 +287,12 @@ const CreateMeetup: React.FC = () => {
   const uploadQRImage = async (base64Image: string): Promise<string> => {
     try {
       const response = await api.images.upload(base64Image);
+      console.log('上传二维码返回：response', response);
       if (!response.success) {
         showSnackbar.error('上传二维码失败');
         return '';
       }
-      return response.data?.imageUrl || '';
+      return response.data?.url || '';
     } catch (error) {
       console.error('上传二维码失败:', error);
       showSnackbar.error(

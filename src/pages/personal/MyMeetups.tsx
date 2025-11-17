@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Box,
@@ -17,7 +17,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Meetup } from '@/netlify/types';
+import { Meetup, MeetupStatus } from '@/netlify/types';
 import { api } from '@/netlify/configs';
 import {
   escapeHtml,
@@ -38,11 +38,20 @@ interface UserInfo {
   // 其他用户信息字段
 }
 
+enum FilterStatus {
+  'ALL' = 'all',
+  'UPCOMING' = MeetupStatus.UPCOMING,
+  'ONGOING' = MeetupStatus.ONGOING,
+  'ACTIVE' = MeetupStatus.ACTIVE,
+  'END' = MeetupStatus.END,
+  'CANCEL' = MeetupStatus.CANCEL,
+}
+
 const MyMeetups: React.FC = () => {
   const [allMeetups, setAllMeetups] = useState<Meetup[]>([]);
-  const [currentStatus, setCurrentStatus] = useState<
-    'active' | 'completed' | 'cancelled' | 'all'
-  >('all');
+  const [currentStatus, setCurrentStatus] = useState<FilterStatus>(
+    FilterStatus.ALL
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authChecking, setAuthChecking] = useState(true);
@@ -126,7 +135,7 @@ const MyMeetups: React.FC = () => {
 
   // 处理下拉选择变更
   const handleSelectChange = (newStatus: string) => {
-    setCurrentStatus(newStatus as 'active' | 'completed' | 'cancelled' | 'all');
+    setCurrentStatus(newStatus as FilterStatus);
   };
 
   // 删除/取消活动
@@ -156,18 +165,17 @@ const MyMeetups: React.FC = () => {
   // 获取状态文本
   const getStatusText = (status: string) => {
     const statusMap: Record<string, string> = {
-      all: '全部',
-      active: '进行中',
-      ended: '已结束',
-      cancelled: '已取消',
+      [FilterStatus.ALL]: '全部',
+      [FilterStatus.ACTIVE]: '进行中',
+      [FilterStatus.END]: '已结束',
+      [FilterStatus.CANCEL]: '已取消',
     };
     return statusMap[status] || status;
   };
 
   // 根据当前状态过滤活动
   const getFilteredMeetups = () => {
-    console.log('currentStatus', currentStatus);
-    if (currentStatus === 'all') {
+    if (currentStatus === FilterStatus.ALL) {
       return allMeetups;
     }
 
@@ -178,33 +186,42 @@ const MyMeetups: React.FC = () => {
       // 计算活动的实际状态（考虑时间因素）
       let actualStatus = meetup.status;
 
-      if (actualStatus === 'active' && !isUpcomingMeetup) {
-        actualStatus = 'ended';
+      if (currentStatus === FilterStatus.END) {
+        return (actualStatus =
+          MeetupStatus.END ||
+          (actualStatus === MeetupStatus.ACTIVE && !isUpcomingMeetup));
+      }
+
+      if (currentStatus === FilterStatus.ACTIVE) {
+        return actualStatus === MeetupStatus.ACTIVE && isUpcomingMeetup;
       }
 
       // 根据实际状态进行筛选
-      return actualStatus === currentStatus;
+      return (actualStatus as unknown as FilterStatus) === currentStatus;
     });
   };
 
+  const filteredMeetups = useMemo(
+    () => getFilteredMeetups(),
+    [currentStatus, allMeetups]
+  );
   // 渲染活动卡片
   const renderMeetupCard = (meetup: Meetup) => {
     const meetupDate = new Date(meetup.datetime);
     const isUpcomingMeetup = isUpcoming(meetupDate.toISOString());
     const formattedDate = formatDate(meetupDate.toISOString());
     const formattedTime = formatTime(meetupDate.toISOString());
-    console.log('meetupDate.toISOString()', meetupDate.toISOString());
 
     let status = meetup.status;
-    if (status === 'active' && !isUpcomingMeetup) {
-      status = 'ended';
+    if (status === MeetupStatus.ACTIVE && !isUpcomingMeetup) {
+      status = MeetupStatus.END;
     }
 
     // 状态颜色映射
     const statusColorMap: Record<string, string> = {
-      active: 'success',
-      ended: 'info',
-      cancelled: 'error',
+      [MeetupStatus.ACTIVE]: 'success',
+      [MeetupStatus.END]: 'info',
+      [MeetupStatus.CANCEL]: 'error',
     };
 
     return (
@@ -484,10 +501,10 @@ const MyMeetups: React.FC = () => {
               },
             }}
           >
-            <ToggleButton value="all">全部</ToggleButton>
-            <ToggleButton value="active">进行中</ToggleButton>
-            <ToggleButton value="completed">已完成</ToggleButton>
-            <ToggleButton value="cancelled">已取消</ToggleButton>
+            <ToggleButton value={FilterStatus.ALL}>全部</ToggleButton>
+            <ToggleButton value={FilterStatus.ACTIVE}>进行中</ToggleButton>
+            <ToggleButton value={FilterStatus.END}>已完成</ToggleButton>
+            <ToggleButton value={FilterStatus.CANCEL}>已取消</ToggleButton>
           </ToggleButtonGroup>
         )}
       </Box>
@@ -504,7 +521,7 @@ const MyMeetups: React.FC = () => {
           />
         ) : (
           <>
-            {getFilteredMeetups().length === 0 ? (
+            {filteredMeetups.length === 0 ? (
               <Empty
                 message={`暂无${getStatusText(currentStatus)}活动`}
                 description={`您还没有${getStatusText(
@@ -521,7 +538,7 @@ const MyMeetups: React.FC = () => {
                   },
                 }}
               >
-                {getFilteredMeetups().map((meetup) => (
+                {filteredMeetups.map((meetup) => (
                   <Grid
                     size={{
                       xs: 12,

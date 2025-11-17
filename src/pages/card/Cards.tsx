@@ -60,7 +60,7 @@ const Cards: React.FC = () => {
 
   // 处理卡片点击
   const handleCardClick = (cardId: string) => {
-    navigate(`/card-detail/${cardId}`);
+    navigate(`/card-detail?id=${cardId}`);
   };
 
   // 提交评论

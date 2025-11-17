@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, Fragment } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 
@@ -11,7 +11,6 @@ import {
   Button,
   TextField,
   Divider,
-  CircularProgress,
 } from '@mui/material';
 import useResponsive from '@/hooks/useResponsive';
 import { CardItem, Comment } from '@/netlify/types';
@@ -23,8 +22,16 @@ import ErrorCard from '@/components/ErrorCard';
 import { useGlobalSnackbar } from '@/context/app';
 
 const CardDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
+
+  // 从查询参数获取卡片ID
+  const getCardId = (): string | null => {
+    const searchParams = new URLSearchParams(location.search);
+    return searchParams.get('id');
+  };
+
+  const cardId = getCardId();
   const cardRef = useRef<HTMLDivElement>(null);
   const { isMobile } = useResponsive();
   const showSnackbar = useGlobalSnackbar();
@@ -151,7 +158,8 @@ const CardDetail: React.FC = () => {
   // 初始化页面
   useEffect(() => {
     const initPage = async () => {
-      if (!id) {
+      const cardId = getCardId();
+      if (!cardId) {
         const text = '未找到卡片ID，请返回卡片列表页面重试。';
         setError(text);
 
@@ -160,11 +168,11 @@ const CardDetail: React.FC = () => {
         return;
       }
 
-      fetchCardById(id);
-      fetchComments(id);
+      fetchCardById(cardId);
+      fetchComments(cardId);
     };
     initPage();
-  }, [id]);
+  }, [location.search]);
 
   // 下载卡片为图片
   const handleDownloadCard = async () => {
@@ -284,8 +292,9 @@ const CardDetail: React.FC = () => {
 
   // 处理编辑按钮点击
   const handleEdit = () => {
-    if (id) {
-      navigate(`/card-edit?id=${id}`);
+    const cardId = getCardId();
+    if (cardId) {
+      navigate(`/card-edit?id=${cardId}`);
     }
   };
 
@@ -301,8 +310,8 @@ const CardDetail: React.FC = () => {
       return;
     }
 
-    if (!id) {
-      alert('');
+    const cardId = getCardId();
+    if (!cardId) {
       showSnackbar.warning('卡片ID无效');
       return;
     }
@@ -313,7 +322,7 @@ const CardDetail: React.FC = () => {
       // 使用统一API封装提交评论
       console.log('正在提交评论...');
       const response = await api.comments.create({
-        cardId: id,
+        cardId: cardId,
         name: commentForm.name,
         comment: commentForm.content,
       });

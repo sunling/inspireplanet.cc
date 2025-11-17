@@ -704,7 +704,7 @@ const CreateCard: React.FC = () => {
                     font: item.font || 'sans-serif',
                   }}
                   canComment={false} // 轮播区域不需要评论功能
-                  onCardClick={(id) => navigate(`/card-detail/${id}`)}
+                  onCardClick={(id) => navigate(`/card-detail?id=${id}`)}
                   onSubmitComment={() => {}}
                 />
               ))}

@@ -51,17 +51,17 @@
 
 项目使用 Netlify 无服务器函数安全处理 API 请求：
 
-- **authHandler.js** – 处理登录、注册、会话校验
-- **cardsHandler.js** – 读取与更新卡片数据（Supabase）
-- **commentsHandler.js** – 管理卡片评论（读取/提交）
-- **fetchWeeklyCards.js** – 获取全部每周会议卡片
-- **getLatestWeeklyCards.js** – 获取最新一期的会议卡片
-- **searchImage.js** – 基于 OpenRouter + Unsplash 搜图
-- **uploadImageToGitHub.js** – 将生成的图片保存到 GitHub 仓库
-- **uploadWeeklyCard.js** – 批量/自动上传每周会议卡片（含自动配图）
-- **meetupHandler.js** – 活动创建、列表、更新、删除
-- **rsvpHandler.js** – 活动报名与状态管理
-- **workshopHandler.js** – 工作坊报名接口
+- **auth.ts** – 处理登录、注册、会话校验
+- **cards.ts** – 读取与更新卡片数据（Supabase）
+- **comments.ts** – 管理卡片评论（读取/提交）
+- **weeklyCards.ts** – 获取全部每周会议卡片
+- **weeklyCardLatest.ts** – 获取最新一期的会议卡片
+- **searchImage.ts** – 基于 OpenRouter + Unsplash 搜图
+- **uploadImage.ts** – 将生成的图片保存到 GitHub 仓库
+- **uploadCard.ts** – 批量/自动上传每周会议卡片（含自动配图）
+- **meetup.ts** – 活动创建、列表、更新、删除
+- **rsvp.ts** – 活动报名与状态管理
+- **workshop.ts** – 工作坊报名接口
 
 ## 主要功能
 

@@ -60,13 +60,33 @@ export interface WeeklyCardResponse {
   records: WeeklyCard[];
 }
 
+export enum MeetupStatus {
+  'UPCOMING' = 'upcoming',
+  'ONGOING' = 'ongoing',
+  'ACTIVE' = 'active',
+  'END' = 'end',
+  'CANCEL' = 'cancelled',
+}
+
+export enum MeetupType {
+  'ONLINE' = 'online',
+  'OFFLINE' = 'offline',
+  'CULTURE' = 'culture',
+  'OUTDOOR' = 'outdoor',
+}
+
+export enum MeetupMode {
+  'ONLINE' = 'online',
+  'OFFLINE' = 'offline',
+}
+
 // 聚会数据接口
 export interface Meetup {
   id: string;
   title: string;
   description: string;
-  type: 'online' | 'offline' | 'culture' | 'outdoor';
-  mode?: 'online' | 'offline';
+  type: MeetupType;
+  mode?: MeetupMode;
   datetime: string;
   location?: string;
   max_ppl?: number;
@@ -76,7 +96,7 @@ export interface Meetup {
   creator?: string;
   contact: string;
   qr_image_url?: string;
-  status: 'upcoming' | 'ongoing' | 'ended' | 'active';
+  status: MeetupStatus;
   created_at: string;
   participant_count: number;
   cover?: string;

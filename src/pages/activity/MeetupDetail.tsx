@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { api, http } from '../../netlify/configs';
-import { Meetup, Participant, UserInfo } from '../../netlify/types/index';
-import { isUpcoming, formatTime, escapeHtml, formatDate } from '../../utils';
+import {
+  Meetup,
+  MeetupMode,
+  MeetupStatus,
+  MeetupType,
+  Participant,
+  UserInfo,
+} from '../../netlify/types/index';
+import { isUpcoming, formatTime, formatDate } from '../../utils';
 import {
   Box,
   Container,
@@ -14,12 +21,7 @@ import {
   DialogContent,
   DialogActions,
   Chip,
-  Alert,
-  Divider,
   Avatar,
-  useMediaQuery,
-  useTheme,
-  Paper,
   CircularProgress,
   Card,
 } from '@mui/material';
@@ -30,8 +32,16 @@ import Empty from '../../components/Empty';
 import { useGlobalSnackbar } from '../../context/app';
 
 const MeetupDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
+
+  // 从查询参数中获取id
+  const getMeetupId = () => {
+    const searchParams = new URLSearchParams(location.search);
+    return searchParams.get('id');
+  };
+
+  const id = getMeetupId();
 
   const showSnackbar = useGlobalSnackbar();
 
@@ -59,14 +69,16 @@ const MeetupDetail: React.FC = () => {
 
   // 加载活动详情
   useEffect(() => {
-    if (!id) {
+    const meetupId = getMeetupId();
+
+    if (!meetupId) {
       setError('缺少活动ID参数');
       setIsLoading(false);
       return;
     }
 
-    loadMeetupDetail(id);
-  }, [id]);
+    loadMeetupDetail(meetupId);
+  }, [location.search]); // 依赖location.search而不是id
 
   // 加载活动详情数据
   const loadMeetupDetail = async (meetupId: string) => {
@@ -97,12 +109,8 @@ const MeetupDetail: React.FC = () => {
         id: meetupData.id,
         title: meetupData.title || '未命名活动',
         description: meetupData.description || '',
-        type: (meetupData.type || 'online') as
-          | 'online'
-          | 'offline'
-          | 'culture'
-          | 'outdoor',
-        mode: meetupData.mode as 'online' | 'offline',
+        type: (meetupData.type || MeetupType.ONLINE) as MeetupType,
+        mode: meetupData.mode as MeetupMode,
         datetime: meetupData.datetime || new Date().toISOString(),
         location: meetupData.location,
         fee: meetupData.fee,
@@ -113,10 +121,7 @@ const MeetupDetail: React.FC = () => {
         creator: meetupData.creator,
         contact: meetupData.contact || '',
         qr_image_url: meetupData.qr_image_url,
-        status: (meetupData.status || 'upcoming') as
-          | 'upcoming'
-          | 'ongoing'
-          | 'ended',
+        status: (meetupData.status || MeetupStatus.UPCOMING) as MeetupStatus,
         created_at: meetupData.created_at || new Date().toISOString(),
         participant_count: meetupData.participant_count || 0,
         cover: meetupData.cover,
@@ -145,7 +150,7 @@ const MeetupDetail: React.FC = () => {
         <ErrorCard
           message={error}
           description="请稍后重试或返回活动列表"
-          onRetry={() => loadMeetupDetail(id!)}
+          onRetry={() => loadMeetupDetail(getMeetupId()!)}
           retryText="重新加载"
         />
       );
@@ -378,7 +383,7 @@ const MeetupDetail: React.FC = () => {
                 height: { xs: '180px', sm: '220px', md: '280px' },
                 objectFit: 'cover',
                 display: 'block',
-                backgroundColor: '#ddd',
+                backgroundColor: '#f4eee6',
                 borderRadius: '8px',
               }}
             />
@@ -437,7 +442,7 @@ const MeetupDetail: React.FC = () => {
                 基本信息
               </h2>
 
-              <Box sx={{ background: '#edebeb', p: 3 }}>
+              <Box sx={{ background: '#f4eee6', p: 3 }}>
                 <div style={{ marginBottom: '1rem' }}>
                   <span
                     style={{
@@ -599,7 +604,7 @@ const MeetupDetail: React.FC = () => {
                 sx={{
                   p: 3,
                   borderRadius: 1,
-                  bgcolor: '#edebeb',
+                  bgcolor: '#f4eee6',
                   whiteSpace: 'pre-line',
                   lineHeight: 1.8,
                 }}
@@ -617,7 +622,7 @@ const MeetupDetail: React.FC = () => {
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  bgcolor: '#edebeb',
+                  bgcolor: '#f4eee6',
                   p: 3,
                   borderRadius: 1,
                 }}
@@ -635,35 +640,37 @@ const MeetupDetail: React.FC = () => {
 
             {/* 操作按钮 */}
             <Box sx={{ mt: 4, textAlign: 'center' }}>
-              <Typography variant="subtitle1" sx={{ mb: 2, color: 'var(--text-light)' }}>
-                {isUpcomingMeetup ? '立即报名参加' : '活动已结束'}
-              </Typography>
-              <Button
-                variant={isUpcomingMeetup ? 'contained' : 'outlined'}
-                onClick={handleJoinMeetup}
-                disabled={!isUpcomingMeetup || isActionLoading}
-                startIcon={
-                  isActionLoading ? <CircularProgress size={16} /> : undefined
-                }
-                sx={{
-                  py: 1.2,
-                  px: 5,
-                  fontSize: '1rem',
-                  textTransform: 'none',
-                  mb: 2,
-                }}
-              >
-                {isUpcomingMeetup ? '报名参加' : '已结束'}
-              </Button>
-              <Button
-                variant="text"
-                onClick={handleViewParticipants}
-                startIcon={<span>👥</span>}
-                sx={{ textTransform: 'none' }}
-              >
-                {meetup.participant_count || 0}
-                {meetup.max_ppl ? `/${meetup.max_ppl}` : ''} 人已报名
-              </Button>
+              <div>
+                <Button
+                  variant="text"
+                  onClick={handleViewParticipants}
+                  startIcon={<span>👥</span>}
+                  sx={{ textTransform: 'none' }}
+                >
+                  {meetup.participant_count || 0}
+                  {meetup.max_ppl ? `/${meetup.max_ppl}` : ''} 人已报名
+                </Button>
+              </div>
+
+              {isUpcomingMeetup && (
+                <Button
+                  variant={isUpcomingMeetup ? 'contained' : 'outlined'}
+                  onClick={handleJoinMeetup}
+                  disabled={!isUpcomingMeetup || isActionLoading}
+                  startIcon={
+                    isActionLoading ? <CircularProgress size={16} /> : undefined
+                  }
+                  sx={{
+                    py: 1.2,
+                    px: 5,
+                    fontSize: '1rem',
+                    textTransform: 'none',
+                    mb: 2,
+                  }}
+                >
+                  报名参加
+                </Button>
+              )}
             </Box>
           </Box>
         </Box>
@@ -672,7 +679,7 @@ const MeetupDetail: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#eaf6f7' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#fff9f0' }}>
       <Container maxWidth="lg" sx={{ py: 1 }}>
         <Box sx={{ mb: 1 }}>
           <Button
@@ -789,7 +796,10 @@ const MeetupDetail: React.FC = () => {
               }}
             />
           )}
-          <Typography variant="body1" sx={{ color: 'var(--text-light)', mb: 2 }}>
+          <Typography
+            variant="body1"
+            sx={{ color: 'var(--text-light)', mb: 2 }}
+          >
             请使用微信扫描二维码加入群聊
           </Typography>
         </DialogContent>
