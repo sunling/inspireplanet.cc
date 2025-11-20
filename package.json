@@ -1,23 +1,48 @@
 {
   "name": "flashcard-for-inspiration-planet",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "dev": "netlify dev",
-    "build": "echo No build needed"
+    "build": "vite build",
+    "preview": "vite preview",
+    "vite:dev": "vite"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.4",
+    "@mui/material": "^7.3.4",
     "@supabase/supabase-js": "^2.49.4",
     "bcryptjs": "^3.0.2",
+    "dompurify": "^3.3.0",
     "dotenv": "^16.5.0",
+    "html2canvas": "^1.4.1",
     "jsonwebtoken": "^9.0.2",
     "luxon": "^3.6.1",
+    "marked": "^16.4.1",
     "node-fetch": "^2.6.7",
     "puppeteer": "^24.7.2",
-
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.5",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "netlify-cli": "^17.10.1"
+    "@types/dompurify": "^3.2.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/marked": "^6.0.0",
+    "@types/node": "^24.9.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "netlify-cli": "^17.10.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12"
+  },
+  "peerDependencies": {
+    "react": "^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0"
   },
   "resolutions": {
     "puppeteer-core": "npm:puppeteer@^24.7.2"

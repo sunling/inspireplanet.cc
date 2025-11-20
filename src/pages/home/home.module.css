@@ -1,0 +1,60 @@
+/* Home页面主容器 */
+.home-container {
+  padding: 0 1rem;
+}
+
+/* 轮播部分 */
+.carousel-section {
+  margin-bottom: 3rem;
+}
+
+/* 区域标题 */
+.section-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-description {
+  max-width: 600px;
+  margin: 0 auto;
+  color: #4a5568;
+}
+
+/* 查看全部按钮容器 */
+.view-all-container {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.view-all-button {
+  padding: 0.5rem 1rem;
+  border-radius: 28px;
+  text-transform: none;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 4px 15px rgba(255, 127, 80, 0.3);
+  transition: all 0.3s ease;
+}
+
+/* 移动端样式调整 */
+@media (max-width: 600px) {
+  .home-container {
+    padding: 0rem 0.5rem;
+  }
+
+  .view-all-button {
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+  }
+}
