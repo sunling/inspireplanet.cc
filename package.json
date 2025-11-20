@@ -1,7 +1,7 @@
 {
   "name": "flashcard-for-inspiration-planet",
   "version": "1.0.0",
-  "type": "module",
+  
   "scripts": {
     "dev": "netlify dev",
     "build": "vite build",
@@ -21,6 +21,7 @@
     "jsonwebtoken": "^9.0.2",
     "luxon": "^3.6.1",
     "marked": "^16.4.1",
+    "uri-js": "^4.4.1",
     "node-fetch": "^2.6.7",
     "puppeteer": "^24.7.2",
     "react": "^19.2.0",
@@ -49,5 +50,6 @@
   },
   "description": "一个用于创建、上传和展示来自书籍、播客、电影及个人感悟的启发闪卡的网页应用。该项目让用户能够捕捉灵感瞬间，并以视觉吸引人的形式与他人分享。",
   "author": "Ling Sun",
-  "license": "ISC"
+  "license": "ISC",
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
