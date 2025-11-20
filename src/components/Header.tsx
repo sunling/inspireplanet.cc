@@ -47,6 +47,12 @@ const Header: React.FC<HeaderProps> = ({
   const [coverMenuAnchor, setCoverMenuAnchor] = useState<null | HTMLElement>(
     null
   );
+  const [cardsMenuAnchor, setCardsMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
+  const [activitiesMenuAnchor, setActivitiesMenuAnchor] = useState<
+    null | HTMLElement
+  >(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { isMobile } = useResponsive();
@@ -77,6 +83,22 @@ const Header: React.FC<HeaderProps> = ({
     setCoverMenuAnchor(null);
   };
 
+  const handleCardsMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setCardsMenuAnchor(event.currentTarget);
+  };
+
+  const handleCardsMenuClose = () => {
+    setCardsMenuAnchor(null);
+  };
+
+  const handleActivitiesMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setActivitiesMenuAnchor(event.currentTarget);
+  };
+
+  const handleActivitiesMenuClose = () => {
+    setActivitiesMenuAnchor(null);
+  };
+
   const handleCoverMenuClick = (path: string) => {
     navigate(path);
     handleCoverMenuClose();
@@ -92,30 +114,19 @@ const Header: React.FC<HeaderProps> = ({
     setIsMenuOpen(false);
   };
 
-  const navItems = [
+  const topNavItems = [
     { path: '/home', label: '首页', icon: <Home fontSize="small" /> },
-    { path: '/create-card', label: '创建卡片', icon: <Add fontSize="small" /> },
-    {
-      path: '/cards',
-      label: '卡片广场',
-      icon: <CardMembership fontSize="small" />,
-    },
-    {
-      path: '/my-cards',
-      label: '我的卡片',
-      icon: <AccountCircle fontSize="small" />,
-    },
-    {
-      path: '/meetups',
-      label: '活动广场',
-      icon: <CalendarToday fontSize="small" />,
-    },
-    {
-      path: '/weekly-cards',
-      label: '启发星球周刊',
-      icon: <Book fontSize="small" />,
-    },
-    { path: '/about', label: '关于我们', icon: <Info fontSize="small" /> },
+  ];
+
+  const cardsMenuItems = [
+    { path: '/create-card', label: '创建卡片' },
+    { path: '/cards', label: '卡片广场' },
+    { path: '/weekly-cards', label: '启发星球周刊' },
+  ];
+
+  const activitiesMenuItems = [
+    { path: '/meetups', label: '活动广场' },
+    { path: '/create-meetup', label: '创建活动' },
   ];
 
   const coverMenuItems = [
@@ -131,7 +142,8 @@ const Header: React.FC<HeaderProps> = ({
 
   const renderNavLinks = () => (
     <>
-      {navItems.map((item) => (
+      {/* 顶级菜单 */}
+      {topNavItems.map((item) => (
         <Button
           key={item.path}
           color="inherit"
@@ -150,6 +162,94 @@ const Header: React.FC<HeaderProps> = ({
           {item.label}
         </Button>
       ))}
+
+      {/* 知识开票分组 */}
+      <>
+        <Button
+          color="inherit"
+          startIcon={<CardMembership fontSize="small" />}
+          endIcon={<ChevronDown fontSize="small" />}
+          onClick={handleCardsMenuOpen}
+          sx={{
+            marginLeft: 1,
+            boxShadow: 'none',
+            display: { xs: 'none', md: 'flex' },
+            textTransform: 'none',
+            fontSize: '0.9rem',
+            fontWeight: cardsMenuItems.some((item) => isActiveRoute(item.path))
+              ? 'bold'
+              : 'normal',
+            color: cardsMenuItems.some((item) => isActiveRoute(item.path))
+              ? '#ff7f50'
+              : 'inherit',
+          }}
+        >
+          知识卡片
+        </Button>
+        <Menu
+          anchorEl={cardsMenuAnchor}
+          open={Boolean(cardsMenuAnchor)}
+          onClose={handleCardsMenuClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        >
+          {cardsMenuItems.map((item) => (
+            <MenuItem
+              key={item.path}
+              component={Link}
+              to={item.path}
+              onClick={handleCardsMenuClose}
+            >
+              <ListItemText primary={item.label} sx={{ pl: 1 }} />
+            </MenuItem>
+          ))}
+        </Menu>
+      </>
+
+      {/* 活动分组 */}
+      <>
+        <Button
+          color="inherit"
+          startIcon={<CalendarToday fontSize="small" />}
+          endIcon={<ChevronDown fontSize="small" />}
+          onClick={handleActivitiesMenuOpen}
+          sx={{
+            marginLeft: 1,
+            boxShadow: 'none',
+            display: { xs: 'none', md: 'flex' },
+            textTransform: 'none',
+            fontSize: '0.9rem',
+            fontWeight: activitiesMenuItems.some((item) =>
+              isActiveRoute(item.path)
+            )
+              ? 'bold'
+              : 'normal',
+            color: activitiesMenuItems.some((item) => isActiveRoute(item.path))
+              ? '#ff7f50'
+              : 'inherit',
+          }}
+        >
+          活动
+        </Button>
+        <Menu
+          anchorEl={activitiesMenuAnchor}
+          open={Boolean(activitiesMenuAnchor)}
+          onClose={handleActivitiesMenuClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        >
+          {activitiesMenuItems.map((item) => (
+            <MenuItem
+              key={item.path}
+              component={Link}
+              to={item.path}
+              onClick={handleActivitiesMenuClose}
+            >
+              <ListItemText primary={item.label} sx={{ pl: 1 }} />
+            </MenuItem>
+          ))}
+        </Menu>
+      </>
 
       {/* 封面制作下拉菜单 */}
       <>
@@ -193,6 +293,24 @@ const Header: React.FC<HeaderProps> = ({
           ))}
         </Menu>
       </>
+
+      {/* 关于我们（在封面制作之后） */}
+      <Button
+        color="inherit"
+        startIcon={<Info fontSize="small" />}
+        component={Link}
+        to="/about"
+        sx={{
+          marginLeft: 1,
+          display: { xs: 'none', md: 'flex' },
+          textTransform: 'none',
+          fontSize: '0.9rem',
+          fontWeight: isActiveRoute('/about') ? 'bold' : 'normal',
+          color: isActiveRoute('/about') ? '#ff7f50' : 'inherit',
+        }}
+      >
+        关于我们
+      </Button>
     </>
   );
 
@@ -212,7 +330,8 @@ const Header: React.FC<HeaderProps> = ({
           </Typography>
         </Box>
         <List>
-          {navItems.map((item) => (
+          {/* 顶级菜单项 */}
+          {topNavItems.map((item) => (
             <ListItem
               key={item.path}
               component={Link}
@@ -232,6 +351,90 @@ const Header: React.FC<HeaderProps> = ({
               }}
             >
               {item.icon}
+              <ListItemText primary={item.label} sx={{ pl: 1 }} />
+            </ListItem>
+          ))}
+
+          {/* 移动端：知识开票菜单组 */}
+          <ListItem
+            sx={{
+              color: cardsMenuItems.some((item) => isActiveRoute(item.path))
+                ? '#ff7f50'
+                : 'grey',
+              backgroundColor: cardsMenuItems.some((item) =>
+                isActiveRoute(item.path)
+              )
+                ? '#fff9f0'
+                : 'transparent',
+              borderLeft: cardsMenuItems.some((item) =>
+                isActiveRoute(item.path)
+              )
+                ? '4px solid #fff9f0'
+                : 'none',
+            }}
+          >
+            <CardMembership fontSize="small" />
+            <ListItemText primary="知识开票" sx={{ pl: 1 }} />
+          </ListItem>
+          {cardsMenuItems.map((item) => (
+            <ListItem
+              key={item.path}
+              component={Link}
+              to={item.path}
+              onClick={handleMenuClick}
+              sx={{
+                pl: 5,
+                color: isActiveRoute(item.path) ? '#ff7f50' : 'grey',
+                backgroundColor: isActiveRoute(item.path)
+                  ? '#fff9f0'
+                  : 'transparent',
+                '&:hover': {
+                  backgroundColor: '#fff9f0',
+                },
+              }}
+            >
+              <ListItemText primary={item.label} sx={{ pl: 1 }} />
+            </ListItem>
+          ))}
+
+          {/* 移动端：活动菜单组 */}
+          <ListItem
+            sx={{
+              color: activitiesMenuItems.some((item) => isActiveRoute(item.path))
+                ? '#ff7f50'
+                : 'grey',
+              backgroundColor: activitiesMenuItems.some((item) =>
+                isActiveRoute(item.path)
+              )
+                ? '#fff9f0'
+                : 'transparent',
+              borderLeft: activitiesMenuItems.some((item) =>
+                isActiveRoute(item.path)
+              )
+                ? '4px solid #fff9f0'
+                : 'none',
+            }}
+          >
+            <CalendarToday fontSize="small" />
+            <ListItemText primary="活动" sx={{ pl: 1 }} />
+          </ListItem>
+          {activitiesMenuItems.map((item) => (
+            <ListItem
+              key={item.path}
+              component={Link}
+              to={item.path}
+              onClick={handleMenuClick}
+              sx={{
+                pl: 5,
+                color: isActiveRoute(item.path) ? '#ff7f50' : 'grey',
+                backgroundColor: isActiveRoute(item.path)
+                  ? '#fff9f0'
+                  : 'transparent',
+                '&:hover': {
+                  backgroundColor: '#fff9f0',
+                },
+              }}
+            >
               <ListItemText primary={item.label} sx={{ pl: 1 }} />
             </ListItem>
           ))}
@@ -276,6 +479,22 @@ const Header: React.FC<HeaderProps> = ({
               <ListItemText primary={item.label} sx={{ pl: 1 }} />
             </ListItem>
           ))}
+
+          {/* 移动端：关于我们（在封面制作之后） */}
+          <ListItem
+            component={Link}
+            to="/about"
+            onClick={handleMenuClick}
+            sx={{
+              color: isActiveRoute('/about') ? '#ff7f50' : 'grey',
+              backgroundColor: isActiveRoute('/about') ? '#fff9f0' : 'transparent',
+              '&:hover': { backgroundColor: '#fff9f0' },
+              borderLeft: isActiveRoute('/about') ? '4px solid #fff9f0' : 'none',
+            }}
+          >
+            <Info fontSize="small" />
+            <ListItemText primary="关于我们" sx={{ pl: 1 }} />
+          </ListItem>
         </List>
       </Box>
     </Drawer>
@@ -368,6 +587,14 @@ const Header: React.FC<HeaderProps> = ({
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               >
+                <MenuItem
+                  component={Link}
+                  to="/my-cards"
+                  onClick={handleUserMenuClose}
+                >
+                  <CardMembership fontSize="small" sx={{ mr: 1 }} />
+                  我的卡片
+                </MenuItem>
                 <MenuItem
                   component={Link}
                   to="/my-meetups"

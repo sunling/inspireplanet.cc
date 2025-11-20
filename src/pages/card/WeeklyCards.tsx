@@ -13,6 +13,9 @@ import {
   Select,
   MenuItem,
   Grid,
+  TextField,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
 import useResponsive from '@/hooks/useResponsive';
 
@@ -36,6 +39,8 @@ const WeeklyCards: React.FC = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<string>('all');
   const [loading, setLoading] = useState<boolean>(true);
   const [episodes, setEpisodes] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedQuery, setDebouncedQuery] = useState<string>('');
   const { isMobile, isMedium } = useResponsive();
   const showSnackbar = useGlobalSnackbar();
 
@@ -93,16 +98,55 @@ const WeeklyCards: React.FC = () => {
     loadWeeklyCards();
   }, []);
 
-  // 过滤卡片
+  // 输入去抖
   useEffect(() => {
-    if (selectedEpisode === 'all') {
-      setFilteredCards(cards);
-    } else {
-      setFilteredCards(
-        cards.filter((card) => card.episode === selectedEpisode)
-      );
+    const t = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // 过滤卡片（期数 + 关键字）
+  useEffect(() => {
+    const base =
+      selectedEpisode === 'all'
+        ? cards
+        : cards.filter((card) => card.episode === selectedEpisode);
+
+    if (!debouncedQuery) {
+      setFilteredCards(base);
+      return;
     }
-  }, [selectedEpisode, cards]);
+
+    const q = debouncedQuery.toLowerCase();
+    const stripHtml = (html: string) => html.replace(/<[^>]+>/g, '');
+
+    const match = (card: WeeklyCardItem) => {
+      const title = (card.title || '').toLowerCase();
+      const quote = (card.quote || '').toLowerCase();
+      const detailText = stripHtml(card.detail || '').toLowerCase();
+      const name = (card.name || '').toLowerCase();
+      return (
+        title.includes(q) ||
+        quote.includes(q) ||
+        detailText.includes(q) ||
+        name.includes(q)
+      );
+    };
+
+    setFilteredCards(base.filter(match));
+  }, [selectedEpisode, cards, debouncedQuery]);
+
+  const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const renderHighlighted = (text: string, query: string) => {
+    const q = query.trim();
+    if (!q || q.length < 2) return text;
+    const reg = new RegExp(`(${escapeRegExp(q)})`, 'gi');
+    const parts = text.split(reg);
+    return parts.map((part, i) =>
+      reg.test(part) ? <mark key={i}>{part}</mark> : <React.Fragment key={i}>{part}</React.Fragment>
+    );
+  };
 
   // 下载卡片功能
   const handleDownloadCard = async (cardId: string) => {
@@ -170,20 +214,8 @@ const WeeklyCards: React.FC = () => {
       }}
     >
       <Container maxWidth="lg">
-        <Typography
-          variant="h3"
-          component="h1"
-          sx={{
-            textAlign: 'center',
-            mb: 6,
-            color: '#4a6fa5',
-            fontWeight: 'bold',
-          }}
-        >
-          启发星球周刊
-        </Typography>
 
-        {/* 期数过滤器 */}
+        {/* 搜索与期数过滤器 */}
         <Paper
           elevation={1}
           sx={{
@@ -197,13 +229,49 @@ const WeeklyCards: React.FC = () => {
           <Box
             sx={{
               display: 'flex',
-              flexDirection: 'column',
+              flexDirection: isMobile ? 'column' : 'row',
               alignItems: 'center',
+              justifyContent: 'center',
+              gap: isMobile ? 2 : 3,
+              width: '100%',
             }}
           >
-            <Typography variant="h6" sx={{ mb: 2, color: '#667eea' }}>
-              选择期数
-            </Typography>
+            <Box sx={{ width: '100%', maxWidth: 600, flex: 1 }}>
+              <TextField
+                fullWidth
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="输入标题/引语/正文/作者，支持模糊搜索"
+                size={isMobile ? 'small' : 'medium'}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setSearchQuery('');
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      {searchQuery && (
+                        <IconButton aria-label="清空" onClick={() => setSearchQuery('')} edge="end">
+                          ✕
+                        </IconButton>
+                      )}
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: '#667eea33',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#667eea66',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea',
+                    },
+                  },
+                }}
+              />
+            </Box>
             <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
               <InputLabel id="episode-filter-label">期数</InputLabel>
               <Select
@@ -306,7 +374,7 @@ const WeeklyCards: React.FC = () => {
                                 color: fontColor,
                               }}
                             >
-                              {card.title}
+                              {renderHighlighted(card.title, debouncedQuery)}
                             </Typography>
 
                             <Box
@@ -322,7 +390,7 @@ const WeeklyCards: React.FC = () => {
                                 variant="body1"
                                 sx={{ color: fontColor }}
                               >
-                                {card.quote}
+                                {renderHighlighted(card.quote, debouncedQuery)}
                               </Typography>
                             </Box>
 
