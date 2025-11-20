@@ -96,7 +96,7 @@
 2. 安装依赖
 
    ```
-   npm install
+   yarn
    ```
 
 3. 创建`.env`文件，包含以下变量：
@@ -114,10 +114,10 @@
    GITHUB_BRANCH=main
    ```
 
-4. 启动 Netlify 开发服务器
+4. 启动项目
 
    ```
-   npx netlify dev
+   yarn dev
    ```
 
 5. 打开浏览器访问`http://localhost:8888`

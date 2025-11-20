@@ -287,6 +287,7 @@ const About: React.FC = () => {
                 style={{
                   color: '#ff5a36',
                   textDecoration: 'none',
+                  wordBreak: 'break-all',
                 }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.textDecoration = 'underline')
