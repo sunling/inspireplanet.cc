@@ -59,6 +59,21 @@ export const API_MAP = {
     RSVP: '/rsvp',
   },
 
+  // 人员与一对一
+  PEOPLE: {
+    LIST: '/users',
+  },
+  ONEONONE: {
+    INVITES: '/oneononeInvites',
+    MEETINGS: '/oneononeMeetings',
+  },
+  PROFILE: {
+    ROOT: '/userProfile',
+  },
+  NOTIFICATIONS: {
+    ROOT: '/notifications',
+  },
+
   // 工作坊相关
   WORKSHOP: {
     REGISTER: '/workshop', // 修改为/workshop，与函数名对应
@@ -248,6 +263,104 @@ export const api = {
       return http.get<{ rsvps: Participant[] }>(API_MAP.MEETUPS.RSVP, {
         meetupId,
       });
+    },
+  },
+
+  people: {
+    list: async (
+      params?: { q?: string; offering?: string; seeking?: string; interest?: string; expertise?: string; theme?: string }
+    ): Promise<ApiResponse<{ users: import('../types').PeopleUser[] }>> => {
+      return http.get<{ users: import('../types').PeopleUser[] }>(
+        API_MAP.PEOPLE.LIST,
+        params as any
+      )
+    },
+    getById: async (
+      id: string | number
+    ): Promise<ApiResponse<{ users: import('../types').PeopleUser[] }>> => {
+      return http.get<{ users: import('../types').PeopleUser[] }>(API_MAP.PEOPLE.LIST, { id } as any)
+    },
+  },
+
+  oneonone: {
+    invites: {
+      create: async (
+        data: Partial<import('../types').OneOnOneInvite> & { invitee_id: string }
+      ): Promise<ApiResponse<{ invite: import('../types').OneOnOneInvite }>> => {
+        return http.post<{ invite: import('../types').OneOnOneInvite }>(
+          API_MAP.ONEONONE.INVITES,
+          data
+        )
+      },
+      list: async (
+        role: 'inviter' | 'invitee' = 'invitee',
+        status?: 'pending' | 'accepted' | 'declined' | 'cancelled'
+      ): Promise<ApiResponse<{ invites: import('../types').OneOnOneInvite[] }>> => {
+        const params: Record<string, any> = { role }
+        if (status) params.status = status
+        return http.get<{ invites: import('../types').OneOnOneInvite[] }>(
+          API_MAP.ONEONONE.INVITES,
+          params
+        )
+      },
+      update: async (
+        id: string,
+        data: Partial<import('../types').OneOnOneInvite>
+      ): Promise<ApiResponse<{ invite: import('../types').OneOnOneInvite }>> => {
+        return http.put<{ invite: import('../types').OneOnOneInvite }>(
+          API_MAP.ONEONONE.INVITES,
+          { id, ...data }
+        )
+      },
+    },
+    meetings: {
+      create: async (
+        data: Partial<import('../types').OneOnOneMeeting>
+      ): Promise<ApiResponse<{ meeting: import('../types').OneOnOneMeeting }>> => {
+        return http.post<{ meeting: import('../types').OneOnOneMeeting }>(
+          API_MAP.ONEONONE.MEETINGS,
+          data
+        )
+      },
+      list: async (): Promise<ApiResponse<{ meetings: import('../types').OneOnOneMeeting[] }>> => {
+        return http.get<{ meetings: import('../types').OneOnOneMeeting[] }>(
+          API_MAP.ONEONONE.MEETINGS
+        )
+      },
+      update: async (
+        id: string,
+        data: Partial<import('../types').OneOnOneMeeting>
+      ): Promise<ApiResponse<{ meeting: import('../types').OneOnOneMeeting }>> => {
+        return http.put<{ meeting: import('../types').OneOnOneMeeting }>(
+          API_MAP.ONEONONE.MEETINGS,
+          { id, ...data }
+        )
+      },
+    },
+  },
+
+  notifications: {
+    list: async (
+      params?: { status?: 'unread' | 'read'; limit?: number; offset?: number }
+    ): Promise<ApiResponse<{ notifications: any[] }>> => {
+      return http.get<{ notifications: any[] }>(API_MAP.NOTIFICATIONS.ROOT, params as any)
+    },
+    markRead: async (id: string): Promise<ApiResponse<{ success: boolean }>> => {
+      return http.put<{ success: boolean }>(API_MAP.NOTIFICATIONS.ROOT, { id })
+    },
+    markAllRead: async (): Promise<ApiResponse<{ success: boolean }>> => {
+      return http.put<{ success: boolean }>(API_MAP.NOTIFICATIONS.ROOT, { all: true })
+    },
+  },
+
+  profile: {
+    getMy: async (): Promise<ApiResponse<{ profile: import('../types').UserProfile | null }>> => {
+      return http.get<{ profile: import('../types').UserProfile | null }>(API_MAP.PROFILE.ROOT)
+    },
+    upsert: async (
+      data: Partial<import('../types').UserProfile>
+    ): Promise<ApiResponse<{ profile: import('../types').UserProfile }>> => {
+      return http.post<{ profile: import('../types').UserProfile }>(API_MAP.PROFILE.ROOT, data)
     },
   },
 

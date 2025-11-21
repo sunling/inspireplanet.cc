@@ -13,6 +13,7 @@ import {
   Box,
   Menu,
   MenuItem,
+  Badge,
 } from "@mui/material";
 import { useResponsive } from "../hooks/useResponsive";
 import {
@@ -56,6 +57,21 @@ const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
   const { isMobile } = useResponsive();
   const menuRef = useRef<HTMLDivElement>(null);
+  const [unread, setUnread] = useState<number>(0);
+  React.useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+    const load = async () => {
+      try {
+        const res = await import('../netlify/configs').then((m) =>
+          m.api.notifications.list({ status: 'unread', limit: 100 })
+        );
+        if ((res as any).success)
+          setUnread((res as any).data?.notifications?.length || 0);
+      } catch {}
+    };
+    load();
+  }, [location.pathname]);
 
   // 判断当前路由是否匹配
   const isActiveRoute = (path: string): boolean => {
@@ -125,18 +141,8 @@ const Header: React.FC<HeaderProps> = ({
 
   const activitiesMenuItems = [
     { path: "/meetups", label: "活动广场" },
+    { path: "/people", label: "找人聊聊" },
     { path: "/create-meetup", label: "创建活动" },
-  ];
-
-  const coverMenuItems = [
-    {
-      path: "/cover-editor",
-      label: "横屏封面",
-    },
-    {
-      path: "/cover-editor-mobile",
-      label: "竖屏封面",
-    },
   ];
 
   const renderNavLinks = () => (
@@ -497,7 +503,7 @@ const Header: React.FC<HeaderProps> = ({
               <Button
                 color="inherit"
                 onClick={handleUserMenuOpen}
-                startIcon={<AccountCircle />}
+                startIcon={<Badge color="error" badgeContent={unread} max={9} invisible={unread === 0}><AccountCircle /></Badge>}
                 endIcon={<ChevronDown fontSize="small" />}
                 sx={{ ml: 2, textTransform: "none", boxShadow: "none" }}
               >
@@ -520,11 +526,37 @@ const Header: React.FC<HeaderProps> = ({
                 </MenuItem>
                 <MenuItem
                   component={Link}
+                  to="/notifications"
+                  onClick={handleUserMenuClose}
+                >
+                  <Badge color="error" badgeContent={unread} max={9} sx={{ mr: 1 }}>
+                    <AccountCircle fontSize="small" />
+                  </Badge>
+                  通知
+                </MenuItem>
+                <MenuItem
+                  component={Link}
                   to="/my-meetups"
                   onClick={handleUserMenuClose}
                 >
                   <CalendarToday fontSize="small" sx={{ mr: 1 }} />
                   我的活动
+                </MenuItem>
+                <MenuItem
+                  component={Link}
+                  to="/connections"
+                  onClick={handleUserMenuClose}
+                >
+                  <CalendarToday fontSize="small" sx={{ mr: 1 }} />
+                  我的连接
+                </MenuItem>
+                <MenuItem
+                  component={Link}
+                  to="/profile"
+                  onClick={handleUserMenuClose}
+                >
+                  <AccountCircle fontSize="small" sx={{ mr: 1 }} />
+                  完善资料
                 </MenuItem>
                 <MenuItem onClick={handleLogout}>
                   <Logout fontSize="small" sx={{ mr: 1 }} />

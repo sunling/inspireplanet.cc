@@ -85,6 +85,10 @@ const CoverEditorMobile = lazy(
 const NotFound = lazy(() => import('../components/NotFound/index'));
 const ChangePassWord = lazy(() => import('../pages/auth/ChangePassWord'));
 const ActSignup = lazy(() => import('../pages/auth/ActSignup'));
+const PeopleDirectory = lazy(() => import('../pages/people/Directory'));
+const MyConnections = lazy(() => import('../pages/connections/MyConnections'));
+const Profile = lazy(() => import('../pages/personal/Profile'));
+const Notifications = lazy(() => import('../pages/personal/Notifications'));
 
 // 创建路由器
 const router = createBrowserRouter(
@@ -102,6 +106,7 @@ const router = createBrowserRouter(
         { path: 'login', element: createLazyRoute(<Login />) },
         { path: 'cards', element: createLazyRoute(<Cards />) },
         { path: 'meetups', element: createLazyRoute(<Meetups />) },
+        { path: 'people', element: createLazyRoute(<PeopleDirectory />) },
         { path: 'weekly-cards', element: createLazyRoute(<WeeklyCards />) },
         { path: 'weekly-cards/:episode', element: createLazyRoute(<WeeklyCards />) },
         { path: 'card-detail', element: createLazyRoute(<CardDetail />) },
@@ -126,6 +131,9 @@ const router = createBrowserRouter(
           element: createProtectedRoute(<CreateMeetup />),
         },
         { path: 'my-meetups', element: createProtectedRoute(<MyMeetups />) },
+        { path: 'connections', element: createProtectedRoute(<MyConnections />) },
+        { path: 'profile', element: createProtectedRoute(<Profile />) },
+        { path: 'notifications', element: createProtectedRoute(<Notifications />) },
         {
           path: 'change-password',
           element: createProtectedRoute(<ChangePassWord />),
