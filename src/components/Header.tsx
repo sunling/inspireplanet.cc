@@ -114,7 +114,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const topNavItems = [
-    { path: "/home", label: "首页", icon: <Home fontSize="small" /> },
+    { path: "", label: "首页", icon: <Home fontSize="small" /> },
   ];
 
   const cardsMenuItems = [
@@ -162,7 +162,7 @@ const Header: React.FC<HeaderProps> = ({
         </Button>
       ))}
 
-      {/* 知识开票分组 */}
+      {/* 知识卡片分组 */}
       <>
         <Button
           color="inherit"
@@ -330,7 +330,7 @@ const Header: React.FC<HeaderProps> = ({
             }}
           >
             <CardMembership fontSize="small" />
-            <ListItemText primary="知识开票" sx={{ pl: 1 }} />
+            <ListItemText primary="知识卡片" sx={{ pl: 1 }} />
           </ListItem>
           {cardsMenuItems.map((item) => (
             <ListItem
@@ -397,48 +397,7 @@ const Header: React.FC<HeaderProps> = ({
             </ListItem>
           ))}
 
-          {/* 移动端封面制作菜单组 */}
-          <ListItem
-            sx={{
-              color: coverMenuItems.some((item) => isActiveRoute(item.path))
-                ? "#ff7f50"
-                : "grey",
-              backgroundColor: coverMenuItems.some((item) =>
-                isActiveRoute(item.path)
-              )
-                ? "#fff9f0"
-                : "transparent",
-              borderLeft: coverMenuItems.some((item) =>
-                isActiveRoute(item.path)
-              )
-                ? "4px solid #fff9f0"
-                : "none",
-            }}
-          >
-            <ListItemText primary="封面制作" sx={{ pl: 1 }} />
-          </ListItem>
-          {coverMenuItems.map((item) => (
-            <ListItem
-              key={item.path}
-              component={Link}
-              to={item.path}
-              onClick={handleMenuClick}
-              sx={{
-                pl: 5,
-                color: isActiveRoute(item.path) ? "#ff7f50" : "grey",
-                backgroundColor: isActiveRoute(item.path)
-                  ? "#fff9f0"
-                  : "transparent",
-                "&:hover": {
-                  backgroundColor: "#fff9f0",
-                },
-              }}
-            >
-              <ListItemText primary={item.label} sx={{ pl: 1 }} />
-            </ListItem>
-          ))}
-
-          {/* 移动端：关于我们（在封面制作之后） */}
+          {/* 移动端：关于我们 */}
           <ListItem
             component={Link}
             to="/about"

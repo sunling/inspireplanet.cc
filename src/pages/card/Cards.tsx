@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Box, Container, Typography, Grid } from '@mui/material';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Box, Container, Typography, Grid } from "@mui/material";
 
-import useResponsive from '@/hooks/useResponsive';
-import { api } from '@/netlify/configs';
-import { groupCardsByDate } from '@/utils/helper';
-import { formatDate } from '@/utils';
-import Loading from '@/components/Loading';
-import ErrorCard from '@/components/ErrorCard';
-import Empty from '@/components/Empty';
-import InspireCard from '@/components/InspireCard';
-import { useGlobalSnackbar } from '@/context/app';
+import useResponsive from "@/hooks/useResponsive";
+import { api } from "@/netlify/configs";
+import { groupCardsByDate } from "@/utils/helper";
+import { formatDate } from "@/utils";
+import Loading from "@/components/Loading";
+import ErrorCard from "@/components/ErrorCard";
+import Empty from "@/components/Empty";
+import InspireCard from "@/components/InspireCard";
+import { useGlobalSnackbar } from "@/context/app";
 
 const Cards: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
@@ -27,11 +27,11 @@ const Cards: React.FC = () => {
 
       const response = await api.cards.getAll();
 
-      console.log('查询所有卡片返回', response);
+      console.log("查询所有卡片返回", response);
 
       if (!response.success) {
-        setError('接口请求失败');
-        showSnackbar.error('接口请求失败');
+        setError("接口请求失败");
+        showSnackbar.error("接口请求失败");
       }
 
       let allCards = response.data?.records || [];
@@ -45,7 +45,7 @@ const Cards: React.FC = () => {
       const grouped = groupCardsByDate(validCards);
       setGroupedCards(grouped);
     } catch (err: any) {
-      const text = err.message || '加载失败，请稍后再试';
+      const text = err.message || "加载失败，请稍后再试";
       setError(text);
       showSnackbar.error(text);
     } finally {
@@ -70,7 +70,7 @@ const Cards: React.FC = () => {
     comment: string
   ) => {
     if (!name.trim() || !comment.trim()) {
-      showSnackbar.warning('请填写姓名和评论内容');
+      showSnackbar.warning("请填写姓名和评论内容");
       return;
     }
 
@@ -84,17 +84,17 @@ const Cards: React.FC = () => {
 
       // 检查响应状态并显示相应消息
       if (response.success) {
-        const text = response.message || '评论提交成功！';
+        const text = response.message || "评论提交成功！";
         showSnackbar.success(text);
         // todo:可以在这里添加刷新评论列表的逻辑
       } else {
-        console.error('提交评论失败:', response.error);
-        const text = response.error || '提交评论失败，请稍后再试';
+        console.error("提交评论失败:", response.error);
+        const text = response.error || "提交评论失败，请稍后再试";
         showSnackbar.error(text);
       }
     } catch (err: any) {
-      console.error('提交评论异常:', err);
-      const text = '提交评论时发生错误，请稍后再试';
+      console.error("提交评论异常:", err);
+      const text = "提交评论时发生错误，请稍后再试";
       showSnackbar.error(text);
     }
   };
@@ -111,9 +111,9 @@ const Cards: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: "100vh",
         padding: 2,
-        background: '#f8f8fa',
+        background: "#f8f8fa",
       }}
     >
       <Container maxWidth="lg">
@@ -133,20 +133,17 @@ const Cards: React.FC = () => {
                   <Typography
                     variant="h5"
                     sx={{
-                      mb: '1.5rem',
-                      pb: '0.5rem',
-                      color: '#4a6fa5',
-                      textAlign: 'left',
-                      borderBottom: '1px solid #7aa6e7',
+                      mb: "1.5rem",
+                      pb: "0.5rem",
+                      color: "#4a6fa5",
+                      textAlign: "left",
+                      borderBottom: "1px solid #7aa6e7",
                     }}
                   >
                     {formatDate(date)}
                   </Typography>
 
-                  <Grid
-                    container
-                    spacing={4}
-                  >
+                  <Grid container spacing={4}>
                     {groupedCards[date].map((card) => (
                       <Grid
                         size={{

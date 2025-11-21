@@ -114,12 +114,51 @@
   text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
   white-space: pre-line;
 }
+.vertical-title {
+  margin-top: 8px;
+  text-align: center;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  font-size: 1.25rem;
+}
+
+.vertical-detail {
+  margin-top: 8px;
+  color: #fff;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+  line-height: 1.6;
+  padding: 0 16px;
+  max-width: 92%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.vertical-episode {
+  margin-top: 6px;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
+
+.vertical-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 450px) {
+  .vertical-carousel-img {
+    height: 360px;
+  }
+}
 .vertical-quote::before {
   content: '"';
   position: absolute;
   left: 4px;
   top: -8px;
   font-size: 2rem;
+  color: var(--quoteColor);
   opacity: 0.3;
 }
 
@@ -157,8 +196,8 @@
 .vertical-wrapper {
   display: flex;
   flex-wrap: nowrap;
-  height: 100%;
-  overflow: hidden;
+  height: auto;
+  overflow: visible;
 }
 
 .vertical-carousel-content {
@@ -203,4 +242,11 @@
   right: 0;
   height: 20px;
   z-index: 1;
+}
+.vertical-meta {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 16px;
+  opacity: 0.8;
 }

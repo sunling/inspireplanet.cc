@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 import { Link } from "react-router-dom";
-import { Container, Button } from "@mui/material";
+import { Container, Button, Box, Typography, Paper, IconButton } from "@mui/material";
 import { useResponsive } from "../../hooks/useResponsive";
 import { ChevronRight, Star } from "@mui/icons-material";
 import Carousel from "../../components/Carousel";
@@ -11,12 +11,19 @@ import { api } from "../../netlify/configs";
 import { WeeklyCard } from "../../netlify/types/index";
 import styles from "./home.module.css";
 import ErrorCard from "../../components/ErrorCard/index";
+import { getFontColorForGradient, getRandomGradientClass } from "@/constants/gradient";
+import DOMPurify from "dompurify";
+import { marked } from "marked";
+import html2canvas from "html2canvas";
 
 const Home: React.FC = () => {
   const [cards, setCards] = useState<WeeklyCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isMobile } = useResponsive();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [gradients, setGradients] = useState<string[]>([]);
+  marked.setOptions({ breaks: true });
 
   // 加载最新卡片数据
   const fetchLatestCards = async () => {
@@ -34,6 +41,7 @@ const Home: React.FC = () => {
       ); // 过滤无效卡片
 
       setCards(formattedCards);
+      setGradients(formattedCards.map(() => getRandomGradientClass()));
       setIsLoading(false);
     } catch (err) {
       console.error("加载卡片错误:", err);
@@ -46,6 +54,30 @@ const Home: React.FC = () => {
   useEffect(() => {
     fetchLatestCards();
   }, []);
+
+  useEffect(() => {
+    if (!isMobile || cards.length === 0) return;
+    const t = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % cards.length);
+    }, 5000);
+    return () => clearInterval(t);
+  }, [isMobile, cards.length]);
+
+  const handleDownloadMobile = async (cardId: string) => {
+    const el = document.getElementById(`home-mobile-card-${cardId}`);
+    if (!el) return;
+    const canvas = await html2canvas(el, {
+      backgroundColor: null,
+      scale: 3,
+      useCORS: true,
+      logging: false,
+    });
+    const link = document.createElement("a");
+    const safeTitle = (cards[currentIndex]?.title || "card").replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "-");
+    link.download = `weekly-card-${safeTitle}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
 
   // 渲染轮播内容
   const renderCarouselContent = () => {
@@ -70,6 +102,113 @@ const Home: React.FC = () => {
           message="暂无最新卡片内容"
           description="前往卡片页面查看更多精彩内容"
         />
+      );
+    }
+
+    if (isMobile) {
+      const card = cards[currentIndex];
+      const gradientClass = gradients[currentIndex] || "card-gradient-1";
+      const fontColor = getFontColorForGradient(gradientClass);
+      return (
+        <Box sx={{ px: 1 }}>
+          <Paper
+            elevation={1}
+            id={`home-mobile-card-${card.id}`}
+            className={gradientClass}
+            sx={{
+              borderRadius: "12px",
+              overflow: "hidden",
+              p: 3,
+              color: fontColor,
+              position: "relative",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: "bold", mb: 2, color: fontColor }}
+            >
+              {card.title}
+            </Typography>
+
+            <Box
+              sx={{
+                backgroundColor: `${fontColor}10`,
+                p: 2,
+                borderRadius: "8px",
+                mb: 3,
+                fontStyle: "italic",
+                position: "relative",
+                pl: 4,
+                "&::before": {
+                  content: '"“"',
+                  position: "absolute",
+                  left: 8,
+                  top: -10,
+                  fontSize: "2.2rem",
+                  lineHeight: 1,
+                  color: fontColor,
+                  opacity: 0.2,
+                },
+              }}
+            >
+              <Typography variant="body1" sx={{ color: fontColor, whiteSpace: "pre-line" }}>
+                {card.quote}
+              </Typography>
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <img
+                src={card.imagePath || "/images/mistyblue.png"}
+                alt={card.title}
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  borderRadius: "8px",
+                  maxHeight: "240px",
+                  objectFit: "cover",
+                }}
+              />
+            </Box>
+
+            <Box sx={{ fontSize: "1rem", lineHeight: 1.6, mb: 3 }}>
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(
+                    card.detail ? marked.parse(card.detail).toString() : ""
+                  ),
+                }}
+              />
+            </Box>
+
+            <Box sx={{ mt: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography variant="caption" sx={{ color: fontColor, opacity: 0.8 }}>
+                — {card.name}
+              </Typography>
+              <Typography variant="caption" sx={{ color: fontColor, opacity: 0.8 }}>
+                {new Date(card.created).toLocaleDateString("zh-CN")}
+              </Typography>
+            </Box>
+
+            <IconButton
+              aria-label="下载"
+              onClick={() => handleDownloadMobile(card.id)}
+              sx={{
+                position: "absolute",
+                bottom: 10,
+                right: 10,
+                backgroundColor: "#667eea",
+                color: "white",
+                opacity: 0.8,
+                "&:hover": { opacity: 1 },
+              }}
+              size="small"
+            >
+              下载
+            </IconButton>
+          </Paper>
+        </Box>
       );
     }
 

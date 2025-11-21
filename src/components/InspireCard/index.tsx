@@ -125,7 +125,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
           }}
         >
           <Typography variant="body1" sx={{ fontStyle: 'italic', color: fontColor, whiteSpace: 'pre-line' }}>
-            "{card.quote || ''}"
+            {card.quote || ''}
           </Typography>
         </Box>
 

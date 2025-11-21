@@ -13,7 +13,7 @@ import { Box, IconButton } from "@mui/material";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import DownloadIcon from "@mui/icons-material/Download";
-import { getRandomGradientClass } from "@/constants/gradient";
+import { getRandomGradientClass, getFontColorForGradient } from "@/constants/gradient";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 export interface CarouselItem extends WeeklyCard {
@@ -67,7 +67,7 @@ const Carousel: React.FC<CarouselProps> = ({
 
   // 计算根样式
   const rootStyle = {
-    height: getResponsiveHeight(),
+    height: direction === "vertical" ? "auto" : getResponsiveHeight(),
     minHeight: "300px",
   };
 
@@ -175,6 +175,7 @@ const Carousel: React.FC<CarouselProps> = ({
         {items.map((e, index) => {
           const bgClass =
             gradientClassesRef.current[index] || "card-gradient-1";
+          const fontColor = getFontColorForGradient(bgClass);
           return (
             <Box
               key={e.id}
@@ -198,30 +199,75 @@ const Carousel: React.FC<CarouselProps> = ({
                   alt={e.title || `Slide ${index + 1}`}
                   loading="lazy"
                 />
-                <div className={styles[`cover-overlay`]}>
-                  <div className={styles[`cover-title`]}>{e.title}</div>
-                  <IconButton
-                    aria-label="下载"
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      downloadSlide(index);
-                    }}
-                    sx={{
-                      position: "absolute",
-                      right: 12,
-                      bottom: 12,
-                      backgroundColor: "#b2bceaff",
-                      color: "#fff",
-                      opacity: 0.85,
-                      "&:hover": { opacity: 1 },
-                    }}
-                    size="small"
-                  >
-                    <DownloadIcon fontSize="small" />
-                  </IconButton>
-                </div>
+                {direction === "horizontal" && (
+                  <div className={styles[`cover-overlay`]}>
+                    <div className={styles[`cover-title`]}>{e.title}</div>
+                    <IconButton
+                      aria-label="下载"
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        downloadSlide(index);
+                      }}
+                      sx={{
+                        position: "absolute",
+                        right: 12,
+                        bottom: 12,
+                        backgroundColor: "#b2bceaff",
+                        color: "#fff",
+                        opacity: 0.85,
+                        "&:hover": { opacity: 1 },
+                      }}
+                      size="small"
+                    >
+                      <DownloadIcon fontSize="small" />
+                    </IconButton>
+                  </div>
+                )}
                 {direction === "vertical" && (
-                  <div className={styles["vertical-quote"]}>{e.quote}</div>
+                  <>
+                    <div className={styles["vertical-episode"]}>{`${e.episode}. ${e.name}`}</div>
+                    <div className={styles["vertical-title"]} style={{ color: fontColor }}>{e.title}</div>
+                    <div
+                      className={styles["vertical-quote"]}
+                      style={{
+                        backgroundColor: `${fontColor}10`,
+                        ["--quoteColor" as any]: fontColor,
+                      }}
+                    >
+                      <span style={{ color: fontColor, fontStyle: "italic", whiteSpace: "pre-line" }}>{e.quote}</span>
+                    </div>
+                    <div
+                      className={styles["vertical-detail"]}
+                      style={{ color: fontColor }}
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(
+                          e.detail ? marked.parse(e.detail).toString() : ""
+                        ),
+                      }}
+                    />
+                    <div className={styles["vertical-meta"]} style={{ color: fontColor }}>
+                      <span>{e.name}</span>
+                      <span>{new Date(e.created).toLocaleDateString("zh-CN")}</span>
+                    </div>
+                    <div className={styles["vertical-actions"]}>
+                      <IconButton
+                        aria-label="下载"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          downloadSlide(index);
+                        }}
+                        sx={{
+                          backgroundColor: "#b2bceaff",
+                          color: "#fff",
+                          opacity: 0.9,
+                          "&:hover": { opacity: 1 },
+                        }}
+                        size="small"
+                      >
+                        <DownloadIcon fontSize="small" />
+                      </IconButton>
+                    </div>
+                  </>
                 )}
               </div>
               <div className={styles[`${direction}-second`]}>
