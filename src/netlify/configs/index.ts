@@ -164,6 +164,22 @@ export const api = {
     getLatest: async (): Promise<ApiResponse<WeeklyCardResponse>> => {
       return http.get<WeeklyCardResponse>(API_MAP.WEEKLY_CARDS.GET_LATEST);
     },
+
+    getByEpisode: async (
+      episode: string
+    ): Promise<ApiResponse<{ records: WeeklyCard[] }>> => {
+      return http.get<{ records: WeeklyCard[] }>(API_MAP.WEEKLY_CARDS.FETCH, {
+        episode,
+      });
+    },
+
+    getAllLimited: async (
+      limit: number
+    ): Promise<ApiResponse<{ records: WeeklyCard[] }>> => {
+      return http.get<{ records: WeeklyCard[] }>(API_MAP.WEEKLY_CARDS.FETCH, {
+        limit,
+      });
+    },
   },
 
   // 评论相关API

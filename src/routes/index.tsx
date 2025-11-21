@@ -97,6 +97,7 @@ const router = createBrowserRouter(
         { path: 'cards', element: createLazyRoute(<Cards />) },
         { path: 'meetups', element: createLazyRoute(<Meetups />) },
         { path: 'weekly-cards', element: createLazyRoute(<WeeklyCards />) },
+        { path: 'weekly-cards/:episode', element: createLazyRoute(<WeeklyCards />) },
         { path: 'card-detail', element: createLazyRoute(<CardDetail />) },
         {
           path: 'meetup-detail',
