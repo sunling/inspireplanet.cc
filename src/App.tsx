@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 
 import '@/styles/index.css';
 
@@ -30,12 +30,12 @@ const App: React.FC = () => {
   // 用户认证状态
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>('');
+  const location = useLocation();
 
   // 检查用户认证状态
   useEffect(() => {
     const checkAuth = () => {
       try {
-        // 同时检查两种可能的token存储键名
         const token =
           localStorage.getItem('authToken') || localStorage.getItem('token');
         const userData = localStorage.getItem('userData');
@@ -44,15 +44,19 @@ const App: React.FC = () => {
           setIsAuthenticated(true);
           const user = JSON.parse(userData);
           setUserName(user.name || '用户');
+        } else {
+          setIsAuthenticated(false);
+          setUserName('');
         }
       } catch (error) {
         console.error('检查认证状态时出错:', error);
         setIsAuthenticated(false);
+        setUserName('');
       }
     };
 
     checkAuth();
-  }, []);
+  }, [location.pathname, location.search, location.hash]);
 
   // 退出登录函数
   const handleLogout = () => {

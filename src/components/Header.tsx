@@ -485,7 +485,9 @@ const Header: React.FC<HeaderProps> = ({
               color="primary"
               variant="contained"
               component={Link}
-              to="/login"
+              to={`/login?redirect=${encodeURIComponent(
+                `${location.pathname}${location.search}${location.hash}`
+              )}`}
               sx={{ ml: 2, backgroundColor: "#ff7f50", boxShadow: "none" }}
             >
               登录

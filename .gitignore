@@ -8,6 +8,7 @@
 # Netlify
 .netlify/
 node_modules
+dist/
 
 ~
 
