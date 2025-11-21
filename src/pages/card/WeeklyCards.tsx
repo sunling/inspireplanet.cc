@@ -18,6 +18,7 @@ import {
   InputAdornment,
   IconButton,
 } from "@mui/material";
+import DownloadIcon from "@mui/icons-material/Download";
 import useResponsive from "@/hooks/useResponsive";
 
 import {
@@ -233,7 +234,6 @@ const WeeklyCards: React.FC = () => {
       }}
     >
       <Container maxWidth="lg">
-        {/* 搜索与期数过滤器 */}
         <Paper
           elevation={1}
           sx={{
@@ -244,88 +244,32 @@ const WeeklyCards: React.FC = () => {
             backdropFilter: "blur(10px)",
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: isMobile ? 2 : 3,
-              width: "100%",
+          <TextField
+            fullWidth
+            sx={{ width: "100%" }}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="输入标题/引语/正文/作者，支持模糊搜索"
+            size={isMobile ? "small" : "medium"}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setSearchQuery("");
             }}
-          >
-            <Box sx={{ width: "100%", maxWidth: 600, flex: 1 }}>
-              <TextField
-                fullWidth
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="输入标题/引语/正文/作者，支持模糊搜索"
-                size={isMobile ? "small" : "medium"}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") setSearchQuery("");
-                }}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      {searchQuery && (
-                        <IconButton
-                          aria-label="清空"
-                          onClick={() => setSearchQuery("")}
-                          edge="end"
-                        >
-                          ✕
-                        </IconButton>
-                      )}
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": {
-                      borderColor: "#667eea33",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#667eea66",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#667eea",
-                    },
-                  },
-                }}
-              />
-            </Box>
-            <FormControl sx={{ minWidth: 200, maxWidth: 300 }}>
-              <InputLabel id="episode-filter-label">期数</InputLabel>
-              <Select
-                labelId="episode-filter-label"
-                id="episode-filter"
-                value={selectedEpisode}
-                label="期数"
-                onChange={(event) => setSelectedEpisode(event.target.value)}
-                size={isMobile ? "small" : "medium"}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": {
-                      borderColor: "#667eea33",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "#667eea66",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#667eea",
-                    },
-                  },
-                }}
-              >
-                <MenuItem value="all">所有期数</MenuItem>
-                {episodes.map((episode) => (
-                  <MenuItem key={episode} value={episode}>
-                    {episode}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  {searchQuery && (
+                    <IconButton
+                      aria-label="清空"
+                      onClick={() => setSearchQuery("")}
+                      edge="end"
+                    >
+                      ✕
+                    </IconButton>
+                  )}
+                </InputAdornment>
+              ),
+            }}
+          />
         </Paper>
 
         {/* 卡片容器 */}
@@ -427,7 +371,7 @@ const WeeklyCards: React.FC = () => {
                                   whiteSpace: "pre-line",
                                 }}
                               >
-                                {renderHighlighted(card.quote, debouncedQuery)}
+                                {card.quote}
                               </Typography>
                             </Box>
 
@@ -511,7 +455,7 @@ const WeeklyCards: React.FC = () => {
                               p: 0,
                             }}
                           >
-                            <Typography variant="caption">下载</Typography>
+                            <DownloadIcon fontSize="small" />
                           </Button>
                         </Box>
                       </Grid>
