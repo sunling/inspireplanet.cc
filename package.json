@@ -1,7 +1,9 @@
 {
-  "name": "flashcard-for-inspiration-planet",
+  "name": "inspire-planet",
   "version": "1.0.0",
-  
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "netlify dev",
     "build": "vite build",

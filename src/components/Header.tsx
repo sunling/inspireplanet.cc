@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useRef } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   AppBar,
   Toolbar,
@@ -13,8 +13,8 @@ import {
   Box,
   Menu,
   MenuItem,
-} from '@mui/material';
-import { useResponsive } from '../hooks/useResponsive';
+} from "@mui/material";
+import { useResponsive } from "../hooks/useResponsive";
 import {
   Menu as MenuIcon,
   ExpandMore as ChevronDown,
@@ -27,7 +27,7 @@ import {
   AccountCircle,
   Logout,
   Image as ImageIcon,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -50,9 +50,8 @@ const Header: React.FC<HeaderProps> = ({
   const [cardsMenuAnchor, setCardsMenuAnchor] = useState<null | HTMLElement>(
     null
   );
-  const [activitiesMenuAnchor, setActivitiesMenuAnchor] = useState<
-    null | HTMLElement
-  >(null);
+  const [activitiesMenuAnchor, setActivitiesMenuAnchor] =
+    useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { isMobile } = useResponsive();
@@ -107,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({
   const handleLogout = () => {
     onLogout();
     handleUserMenuClose();
-    navigate('/');
+    navigate("/");
   };
 
   const handleMenuClick = () => {
@@ -115,28 +114,28 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const topNavItems = [
-    { path: '/home', label: '首页', icon: <Home fontSize="small" /> },
+    { path: "/home", label: "首页", icon: <Home fontSize="small" /> },
   ];
 
   const cardsMenuItems = [
-    { path: '/create-card', label: '创建卡片' },
-    { path: '/cards', label: '卡片广场' },
-    { path: '/weekly-cards', label: '启发星球周刊' },
+    { path: "/create-card", label: "创建卡片" },
+    { path: "/cards", label: "卡片广场" },
+    { path: "/weekly-cards", label: "启发星球周刊" },
   ];
 
   const activitiesMenuItems = [
-    { path: '/meetups', label: '活动广场' },
-    { path: '/create-meetup', label: '创建活动' },
+    { path: "/meetups", label: "活动广场" },
+    { path: "/create-meetup", label: "创建活动" },
   ];
 
   const coverMenuItems = [
     {
-      path: '/cover-editor',
-      label: '横屏封面',
+      path: "/cover-editor",
+      label: "横屏封面",
     },
     {
-      path: '/cover-editor-mobile',
-      label: '竖屏封面',
+      path: "/cover-editor-mobile",
+      label: "竖屏封面",
     },
   ];
 
@@ -152,11 +151,11 @@ const Header: React.FC<HeaderProps> = ({
           to={item.path}
           sx={{
             marginLeft: 1,
-            display: { xs: 'none', md: 'flex' },
-            textTransform: 'none',
-            fontSize: '0.9rem',
-            fontWeight: isActiveRoute(item.path) ? 'bold' : 'normal',
-            color: isActiveRoute(item.path) ? '#ff7f50' : 'inherit',
+            display: { xs: "none", md: "flex" },
+            textTransform: "none",
+            fontSize: "0.9rem",
+            fontWeight: isActiveRoute(item.path) ? "bold" : "normal",
+            color: isActiveRoute(item.path) ? "#ff7f50" : "inherit",
           }}
         >
           {item.label}
@@ -172,16 +171,16 @@ const Header: React.FC<HeaderProps> = ({
           onClick={handleCardsMenuOpen}
           sx={{
             marginLeft: 1,
-            boxShadow: 'none',
-            display: { xs: 'none', md: 'flex' },
-            textTransform: 'none',
-            fontSize: '0.9rem',
+            boxShadow: "none",
+            display: { xs: "none", md: "flex" },
+            textTransform: "none",
+            fontSize: "0.9rem",
             fontWeight: cardsMenuItems.some((item) => isActiveRoute(item.path))
-              ? 'bold'
-              : 'normal',
+              ? "bold"
+              : "normal",
             color: cardsMenuItems.some((item) => isActiveRoute(item.path))
-              ? '#ff7f50'
-              : 'inherit',
+              ? "#ff7f50"
+              : "inherit",
           }}
         >
           知识卡片
@@ -190,8 +189,8 @@ const Header: React.FC<HeaderProps> = ({
           anchorEl={cardsMenuAnchor}
           open={Boolean(cardsMenuAnchor)}
           onClose={handleCardsMenuClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "left" }}
         >
           {cardsMenuItems.map((item) => (
             <MenuItem
@@ -215,18 +214,18 @@ const Header: React.FC<HeaderProps> = ({
           onClick={handleActivitiesMenuOpen}
           sx={{
             marginLeft: 1,
-            boxShadow: 'none',
-            display: { xs: 'none', md: 'flex' },
-            textTransform: 'none',
-            fontSize: '0.9rem',
+            boxShadow: "none",
+            display: { xs: "none", md: "flex" },
+            textTransform: "none",
+            fontSize: "0.9rem",
             fontWeight: activitiesMenuItems.some((item) =>
               isActiveRoute(item.path)
             )
-              ? 'bold'
-              : 'normal',
+              ? "bold"
+              : "normal",
             color: activitiesMenuItems.some((item) => isActiveRoute(item.path))
-              ? '#ff7f50'
-              : 'inherit',
+              ? "#ff7f50"
+              : "inherit",
           }}
         >
           活动
@@ -235,8 +234,8 @@ const Header: React.FC<HeaderProps> = ({
           anchorEl={activitiesMenuAnchor}
           open={Boolean(activitiesMenuAnchor)}
           onClose={handleActivitiesMenuClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "left" }}
         >
           {activitiesMenuItems.map((item) => (
             <MenuItem
@@ -251,50 +250,7 @@ const Header: React.FC<HeaderProps> = ({
         </Menu>
       </>
 
-      {/* 封面制作下拉菜单 */}
-      <>
-        <Button
-          color="inherit"
-          startIcon={<ImageIcon fontSize="small" />}
-          endIcon={<ChevronDown fontSize="small" />}
-          onClick={handleCoverMenuOpen}
-          sx={{
-            marginLeft: 1,
-            boxShadow: 'none',
-            display: { xs: 'none', md: 'flex' },
-            textTransform: 'none',
-            fontSize: '0.9rem',
-            fontWeight: coverMenuItems.some((item) => isActiveRoute(item.path))
-              ? 'bold'
-              : 'normal',
-            color: coverMenuItems.some((item) => isActiveRoute(item.path))
-              ? '#ff7f50'
-              : 'inherit',
-          }}
-        >
-          封面制作
-        </Button>
-        <Menu
-          anchorEl={coverMenuAnchor}
-          open={Boolean(coverMenuAnchor)}
-          onClose={handleCoverMenuClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-        >
-          {coverMenuItems.map((item) => (
-            <MenuItem
-              key={item.path}
-              component={Link}
-              to={item.path}
-              onClick={() => handleCoverMenuClick(item.path)}
-            >
-              <ListItemText primary={item.label} sx={{ pl: 1 }} />
-            </MenuItem>
-          ))}
-        </Menu>
-      </>
-
-      {/* 关于我们（在封面制作之后） */}
+      {/* 关于我们 */}
       <Button
         color="inherit"
         startIcon={<Info fontSize="small" />}
@@ -302,11 +258,11 @@ const Header: React.FC<HeaderProps> = ({
         to="/about"
         sx={{
           marginLeft: 1,
-          display: { xs: 'none', md: 'flex' },
-          textTransform: 'none',
-          fontSize: '0.9rem',
-          fontWeight: isActiveRoute('/about') ? 'bold' : 'normal',
-          color: isActiveRoute('/about') ? '#ff7f50' : 'inherit',
+          display: { xs: "none", md: "flex" },
+          textTransform: "none",
+          fontSize: "0.9rem",
+          fontWeight: isActiveRoute("/about") ? "bold" : "normal",
+          color: isActiveRoute("/about") ? "#ff7f50" : "inherit",
         }}
       >
         关于我们
@@ -318,7 +274,7 @@ const Header: React.FC<HeaderProps> = ({
   const renderMobileMenu = () => (
     <Drawer anchor="left" open={isMenuOpen} onClose={handleMenuToggle}>
       <Box sx={{ width: 250, padding: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
           <img
             src="/images/logo.png"
             alt="启发星球"
@@ -338,16 +294,16 @@ const Header: React.FC<HeaderProps> = ({
               to={item.path}
               onClick={handleMenuClick}
               sx={{
-                color: isActiveRoute(item.path) ? '#ff7f50' : 'grey',
+                color: isActiveRoute(item.path) ? "#ff7f50" : "grey",
                 backgroundColor: isActiveRoute(item.path)
-                  ? '#fff9f0'
-                  : 'transparent',
-                '&:hover': {
-                  backgroundColor: '#fff9f0',
+                  ? "#fff9f0"
+                  : "transparent",
+                "&:hover": {
+                  backgroundColor: "#fff9f0",
                 },
                 borderLeft: isActiveRoute(item.path)
-                  ? '4px solid #fff9f0'
-                  : 'none',
+                  ? "4px solid #fff9f0"
+                  : "none",
               }}
             >
               {item.icon}
@@ -359,18 +315,18 @@ const Header: React.FC<HeaderProps> = ({
           <ListItem
             sx={{
               color: cardsMenuItems.some((item) => isActiveRoute(item.path))
-                ? '#ff7f50'
-                : 'grey',
+                ? "#ff7f50"
+                : "grey",
               backgroundColor: cardsMenuItems.some((item) =>
                 isActiveRoute(item.path)
               )
-                ? '#fff9f0'
-                : 'transparent',
+                ? "#fff9f0"
+                : "transparent",
               borderLeft: cardsMenuItems.some((item) =>
                 isActiveRoute(item.path)
               )
-                ? '4px solid #fff9f0'
-                : 'none',
+                ? "4px solid #fff9f0"
+                : "none",
             }}
           >
             <CardMembership fontSize="small" />
@@ -384,12 +340,12 @@ const Header: React.FC<HeaderProps> = ({
               onClick={handleMenuClick}
               sx={{
                 pl: 5,
-                color: isActiveRoute(item.path) ? '#ff7f50' : 'grey',
+                color: isActiveRoute(item.path) ? "#ff7f50" : "grey",
                 backgroundColor: isActiveRoute(item.path)
-                  ? '#fff9f0'
-                  : 'transparent',
-                '&:hover': {
-                  backgroundColor: '#fff9f0',
+                  ? "#fff9f0"
+                  : "transparent",
+                "&:hover": {
+                  backgroundColor: "#fff9f0",
                 },
               }}
             >
@@ -400,19 +356,21 @@ const Header: React.FC<HeaderProps> = ({
           {/* 移动端：活动菜单组 */}
           <ListItem
             sx={{
-              color: activitiesMenuItems.some((item) => isActiveRoute(item.path))
-                ? '#ff7f50'
-                : 'grey',
+              color: activitiesMenuItems.some((item) =>
+                isActiveRoute(item.path)
+              )
+                ? "#ff7f50"
+                : "grey",
               backgroundColor: activitiesMenuItems.some((item) =>
                 isActiveRoute(item.path)
               )
-                ? '#fff9f0'
-                : 'transparent',
+                ? "#fff9f0"
+                : "transparent",
               borderLeft: activitiesMenuItems.some((item) =>
                 isActiveRoute(item.path)
               )
-                ? '4px solid #fff9f0'
-                : 'none',
+                ? "4px solid #fff9f0"
+                : "none",
             }}
           >
             <CalendarToday fontSize="small" />
@@ -426,12 +384,12 @@ const Header: React.FC<HeaderProps> = ({
               onClick={handleMenuClick}
               sx={{
                 pl: 5,
-                color: isActiveRoute(item.path) ? '#ff7f50' : 'grey',
+                color: isActiveRoute(item.path) ? "#ff7f50" : "grey",
                 backgroundColor: isActiveRoute(item.path)
-                  ? '#fff9f0'
-                  : 'transparent',
-                '&:hover': {
-                  backgroundColor: '#fff9f0',
+                  ? "#fff9f0"
+                  : "transparent",
+                "&:hover": {
+                  backgroundColor: "#fff9f0",
                 },
               }}
             >
@@ -443,18 +401,18 @@ const Header: React.FC<HeaderProps> = ({
           <ListItem
             sx={{
               color: coverMenuItems.some((item) => isActiveRoute(item.path))
-                ? '#ff7f50'
-                : 'grey',
+                ? "#ff7f50"
+                : "grey",
               backgroundColor: coverMenuItems.some((item) =>
                 isActiveRoute(item.path)
               )
-                ? '#fff9f0'
-                : 'transparent',
+                ? "#fff9f0"
+                : "transparent",
               borderLeft: coverMenuItems.some((item) =>
                 isActiveRoute(item.path)
               )
-                ? '4px solid #fff9f0'
-                : 'none',
+                ? "4px solid #fff9f0"
+                : "none",
             }}
           >
             <ListItemText primary="封面制作" sx={{ pl: 1 }} />
@@ -467,12 +425,12 @@ const Header: React.FC<HeaderProps> = ({
               onClick={handleMenuClick}
               sx={{
                 pl: 5,
-                color: isActiveRoute(item.path) ? '#ff7f50' : 'grey',
+                color: isActiveRoute(item.path) ? "#ff7f50" : "grey",
                 backgroundColor: isActiveRoute(item.path)
-                  ? '#fff9f0'
-                  : 'transparent',
-                '&:hover': {
-                  backgroundColor: '#fff9f0',
+                  ? "#fff9f0"
+                  : "transparent",
+                "&:hover": {
+                  backgroundColor: "#fff9f0",
                 },
               }}
             >
@@ -486,10 +444,14 @@ const Header: React.FC<HeaderProps> = ({
             to="/about"
             onClick={handleMenuClick}
             sx={{
-              color: isActiveRoute('/about') ? '#ff7f50' : 'grey',
-              backgroundColor: isActiveRoute('/about') ? '#fff9f0' : 'transparent',
-              '&:hover': { backgroundColor: '#fff9f0' },
-              borderLeft: isActiveRoute('/about') ? '4px solid #fff9f0' : 'none',
+              color: isActiveRoute("/about") ? "#ff7f50" : "grey",
+              backgroundColor: isActiveRoute("/about")
+                ? "#fff9f0"
+                : "transparent",
+              "&:hover": { backgroundColor: "#fff9f0" },
+              borderLeft: isActiveRoute("/about")
+                ? "4px solid #fff9f0"
+                : "none",
             }}
           >
             <Info fontSize="small" />
@@ -506,10 +468,10 @@ const Header: React.FC<HeaderProps> = ({
     <AppBar
       position="sticky"
       elevation={1}
-      sx={{ backgroundColor: 'white', color: 'var(--text)' }}
+      sx={{ backgroundColor: "white", color: "var(--text)" }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <Toolbar sx={{ justifyContent: "space-between" }}>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
           {isMobile && (
             <IconButton
               edge="start"
@@ -524,10 +486,10 @@ const Header: React.FC<HeaderProps> = ({
           <Link
             to="/"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              textDecoration: 'none',
-              color: 'inherit',
+              display: "flex",
+              alignItems: "center",
+              textDecoration: "none",
+              color: "inherit",
             }}
           >
             <img
@@ -540,15 +502,15 @@ const Header: React.FC<HeaderProps> = ({
                 variant="h6"
                 component="div"
                 sx={{
-                  fontWeight: 'bold',
-                  display: { xs: 'none', sm: 'block' },
+                  fontWeight: "bold",
+                  display: { xs: "none", sm: "block" },
                 }}
               >
                 启发星球
               </Typography>
               <Typography
                 variant="caption"
-                sx={{ display: { xs: 'none', sm: 'block' } }}
+                sx={{ display: { xs: "none", sm: "block" } }}
               >
                 在真实中启发，在连接中发光
               </Typography>
@@ -556,7 +518,7 @@ const Header: React.FC<HeaderProps> = ({
           </Link>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
           {!isMobile && renderNavLinks()}
 
           {!isAuthenticated ? (
@@ -565,7 +527,7 @@ const Header: React.FC<HeaderProps> = ({
               variant="contained"
               component={Link}
               to="/login"
-              sx={{ ml: 2, backgroundColor: '#ff7f50', boxShadow: 'none' }}
+              sx={{ ml: 2, backgroundColor: "#ff7f50", boxShadow: "none" }}
             >
               登录
             </Button>
@@ -576,7 +538,7 @@ const Header: React.FC<HeaderProps> = ({
                 onClick={handleUserMenuOpen}
                 startIcon={<AccountCircle />}
                 endIcon={<ChevronDown fontSize="small" />}
-                sx={{ ml: 2, textTransform: 'none', boxShadow: 'none' }}
+                sx={{ ml: 2, textTransform: "none", boxShadow: "none" }}
               >
                 {userName}
               </Button>
@@ -584,8 +546,8 @@ const Header: React.FC<HeaderProps> = ({
                 anchorEl={userMenuAnchor}
                 open={userMenuOpen}
                 onClose={handleUserMenuClose}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
               >
                 <MenuItem
                   component={Link}

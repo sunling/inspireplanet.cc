@@ -146,11 +146,6 @@ const Cards: React.FC = () => {
                   <Grid
                     container
                     spacing={4}
-                    sx={{
-                      '& > .MuiGrid-item': {
-                        display: 'flex',
-                      },
-                    }}
                   >
                     {groupedCards[date].map((card) => (
                       <Grid

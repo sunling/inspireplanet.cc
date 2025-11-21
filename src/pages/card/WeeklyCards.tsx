@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 import html2canvas from 'html2canvas';
 import {
   Box,
@@ -34,6 +35,7 @@ export interface WeeklyCardItem extends WeeklyCard {
 }
 
 const WeeklyCards: React.FC = () => {
+  marked.setOptions({ breaks: true });
   const [cards, setCards] = useState<WeeklyCardItem[]>([]);
   const [filteredCards, setFilteredCards] = useState<WeeklyCardItem[]>([]);
   const [selectedEpisode, setSelectedEpisode] = useState<string>('all');
@@ -384,11 +386,23 @@ const WeeklyCards: React.FC = () => {
                                 borderRadius: '8px',
                                 mb: 3,
                                 fontStyle: 'italic',
+                                position: 'relative',
+                                pl: 4,
+                                '&::before': {
+                                  content: '"“"',
+                                  position: 'absolute',
+                                  left: 8,
+                                  top: -10,
+                                  fontSize: '2.2rem',
+                                  lineHeight: 1,
+                                  color: fontColor,
+                                  opacity: 0.2,
+                                },
                               }}
                             >
                               <Typography
                                 variant="body1"
-                                sx={{ color: fontColor }}
+                                sx={{ color: fontColor, whiteSpace: 'pre-line' }}
                               >
                                 {renderHighlighted(card.quote, debouncedQuery)}
                               </Typography>
@@ -418,7 +432,11 @@ const WeeklyCards: React.FC = () => {
                             >
                               <div
                                 dangerouslySetInnerHTML={{
-                                  __html: DOMPurify.sanitize(card.detail),
+                                  __html: DOMPurify.sanitize(
+                                    card.detail
+                                      ? marked.parse(card.detail).toString()
+                                      : ''
+                                  ),
                                 }}
                               />
                             </Box>

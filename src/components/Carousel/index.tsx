@@ -5,13 +5,17 @@ import React, {
   useRef,
   useCallback,
   useMemo,
-} from 'react';
-import styles from './index.module.css';
-import { useResponsive } from '../../hooks/useResponsive';
-import { WeeklyCard } from '@/netlify/types';
-import { Box, IconButton } from '@mui/material';
-import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+} from "react";
+import styles from "./index.module.css";
+import { useResponsive } from "../../hooks/useResponsive";
+import { WeeklyCard } from "@/netlify/types";
+import { Box, IconButton } from "@mui/material";
+import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import DownloadIcon from "@mui/icons-material/Download";
+import { getRandomGradientClass } from "@/constants/gradient";
+import DOMPurify from "dompurify";
+import { marked } from "marked";
 export interface CarouselItem extends WeeklyCard {
   category?: string;
 }
@@ -28,22 +32,25 @@ export interface CarouselProps {
 
 const Carousel: React.FC<CarouselProps> = ({
   items,
-  height = '480px',
+  height = "600px",
   autoPlay = true,
   autoPlayInterval = 3000,
   showIndicators = true,
   showPlayButton = true,
-  className = '',
+  className = "",
 }) => {
   const { isMobile, isTablet } = useResponsive();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isHovered, setIsHovered] = useState(false);
   const autoPlayIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const gradientClassesRef = useRef<string[]>([]);
+  const firstRefs = useRef<HTMLDivElement[]>([]);
+  marked.setOptions({ breaks: true });
 
   // 响应式高度计算
   const getResponsiveHeight = useCallback(() => {
-    if (typeof height === 'number') {
+    if (typeof height === "number") {
       if (isMobile) return `${Math.min(height, 400)}px`;
       if (isTablet) return `${Math.min(height, 520)}px`;
       return `${height}px`;
@@ -53,15 +60,15 @@ const Carousel: React.FC<CarouselProps> = ({
 
   const direction = useMemo(() => {
     if (isMobile || isTablet) {
-      return 'vertical';
+      return "vertical";
     }
-    return 'horizontal';
+    return "horizontal";
   }, [isMobile, isTablet]);
 
   // 计算根样式
   const rootStyle = {
     height: getResponsiveHeight(),
-    minHeight: '300px',
+    minHeight: "300px",
   };
 
   // 下一张
@@ -106,6 +113,9 @@ const Carousel: React.FC<CarouselProps> = ({
 
   // 初始化和事件监听
   useEffect(() => {
+    // 为每个条目生成一次随机背景类，保证渲染稳定
+    gradientClassesRef.current = items.map(() => getRandomGradientClass());
+
     // 启动自动播放
     if (autoPlay || isPlaying) {
       startAutoPlay();
@@ -115,6 +125,28 @@ const Carousel: React.FC<CarouselProps> = ({
       stopAutoPlay();
     };
   }, [autoPlay, isPlaying, startAutoPlay, stopAutoPlay]);
+
+  const downloadSlide = async (index: number) => {
+    try {
+      const el = firstRefs.current[index];
+      if (!el) return;
+      const { default: html2canvas } = await import("html2canvas");
+      const canvas = await html2canvas(el, {
+        backgroundColor: null,
+        scale: 3,
+        useCORS: true,
+        logging: false,
+      });
+      const link = document.createElement("a");
+      const safeTitle = (items[index]?.title || "weekly-card").replace(
+        /[^a-zA-Z0-9\u4e00-\u9fa5]/g,
+        "-"
+      );
+      link.download = `weekly-card-${safeTitle}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (_) {}
+  };
 
   // 悬停暂停
   useEffect(() => {
@@ -132,7 +164,7 @@ const Carousel: React.FC<CarouselProps> = ({
 
   return (
     <section
-      className={`${styles['component__carousel']} ${className}`}
+      className={`${styles["component__carousel"]} ${className}`}
       style={rootStyle}
     >
       <div
@@ -141,15 +173,25 @@ const Carousel: React.FC<CarouselProps> = ({
         onMouseLeave={() => setIsHovered(false)}
       >
         {items.map((e, index) => {
+          const bgClass =
+            gradientClassesRef.current[index] || "card-gradient-1";
           return (
             <Box
               key={e.id}
-              className={styles[`${direction}-carousel-content`]}
+              className={`${
+                styles[`${direction}-carousel-content`]
+              } ${bgClass}`}
               style={{
                 transform: `translateX(-${currentSlide * 100}%)`,
               }}
             >
-              <div className={styles[`${direction}-first`]}>
+              <div
+                className={styles[`${direction}-first`]}
+                ref={(el) => {
+                  if (el) firstRefs.current[index] = el;
+                }}
+                id={`carousel-first-${e.id}`}
+              >
                 <img
                   src={e.imagePath}
                   className={styles[`${direction}-carousel-img`]}
@@ -158,8 +200,29 @@ const Carousel: React.FC<CarouselProps> = ({
                 />
                 <div className={styles[`cover-overlay`]}>
                   <div className={styles[`cover-title`]}>{e.title}</div>
-                  <div className={styles[`cover-content`]}>{e.quote}</div>
+                  <IconButton
+                    aria-label="下载"
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      downloadSlide(index);
+                    }}
+                    sx={{
+                      position: "absolute",
+                      right: 12,
+                      bottom: 12,
+                      backgroundColor: "#b2bceaff",
+                      color: "#fff",
+                      opacity: 0.85,
+                      "&:hover": { opacity: 1 },
+                    }}
+                    size="small"
+                  >
+                    <DownloadIcon fontSize="small" />
+                  </IconButton>
                 </div>
+                {direction === "vertical" && (
+                  <div className={styles["vertical-quote"]}>{e.quote}</div>
+                )}
               </div>
               <div className={styles[`${direction}-second`]}>
                 <div
@@ -172,9 +235,14 @@ const Carousel: React.FC<CarouselProps> = ({
                   {e.quote}
                 </blockquote>
 
-                <div className={styles[`${direction}-item-desc`]}>
-                  {e.detail}
-                </div>
+                <div
+                  className={styles[`${direction}-item-desc`]}
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(
+                      e.detail ? marked.parse(e.detail).toString() : ""
+                    ),
+                  }}
+                />
               </div>
             </Box>
           );
@@ -182,8 +250,8 @@ const Carousel: React.FC<CarouselProps> = ({
         {showPlayButton && (
           <div className={styles[`${direction}-carousel-action`]}>
             <IconButton
-              className={styles['carousel-arrow-left']}
-              sx={{ color: 'var(--primary)' }}
+              className={styles["carousel-arrow-left"]}
+              sx={{ color: "var(--primary)" }}
               onClick={prevSlide}
               aria-label="上一张"
             >
@@ -191,9 +259,9 @@ const Carousel: React.FC<CarouselProps> = ({
             </IconButton>
 
             <IconButton
-              className={styles['carousel-arrow-right']}
+              className={styles["carousel-arrow-right"]}
               onClick={nextSlide}
-              sx={{ color: 'var(--primary)' }}
+              sx={{ color: "var(--primary)" }}
               aria-label="下一张"
             >
               <ArrowForwardIosIcon fontSize="small" />
@@ -204,14 +272,14 @@ const Carousel: React.FC<CarouselProps> = ({
         {showIndicators && (
           <Box
             className={styles[`${direction}-carousel-indicate`]}
-            sx={{ display: { xs: 'none', sm: 'block' } }}
+            sx={{ display: { xs: "none", sm: "block" } }}
           >
             {items.length > 1 && (
               <Box
                 sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
                   gap: 1,
                   mt: 2,
                 }}
@@ -221,11 +289,11 @@ const Carousel: React.FC<CarouselProps> = ({
                   return (
                     <IconButton
                       key={index}
-                      className={styles['indicate-icon']}
+                      className={styles["indicate-icon"]}
                       sx={{
-                        backgroundColor: isActive ? '#ff5a36' : '#ffb6c1',
-                        '&:hover': {
-                          backgroundColor: '#ff5a36',
+                        backgroundColor: isActive ? "#ff5a36" : "#ffb6c1",
+                        "&:hover": {
+                          backgroundColor: "#ff5a36",
                         },
                       }}
                       size="small"

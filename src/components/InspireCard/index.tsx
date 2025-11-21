@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, TextField, Card } from '@mui/material';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 
 import { CardItem } from '@/netlify/types';
 import { getFontColorForGradient, gradientStyles } from '@/constants/gradient';
@@ -18,6 +20,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
   canComment = true,
   onSubmitComment,
 }) => {
+  marked.setOptions({ breaks: true });
   const [showCommentForm, setShowCommentForm] = useState<boolean>(canComment);
   const [commentName, setCommentName] = useState<string>('');
   const [commentText, setCommentText] = useState<string>('');
@@ -29,10 +32,10 @@ const InspireCard: React.FC<InspireCardProps> = ({
   );
   const gradientClass = card.gradientClass || 'card-gradient-1';
 
-  // Quote box背景色
-  const quoteBoxBg = 'rgba(255, 255, 255, 0.9)';
+  // Quote box背景色：跟随渐变主题颜色的半透明背景
+  const quoteBoxBg = `${fontColor}10`;
 
-  const finalImage = card.imagePath;
+  const finalImage = card.imagePath || card.upload;
 
   // 格式化创建日期
   const formatCardDate = (dateString: string): string => {
@@ -50,7 +53,6 @@ const InspireCard: React.FC<InspireCardProps> = ({
       sx={{
         position: 'relative',
         cursor: 'pointer',
-        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         '&:hover': {
@@ -67,7 +69,6 @@ const InspireCard: React.FC<InspireCardProps> = ({
           fontFamily: 'sans-serif',
           borderRadius: '8px',
           padding: 2,
-          height: '100%',
           position: 'relative',
           overflow: 'hidden',
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
@@ -109,19 +110,35 @@ const InspireCard: React.FC<InspireCardProps> = ({
             padding: 2,
             borderRadius: 'var(--radius-sm)',
             mb: 2,
-            color: 'var(--text)',
+            position: 'relative',
+            pl: 4,
+            '&::before': {
+              content: '"“"',
+              position: 'absolute',
+              left: 8,
+              top: -10,
+              fontSize: '2.2rem',
+              lineHeight: 1,
+              color: fontColor,
+              opacity: 0.2,
+            },
           }}
         >
-          <Typography variant="body1" sx={{ fontStyle: 'italic' }}>
+          <Typography variant="body1" sx={{ fontStyle: 'italic', color: fontColor, whiteSpace: 'pre-line' }}>
             "{card.quote || ''}"
           </Typography>
         </Box>
 
         {/* 卡片详情 */}
         {card.detail && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2">{card.detail}</Typography>
-          </Box>
+          <Box
+            sx={{ mb: 2, '& *': { color: 'inherit !important' } }}
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(
+                card.detail ? marked.parse(card.detail).toString() : ''
+              ),
+            }}
+          />
         )}
 
         {/* 卡片创作者 */}
