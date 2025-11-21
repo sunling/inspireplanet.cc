@@ -94,7 +94,23 @@ async function createInvite(event: any, headers: Record<string, string>) {
     return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: error.message }) }
   }
   const inv = inserted?.[0]
-  if (inv) await createNotification(invitee_id, '收到邀请', '你收到一条一对一邀请', '/connections')
+  if (inv) {
+    const { data: inviterUser } = await supabase
+      .from('users')
+      .select('name, username')
+      .eq('id', userId)
+      .single()
+    const inviterName = inviterUser?.name || (inviterUser?.username ? `@${inviterUser.username}` : '对方')
+    const fmt = (iso: string) => {
+      try { return new Date(iso).toLocaleString() } catch { return iso }
+    }
+    const slotsText = validSlots
+      .slice(0, 3)
+      .map((s: any) => `${fmt(s.datetime_iso)} · ${s.mode === 'online' ? '线上' : '线下'}`)
+      .join('、') + (validSlots.length > 3 ? '…' : '')
+    const msg = `来自 ${inviterName} 的邀请：${message || '（无邀请语）'}；候选时间：${slotsText}`
+    await createNotification(invitee_id, '收到邀请', msg, '/connections')
+  }
   return { statusCode: 200, headers, body: JSON.stringify({ success: true, invite: inserted?.[0] || null }) }
 }
 
@@ -162,12 +178,21 @@ async function updateInvite(event: any, headers: Record<string, string>) {
   const updated = data?.[0]
   if (updated) {
     if (nextStatus === 'accepted') {
-      await createNotification(updated.inviter_id, '邀请已接受', '对方已接受你的邀请', '/connections')
-      await createNotification(updated.invitee_id, '你已接受邀请', '已生成会面记录', '/connections')
+      const { data: inviterUser } = await supabase.from('users').select('name, username').eq('id', updated.inviter_id).single()
+      const { data: inviteeUser } = await supabase.from('users').select('name, username').eq('id', updated.invitee_id).single()
+      const inviterName = inviterUser?.name || (inviterUser?.username ? `@${inviterUser.username}` : String(updated.inviter_id))
+      const inviteeName = inviteeUser?.name || (inviteeUser?.username ? `@${inviteeUser.username}` : String(updated.invitee_id))
+      await createNotification(updated.inviter_id, '邀请已接受', `${inviteeName} 已接受你的邀请，系统已生成会面记录`, '/connections')
+      await createNotification(updated.invitee_id, '你已接受邀请', `已接受来自 ${inviterName} 的邀请，系统已生成会面记录`, '/connections')
     } else if (nextStatus === 'declined') {
-      await createNotification(updated.inviter_id, '邀请被拒绝', '对方拒绝了你的邀请', '/connections')
+      const { data: inviteeUser } = await supabase.from('users').select('name, username').eq('id', updated.invitee_id).single()
+      const inviteeName = inviteeUser?.name || (inviteeUser?.username ? `@${inviteeUser.username}` : String(updated.invitee_id))
+      await createNotification(updated.inviter_id, '邀请被拒绝', `${inviteeName} 拒绝了你的邀请`, '/connections')
     } else if (nextStatus === 'cancelled') {
-      await createNotification(isInvitee ? updated.inviter_id : updated.invitee_id, '邀请已取消', '对方取消了邀请', '/connections')
+      const targetId = isInvitee ? updated.inviter_id : updated.invitee_id
+      const { data: canceller } = await supabase.from('users').select('name, username').eq('id', userId).single()
+      const cancellerName = canceller?.name || (canceller?.username ? `@${canceller.username}` : '对方')
+      await createNotification(targetId, '邀请已取消', `${cancellerName} 取消了邀请`, '/connections')
     }
   }
   return { statusCode: 200, headers, body: JSON.stringify({ success: true, invite: data?.[0] || null }) }

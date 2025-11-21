@@ -28,7 +28,7 @@ export async function handler(event: any, context: any) {
 
 async function listUsers(event: any, headers: Record<string, string>) {
   const params = event.queryStringParameters || {}
-  const { q = '', limit = '50', offset = '0', offering = '', seeking = '', interest = '', expertise = '', theme = '', id = '' } = params
+  const { q = '', limit = '50', offset = '0', offering = '', seeking = '', interest = '', expertise = '', theme = '', city = '', id = '' } = params
 
   // 当有画像筛选时，先筛选 user_profiles，得到 user_id 集合
   let filteredUserIds: Array<number | string> | null = null
@@ -36,12 +36,13 @@ async function listUsers(event: any, headers: Record<string, string>) {
     const parsedId = isNaN(Number(id)) ? id : Number(id)
     filteredUserIds = [parsedId]
   }
-  if (offering || seeking || interest || expertise || theme) {
+  if (offering || seeking || interest || expertise || theme || city) {
     let profileQuery = supabase.from('user_profiles').select('user_id')
     if (offering) profileQuery = profileQuery.contains('offerings', [String(offering)])
     if (seeking) profileQuery = profileQuery.contains('seeking', [String(seeking)])
     if (interest) profileQuery = profileQuery.contains('interests', [String(interest)])
     if (expertise) profileQuery = profileQuery.contains('expertise', [String(expertise)])
+    if (city) profileQuery = profileQuery.eq('city', String(city))
     let profilesIds: Array<number | string> = []
     const { data: profiles, error: pErr } = await profileQuery
     if (pErr) {
@@ -88,7 +89,7 @@ async function listUsers(event: any, headers: Record<string, string>) {
   if (ids.length > 0) {
     const { data: profiles } = await supabase
       .from('user_profiles')
-      .select('user_id, bio, interests, expertise, availability_text, timezone, wechat_id')
+      .select('user_id, bio, interests, expertise, availability_text, wechat_id, city, offerings, seeking')
       .in('user_id', ids as any)
     ;(profiles || []).forEach((p: any) => { profilesByUserId[String(p.user_id)] = p })
   }

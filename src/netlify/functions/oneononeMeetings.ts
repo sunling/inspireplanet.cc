@@ -74,8 +74,16 @@ async function createMeeting(event: any, headers: Record<string, string>) {
     .select()
   if (error) return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: error.message }) }
   await supabase.from('one_on_one_invites').update({ status: 'accepted' }).eq('id', invite_id)
-  await createNotification(invite.inviter_id, '会面已安排', '对方已确认会面时间', '/connections')
-  await createNotification(invite.invitee_id, '会面已安排', '会面时间已确认', '/connections')
+  const { data: inviterUser } = await supabase.from('users').select('name, username').eq('id', invite.inviter_id).single()
+  const { data: inviteeUser } = await supabase.from('users').select('name, username').eq('id', invite.invitee_id).single()
+  const inviterName = inviterUser?.name || (inviterUser?.username ? `@${inviterUser.username}` : String(invite.inviter_id))
+  const inviteeName = inviteeUser?.name || (inviteeUser?.username ? `@${inviteeUser.username}` : String(invite.invitee_id))
+  const fmt = (iso: string) => { try { return new Date(iso).toLocaleString() } catch { return iso } }
+  const whereText = mode === 'online'
+    ? (meeting_url ? `线上会议（链接：${meeting_url}）` : '线上会议（链接未提供）')
+    : (location_text ? `线下地点：${location_text}` : '线下地点未提供')
+  await createNotification(invite.inviter_id, '会面已安排', `与 ${inviteeName} 于 ${fmt(final_datetime_iso)} 会面（${whereText}）`, '/connections')
+  await createNotification(invite.invitee_id, '会面已安排', `与 ${inviterName} 于 ${fmt(final_datetime_iso)} 会面（${whereText}）`, '/connections')
   return { statusCode: 200, headers, body: JSON.stringify({ success: true, meeting: inserted?.[0] || null }) }
 }
 
@@ -156,16 +164,36 @@ async function updateMeeting(event: any, headers: Record<string, string>) {
       .from('one_on_one_invites')
       .update({ status: 'cancelled' })
       .eq('id', meeting.invite_id)
-    await createNotification(invite.inviter_id, '会面已取消', '对方取消了会面', '/connections')
-    await createNotification(invite.invitee_id, '会面已取消', '会面已取消', '/connections')
+    const { data: inviterUser } = await supabase.from('users').select('name, username').eq('id', invite.inviter_id).single()
+    const { data: inviteeUser } = await supabase.from('users').select('name, username').eq('id', invite.invitee_id).single()
+    const inviterName = inviterUser?.name || (inviterUser?.username ? `@${inviterUser.username}` : String(invite.inviter_id))
+    const inviteeName = inviteeUser?.name || (inviteeUser?.username ? `@${inviteeUser.username}` : String(invite.invitee_id))
+    const fmt = (iso: string) => { try { return new Date(iso).toLocaleString() } catch { return iso } }
+    await createNotification(invite.inviter_id, '会面已取消', `与 ${inviteeName} 的会面已取消（原定 ${fmt(meeting.final_datetime_iso)}）`, '/connections')
+    await createNotification(invite.invitee_id, '会面已取消', `与 ${inviterName} 的会面已取消（原定 ${fmt(meeting.final_datetime_iso)}）`, '/connections')
   } else {
     if (updateRecord.final_datetime_iso || updateRecord.mode || updateRecord.meeting_url || updateRecord.location_text) {
-      await createNotification(invite.inviter_id, '会面信息更新', '会面信息已更新', '/connections')
-      await createNotification(invite.invitee_id, '会面信息更新', '会面信息已更新', '/connections')
+      const { data: inviterUser } = await supabase.from('users').select('name, username').eq('id', invite.inviter_id).single()
+      const { data: inviteeUser } = await supabase.from('users').select('name, username').eq('id', invite.invitee_id).single()
+      const inviterName = inviterUser?.name || (inviterUser?.username ? `@${inviterUser.username}` : String(invite.inviter_id))
+      const inviteeName = inviteeUser?.name || (inviteeUser?.username ? `@${inviteeUser.username}` : String(invite.invitee_id))
+      const fmt = (iso: string) => { try { return new Date(iso).toLocaleString() } catch { return iso } }
+      const timeText = updateRecord.final_datetime_iso ? `时间更新为 ${fmt(updateRecord.final_datetime_iso)}` : ''
+      const modeText = updateRecord.mode ? `形式 ${updateRecord.mode === 'online' ? '线上' : '线下'}` : ''
+      const whereText = updateRecord.mode === 'online'
+        ? (updateRecord.meeting_url !== undefined ? `链接 ${updateRecord.meeting_url || '未提供'}` : '')
+        : (updateRecord.location_text !== undefined ? `地点 ${updateRecord.location_text || '未提供'}` : '')
+      const merged = [timeText, modeText, whereText].filter(Boolean).join('，') || '会面信息已更新'
+      await createNotification(invite.inviter_id, '会面信息更新', `与 ${inviteeName} 的会面：${merged}`, '/connections')
+      await createNotification(invite.invitee_id, '会面信息更新', `与 ${inviterName} 的会面：${merged}`, '/connections')
     }
     if (updateRecord.status === 'completed') {
-      await createNotification(invite.inviter_id, '会面已完成', '会面已标记完成', '/connections')
-      await createNotification(invite.invitee_id, '会面已完成', '会面已标记完成', '/connections')
+      const { data: inviterUser } = await supabase.from('users').select('name, username').eq('id', invite.inviter_id).single()
+      const { data: inviteeUser } = await supabase.from('users').select('name, username').eq('id', invite.invitee_id).single()
+      const inviterName = inviterUser?.name || (inviterUser?.username ? `@${inviterUser.username}` : String(invite.inviter_id))
+      const inviteeName = inviteeUser?.name || (inviteeUser?.username ? `@${inviteeUser.username}` : String(invite.invitee_id))
+      await createNotification(invite.inviter_id, '会面已完成', `与 ${inviteeName} 的会面已标记完成`, '/connections')
+      await createNotification(invite.invitee_id, '会面已完成', `与 ${inviterName} 的会面已标记完成`, '/connections')
     }
   }
   return { statusCode: 200, headers, body: JSON.stringify({ success: true, meeting: updated?.[0] || null }) }

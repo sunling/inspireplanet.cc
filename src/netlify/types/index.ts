@@ -164,6 +164,7 @@ export interface UserProfile {
   availability_text?: string | null;
   timezone?: string | null;
   wechat_id?: string | null;
+  city?: string | null;
   offerings?: string[] | null;
   seeking?: string[] | null;
   created_at?: string;

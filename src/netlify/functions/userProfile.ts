@@ -59,9 +59,12 @@ async function upsertMyProfile(event: any, headers: Record<string, string>) {
     interests: Array.isArray(payload.interests) ? payload.interests : null,
     expertise: Array.isArray(payload.expertise) ? payload.expertise : null,
     availability_text: payload.availability_text ?? null,
-    timezone: payload.timezone ?? null,
     wechat_id: payload.wechat_id ?? null,
+    city: payload.city ?? null,
+    offerings: Array.isArray(payload.offerings) ? payload.offerings : null,
+    seeking: Array.isArray(payload.seeking) ? payload.seeking : null,
   }
+  
   const uid = isNaN(Number(userId)) ? userId : Number(userId)
   const { data: existing } = await supabase
     .from('user_profiles')
