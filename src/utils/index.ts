@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 /**
  * 检查活动是否即将举行
  * @param dateString 日期字符串
@@ -9,25 +10,17 @@ export const isUpcoming = (dateString: string): boolean => {
 
 /**
  * 格式化时间
- * @param timeString 时间字符串 (HH:mm格式)
+ * @param data 时间字符串 | Date对象
+ * @param format 时间格式，如HH:mm:ss
  * @returns string 格式化后的时间
  */
-export const formatTime = (timeString: string): string => {
-  if (!timeString) return '';
+export const formatTime = (
+  data: string | Date,
+  format = 'HH:mm:ss'
+): string => {
+  if (!data) return '';
 
-  // 处理不同格式的时间字符串
-  if (timeString.includes(':')) {
-    const [hours, minutes] = timeString.split(':');
-    return `${hours}:${minutes}`;
-  } else if (typeof timeString === 'string') {
-    // 处理日期时间字符串
-    const date = new Date(timeString);
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
-  }
-
-  return '';
+  return dayjs(data).format(format);
 };
 
 /**
@@ -43,20 +36,17 @@ export const escapeHtml = (text: string): string => {
 
 /**
  * 格式化日期
- * @param dateString 日期字符串
+ * @param data 日期字符串 | Date对象
+ * @param format 日期格式，如'YYYY-MM-DD'
  * @returns string 格式化后的日期
  */
-export const formatDate = (dateString: string): string => {
-  if (!dateString) return '';
+export const formatDate = (
+  data: string | Date,
+  format = 'YYYY-MM-DD'
+): string => {
+  if (!data) return '';
 
-  const date = new Date(dateString);
-  const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  };
-
-  return date.toLocaleDateString('zh-CN', options);
+  return dayjs(data).format(format);
 };
 
 /**
