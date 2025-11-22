@@ -280,6 +280,11 @@ export const api = {
     ): Promise<ApiResponse<{ users: import('../types').PeopleUser[] }>> => {
       return http.get<{ users: import('../types').PeopleUser[] }>(API_MAP.PEOPLE.LIST, { id } as any)
     },
+    getByIds: async (
+      ids: Array<string | number>
+    ): Promise<ApiResponse<{ users: import('../types').PeopleUser[] }>> => {
+      return http.get<{ users: import('../types').PeopleUser[] }>(API_MAP.PEOPLE.LIST, { ids: ids.map(String).join(',') } as any)
+    },
   },
 
   oneonone: {

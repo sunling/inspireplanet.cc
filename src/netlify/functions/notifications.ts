@@ -69,4 +69,71 @@ async function updateNotification(event: any, headers: Record<string, string>) {
 export async function createNotification(userId: string | number, title: string, content: string, path?: string) {
   const uid = isNaN(Number(userId)) ? userId : Number(userId)
   await supabase.from('notifications').insert({ user_id: uid, title, content, status: 'unread', path: path || null }).select()
+  try {
+    const { data: user } = await supabase
+      .from('users')
+      .select('email, name, username')
+      .eq('id', uid)
+      .single()
+    const to = user?.email
+    if (!to) return
+    const subject = title
+    const base = process.env.PUBLIC_BASE_URL || ''
+    const link = path ? (base ? `${base}${path}` : path) : ''
+    const name = user?.name || (user?.username ? `@${user.username}` : '')
+    const text = [
+      name ? `${name}，您好！` : '您好！',
+      '',
+      content,
+      link ? `前往：${link}` : '',
+      '',
+      '此邮件由系统发送，如有打扰请忽略。'
+    ].filter(Boolean).join('\n')
+    await sendEmail(to, subject, text)
+  } catch {}
+}
+
+async function sendEmail(to: string, subject: string, text: string) {
+  const from = process.env.EMAIL_FROM || 'no-reply@cards.bysunling.com'
+  const resendKey = process.env.RESEND_API_KEY
+  const sendgridKey = process.env.SENDGRID_API_KEY
+  try {
+    if (resendKey) {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ from, to, subject, text })
+      })
+      if (!res.ok) {
+        const body = await res.text()
+        console.error('Resend email failed:', res.status, body)
+      }
+      return
+    }
+    if (sendgridKey) {
+      const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sendgridKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          personalizations: [{ to: [{ email: to }] }],
+          from: { email: from },
+          subject,
+          content: [{ type: 'text/plain', value: text }],
+        })
+      })
+      if (!res.ok) {
+        const body = await res.text()
+        console.error('SendGrid email failed:', res.status, body)
+      }
+      return
+    }
+  } catch (e) {
+    console.error('sendEmail error:', e)
+  }
 }

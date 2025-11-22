@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Container,
@@ -73,14 +73,22 @@ const AcceptDialog: React.FC<{
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {!!(invite?.proposed_slots || []).length && (
             <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-              <Typography sx={{ width: 88 }} variant="body2" color="text.secondary">
+              <Typography
+                sx={{ width: 88 }}
+                variant="body2"
+                color="text.secondary"
+              >
                 候选时间
               </Typography>
               <Box sx={{ flex: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
                 {(invite?.proposed_slots || []).map((s: any, idx: number) => {
                   const d = new Date(s.datetime_iso);
-                  const label = `${d.toLocaleString()} · ${s.mode === "online" ? "线上" : "线下"}`;
-                  const selected = slot.datetime_iso === s.datetime_iso && slot.mode === s.mode;
+                  const label = `${d.toLocaleString()} · ${
+                    s.mode === "online" ? "线上" : "线下"
+                  }`;
+                  const selected =
+                    slot.datetime_iso === s.datetime_iso &&
+                    slot.mode === s.mode;
                   return (
                     <Chip
                       key={idx}
@@ -102,7 +110,11 @@ const AcceptDialog: React.FC<{
             </Box>
           )}
           <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-            <Typography sx={{ width: 88 }} variant="body2" color="text.secondary">
+            <Typography
+              sx={{ width: 88 }}
+              variant="body2"
+              color="text.secondary"
+            >
               选择时间
             </Typography>
             <Box sx={{ flex: 1 }}>
@@ -117,16 +129,30 @@ const AcceptDialog: React.FC<{
                   min: (() => {
                     const d = new Date();
                     const pad = (n: number) => String(n).padStart(2, "0");
-                    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+                      d.getDate()
+                    )}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
                   })(),
                 }}
-                error={!!slot.datetime_iso && new Date(slot.datetime_iso).getTime() <= Date.now()}
-                helperText={!!slot.datetime_iso && new Date(slot.datetime_iso).getTime() <= Date.now() ? "会面时间不能早于当前时间" : "时间为你的当地时间（" + timeZone + ")"}
+                error={
+                  !!slot.datetime_iso &&
+                  new Date(slot.datetime_iso).getTime() <= Date.now()
+                }
+                helperText={
+                  !!slot.datetime_iso &&
+                  new Date(slot.datetime_iso).getTime() <= Date.now()
+                    ? "会面时间不能早于当前时间"
+                    : "时间为你的当地时间（" + timeZone + ")"
+                }
               />
             </Box>
           </Box>
           <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-            <Typography sx={{ width: 88 }} variant="body2" color="text.secondary">
+            <Typography
+              sx={{ width: 88 }}
+              variant="body2"
+              color="text.secondary"
+            >
               会面方式
             </Typography>
             <Box sx={{ flex: 1 }}>
@@ -134,7 +160,9 @@ const AcceptDialog: React.FC<{
                 select
                 fullWidth
                 value={slot.mode}
-                onChange={(e) => setSlot((prev) => ({ ...prev, mode: e.target.value as any }))}
+                onChange={(e) =>
+                  setSlot((prev) => ({ ...prev, mode: e.target.value as any }))
+                }
               >
                 <MenuItem value="online">线上</MenuItem>
                 <MenuItem value="offline">线下</MenuItem>
@@ -143,7 +171,11 @@ const AcceptDialog: React.FC<{
           </Box>
           {slot.mode === "online" ? (
             <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-              <Typography sx={{ width: 88 }} variant="body2" color="text.secondary">
+              <Typography
+                sx={{ width: 88 }}
+                variant="body2"
+                color="text.secondary"
+              >
                 会议链接
               </Typography>
               <Box sx={{ flex: 1 }}>
@@ -151,7 +183,12 @@ const AcceptDialog: React.FC<{
                   fullWidth
                   placeholder="https://..."
                   value={slot.meeting_url || ""}
-                  onChange={(e) => setSlot((prev) => ({ ...prev, meeting_url: e.target.value }))}
+                  onChange={(e) =>
+                    setSlot((prev) => ({
+                      ...prev,
+                      meeting_url: e.target.value,
+                    }))
+                  }
                   multiline
                   minRows={2}
                 />
@@ -159,7 +196,11 @@ const AcceptDialog: React.FC<{
             </Box>
           ) : (
             <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-              <Typography sx={{ width: 88 }} variant="body2" color="text.secondary">
+              <Typography
+                sx={{ width: 88 }}
+                variant="body2"
+                color="text.secondary"
+              >
                 线下地点
               </Typography>
               <Box sx={{ flex: 1 }}>
@@ -167,7 +208,12 @@ const AcceptDialog: React.FC<{
                   fullWidth
                   placeholder="具体地址或地点描述"
                   value={slot.location_text || ""}
-                  onChange={(e) => setSlot((prev) => ({ ...prev, location_text: e.target.value }))}
+                  onChange={(e) =>
+                    setSlot((prev) => ({
+                      ...prev,
+                      location_text: e.target.value,
+                    }))
+                  }
                   multiline
                   minRows={3}
                 />
@@ -244,6 +290,7 @@ const MyConnections: React.FC = () => {
   useEffect(() => {
     loadInvites();
   }, [recvStatusFilter, sentStatusFilter]);
+  const lastMissingRef = React.useRef<string>("");
   useEffect(() => {
     const hydrate = async () => {
       const ids = new Set<string>([] as any);
@@ -251,19 +298,14 @@ const MyConnections: React.FC = () => {
       invitesSent.forEach((i) => ids.add(String(i.invitee_id)));
       const missing = Array.from(ids).filter((id) => !peopleMap[id]);
       if (missing.length === 0) return;
-      const results = await Promise.all(
-        missing.map(async (id) => {
-          const r = await api.people.getById(id);
-          if (r.success && r.data?.users?.[0]) {
-            const u = r.data.users[0];
-            return { id: String(u.id), name: u.name, username: u.username };
-          }
-          return null;
-        })
-      );
+      const missingStr = [...missing].sort().join(",");
+      if (missingStr === lastMissingRef.current) return;
+      lastMissingRef.current = missingStr;
+      const r = await api.people.getByIds(missing);
+      const results = r.success ? r.data?.users || [] : [];
       const next = { ...peopleMap };
-      results.forEach((r) => {
-        if (r) next[r.id] = { name: r.name, username: r.username };
+      results.forEach((u: any) => {
+        if (u) next[String(u.id)] = { name: u.name, username: u.username };
       });
       setPeopleMap(next);
     };
@@ -328,7 +370,11 @@ const MyConnections: React.FC = () => {
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-              <Typography sx={{ width: 88 }} variant="body2" color="text.secondary">
+              <Typography
+                sx={{ width: 88 }}
+                variant="body2"
+                color="text.secondary"
+              >
                 选择时间
               </Typography>
               <Box sx={{ flex: 1 }}>
@@ -341,7 +387,9 @@ const MyConnections: React.FC = () => {
                     min: (() => {
                       const d = new Date();
                       const pad = (n: number) => String(n).padStart(2, "0");
-                      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+                        d.getDate()
+                      )}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
                     })(),
                   }}
                   error={!!time && new Date(time).getTime() <= Date.now()}
@@ -354,7 +402,11 @@ const MyConnections: React.FC = () => {
               </Box>
             </Box>
             <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-              <Typography sx={{ width: 88 }} variant="body2" color="text.secondary">
+              <Typography
+                sx={{ width: 88 }}
+                variant="body2"
+                color="text.secondary"
+              >
                 会面方式
               </Typography>
               <Box sx={{ flex: 1 }}>
@@ -371,7 +423,11 @@ const MyConnections: React.FC = () => {
             </Box>
             {mode === "online" ? (
               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-                <Typography sx={{ width: 88 }} variant="body2" color="text.secondary">
+                <Typography
+                  sx={{ width: 88 }}
+                  variant="body2"
+                  color="text.secondary"
+                >
                   会议链接
                 </Typography>
                 <Box sx={{ flex: 1 }}>
@@ -387,7 +443,11 @@ const MyConnections: React.FC = () => {
               </Box>
             ) : (
               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-                <Typography sx={{ width: 88 }} variant="body2" color="text.secondary">
+                <Typography
+                  sx={{ width: 88 }}
+                  variant="body2"
+                  color="text.secondary"
+                >
                   线下地点
                 </Typography>
                 <Box sx={{ flex: 1 }}>
@@ -660,7 +720,8 @@ const MyConnections: React.FC = () => {
                   }}
                 >
                   <Typography variant="body2" sx={{ flex: 1 }}>
-                    与 {(() => {
+                    与{" "}
+                    {(() => {
                       const inv = m.one_on_one_invites;
                       const me = myProfile?.user_id;
                       const other = inv
@@ -669,11 +730,19 @@ const MyConnections: React.FC = () => {
                           : inv.inviter_id
                         : "?";
                       return displayName(other);
-                    })()} 在 {m.mode === "online" ? (
+                    })()}{" "}
+                    在{" "}
+                    {m.mode === "online" ? (
                       m.meeting_url ? (
                         <>
                           线上会议（
-                          <a href={m.meeting_url} target="_blank" rel="noopener noreferrer">{m.meeting_url}</a>
+                          <a
+                            href={m.meeting_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {m.meeting_url}
+                          </a>
                           ）
                         </>
                       ) : (
@@ -681,11 +750,17 @@ const MyConnections: React.FC = () => {
                       )
                     ) : (
                       m.location_text || "线下地点未提供"
-                    )} 于 {new Date(m.final_datetime_iso).toLocaleString()} 会面（当地时区：{timeZone}）
+                    )}{" "}
+                    于 {new Date(m.final_datetime_iso).toLocaleString()}{" "}
+                    会面（当地时区：{timeZone}）
                   </Typography>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     {m.status === "cancelled" ? (
-                      <Chip size="small" variant="outlined" label="已取消会面" />
+                      <Chip
+                        size="small"
+                        variant="outlined"
+                        label="已取消会面"
+                      />
                     ) : (
                       <Chip size="small" variant="outlined" label="已安排" />
                     )}
@@ -694,7 +769,9 @@ const MyConnections: React.FC = () => {
                         <Button
                           size="small"
                           variant="text"
-                          onClick={() => setUpdateState({ open: true, meeting: m })}
+                          onClick={() =>
+                            setUpdateState({ open: true, meeting: m })
+                          }
                         >
                           修改
                         </Button>

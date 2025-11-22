@@ -28,11 +28,18 @@ export async function handler(event: any, context: any) {
 
 async function listUsers(event: any, headers: Record<string, string>) {
   const params = event.queryStringParameters || {}
-  const { q = '', limit = '50', offset = '0', offering = '', seeking = '', interest = '', expertise = '', theme = '', city = '', id = '' } = params
+  const { q = '', limit = '50', offset = '0', offering = '', seeking = '', interest = '', expertise = '', theme = '', city = '', id = '', ids = '' } = params
 
   // 当有画像筛选时，先筛选 user_profiles，得到 user_id 集合
   let filteredUserIds: Array<number | string> | null = null
-  if (id) {
+  if (ids) {
+    const list = String(ids)
+      .split(',')
+      .map((x) => x.trim())
+      .filter((x) => x.length > 0)
+      .map((x) => (isNaN(Number(x)) ? x : Number(x)))
+    if (list.length > 0) filteredUserIds = list
+  } else if (id) {
     const parsedId = isNaN(Number(id)) ? id : Number(id)
     filteredUserIds = [parsedId]
   }
@@ -84,13 +91,13 @@ async function listUsers(event: any, headers: Record<string, string>) {
     return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: error.message }) }
   }
 
-  const ids = (users || []).map((u: any) => u.id)
+  const userIds = (users || []).map((u: any) => u.id)
   let profilesByUserId: Record<string, any> = {}
-  if (ids.length > 0) {
+  if (userIds.length > 0) {
     const { data: profiles } = await supabase
       .from('user_profiles')
       .select('user_id, bio, interests, expertise, availability_text, wechat_id, city, offerings, seeking')
-      .in('user_id', ids as any)
+      .in('user_id', userIds as any)
     ;(profiles || []).forEach((p: any) => { profilesByUserId[String(p.user_id)] = p })
   }
 

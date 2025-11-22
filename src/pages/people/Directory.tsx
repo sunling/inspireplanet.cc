@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Container,
@@ -216,24 +216,20 @@ const Directory: React.FC = () => {
     };
     loadMy();
   }, []);
+  const lastMissingRef = React.useRef<string>("");
   useEffect(() => {
     const hydrate = async () => {
       const withoutProfile = users.filter((u) => !u.profile);
       if (withoutProfile.length === 0) return;
-      const updates = await Promise.all(
-        withoutProfile.map(async (u) => {
-          const r = await api.people.getById(u.id);
-          if (r.success && r.data?.users?.[0]) return r.data.users[0];
-          return null;
-        })
-      );
+      const missingIds = withoutProfile.map((u) => String(u.id)).sort().join(",");
+      if (missingIds === lastMissingRef.current) return;
+      lastMissingRef.current = missingIds;
+      const ids = withoutProfile.map((u) => u.id);
+      const r = await api.people.getByIds(ids as any);
+      const list = r.success ? (r.data?.users || []) : [];
       const byId: Record<string, any> = {};
-      updates.forEach((u) => {
-        if (u) byId[String(u.id)] = u;
-      });
-      setUsers((prev) =>
-        prev.map((u) => (byId[String(u.id)] ? byId[String(u.id)] : u))
-      );
+      list.forEach((u: any) => { byId[String(u.id)] = u; });
+      setUsers((prev) => prev.map((u) => (byId[String(u.id)] ? byId[String(u.id)] : u)));
     };
     hydrate();
   }, [users]);
