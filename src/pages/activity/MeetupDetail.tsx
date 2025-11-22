@@ -364,7 +364,6 @@ const MeetupDetail: React.FC = () => {
   const renderMeetupDetail = () => {
     if (!meetup) return null;
 
-    const meetupDate = new Date(meetup.datetime);
     const isUpcomingMeetup = isUpcoming(meetup.datetime);
     const formattedDate = formatDate(meetup.datetime);
     const formattedTime = formatTime(meetup.datetime);
@@ -536,7 +535,9 @@ const MeetupDetail: React.FC = () => {
                     >
                       活动地点
                     </strong>
-                    <span>{meetup.location}</span>
+                    <span style={{ wordBreak: 'break-all' }}>
+                      {meetup.location}
+                    </span>
                   </div>
                 )}
 
