@@ -8,7 +8,10 @@
 # Netlify
 .netlify/
 node_modules
+dist/
 
 ~
 
 .DS_Store
+
+.nvmrc

@@ -499,6 +499,20 @@ const CardDetail: React.FC = () => {
                         borderRadius: '8px',
                         mb: 3,
                         fontStyle: 'italic',
+                        position: 'relative',
+                        pl: 4,
+                        '&::before': {
+                          content: '"“"',
+                          position: 'absolute',
+                          left: 12,
+                          top: -10,
+                          fontSize: '2.6rem',
+                          lineHeight: 1,
+                          color: getFontColorForGradient(
+                            card?.gradientClass || 'card-gradient-1'
+                          ),
+                          opacity: 0.2,
+                        },
                       }}
                     >
                       <Typography
@@ -507,6 +521,7 @@ const CardDetail: React.FC = () => {
                           color: getFontColorForGradient(
                             card?.gradientClass || 'card-gradient-1'
                           ),
+                          whiteSpace: 'pre-line',
                         }}
                       >
                         {sanitizeContent(card?.quote || '')}

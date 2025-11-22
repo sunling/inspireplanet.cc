@@ -34,10 +34,27 @@ export async function handler(
       };
     }
 
-    const { data, error } = await supabase
-      .from('weekly_cards')
-      .select('*')
-      .order('Created', { ascending: false });
+    const params = event.queryStringParameters || {};
+    const episodeParam = params.episode;
+    const limitParam = params.limit ? parseInt(params.limit as string, 10) : undefined;
+
+    let query = supabase.from('weekly_cards').select('*');
+    if (episodeParam) {
+      const digits = (episodeParam.match(/\d+/)?.[0]) || '';
+      if (digits) {
+        // 兼容 EP43、第43期 等格式，按数字模糊匹配
+        query = query.ilike('Episode', `%${digits}%`);
+      } else {
+        // 无数字，则使用模糊匹配整个字符串
+        query = query.ilike('Episode', `%${episodeParam}%`);
+      }
+    }
+    query = query.order('Created', { ascending: false });
+    if (limitParam && !Number.isNaN(limitParam)) {
+      query = query.limit(limitParam);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching weekly cards:', error);

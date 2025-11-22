@@ -1,6 +1,8 @@
 /* Home页面主容器 */
 .home-container {
   padding: 0 1rem;
+  min-height: calc(100vh - 56px);
+  padding-bottom: 56px;
 }
 
 /* 轮播部分 */

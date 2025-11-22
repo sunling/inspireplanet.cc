@@ -124,6 +124,52 @@ export interface UserInfo {
   username?: string;
 }
 
+export interface PeopleUser {
+  id: string | number;
+  name: string;
+  username: string;
+  profile?: UserProfile | null;
+}
+
+export interface OneOnOneInvite {
+  id: string;
+  inviter_id: string;
+  invitee_id: string;
+  message?: string;
+  proposed_slots?: Array<{ datetime_iso: string; mode: 'online' | 'offline' }>;
+  selected_slot?: { datetime_iso: string; mode: 'online' | 'offline' } | null;
+  status: 'pending' | 'accepted' | 'declined' | 'cancelled';
+  created_at?: string;
+}
+
+export interface OneOnOneMeeting {
+  id: string;
+  invite_id: string;
+  final_datetime_iso: string;
+  mode: 'online' | 'offline';
+  location_text?: string | null;
+  meeting_url?: string | null;
+  notes?: string | null;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  created_at?: string;
+}
+
+export interface UserProfile {
+  id?: string;
+  user_id: string | number;
+  bio?: string | null;
+  topics?: string[] | null;
+  interests?: string[] | null;
+  expertise?: string[] | null;
+  availability_text?: string | null;
+  timezone?: string | null;
+  wechat_id?: string | null;
+  city?: string | null;
+  offerings?: string[] | null;
+  seeking?: string[] | null;
+  created_at?: string;
+}
+
 // 轮播卡片数据接口
 export interface CarouselCardData {
   id: string;

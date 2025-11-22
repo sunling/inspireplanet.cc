@@ -1,6 +1,6 @@
 // src/netlify/functions/uploadWeeklyCard.ts
-import { supabase } from '../../database/supabase';
-import { getBaseUrl } from '../../utils/http';
+import { supabase } from "../../database/supabase";
+import { getBaseUrl } from "../../utils/http";
 import {
   WeeklyCardRecord,
   WeeklyCardRequest,
@@ -8,7 +8,7 @@ import {
   NetlifyEvent,
   NetlifyContext,
   SearchImageResponse,
-} from '../types/index';
+} from "../types/index";
 
 export async function handler(
   event: NetlifyEvent,
@@ -16,11 +16,11 @@ export async function handler(
 ): Promise<{ statusCode: number; body: string }> {
   try {
     // Only allow POST requests
-    if (event.httpMethod !== 'POST') {
+    if (event.httpMethod !== "POST") {
       return {
         statusCode: 405,
         body: JSON.stringify({
-          error: 'Method Not Allowed',
+          error: "Method Not Allowed",
         } as WeeklyCardResponse),
       };
     }
@@ -41,7 +41,7 @@ export async function handler(
         statusCode: 400,
         body: JSON.stringify({
           success: false,
-          error: 'Missing required fields',
+          error: "Missing required fields",
           missingFields: getMissingFields(record),
         } as WeeklyCardResponse),
       };
@@ -51,9 +51,9 @@ export async function handler(
     const searchResponse: Response = await fetch(
       `${getBaseUrl()}/.netlify/functions/searchImage`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ text: record.detail }),
       }
@@ -72,7 +72,7 @@ export async function handler(
         imagePath = searchData.images[randomIndex].url;
       }
     } else {
-      console.warn('Failed to fetch image, continuing without image');
+      console.warn("Failed to fetch image, continuing without image");
     }
 
     // Prepare the record for Supabase
@@ -88,17 +88,17 @@ export async function handler(
 
     // Insert into Supabase
     const { data, error } = await supabase
-      .from('weekly_cards')
+      .from("weekly_cards")
       .insert([weeklyCardRecord])
       .select();
 
     if (error) {
-      console.error('Supabase error:', error);
+      console.error("Supabase error:", error);
       return {
         statusCode: 500,
         body: JSON.stringify({
           success: false,
-          error: 'Failed to submit weekly card',
+          error: "Failed to submit weekly card",
           details: error.message,
         } as WeeklyCardResponse),
       };
@@ -108,17 +108,17 @@ export async function handler(
       statusCode: 200,
       body: JSON.stringify({
         success: true,
-        message: 'Weekly card submitted successfully',
+        message: "Weekly card submitted successfully",
         id: data[0].id,
       } as WeeklyCardResponse),
     };
   } catch (error: any) {
-    console.error('Function error:', error);
+    console.error("Function error:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({
         success: false,
-        error: 'Internal Server Error',
+        error: "Internal Server Error",
         message: error.message,
       } as WeeklyCardResponse),
     };
@@ -128,11 +128,11 @@ export async function handler(
 // Helper function to identify missing fields
 function getMissingFields(record: WeeklyCardRecord): string[] {
   const requiredFields: string[] = [
-    'episode',
-    'name',
-    'title',
-    'quote',
-    'detail',
+    "episode",
+    "name",
+    "title",
+    "quote",
+    "detail",
   ];
   return requiredFields.filter(
     (field: string) => !record[field as keyof WeeklyCardRecord]

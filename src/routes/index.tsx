@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useState, useEffect } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
 
 // 导入主组件和工具组件
 import App from '../App';
@@ -43,8 +43,14 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const isAuthenticated = !!localStorage.getItem('authToken');
+  const location = useLocation();
+  const redirect = `${location.pathname}${location.search}${location.hash}`;
   console.log('isAuthenticated', isAuthenticated);
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  return isAuthenticated ? (
+    <>{children}</>
+  ) : (
+    <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />
+  );
 };
 
 // 路由辅助函数
@@ -76,9 +82,14 @@ const CoverEditor = lazy(() => import('../pages/tools/CoverEditor'));
 const CoverEditorMobile = lazy(
   () => import('../pages/tools/CoverEditorMobile')
 );
+const BulkWeeklyUpload = lazy(() => import('../pages/tools/BulkWeeklyUpload'));
 const NotFound = lazy(() => import('../components/NotFound/index'));
 const ChangePassWord = lazy(() => import('../pages/auth/ChangePassWord'));
 const ActSignup = lazy(() => import('../pages/auth/ActSignup'));
+const PeopleDirectory = lazy(() => import('../pages/people/Directory'));
+const MyConnections = lazy(() => import('../pages/connections/MyConnections'));
+const Profile = lazy(() => import('../pages/personal/Profile'));
+const Notifications = lazy(() => import('../pages/personal/Notifications'));
 
 // 创建路由器
 const router = createBrowserRouter(
@@ -96,7 +107,9 @@ const router = createBrowserRouter(
         { path: 'login', element: createLazyRoute(<Login />) },
         { path: 'cards', element: createLazyRoute(<Cards />) },
         { path: 'meetups', element: createLazyRoute(<Meetups />) },
+        { path: 'people', element: createLazyRoute(<PeopleDirectory />) },
         { path: 'weekly-cards', element: createLazyRoute(<WeeklyCards />) },
+        { path: 'weekly-cards/:episode', element: createLazyRoute(<WeeklyCards />) },
         { path: 'card-detail', element: createLazyRoute(<CardDetail />) },
         {
           path: 'meetup-detail',
@@ -119,6 +132,10 @@ const router = createBrowserRouter(
           element: createProtectedRoute(<CreateMeetup />),
         },
         { path: 'my-meetups', element: createProtectedRoute(<MyMeetups />) },
+        { path: 'connections', element: createProtectedRoute(<MyConnections />) },
+        { path: 'profile', element: createProtectedRoute(<Profile />) },
+        { path: 'notifications', element: createProtectedRoute(<Notifications />) },
+        { path: 'bulk-weekly-upload', element: createProtectedRoute(<BulkWeeklyUpload />) },
         {
           path: 'change-password',
           element: createProtectedRoute(<ChangePassWord />),

@@ -1,6 +1,6 @@
 [build]
   publish = "dist"
-  functions = "public/netlify/functions"
+  functions = "src/netlify/functions"
   command = "vite build"
 
 [dev]
@@ -14,4 +14,14 @@
   node_bundler = "esbuild"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

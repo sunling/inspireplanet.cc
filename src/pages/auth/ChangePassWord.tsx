@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../../netlify/configs';
 import {
   Box,
@@ -37,6 +37,7 @@ interface FormErrors {
 
 const ChangePassWord: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [submitLoading, setSubmitLoading] = useState<boolean>(false);
   const [passwordStrength, setPasswordStrength] = useState<
@@ -66,7 +67,8 @@ const ChangePassWord: React.FC = () => {
     setIsLoading(true);
     const token = localStorage.getItem('userToken');
     if (!token) {
-      navigate('/login');
+      const redirect = `${location.pathname}${location.search}${location.hash}`;
+      navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
     }
     setIsLoading(false);
   }, [navigate]);
@@ -220,7 +222,8 @@ const ChangePassWord: React.FC = () => {
         isAuthenticated={true}
         userName="用户"
         onLogout={() => {
-          navigate('/login');
+          const redirect = `${location.pathname}${location.search}${location.hash}`;
+          navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
         }}
       />
 

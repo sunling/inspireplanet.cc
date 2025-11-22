@@ -152,7 +152,8 @@ const Meetups: React.FC = () => {
 
     if (!token || !userInfo) {
       showSnackbar.warning('请先登录后再报名参加活动');
-      navigate('/login', { state: { redirect: window.location.pathname } });
+      const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
       return;
     }
 
