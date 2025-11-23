@@ -180,11 +180,14 @@ const MeetupDetail: React.FC = () => {
 
       const rsvps = response?.data?.rsvps || [];
       // 处理数据格式
-      const processedParticipants: Participant[] = rsvps.map((record: any) => ({
-        name: record.name || '未知用户',
-        wechat_id: record.wechat_id,
-        created_at: record.created_at,
-      }));
+      const processedParticipants: Participant[] = rsvps
+        .map((record: any) => ({
+          name: record.name || '未知用户',
+          wechat_id: record.wechat_id,
+          created_at: record.created_at,
+          meetup_id: record.meetup_id,
+        }))
+        .filter((item) => `${item.meetup_id}` === meetupId);
 
       setParticipants(processedParticipants);
     } catch (err) {
