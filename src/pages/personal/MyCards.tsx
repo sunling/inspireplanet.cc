@@ -4,19 +4,8 @@ import { api } from '@/netlify/configs';
 import { CardItem } from '@/netlify/types';
 import { formatDate, getCurrentUser } from '@/utils';
 import DOMPurify from 'dompurify';
-import {
-  Box,
-  Container,
-  Typography,
-  Card,
-  CardContent,
-  CardMedia,
-  Button,
-  Grid,
-  Paper,
-  Chip,
-  Divider,
-} from '@mui/material';
+import { Box, Container, Typography, Button, Grid, Paper, Chip } from '@mui/material';
+import InspireCard from '@/components/InspireCard';
 import useResponsive from '@/hooks/useResponsive';
 import { useGlobalSnackbar } from '@/context/app';
 import Loading from '@/components/Loading';
@@ -266,82 +255,25 @@ const MyCards: React.FC = () => {
                     </Box>
                     <Box sx={{ p: 2 }}>
                       <Grid container spacing={3}>
-                        {dateCards.map((card, index) => (
-                          <Grid
-                            size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
-                            key={card.id}
-                          >
-                            <Card
-                              onClick={() =>
-                                navigate(`/card-detail?id=${card.id}`)
-                              }
-                              sx={{
-                                height: '100%',
-                                cursor: 'pointer',
-                                transition: 'transform 0.2s, box-shadow 0.2s',
-                                '&:hover': {
-                                  transform: 'translateY(-2px)',
-                                  boxShadow: 3,
-                                },
+                        {dateCards.map((card) => (
+                          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={card.id}>
+                            <InspireCard
+                              card={card as any}
+                              canComment={false}
+                              onCardClick={(id) => navigate(`/card-detail?id=${id}`)}
+                              onSubmitComment={async (id, name, comment) => {
+                                try {
+                                  const res = await api.comments.create({ cardId: id, name, comment })
+                                  if (res.success) {
+                                    showSnackbar.success(res.message || '评论提交成功！')
+                                  } else {
+                                    showSnackbar.error(res.error || '提交评论失败')
+                                  }
+                                } catch (e: any) {
+                                  showSnackbar.error(e.message || '网络错误')
+                                }
                               }}
-                            >
-                              <CardContent sx={{ p: 0 }}>
-                                <Box
-                                  sx={{
-                                    p: 3,
-                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    fontFamily: card.font || 'sans-serif',
-                                  }}
-                                >
-                                  <Typography
-                                    variant="h6"
-                                    component="div"
-                                    gutterBottom
-                                    sx={{ fontWeight: 'bold' }}
-                                  >
-                                    {card.title}
-                                  </Typography>
-                                  <Typography variant="body1">
-                                    {card.quote}
-                                  </Typography>
-                                  {card.imagePath && (
-                                    <Box sx={{ mt: 2, mb: 2 }}>
-                                      <CardMedia
-                                        component="img"
-                                        height="140"
-                                        image={card.imagePath}
-                                        alt={card.title}
-                                        sx={{
-                                          borderRadius: 1,
-                                          objectFit: 'contain',
-                                        }}
-                                      />
-                                    </Box>
-                                  )}
-                                  <Divider sx={{ my: 2 }} />
-                                  <Box
-                                    sx={{
-                                      display: 'flex',
-                                      justifyContent: 'space-between',
-                                      alignItems: 'center',
-                                    }}
-                                  >
-                                    <Typography
-                                      variant="body2"
-                                      color="textSecondary"
-                                    >
-                                      ——{card.creator || '匿名'}
-                                    </Typography>
-                                    <Typography
-                                      variant="caption"
-                                      color="textSecondary"
-                                    >
-                                      {formatDate(card.created)}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              </CardContent>
-                            </Card>
+                            />
                           </Grid>
                         ))}
                       </Grid>
