@@ -174,7 +174,7 @@ class HttpClient {
           ...this.defaultHeaders,
           ...config.headers,
         },
-        credentials: 'include',
+        credentials: config.credentials || 'same-origin',
         ...config,
       };
       // 应用请求拦截器

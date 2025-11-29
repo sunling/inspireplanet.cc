@@ -175,6 +175,12 @@ async function createMeetup(
     }
 
     // 插入到数据库
+    const maxRaw = meetupData.maxParticipants as any;
+    const maxParsed =
+      typeof maxRaw === 'number' ? maxRaw : Number(maxRaw);
+    const sanitizedMax =
+      Number.isFinite(maxParsed) && maxParsed > 0 ? maxParsed : null;
+
     const { data, error } = await supabase
       .from('meetups')
       .insert([
@@ -185,7 +191,7 @@ async function createMeetup(
           datetime: meetupDateTime.toISOString(),
           location: meetupData.location?.trim() || null,
           duration: meetupData.duration || null,
-          max_ppl: meetupData.maxParticipants || null,
+          max_ppl: sanitizedMax,
           creator: organizer,
           wechat_id: contact,
           cover: meetupData.qrImageUrl || null,

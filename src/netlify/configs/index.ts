@@ -261,7 +261,15 @@ export const api = {
       meetupId: string
     ): Promise<ApiResponse<{ rsvps: Participant[] }>> => {
       return http.get<{ rsvps: Participant[] }>(API_MAP.MEETUPS.RSVP, {
-        meetupId,
+        meetup_id: meetupId,
+      });
+    },
+
+    getByWechatId: async (
+      wechatId: string
+    ): Promise<ApiResponse<{ rsvps: Participant[] }>> => {
+      return http.get<{ rsvps: Participant[] }>(API_MAP.MEETUPS.RSVP, {
+        wechat_id: wechatId,
       });
     },
   },

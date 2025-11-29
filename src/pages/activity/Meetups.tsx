@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { api, http } from '../../netlify/configs';
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { api, http } from "../../netlify/configs";
 import {
   Box,
   Container,
@@ -17,15 +17,15 @@ import {
   DialogContent,
   DialogActions,
   Chip,
-} from '@mui/material';
-import useResponsive from '../../hooks/useResponsive';
-import { useGlobalSnackbar } from '../../context/app';
+} from "@mui/material";
+import useResponsive from "../../hooks/useResponsive";
+import { useGlobalSnackbar } from "../../context/app";
 
-import ErrorCard from '../../components/ErrorCard';
-import Loading from '../../components/Loading';
-import Empty from '../../components/Empty';
-import { Meetup } from '../../netlify/types/index';
-import { isUpcoming, formatTime, formatDate } from '../../utils';
+import ErrorCard from "../../components/ErrorCard";
+import Loading from "../../components/Loading";
+import Empty from "../../components/Empty";
+import { Meetup } from "../../netlify/types/index";
+import { isUpcoming, formatTime, formatDate } from "../../utils";
 
 const Meetups: React.FC = () => {
   const navigate = useNavigate();
@@ -36,10 +36,11 @@ const Meetups: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateButton, setShowCreateButton] = useState(false);
+  const [myRsvpIds, setMyRsvpIds] = useState<Set<string>>(new Set());
 
   // 筛选状态
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
 
   // 模态框状态
   const [showRSVPDialog, setShowRSVPDialog] = useState(false);
@@ -51,8 +52,8 @@ const Meetups: React.FC = () => {
 
   // RSVP表单状态
   const [rsvpForm, setRsvpForm] = useState({
-    name: '',
-    wechatId: '',
+    name: "",
+    wechatId: "",
   });
 
   // 检查用户登录状态并显示创建按钮
@@ -60,13 +61,13 @@ const Meetups: React.FC = () => {
     const checkAuthAndShowCreateButton = () => {
       try {
         const token =
-          localStorage.getItem('userToken') ||
-          localStorage.getItem('authToken');
+          localStorage.getItem("userToken") ||
+          localStorage.getItem("authToken");
         if (token) {
           setShowCreateButton(true);
         }
       } catch (error) {
-        console.error('检查认证状态失败:', error);
+        console.error("检查认证状态失败:", error);
       }
     };
 
@@ -82,9 +83,9 @@ const Meetups: React.FC = () => {
     try {
       // 使用统一的api对象获取活动列表
       const response = await api.meetups.getAll();
-      console.log('loadMeetups 响应', response);
+      console.log("loadMeetups 响应", response);
       if (!response.success) {
-        showSnackbar.error('查询会议列表失败');
+        showSnackbar.error("查询会议列表失败");
         return;
       }
       const meetups = response.data?.meetups || [];
@@ -92,9 +93,9 @@ const Meetups: React.FC = () => {
       setMeetups(meetups);
       setFilteredMeetups(meetups);
     } catch (err) {
-      console.error('加载活动失败:', err);
-      setError('加载活动失败，请稍后再试');
-      showSnackbar.error('加载活动失败，请稍后再试');
+      console.error("加载活动失败:", err);
+      setError("加载活动失败，请稍后再试");
+      showSnackbar.error("加载活动失败，请稍后再试");
 
       setMeetups([]);
       setFilteredMeetups([]);
@@ -106,6 +107,28 @@ const Meetups: React.FC = () => {
   useEffect(() => {
     applyFilters();
   }, [searchQuery, typeFilter, meetups]);
+
+  // 加载我的报名列表，用于禁用报名按钮
+  const loadMyRsvps = async () => {
+    try {
+      const userStr = localStorage.getItem("userInfo") || localStorage.getItem("userData");
+      if (!userStr) return;
+      const user = JSON.parse(userStr || "{}");
+      const wechat = (user?.wechat_id || "").trim();
+      if (!wechat) return;
+      const res = await api.rsvp.getByWechatId(wechat);
+      if (res.success) {
+        const ids = (res.data?.rsvps || []).map((r: any) => String(r.meetup_id));
+        setMyRsvpIds(new Set(ids));
+      }
+    } catch (e) {
+      console.error("加载我的报名失败:", e);
+    }
+  };
+
+  useEffect(() => {
+    loadMyRsvps();
+  }, [meetups.length]);
 
   const applyFilters = () => {
     let filtered = [...meetups];
@@ -135,7 +158,7 @@ const Meetups: React.FC = () => {
 
   // 清除搜索
   const handleClearSearch = () => {
-    setSearchQuery('');
+    setSearchQuery("");
   };
 
   // 处理类型过滤变化
@@ -146,12 +169,12 @@ const Meetups: React.FC = () => {
   // 报名参加活动
   const handleJoinMeetup = async (meetupId: string, qrImageUrl?: string) => {
     const token =
-      localStorage.getItem('userToken') || localStorage.getItem('authToken');
+      localStorage.getItem("userToken") || localStorage.getItem("authToken");
     const userInfo =
-      localStorage.getItem('userInfo') || localStorage.getItem('userData');
+      localStorage.getItem("userInfo") || localStorage.getItem("userData");
 
     if (!token || !userInfo) {
-      showSnackbar.warning('请先登录后再报名参加活动');
+      showSnackbar.warning("请先登录后再报名参加活动");
       const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
       return;
@@ -170,38 +193,44 @@ const Meetups: React.FC = () => {
             showQRCode(qrImageUrl);
           } else {
             showSnackbar.info(
-              '您已经报名了这个活动！请联系组织者获取群聊信息。'
+              "您已经报名了这个活动！请联系组织者获取群聊信息。"
             );
           }
           return;
         }
       } catch (error) {
-        console.error('检查报名状态失败:', error);
+        console.error("检查报名状态失败:", error);
       }
 
       // 显示报名确认对话框
       setRsvpForm({
-        name: user.name || '',
-        wechatId: user.wechat_id || '',
+        name: user.name || "",
+        wechatId: user.wechat_id || "",
       });
       setCurrentMeetupId(meetupId);
       setCurrentQRUrl(qrImageUrl || null);
       setShowRSVPDialog(true);
     } catch (error) {
-      console.error('处理报名失败:', error);
-      showSnackbar.error('处理报名请求失败，请稍后重试');
+      console.error("处理报名失败:", error);
+      showSnackbar.error("处理报名请求失败，请稍后重试");
     }
   };
 
   // 检查RSVP状态
   const checkRSVPStatus = async (meetupId: string): Promise<boolean> => {
     try {
-      // 使用统一的http客户端检查RSVP状态
-      const response = await api.rsvp.getByMeetupId(meetupId);
+      const userStr =
+        localStorage.getItem("userInfo") || localStorage.getItem("userData");
+      if (!userStr) return false;
+      const user = JSON.parse(userStr || "{}");
+      const wechat = (user?.wechat_id || "").trim();
+      if (!wechat) return false;
 
-      return response.success && (response?.data?.rsvps || []).length > 0;
+      const res = await api.rsvp.getByWechatId(wechat);
+      const rsvps = res.success ? res.data?.rsvps || [] : [];
+      return rsvps.some((r: any) => String(r.meetup_id) === String(meetupId));
     } catch (error) {
-      console.error('检查报名状态失败:', error);
+      console.error("检查报名状态失败:", error);
       return false;
     }
   };
@@ -209,7 +238,7 @@ const Meetups: React.FC = () => {
   // 提交RSVP
   const handleSubmitRSVP = async () => {
     if (!rsvpForm.name.trim()) {
-      showSnackbar.warning('请输入您的姓名');
+      showSnackbar.warning("请输入您的姓名");
       return;
     }
 
@@ -218,13 +247,14 @@ const Meetups: React.FC = () => {
     try {
       // 使用统一的api对象提交报名信息
       const response = await api.rsvp.create({
-        meetup_id: currentMeetupId,
-        wechat_id: rsvpForm.wechatId,
-        name: rsvpForm.name,
+        meetup_id: Number(currentMeetupId),
+        wechat_id: rsvpForm.wechatId.trim(),
+        name: rsvpForm.name.trim(),
       });
 
       if (!response.success) {
-        throw new Error(response.error || '报名失败');
+        const msg = (response as any)?.error || "报名失败";
+        throw new Error(msg);
       }
 
       // 关闭对话框
@@ -239,17 +269,21 @@ const Meetups: React.FC = () => {
         )
       );
 
+      // 将当前活动标记为已报名，禁用按钮
+      setMyRsvpIds((prev) => new Set([...Array.from(prev), String(currentMeetupId)]));
+
       // 显示成功消息和二维码
       if (currentQRUrl) {
         setTimeout(() => {
           showQRCode(currentQRUrl);
         }, 500);
       } else {
-        showSnackbar.success('报名成功！请联系组织者获取群聊信息。');
+        showSnackbar.success("报名成功！请联系组织者获取群聊信息。");
       }
     } catch (error) {
-      console.error('报名失败:', error);
-      showSnackbar.error('报名失败，请稍后重试');
+      console.error("报名失败:", error);
+      const msg = error instanceof Error ? error.message : "报名失败，请稍后重试";
+      showSnackbar.error(msg);
     }
   };
 
@@ -262,68 +296,57 @@ const Meetups: React.FC = () => {
   // 获取活动类型标签
   const getTypeLabel = (type: string): string => {
     switch (type) {
-      case 'online':
-        return '线上活动';
-      case 'offline':
-        return '线下活动';
-      case 'culture':
-        return '文化活动';
-      case 'outdoor':
-        return '户外活动';
+      case "online":
+        return "线上活动";
+      case "offline":
+        return "线下活动";
+      case "culture":
+        return "文化活动";
+      case "outdoor":
+        return "户外活动";
       default:
-        return '其他活动';
+        return "其他活动";
     }
   };
 
   // 获取活动类型颜色
   const getTypeColor = (
     type: string
-  ): 'primary' | 'success' | 'info' | 'warning' | 'default' => {
+  ): "primary" | "success" | "info" | "warning" | "default" => {
     switch (type) {
-      case 'online':
-        return 'primary';
-      case 'offline':
-        return 'success';
-      case 'culture':
-        return 'info';
-      case 'outdoor':
-        return 'warning';
+      case "online":
+        return "primary";
+      case "offline":
+        return "success";
+      case "culture":
+        return "info";
+      case "outdoor":
+        return "warning";
       default:
-        return 'default';
+        return "default";
     }
   };
 
   // 获取活动状态标签
-  const getStatusLabel = (status: string): string => {
-    switch (status) {
-      case 'upcoming':
-        return '即将开始';
-      case 'ongoing':
-        return '进行中';
-      case 'active':
-        // todo:确认active应该用什么文案提示
-        return '已报名';
-      case 'ended':
-        return '已结束';
-      default:
-        return '未知状态';
-    }
+  const getStatusLabel = (meetup: Meetup): string => {
+    const now = new Date();
+    const start = new Date(meetup.datetime);
+    const dur = Number(meetup.duration);
+    const hasDur = Number.isFinite(dur) && dur > 0;
+    const end = new Date(start.getTime() + (hasDur ? dur * 3600 * 1000 : 0));
+
+    if (now < start) return "即将开始";
+    if (now > end) return "已结束";
+    return "进行中";
   };
 
   // 获取活动状态颜色
   const getStatusColor = (
-    status: string
-  ): 'primary' | 'success' | 'default' => {
-    switch (status) {
-      case 'upcoming':
-        return 'success';
-      case 'ongoing':
-        return 'primary';
-      case 'ended':
-        return 'default';
-      default:
-        return 'default';
-    }
+    meetup: Meetup
+  ): "primary" | "success" | "default" => {
+    const label = getStatusLabel(meetup);
+    if (label === "已结束") return "default";
+    return label === "即将开始" ? "success" : "primary";
   };
 
   // 渲染活动列表
@@ -334,8 +357,8 @@ const Meetups: React.FC = () => {
           message="暂无活动"
           description={
             searchQuery || typeFilter
-              ? '没有找到匹配的活动，请尝试其他搜索条件'
-              : '暂无活动内容，敬请期待'
+              ? "没有找到匹配的活动，请尝试其他搜索条件"
+              : "暂无活动内容，敬请期待"
           }
         />
       );
@@ -345,16 +368,16 @@ const Meetups: React.FC = () => {
       <Box
         component="ul"
         sx={{
-          display: 'grid',
+          display: "grid",
           gridTemplateColumns: {
-            xs: '1fr',
-            sm: 'repeat(2, 1fr)',
-            md: 'repeat(3, 1fr)',
+            xs: "1fr",
+            sm: "repeat(2, 1fr)",
+            md: "repeat(3, 1fr)",
           } as any,
-          gap: '1.5rem',
-          listStyle: 'none',
+          gap: "1.5rem",
+          listStyle: "none",
           padding: 0,
-          margin: '1.5rem 0 0 0',
+          margin: "1.5rem 0 0 0",
         }}
       >
         {filteredMeetups.map((meetup: Meetup) => {
@@ -367,14 +390,14 @@ const Meetups: React.FC = () => {
             <li key={meetup.id}>
               <Card
                 sx={{
-                  height: '100%',
-                  transition: 'transform 0.3s, box-shadow 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                  height: "100%",
+                  transition: "transform 0.3s, box-shadow 0.3s",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
                   },
                   borderRadius: 2,
-                  overflow: 'hidden',
+                  overflow: "hidden",
                 }}
               >
                 <CardContent
@@ -382,20 +405,20 @@ const Meetups: React.FC = () => {
                 >
                   <Box
                     sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
                       mb: 2,
                     }}
                   >
                     <Chip
                       label={getTypeLabel(meetup.type)}
                       color={typeColor}
-                      size={isMobile ? 'small' : 'medium'}
+                      size={isMobile ? "small" : "medium"}
                     />
                     <Chip
-                      label={getStatusLabel(meetup.status)}
-                      color={getStatusColor(meetup.status)}
+                      label={getStatusLabel(meetup)}
+                      color={getStatusColor(meetup)}
                       size="small"
                       variant="outlined"
                     />
@@ -409,26 +432,26 @@ const Meetups: React.FC = () => {
                     {meetup.title}
                   </Typography>
                   <Box sx={{ mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                       <Typography variant="body2" sx={{ mr: 1 }}>
                         📅
                       </Typography>
                       <Typography variant="body2">{formattedDate}</Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                       <Typography variant="body2" sx={{ mr: 1 }}>
                         🕐
                       </Typography>
                       <Typography variant="body2">{formattedTime}</Typography>
                     </Box>
                     {meetup.location && (
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
                         <Typography variant="body2" sx={{ mr: 1 }}>
                           📍
                         </Typography>
                         <Typography
                           variant="body2"
-                          sx={{ wordBreak: 'break-all' }}
+                          sx={{ wordBreak: "break-all" }}
                         >
                           {meetup.location}
                         </Typography>
@@ -440,16 +463,16 @@ const Meetups: React.FC = () => {
                     color="text.secondary"
                     sx={{
                       mb: 2,
-                      display: '-webkit-box',
+                      display: "-webkit-box",
                       WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      wordBreak: 'break-all',
-                      overflow: 'hidden',
+                      WebkitBoxOrient: "vertical",
+                      wordBreak: "break-all",
+                      overflow: "hidden",
                     }}
                   >
                     {meetup.description}
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
                     <Typography variant="body2" sx={{ mr: 1 }}>
                       👤
                     </Typography>
@@ -460,24 +483,26 @@ const Meetups: React.FC = () => {
                 </CardContent>
                 <CardActions
                   sx={{
-                    justifyContent: 'flex-end',
+                    justifyContent: "flex-end",
                     p: 2,
-                    borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+                    borderTop: "1px solid rgba(0, 0, 0, 0.1)",
                   }}
                 >
-                  <Button
-                    size="small"
-                    variant="contained"
-                    color="primary"
-                    disabled={!isUpcomingMeetup}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleJoinMeetup(meetup.id, meetup.qr_image_url);
-                    }}
-                    sx={{ fontWeight: 600 }}
-                  >
-                    {isUpcomingMeetup ? '报名参加' : '已结束'}
-                  </Button>
+                  {getStatusLabel(meetup) !== "已结束" && (
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="primary"
+                      disabled={!isUpcomingMeetup || myRsvpIds.has(String(meetup.id))}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleJoinMeetup(meetup.id, meetup.qr_image_url);
+                      }}
+                      sx={{ fontWeight: 600 }}
+                    >
+                      {myRsvpIds.has(String(meetup.id)) ? "已报名" : "报名参加"}
+                    </Button>
+                  )}
                   <Button
                     size="small"
                     variant="outlined"
@@ -490,10 +515,7 @@ const Meetups: React.FC = () => {
                   </Button>
                   <Typography variant="caption" color="text.secondary">
                     {meetup.participant_count}
-                    {meetup.max_participants
-                      ? '/' + meetup.max_participants
-                      : ''}{' '}
-                    人参加
+                    {Number(meetup.max_participants) > 0 ? "/" + meetup.max_participants : ""} 人参加
                   </Typography>
                 </CardActions>
               </Card>
@@ -507,27 +529,27 @@ const Meetups: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: "100vh",
         py: 4,
         px: 2,
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
       }}
     >
       <Container maxWidth="lg">
         <Box
           sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
             mb: 4,
-            flexDirection: { xs: 'column', sm: 'row' },
+            flexDirection: { xs: "column", sm: "row" },
             gap: 2,
           }}
         >
           <Typography
             variant="h4"
             component="h1"
-            sx={{ fontWeight: 700, color: 'primary.main' }}
+            sx={{ fontWeight: 700, color: "primary.main" }}
           >
             活动列表
           </Typography>
@@ -536,9 +558,9 @@ const Meetups: React.FC = () => {
               variant="contained"
               color="primary"
               size="large"
-              onClick={() => navigate('/create-meetup')}
+              onClick={() => navigate("/create-meetup")}
               id="createMeetupBtn"
-              sx={{ fontWeight: 600, boxShadow: '0 3px 6px rgba(0,0,0,0.16)' }}
+              sx={{ fontWeight: 600, boxShadow: "0 3px 6px rgba(0,0,0,0.16)" }}
             >
               发起活动
             </Button>
@@ -547,13 +569,13 @@ const Meetups: React.FC = () => {
 
         <Box
           sx={{
-            display: 'flex',
+            display: "flex",
             gap: 2,
             mb: 4,
-            flexDirection: { xs: 'column', sm: 'row' },
+            flexDirection: { xs: "column", sm: "row" },
           }}
         >
-          <Box sx={{ flex: 1, position: 'relative' }}>
+          <Box sx={{ flex: 1, position: "relative" }}>
             <TextField
               fullWidth
               id="searchInput"
@@ -561,22 +583,22 @@ const Meetups: React.FC = () => {
               value={searchQuery}
               onChange={handleSearchChange}
               variant="outlined"
-              size={isMobile ? 'small' : 'medium'}
+              size={isMobile ? "small" : "medium"}
               InputProps={{
                 endAdornment: searchQuery ? (
                   <Button
                     onClick={handleClearSearch}
                     size="small"
-                    sx={{ minWidth: 'auto' }}
+                    sx={{ minWidth: "auto" }}
                   >
                     ×
                   </Button>
                 ) : undefined,
               }}
-              sx={{ bgcolor: 'rgba(255, 255, 255, 0.9)', borderRadius: 1 }}
+              sx={{ bgcolor: "rgba(255, 255, 255, 0.9)", borderRadius: 1 }}
             />
           </Box>
-          <Box sx={{ width: { xs: '100%', sm: '180px' } }}>
+          <Box sx={{ width: { xs: "100%", sm: "180px" } }}>
             <Select
               fullWidth
               value={typeFilter}
@@ -587,9 +609,9 @@ const Meetups: React.FC = () => {
               }
               displayEmpty
               variant="outlined"
-              size={isMobile ? 'small' : 'medium'}
+              size={isMobile ? "small" : "medium"}
               id="typeFilter"
-              sx={{ bgcolor: 'rgba(255, 255, 255, 0.9)', borderRadius: 1 }}
+              sx={{ bgcolor: "rgba(255, 255, 255, 0.9)", borderRadius: 1 }}
             >
               <MenuItem value="">所有类型</MenuItem>
               <MenuItem value="online">线上活动</MenuItem>
@@ -677,24 +699,24 @@ const Meetups: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle sx={{ fontWeight: 600, textAlign: 'center' }}>
+        <DialogTitle sx={{ fontWeight: 600, textAlign: "center" }}>
           扫码进群
         </DialogTitle>
         <DialogContent>
           <Box
             sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
               py: 4,
             }}
           >
             {currentQRUrl && (
               <Box
                 sx={{
-                  bgcolor: 'white',
+                  bgcolor: "white",
                   p: 2,
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
                   borderRadius: 2,
                   mb: 2,
                 }}
@@ -702,16 +724,16 @@ const Meetups: React.FC = () => {
                 <img
                   src={currentQRUrl}
                   alt="群聊二维码"
-                  style={{ maxWidth: '200px', height: 'auto' }}
+                  style={{ maxWidth: "200px", height: "auto" }}
                 />
               </Box>
             )}
-            <Typography variant="body1" sx={{ textAlign: 'center' }}>
+            <Typography variant="body1" sx={{ textAlign: "center" }}>
               请使用微信扫描二维码加入群聊
             </Typography>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: 'center' }}>
+        <DialogActions sx={{ justifyContent: "center" }}>
           <Button
             variant="contained"
             color="primary"

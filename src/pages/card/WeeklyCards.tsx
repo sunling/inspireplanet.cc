@@ -168,39 +168,56 @@ const WeeklyCards: React.FC = () => {
     );
   };
 
-  // 下载卡片功能
   const handleDownloadCard = async (cardId: string) => {
     try {
-      const cardElement = document.getElementById(`card-${cardId}`);
-      if (!cardElement) return;
+      const original = document.getElementById(`card-${cardId}`);
+      if (!original) return;
 
-      // 隐藏下载按钮
-      const downloadButton = cardElement.querySelector(".download-btn");
-      if (downloadButton) {
-        (downloadButton as HTMLElement).style.display = "none";
-      }
+      const exportWidth = 600;
 
-      // 使用html2canvas捕获卡片
-      const canvas = await html2canvas(cardElement, {
+      const wrapper = document.createElement("div");
+      wrapper.style.position = "fixed";
+      wrapper.style.left = "-10000px";
+      wrapper.style.top = "0";
+      wrapper.style.width = `${exportWidth}px`;
+      wrapper.style.zIndex = "-1";
+
+      const clone = original.cloneNode(true) as HTMLElement;
+      clone.style.width = `${exportWidth}px`;
+      clone.style.height = "auto";
+      clone.style.transform = "none";
+      clone.style.boxShadow = "none";
+
+      const dlBtn = clone.querySelector(".download-btn") as HTMLElement | null;
+      if (dlBtn) dlBtn.style.display = "none";
+
+      const imgs = Array.from(clone.getElementsByTagName("img"));
+      imgs.forEach((img) => {
+        img.style.maxHeight = "none";
+        img.style.width = "100%";
+        img.style.height = "auto";
+        img.style.objectFit = "contain";
+      });
+
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
+      const canvas = await html2canvas(clone, {
         backgroundColor: null,
         scale: 2,
         useCORS: true,
         logging: false,
+        width: exportWidth,
       });
 
-      // 恢复下载按钮显示
-      if (downloadButton) {
-        (downloadButton as HTMLElement).style.display = "block";
-      }
+      document.body.removeChild(wrapper);
 
-      // 创建下载链接
       const link = document.createElement("a");
       link.download = `weekly-card-${cardId}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
     } catch (error) {
       console.error("下载卡片失败:", error);
-      // 显示用户友好的错误消息
       if (error instanceof Error) {
         alert(`下载失败: ${error.message}`);
       }

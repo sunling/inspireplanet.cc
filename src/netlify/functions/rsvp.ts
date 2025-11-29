@@ -54,6 +54,9 @@ export async function handler(event: any, context: any) {
 async function createRSVP(event: any, headers: any) {
   try {
     const rsvpData = JSON.parse(event.body);
+    const meetupIdNum = Number(rsvpData.meetup_id);
+    const wechatId = String(rsvpData.wechat_id || '').trim();
+    const name = String(rsvpData.name || '').trim();
 
     // 验证必填字段
     const requiredFields = ['meetup_id', 'name', 'wechat_id'];
@@ -70,11 +73,27 @@ async function createRSVP(event: any, headers: any) {
       }
     }
 
+    if (!Number.isFinite(meetupIdNum) || meetupIdNum <= 0) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ success: false, error: '活动ID不合法' }),
+      };
+    }
+
+    if (!wechatId || !name) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ success: false, error: '姓名或微信号不合法' }),
+      };
+    }
+
     // 检查活动是否存在
     const { data: meetup, error: meetupError } = await supabase
       .from('meetups')
       .select('id, max_ppl, status')
-      .eq('id', rsvpData.meetup_id)
+      .eq('id', meetupIdNum)
       .single();
 
     if (meetupError || !meetup) {
@@ -103,8 +122,8 @@ async function createRSVP(event: any, headers: any) {
     const { data: existingRSVP, error: checkError } = await supabase
       .from('meetup_rsvps')
       .select('id, status')
-      .eq('meetup_id', rsvpData.meetup_id)
-      .eq('wechat_id', rsvpData.wechat_id)
+      .eq('meetup_id', meetupIdNum)
+      .eq('wechat_id', wechatId)
       .single();
 
     if (existingRSVP && existingRSVP.status === 'confirmed') {
@@ -119,16 +138,18 @@ async function createRSVP(event: any, headers: any) {
     }
 
     // 检查人数限制
-    if (meetup.max_ppl) {
+    const maxLimit = Number(meetup.max_ppl);
+    const enforceLimit = Number.isFinite(maxLimit) && maxLimit > 0;
+    if (enforceLimit) {
       const { count, error: countError } = await supabase
         .from('meetup_rsvps')
         .select('*', { count: 'exact', head: true })
-        .eq('meetup_id', rsvpData.meetup_id)
+        .eq('meetup_id', meetupIdNum)
         .eq('status', 'confirmed');
 
       if (countError) {
         console.error('Count error:', countError);
-      } else if (count !== null && count >= meetup.max_ppl) {
+      } else if (count !== null && count >= maxLimit) {
         return {
           statusCode: 400,
           headers,
@@ -147,9 +168,9 @@ async function createRSVP(event: any, headers: any) {
       const { data, error } = await supabase
         .from('meetup_rsvps')
         .update({
-          name: rsvpData.name,
+          name,
           status: 'confirmed',
-          username: rsvpData.username || null,
+          username: (rsvpData.username || null) as any,
         })
         .eq('id', existingRSVP.id)
         .select();
@@ -161,10 +182,10 @@ async function createRSVP(event: any, headers: any) {
         .from('meetup_rsvps')
         .insert([
           {
-            meetup_id: rsvpData.meetup_id,
-            name: rsvpData.name,
-            wechat_id: rsvpData.wechat_id,
-            username: rsvpData.username || null,
+            meetup_id: meetupIdNum,
+            name,
+            wechat_id: wechatId,
+            username: (rsvpData.username || null) as any,
             status: 'confirmed',
           },
         ])
@@ -214,11 +235,12 @@ async function getRSVPs(event: any, headers: any) {
   try {
     const params = event.queryStringParameters || {};
     const { meetup_id, user_id, wechat_id } = params;
+    const meetupIdNum = meetup_id !== undefined ? Number(meetup_id) : undefined;
 
     let query = supabase.from('meetup_rsvps').select('*');
 
-    if (meetup_id) {
-      query = query.eq('meetup_id', meetup_id);
+    if (meetupIdNum !== undefined && Number.isFinite(meetupIdNum)) {
+      query = query.eq('meetup_id', meetupIdNum);
     }
 
     if (user_id) {
@@ -365,13 +387,15 @@ async function deleteRSVP(event: any, headers: any) {
   try {
     const params = event.queryStringParameters || {};
     const { id, meetup_id, wechat_id } = params;
+    const idNum = id !== undefined ? Number(id) : undefined;
+    const meetupIdNum = meetup_id !== undefined ? Number(meetup_id) : undefined;
 
     let query = supabase.from('meetup_rsvps').select('*');
 
-    if (id) {
-      query = query.eq('id', id);
-    } else if (meetup_id && wechat_id) {
-      query = query.eq('meetup_id', meetup_id).eq('wechat_id', wechat_id);
+    if (idNum !== undefined && Number.isFinite(idNum)) {
+      query = query.eq('id', idNum);
+    } else if (meetupIdNum !== undefined && Number.isFinite(meetupIdNum) && wechat_id) {
+      query = query.eq('meetup_id', meetupIdNum).eq('wechat_id', wechat_id);
     } else {
       return {
         statusCode: 400,
@@ -389,11 +413,11 @@ async function deleteRSVP(event: any, headers: any) {
       .from('meetup_rsvps')
       .update({ status: 'cancelled' });
 
-    if (id) {
-      deleteQuery = deleteQuery.eq('id', id);
-    } else if (meetup_id && wechat_id) {
+    if (idNum !== undefined && Number.isFinite(idNum)) {
+      deleteQuery = deleteQuery.eq('id', idNum);
+    } else if (meetupIdNum !== undefined && Number.isFinite(meetupIdNum) && wechat_id) {
       deleteQuery = deleteQuery
-        .eq('meetup_id', meetup_id)
+        .eq('meetup_id', meetupIdNum)
         .eq('wechat_id', wechat_id);
     }
 
