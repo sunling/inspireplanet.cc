@@ -257,8 +257,10 @@ async function getMeetups(
       query = query.eq('id', id);
     } else {
       // 获取活动列表
+      if (String(status).toLowerCase() !== 'all') {
+        query = query.eq('status', status);
+      }
       query = query
-        .eq('status', status)
         .order('datetime', { ascending: true })
         .range(
           parseInt(offset, 10),
@@ -435,29 +437,36 @@ async function updateMeetup(
       };
     }
 
-    // 准备更新数据
-    const allowedFields: (keyof Meetup)[] = [
-      'title',
-      'description',
-      'type',
-      'category',
-      'datetime',
-      'location',
-      'max_participants',
-      'fee',
-      'organizer',
-      'contact',
-      'qr_image_url',
-      'notes',
-      'status',
-    ];
-
+    // 准备更新数据（兼容前端字段，映射到数据库实际列名）
     const updateRecord: Record<string, any> = {};
-    allowedFields.forEach((field) => {
-      if (updateData[field] !== undefined) {
-        updateRecord[field] = updateData[field];
-      }
-    });
+
+    if (updateData.title !== undefined) updateRecord.title = updateData.title;
+    if (updateData.description !== undefined)
+      updateRecord.description = updateData.description;
+    if (updateData.datetime !== undefined) updateRecord.datetime = updateData.datetime;
+    if (updateData.location !== undefined) updateRecord.location = updateData.location || null;
+    if (updateData.duration !== undefined) updateRecord.duration = updateData.duration;
+    // 前端可能传 type，数据库列为 mode
+    if (updateData.type !== undefined) updateRecord.mode = updateData.type;
+    if (updateData.mode !== undefined) updateRecord.mode = updateData.mode;
+    // 人数上限：前端可能传 max_participants，数据库列为 max_ppl
+    if (updateData.max_participants !== undefined) {
+      const mp = Number(updateData.max_participants as any);
+      updateRecord.max_ppl = Number.isFinite(mp) && mp > 0 ? mp : null;
+    }
+    if (updateData.max_ppl !== undefined) updateRecord.max_ppl = updateData.max_ppl;
+    // 组织者：前端传 organizer，数据库列为 creator
+    if (updateData.organizer !== undefined) updateRecord.creator = updateData.organizer;
+    if (updateData.creator !== undefined) updateRecord.creator = updateData.creator;
+    // 联系方式：前端传 contact，数据库列为 wechat_id
+    if (updateData.contact !== undefined) updateRecord.wechat_id = updateData.contact;
+    if (updateData.wechat_id !== undefined) updateRecord.wechat_id = updateData.wechat_id;
+    // 群二维码：前端传 qr_image_url，数据库列为 cover
+    if (updateData.qr_image_url !== undefined) updateRecord.cover = updateData.qr_image_url || null;
+    if (updateData.cover !== undefined) updateRecord.cover = updateData.cover || null;
+    // 状态与其他可选字段
+    if (updateData.status !== undefined) updateRecord.status = updateData.status;
+    if ((updateData as any).notes !== undefined) updateRecord.notes = (updateData as any).notes;
 
     // 更新数据库
     const { data, error } = await supabase

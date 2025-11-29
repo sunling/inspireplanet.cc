@@ -92,7 +92,7 @@ const MyMeetups: React.FC = () => {
 
     try {
       // 使用统一的API封装获取活动数据
-      const response = await api.meetups.getAll();
+      const response = await api.meetups.getAll({ status: 'all' });
       console.log('加载我的活动响应:', response);
 
       if (!response.success) {
@@ -173,31 +173,22 @@ const MyMeetups: React.FC = () => {
     return statusMap[status] || status;
   };
 
-  // 根据当前状态过滤活动
+  // 根据当前状态过滤活动（参考活动列表逻辑：开始时间+时长与当前时间比较）
   const getFilteredMeetups = () => {
-    if (currentStatus === FilterStatus.ALL) {
-      return allMeetups;
-    }
-
+    if (currentStatus === FilterStatus.ALL) return allMeetups;
+    const now = new Date();
     return allMeetups.filter((meetup) => {
-      const meetupDate = new Date(meetup.datetime);
-      const isUpcomingMeetup = isUpcoming(meetupDate.toISOString());
+      const start = new Date(meetup.datetime);
+      const dur = Number(meetup.duration);
+      const hasDur = Number.isFinite(dur) && dur > 0;
+      const end = new Date(start.getTime() + (hasDur ? dur * 3600 * 1000 : 0));
+      const isCancelled = String(meetup.status).toLowerCase() === 'cancelled';
 
-      // 计算活动的实际状态（考虑时间因素）
-      let actualStatus = meetup.status;
-
-      if (currentStatus === FilterStatus.END) {
-        return (actualStatus =
-          MeetupStatus.END ||
-          (actualStatus === MeetupStatus.ACTIVE && !isUpcomingMeetup));
-      }
-
-      if (currentStatus === FilterStatus.ACTIVE) {
-        return actualStatus === MeetupStatus.ACTIVE && isUpcomingMeetup;
-      }
-
-      // 根据实际状态进行筛选
-      return (actualStatus as unknown as FilterStatus) === currentStatus;
+      if (currentStatus === FilterStatus.CANCEL) return isCancelled;
+      if (currentStatus === FilterStatus.END) return now > end && !isCancelled;
+      if (currentStatus === FilterStatus.ACTIVE)
+        return now >= start && now <= end && !isCancelled;
+      return true;
     });
   };
 
@@ -207,22 +198,37 @@ const MyMeetups: React.FC = () => {
   );
   // 渲染活动卡片
   const renderMeetupCard = (meetup: Meetup) => {
-    const meetupDate = new Date(meetup.datetime);
-    const isUpcomingMeetup = isUpcoming(meetupDate.toISOString());
-    const formattedDate = formatDate(meetupDate.toISOString());
-    const formattedTime = formatTime(meetupDate.toISOString());
+    const start = new Date(meetup.datetime);
+    const now = new Date();
+    const dur = Number(meetup.duration);
+    const hasDur = Number.isFinite(dur) && dur > 0;
+    const end = new Date(start.getTime() + (hasDur ? dur * 3600 * 1000 : 0));
+    const isCancelled = String(meetup.status).toLowerCase() === 'cancelled';
 
-    let status = meetup.status;
-    if (status === MeetupStatus.ACTIVE && !isUpcomingMeetup) {
-      status = MeetupStatus.END;
-    }
+    const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const weekday = weekdayNames[start.getDay()];
+    const formattedDate = formatDate(start.toISOString());
+    const hours = start.getHours();
+    const minutes = start.getMinutes();
+    const ampm = hours < 12 ? '上午' : '下午';
+    const hour12 = hours % 12 || 12;
+    const mm = String(minutes).padStart(2, '0');
+    const formattedTime12 = `${ampm} ${hour12}:${mm}`;
 
-    // 状态颜色映射
-    const statusColorMap: Record<string, string> = {
-      [MeetupStatus.ACTIVE]: 'success',
-      [MeetupStatus.END]: 'info',
-      [MeetupStatus.CANCEL]: 'error',
-    };
+    const statusLabel = isCancelled
+      ? '已取消'
+      : now < start
+      ? '即将开始'
+      : now > end
+      ? '已结束'
+      : '进行中';
+    const statusColor = isCancelled
+      ? 'error'
+      : statusLabel === '已结束'
+      ? 'info'
+      : statusLabel === '即将开始'
+      ? 'success'
+      : 'primary';
 
     return (
       <Paper
@@ -239,11 +245,7 @@ const MyMeetups: React.FC = () => {
         }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-          <Chip
-            label={getStatusText(status)}
-            color={statusColorMap[status] as any}
-            size="small"
-          />
+          <Chip label={statusLabel} color={statusColor as any} size="small" />
           <Chip
             label={meetup.type === 'online' ? '线上活动' : '线下活动'}
             variant="outlined"
@@ -256,17 +258,11 @@ const MyMeetups: React.FC = () => {
         </Typography>
 
         <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Typography
-            variant="body2"
-            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-          >
-            📅 {formattedDate}
+          <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            📅 {formattedDate}（{weekday}）
           </Typography>
-          <Typography
-            variant="body2"
-            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-          >
-            🕐 {formattedTime}
+          <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            🕐 {formattedTime12}
           </Typography>
           {meetup.location && (
             <Typography
@@ -309,7 +305,7 @@ const MyMeetups: React.FC = () => {
             >
               👁️ 查看
             </Button>
-            {status === 'active' && isUpcomingMeetup && (
+            {statusLabel !== '已结束' && !isCancelled && (
               <>
                 <Button
                   size={isMobile ? 'small' : 'medium'}
@@ -333,8 +329,7 @@ const MyMeetups: React.FC = () => {
           </Box>
           <Typography variant="caption" color="text.secondary">
             {meetup.participant_count || 0}
-            {meetup.max_participants ? '/' + meetup.max_participants : ''}{' '}
-            人参加
+            {Number(meetup.max_participants) > 0 ? '/' + meetup.max_participants : ''} 人参加
           </Typography>
         </Box>
       </Paper>
@@ -423,7 +418,7 @@ const MyMeetups: React.FC = () => {
 
   // 渲染活动内容
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 4, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Box
         sx={{
           display: 'flex',
@@ -509,7 +504,7 @@ const MyMeetups: React.FC = () => {
         )}
       </Box>
 
-      <section id="meetupsContainer">
+      <section id="meetupsContainer" style={{ flexGrow: 1 }}>
         {loading ? (
           <Loading message="加载活动中..." size={40} />
         ) : error ? (

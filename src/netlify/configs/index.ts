@@ -218,8 +218,10 @@ export const api = {
 
   // 会议相关API
   meetups: {
-    getAll: async (): Promise<ApiResponse<{ meetups: Meetup[] }>> => {
-      return http.get<{ meetups: Meetup[] }>(API_MAP.MEETUPS.ROOT);
+    getAll: async (
+      params?: { status?: string; limit?: number; offset?: number }
+    ): Promise<ApiResponse<{ meetups: Meetup[] }>> => {
+      return http.get<{ meetups: Meetup[] }>(API_MAP.MEETUPS.ROOT, params as any);
     },
 
     getById: async (
@@ -238,9 +240,8 @@ export const api = {
       id: string,
       meetupData: Partial<Meetup>
     ): Promise<ApiResponse<Meetup>> => {
-      return http.put<Meetup>(API_MAP.MEETUPS.ROOT, {
-        id,
-        ...meetupData,
+      return http.put<Meetup>(API_MAP.MEETUPS.ROOT, meetupData, {
+        params: { id },
       });
     },
 

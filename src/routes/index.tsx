@@ -78,6 +78,7 @@ const CardDetail = lazy(() => import('../pages/card/CardDetail'));
 const CardEdit = lazy(() => import('../pages/card/CardEdit'));
 const MeetupDetail = lazy(() => import('../pages/activity/MeetupDetail'));
 const CreateMeetup = lazy(() => import('../pages/activity/CreateMeetup'));
+const EditMeetup = lazy(() => import('../pages/activity/EditMeetup'));
 const CoverEditor = lazy(() => import('../pages/tools/CoverEditor'));
 const CoverEditorMobile = lazy(
   () => import('../pages/tools/CoverEditorMobile')
@@ -130,6 +131,10 @@ const router = createBrowserRouter(
         {
           path: 'create-meetup',
           element: createProtectedRoute(<CreateMeetup />),
+        },
+        {
+          path: 'edit-meetup',
+          element: createProtectedRoute(<EditMeetup />),
         },
         { path: 'my-meetups', element: createProtectedRoute(<MyMeetups />) },
         { path: 'connections', element: createProtectedRoute(<MyConnections />) },
