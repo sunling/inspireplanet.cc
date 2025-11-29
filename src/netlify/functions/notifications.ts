@@ -94,11 +94,12 @@ export async function createNotification(userId: string | number, title: string,
 }
 
 async function sendEmail(to: string, subject: string, text: string) {
-  const from = process.env.EMAIL_FROM || 'no-reply@cards.bysunling.com'
   const resendKey = process.env.RESEND_API_KEY
   const sendgridKey = process.env.SENDGRID_API_KEY
   try {
     if (resendKey) {
+      const from = process.env.EMAIL_FROM || 'onboarding@resend.dev'
+      console.log('[notifications] sending via Resend to:', to, 'from:', from)
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -114,6 +115,8 @@ async function sendEmail(to: string, subject: string, text: string) {
       return
     }
     if (sendgridKey) {
+      const from = process.env.EMAIL_FROM || 'no-reply@inspireplanet.cc'
+      console.log('[notifications] sending via SendGrid to:', to, 'from:', from)
       const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
         headers: {
@@ -133,6 +136,7 @@ async function sendEmail(to: string, subject: string, text: string) {
       }
       return
     }
+    console.warn('[notifications] no email provider configured: set RESEND_API_KEY or SENDGRID_API_KEY')
   } catch (e) {
     console.error('sendEmail error:', e)
   }

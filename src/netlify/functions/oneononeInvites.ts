@@ -102,7 +102,7 @@ async function createInvite(event: any, headers: Record<string, string>) {
       .single()
     const inviterName = inviterUser?.name || (inviterUser?.username ? `@${inviterUser.username}` : '对方')
     const fmt = (iso: string) => {
-      try { return new Date(iso).toLocaleString() } catch { return iso }
+      try { return new Date(iso).toISOString() } catch { return iso }
     }
     const slotsText = validSlots
       .slice(0, 3)

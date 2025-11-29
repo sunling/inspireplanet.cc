@@ -78,7 +78,7 @@ async function createMeeting(event: any, headers: Record<string, string>) {
   const { data: inviteeUser } = await supabase.from('users').select('name, username').eq('id', invite.invitee_id).single()
   const inviterName = inviterUser?.name || (inviterUser?.username ? `@${inviterUser.username}` : String(invite.inviter_id))
   const inviteeName = inviteeUser?.name || (inviteeUser?.username ? `@${inviteeUser.username}` : String(invite.invitee_id))
-  const fmt = (iso: string) => { try { return new Date(iso).toLocaleString() } catch { return iso } }
+  const fmt = (iso: string) => { try { return new Date(iso).toISOString() } catch { return iso } }
   const whereText = mode === 'online'
     ? (meeting_url ? `线上会议（链接：${meeting_url}）` : '线上会议（链接未提供）')
     : (location_text ? `线下地点：${location_text}` : '线下地点未提供')
@@ -168,7 +168,7 @@ async function updateMeeting(event: any, headers: Record<string, string>) {
     const { data: inviteeUser } = await supabase.from('users').select('name, username').eq('id', invite.invitee_id).single()
     const inviterName = inviterUser?.name || (inviterUser?.username ? `@${inviterUser.username}` : String(invite.inviter_id))
     const inviteeName = inviteeUser?.name || (inviteeUser?.username ? `@${inviteeUser.username}` : String(invite.invitee_id))
-    const fmt = (iso: string) => { try { return new Date(iso).toLocaleString() } catch { return iso } }
+    const fmt = (iso: string) => { try { return new Date(iso).toISOString() } catch { return iso } }
     await createNotification(invite.inviter_id, '会面已取消', `与 ${inviteeName} 的会面已取消（原定 ${fmt(meeting.final_datetime_iso)}）`, '/connections')
     await createNotification(invite.invitee_id, '会面已取消', `与 ${inviterName} 的会面已取消（原定 ${fmt(meeting.final_datetime_iso)}）`, '/connections')
   } else {
@@ -177,7 +177,7 @@ async function updateMeeting(event: any, headers: Record<string, string>) {
       const { data: inviteeUser } = await supabase.from('users').select('name, username').eq('id', invite.invitee_id).single()
       const inviterName = inviterUser?.name || (inviterUser?.username ? `@${inviterUser.username}` : String(invite.inviter_id))
       const inviteeName = inviteeUser?.name || (inviteeUser?.username ? `@${inviteeUser.username}` : String(invite.invitee_id))
-      const fmt = (iso: string) => { try { return new Date(iso).toLocaleString() } catch { return iso } }
+      const fmt = (iso: string) => { try { return new Date(iso).toISOString() } catch { return iso } }
       const timeText = updateRecord.final_datetime_iso ? `时间更新为 ${fmt(updateRecord.final_datetime_iso)}` : ''
       const modeText = updateRecord.mode ? `形式 ${updateRecord.mode === 'online' ? '线上' : '线下'}` : ''
       const whereText = updateRecord.mode === 'online'

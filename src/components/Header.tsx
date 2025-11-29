@@ -59,12 +59,12 @@ const Header: React.FC<HeaderProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const [unread, setUnread] = useState<number>(0);
   React.useEffect(() => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem("authToken");
     if (!token) return;
     const load = async () => {
       try {
-        const res = await import('../netlify/configs').then((m) =>
-          m.api.notifications.list({ status: 'unread', limit: 100 })
+        const res = await import("../netlify/configs").then((m) =>
+          m.api.notifications.list({ status: "unread", limit: 100 })
         );
         if ((res as any).success)
           setUnread((res as any).data?.notifications?.length || 0);
@@ -503,7 +503,16 @@ const Header: React.FC<HeaderProps> = ({
               <Button
                 color="inherit"
                 onClick={handleUserMenuOpen}
-                startIcon={<Badge color="error" badgeContent={unread} max={9} invisible={unread === 0}><AccountCircle /></Badge>}
+                startIcon={
+                  <Badge
+                    color="error"
+                    badgeContent={unread}
+                    max={9}
+                    invisible={unread === 0}
+                  >
+                    <AccountCircle />
+                  </Badge>
+                }
                 endIcon={<ChevronDown fontSize="small" />}
                 sx={{ ml: 2, textTransform: "none", boxShadow: "none" }}
               >
@@ -518,22 +527,28 @@ const Header: React.FC<HeaderProps> = ({
               >
                 <MenuItem
                   component={Link}
+                  to="/notifications"
+                  onClick={handleUserMenuClose}
+                >
+                  <Badge
+                    color="error"
+                    badgeContent={unread}
+                    max={9}
+                    sx={{ mr: 1 }}
+                  >
+                    <AccountCircle fontSize="small" />
+                  </Badge>
+                  通知
+                </MenuItem>
+                <MenuItem
+                  component={Link}
                   to="/my-cards"
                   onClick={handleUserMenuClose}
                 >
                   <CardMembership fontSize="small" sx={{ mr: 1 }} />
                   我的卡片
                 </MenuItem>
-                <MenuItem
-                  component={Link}
-                  to="/notifications"
-                  onClick={handleUserMenuClose}
-                >
-                  <Badge color="error" badgeContent={unread} max={9} sx={{ mr: 1 }}>
-                    <AccountCircle fontSize="small" />
-                  </Badge>
-                  通知
-                </MenuItem>
+
                 <MenuItem
                   component={Link}
                   to="/my-meetups"
