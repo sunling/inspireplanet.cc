@@ -13,6 +13,7 @@ export interface CardItem {
   upload?: string;
   created: string;
   username?: string;
+  likesCount?: number;
 }
 
 // 评论数据接口

@@ -11,13 +11,13 @@ function getEnvVars(): EnvVars {
   try {
     // 首先尝试服务端环境变量（Netlify Functions）
     if (typeof process !== 'undefined' && process.env) {
+      const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
+      // 在服务端优先使用服务角色密钥（不受RLS限制）
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+      const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
       return {
-        SUPABASE_URL:
-          process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '',
-        SUPABASE_ANON_KEY:
-          process.env.SUPABASE_ANON_KEY ||
-          process.env.VITE_SUPABASE_ANON_KEY ||
-          '',
+        SUPABASE_URL: url,
+        SUPABASE_ANON_KEY: serviceKey || anonKey,
       };
     }
 

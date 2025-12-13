@@ -56,50 +56,15 @@ const Cards: React.FC = () => {
   // 加载卡片数据
   useEffect(() => {
     loadCards();
+    try {
+      (window as any).setCommentForm = (content?: string) => {};
+    } catch {}
   }, []);
 
   // 处理卡片点击
   const handleCardClick = (cardId: string) => {
     navigate(`/card-detail?id=${cardId}`);
   };
-
-  // 提交评论
-  const handleSubmitComment = async (
-    cardId: string,
-    name: string,
-    comment: string
-  ) => {
-    if (!name.trim() || !comment.trim()) {
-      showSnackbar.warning("请填写姓名和评论内容");
-      return;
-    }
-
-    try {
-      // 使用统一API封装提交评论
-      const response = await api.comments.create({
-        cardId,
-        name,
-        comment,
-      });
-
-      // 检查响应状态并显示相应消息
-      if (response.success) {
-        const text = response.message || "评论提交成功！";
-        showSnackbar.success(text);
-        // todo:可以在这里添加刷新评论列表的逻辑
-      } else {
-        console.error("提交评论失败:", response.error);
-        const text = response.error || "提交评论失败，请稍后再试";
-        showSnackbar.error(text);
-      }
-    } catch (err: any) {
-      console.error("提交评论异常:", err);
-      const text = "提交评论时发生错误，请稍后再试";
-      showSnackbar.error(text);
-    }
-  };
-
-  // 使用外部的InspireCard组件
 
   // 获取适当的网格列数
   const getGridColumns = () => {
@@ -156,7 +121,7 @@ const Cards: React.FC = () => {
                         <InspireCard
                           card={card}
                           onCardClick={handleCardClick}
-                          onSubmitComment={handleSubmitComment}
+                          canComment={false}
                         />
                       </Grid>
                     ))}

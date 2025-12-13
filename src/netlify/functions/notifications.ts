@@ -68,7 +68,14 @@ async function updateNotification(event: any, headers: Record<string, string>) {
 
 export async function createNotification(userId: string | number, title: string, content: string, path?: string) {
   const uid = isNaN(Number(userId)) ? userId : Number(userId)
-  await supabase.from('notifications').insert({ user_id: uid, title, content, status: 'unread', path: path || null }).select()
+  const { error } = await supabase
+    .from('notifications')
+    .insert({ user_id: uid, title, content, status: 'unread', path: path || null })
+    .select()
+  if (error) {
+    console.error('[notifications] insert failed:', error.message)
+    return
+  }
   try {
     const { data: user } = await supabase
       .from('users')

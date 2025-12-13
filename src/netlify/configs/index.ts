@@ -163,6 +163,10 @@ export const api = {
       });
     },
 
+    like: async (cardId: string): Promise<ApiResponse<{ success: boolean; likesCount: number }>> => {
+      return http.post<{ success: boolean; likesCount: number }>(API_MAP.CARDS.ROOT, { action: 'like', cardId });
+    },
+
     delete: async (id: string): Promise<ApiResponse<{ success: boolean }>> => {
       return http.delete<{ success: boolean }>(API_MAP.CARDS.ROOT, {
         id,
@@ -209,8 +213,8 @@ export const api = {
 
     create: async (data: {
       cardId: string;
-      name: string;
       comment: string;
+      name?: string;
     }): Promise<ApiResponse<Comment>> => {
       return http.post<Comment>(API_MAP.COMMENTS.ROOT, data);
     },

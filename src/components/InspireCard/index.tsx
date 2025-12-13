@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, TextField, Card } from '@mui/material';
+import { Box, Typography, Button, TextField, Card, IconButton } from '@mui/material';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 
@@ -11,7 +13,7 @@ interface InspireCardProps {
   card: CardItem;
   canComment?: boolean;
   onCardClick: (id: string) => void;
-  onSubmitComment: (id: string, name: string, comment: string) => void;
+  onSubmitComment?: (id: string, name: string, comment: string) => void;
 }
 
 const InspireCard: React.FC<InspireCardProps> = ({
@@ -21,7 +23,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
   onSubmitComment,
 }) => {
   marked.setOptions({ breaks: true });
-  const [showCommentForm, setShowCommentForm] = useState<boolean>(canComment);
+  const [showCommentForm, setShowCommentForm] = useState<boolean>(!!canComment);
   const [commentName, setCommentName] = useState<string>('');
   const [commentText, setCommentText] = useState<string>('');
   const { isMobile } = useResponsive();
@@ -46,6 +48,30 @@ const InspireCard: React.FC<InspireCardProps> = ({
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const [likes, setLikes] = useState<number>(Number((card as any).likesCount) || 0);
+
+  const handleLike = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login?redirect=${redirect}`;
+        return;
+      }
+      const res = await (await import('@/netlify/configs')).api.cards.like(card.id);
+      if (res.success) {
+        setLikes(res.data?.likesCount || (likes + 1));
+        try {
+          const setKey = 'likedCardIds';
+          const raw = localStorage.getItem(setKey);
+          const set = new Set<string>(raw ? JSON.parse(raw) : []);
+          set.add(card.id);
+          localStorage.setItem(setKey, JSON.stringify(Array.from(set)));
+        } catch {}
+      }
+    } catch {}
   };
 
   return (
@@ -151,7 +177,19 @@ const InspireCard: React.FC<InspireCardProps> = ({
         )}
       </Card>
 
-      {/* 卡片操作区域 */}
+      {/* 操作栏：点赞与评论 */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+        <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleLike(); }}>
+          <FavoriteIcon fontSize="small" color="error" />
+        </IconButton>
+        <Typography variant="caption">{likes}</Typography>
+        <IconButton size="small" onClick={(e) => { e.stopPropagation(); onCardClick(card.id); }}>
+          <ChatBubbleOutlineIcon fontSize="small" />
+        </IconButton>
+      </Box>
+
+      {/* 卡片操作区域：仅在允许评论时显示浮层 */}
+      {canComment && (
       <Box
         sx={{
           position: 'absolute',
@@ -183,7 +221,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
           查看详情
         </Button>
 
-        {showCommentForm && (
+        {showCommentForm && onSubmitComment && (
           <Box
             sx={{
               width: '100%',
@@ -224,7 +262,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
               color="primary"
               fullWidth
               size="small"
-              onClick={() => onSubmitComment(card.id, commentName, commentText)}
+              onClick={() => onSubmitComment?.(card.id, commentName, commentText)}
             >
               提交评论
             </Button>
@@ -243,6 +281,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
           {showCommentForm ? '取消' : '添加评论'}
         </Button>
       </Box>
+      )}
     </Box>
   );
 };
