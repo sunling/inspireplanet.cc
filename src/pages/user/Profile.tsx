@@ -114,7 +114,7 @@ const Profile: React.FC = () => {
           {step === 1 && (
             <Box>
               <Typography variant="h6" sx={{ mt: 1, mb: 1 }}>感兴趣的主题</Typography>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
+              <Box sx={{ display: '柔性', gap: 1, flexWrap: 'wrap', mt: 1 }}>
                 {presetTopics.map((t) => (
                   <Chip key={t} label={t} clickable color={interests.includes(t) ? 'primary' : 'default'} variant={interests.includes(t) ? 'filled' : 'outlined'} onClick={() => toggleInterest(t)} />
                 ))}

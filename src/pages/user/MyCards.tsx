@@ -11,7 +11,6 @@ import { useGlobalSnackbar } from '@/context/app';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
 
-// 卡片数据验证结果
 interface ValidationResult {
   isValid: boolean;
   sanitizedCard?: CardItem;
@@ -25,27 +24,22 @@ const MyCards: React.FC = () => {
   const { isMobile } = useResponsive();
   const showSnackbar = useGlobalSnackbar();
 
-  // 清理和验证卡片数据
   const sanitizeAndValidateCard = (
     card: any,
     requiredFields: string[]
   ): ValidationResult => {
-    // 检查必填字段
     for (const field of requiredFields) {
       if (!card[field]) {
         return { isValid: false };
       }
     }
 
-    // 清理HTML内容
     const sanitizedCard: CardItem = {
       id: card.id || '',
       title: DOMPurify.sanitize(card.title),
       quote: DOMPurify.sanitize(card.quote),
       detail: card.detail ? DOMPurify.sanitize(card.detail) : undefined,
-      imagePath: card.imagePath
-        ? DOMPurify.sanitize(card.imagePath)
-        : undefined,
+      imagePath: card.imagePath ? DOMPurify.sanitize(card.imagePath) : undefined,
       font: DOMPurify.sanitize(card.font),
       creator: DOMPurify.sanitize(card.creator),
       username: DOMPurify.sanitize(card.username),
@@ -55,7 +49,6 @@ const MyCards: React.FC = () => {
     return { isValid: true, sanitizedCard };
   };
 
-  // 获取卡片数据
   const fetchMyCards = async () => {
     try {
       const currentUser = getCurrentUser();
@@ -65,13 +58,11 @@ const MyCards: React.FC = () => {
       }
       setLoading(true);
       setError(null);
-      // 使用统一的api对象获取卡片数据
       const response = await api.cards.getAll();
       if (!response.success) {
         showSnackbar.error(response.error || '获取卡片失败，请稍后再试');
         return [];
       }
-
       const records = response?.data?.records || [];
       const list =
         records.filter(
@@ -81,7 +72,6 @@ const MyCards: React.FC = () => {
         ) || [];
       setCards(list);
     } catch (e) {
-      console.error('获取卡片失败:', e);
       showSnackbar.error('获取卡片失败，请稍后再试');
       setError('获取卡片失败，请稍后再试');
     } finally {
@@ -89,16 +79,12 @@ const MyCards: React.FC = () => {
     }
   };
 
-  // 格式化卡片日期
   const formatCardDate = (dateString?: string): string => {
     if (!dateString) return '';
     return formatDate(new Date(dateString).toISOString());
   };
 
-  // 按日期分组卡片
-  const groupCardsByDate = (
-    cards: CardItem[]
-  ): { [key: string]: CardItem[] } => {
+  const groupCardsByDate = (cards: CardItem[]): { [key: string]: CardItem[] } => {
     const grouped: { [key: string]: CardItem[] } = {};
     cards.forEach((card) => {
       const date = new Date(card.created).toDateString();
@@ -107,37 +93,27 @@ const MyCards: React.FC = () => {
       }
       grouped[date].push(card);
     });
-
-    // 对每个日期内的卡片按时间倒序排列
     Object.keys(grouped).forEach((date) => {
       grouped[date].sort(
         (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime()
       );
     });
-
     return grouped;
   };
 
-  // 按日期分组卡片
   const groupedCards = groupCardsByDate(cards);
 
   useEffect(() => {
     fetchMyCards();
   }, []);
 
-  // 渲染空状态
   const renderEmptyState = () => {
     const currentUser = getCurrentUser();
-
     if (!currentUser) {
       return <Empty description="登录后才能查看您创建的卡片" />;
     }
-
     return (
-      <Empty
-        description="创建一张卡片，记录下您的启发时刻"
-        message="创建卡片"
-      />
+      <Empty description="创建一张卡片，记录下您的启发时刻" message="创建卡片" />
     );
   };
 
@@ -155,12 +131,7 @@ const MyCards: React.FC = () => {
     return (
       <Box sx={{ minHeight: '100vh', bgcolor: 'var(--bg-light)', py: 4 }}>
         <Container maxWidth="lg">
-          <Typography
-            variant="h6"
-            color="error"
-            textAlign="center"
-            sx={{ py: 10 }}
-          >
+          <Typography variant="h6" color="error" textAlign="center" sx={{ py: 10 }}>
             {error}
           </Typography>
         </Container>
@@ -174,11 +145,7 @@ const MyCards: React.FC = () => {
         <Typography
           variant="h4"
           component="h1"
-          sx={{
-            mb: 4,
-            fontWeight: 'bold',
-            color: '#333',
-          }}
+          sx={{ mb: 4, fontWeight: 'bold', color: '#333' }}
         >
           我的灵感卡片
         </Typography>
@@ -204,14 +171,7 @@ const MyCards: React.FC = () => {
         </Paper>
 
         {cards.length === 0 ? (
-          <Paper
-            elevation={1}
-            sx={{
-              p: 6,
-              textAlign: 'center',
-              borderRadius: 2,
-            }}
-          >
+          <Paper elevation={1} sx={{ p: 6, textAlign: 'center', borderRadius: 2 }}>
             {renderEmptyState()}
           </Paper>
         ) : (
@@ -224,11 +184,7 @@ const MyCards: React.FC = () => {
                   <Paper
                     key={date}
                     elevation={2}
-                    sx={{
-                      mb: 4,
-                      borderRadius: 2,
-                      overflow: 'hidden',
-                    }}
+                    sx={{ mb: 4, borderRadius: 2, overflow: 'hidden' }}
                   >
                     <Box
                       sx={{
@@ -240,10 +196,7 @@ const MyCards: React.FC = () => {
                         alignItems: 'center',
                       }}
                     >
-                      <Typography
-                        variant="h6"
-                        sx={{ color: '#555', fontWeight: 'bold' }}
-                      >
+                      <Typography variant="h6" sx={{ color: '#555', fontWeight: 'bold' }}>
                         {formatDate(date)}
                       </Typography>
                       <Chip
@@ -263,14 +216,14 @@ const MyCards: React.FC = () => {
                               onCardClick={(id) => navigate(`/card-detail?id=${id}`)}
                               onSubmitComment={async (id, name, comment) => {
                                 try {
-                                  const res = await api.comments.create({ cardId: id, name, comment })
+                                  const res = await api.comments.create({ cardId: id, name, comment });
                                   if (res.success) {
-                                    showSnackbar.success(res.message || '评论提交成功！')
+                                    showSnackbar.success(res.message || '评论提交成功！');
                                   } else {
-                                    showSnackbar.error(res.error || '提交评论失败')
+                                    showSnackbar.error(res.error || '提交评论失败');
                                   }
                                 } catch (e: any) {
-                                  showSnackbar.error(e.message || '网络错误')
+                                  showSnackbar.error(e.message || '网络错误');
                                 }
                               }}
                             />

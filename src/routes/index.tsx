@@ -5,7 +5,7 @@ import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
 import App from '../App';
 import Error from '../components/ErrorCard/index';
 import Loading from '../components/Loading/index';
-import MyMeetups from '@/pages/personal/MyMeetups';
+import MyMeetups from '@/pages/user/MyMeetups';
 
 // 错误边界组件
 const ErrorBoundary: React.FC<{ children?: React.ReactNode }> = ({
@@ -71,7 +71,7 @@ const Contact = lazy(() => import('../pages/introduce/Contact'));
 const Login = lazy(() => import('../pages/auth/Login'));
 const Cards = lazy(() => import('../pages/card/Cards'));
 const CreateCard = lazy(() => import('../pages/card/CardCreate'));
-const MyCards = lazy(() => import('../pages/personal/MyCards'));
+const MyCards = lazy(() => import('../pages/user/MyCards'));
 const Meetups = lazy(() => import('../pages/activity/Meetups'));
 const WeeklyCards = lazy(() => import('../pages/card/WeeklyCards'));
 const CardDetail = lazy(() => import('../pages/card/CardDetail'));
@@ -89,8 +89,8 @@ const ChangePassWord = lazy(() => import('../pages/auth/ChangePassWord'));
 const ActSignup = lazy(() => import('../pages/auth/ActSignup'));
 const PeopleDirectory = lazy(() => import('../pages/people/Directory'));
 const MyConnections = lazy(() => import('../pages/connections/MyConnections'));
-const Profile = lazy(() => import('../pages/personal/Profile'));
-const Notifications = lazy(() => import('../pages/personal/Notifications'));
+const Profile = lazy(() => import('../pages/user/Profile'));
+const Notifications = lazy(() => import('../pages/user/Notifications'));
 
 // 创建路由器
 const router = createBrowserRouter(

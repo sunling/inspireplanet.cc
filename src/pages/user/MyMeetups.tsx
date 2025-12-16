@@ -35,7 +35,6 @@ import Loading from '@/components/Loading';
 interface UserInfo {
   username: string;
   name: string;
-  // 其他用户信息字段
 }
 
 enum FilterStatus {
@@ -60,7 +59,6 @@ const MyMeetups: React.FC = () => {
   const theme = useTheme();
   const isMobileScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // 检查用户登录状态并加载活动
   useEffect(() => {
     checkAuthAndLoadMeetups();
   }, []);
@@ -76,35 +74,26 @@ const MyMeetups: React.FC = () => {
 
     try {
       const userInfo = JSON.parse(userInfoStr) as UserInfo;
-      console.log('解析用户信息:', userInfo);
       setAuthChecking(false);
       loadMyMeetups();
-    } catch (error) {
-      console.error('解析用户信息失败:', error);
+    } catch {
       setAuthChecking(false);
     }
   };
 
-  // 加载我的活动
   const loadMyMeetups = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // 使用统一的API封装获取活动数据
       const response = await api.meetups.getAll({ status: 'all' });
-      console.log('加载我的活动响应:', response);
-
       if (!response.success) {
         showSnackbar.error(response.error || '加载活动失败');
         return;
       }
 
       const meetups = response.data?.meetups || [];
-
       const curUser = getCurrentUser() || {};
-
-      // 过滤出当前用户创建的活动
       const userMeetups = meetups.filter(
         (meetup: Meetup) =>
           meetup.creator === curUser?.username ||
@@ -112,10 +101,8 @@ const MyMeetups: React.FC = () => {
           meetup.user_id === curUser?.username ||
           meetup.user_id === curUser?.name
       );
-
       setAllMeetups(userMeetups as Meetup[]);
     } catch (error) {
-      console.error('Load my meetups error:', error);
       setError('加载活动失败，请稍后重试');
       showSnackbar.error('加载活动失败，请稍后重试');
     } finally {
@@ -123,46 +110,33 @@ const MyMeetups: React.FC = () => {
     }
   };
 
-  // 处理状态筛选变更
-  const handleStatusChange = (
-    _: React.MouseEvent<HTMLElement>,
-    newStatus: any
-  ) => {
+  const handleStatusChange = (_: React.MouseEvent<HTMLElement>, newStatus: any) => {
     if (newStatus !== null) {
       setCurrentStatus(newStatus);
     }
   };
 
-  // 处理下拉选择变更
   const handleSelectChange = (newStatus: string) => {
     setCurrentStatus(newStatus as FilterStatus);
   };
 
-  // 删除/取消活动
   const deleteMeetup = async (meetupId: string) => {
     if (!window.confirm('确定要取消这个活动吗？取消后无法恢复。')) {
       return;
     }
-
     try {
-      // 使用统一的api对象删除活动
       const response = await api.meetups.delete(meetupId);
-
       if (!response.success) {
         showSnackbar.error(response.error || '删除活动失败');
         return;
       }
-
-      // 模拟成功响应
       setAllMeetups((prev) => prev.filter((meetup) => meetup.id !== meetupId));
       showSnackbar.success('活动已取消');
-    } catch (error) {
-      console.error('Delete meetup error:', error);
+    } catch {
       showSnackbar.error('取消活动失败，请稍后重试');
     }
   };
 
-  // 获取状态文本
   const getStatusText = (status: string) => {
     const statusMap: Record<string, string> = {
       [FilterStatus.ALL]: '全部',
@@ -173,7 +147,6 @@ const MyMeetups: React.FC = () => {
     return statusMap[status] || status;
   };
 
-  // 根据当前状态过滤活动（参考活动列表逻辑：开始时间+时长与当前时间比较）
   const getFilteredMeetups = () => {
     if (currentStatus === FilterStatus.ALL) return allMeetups;
     const now = new Date();
@@ -183,7 +156,6 @@ const MyMeetups: React.FC = () => {
       const hasDur = Number.isFinite(dur) && dur > 0;
       const end = new Date(start.getTime() + (hasDur ? dur * 3600 * 1000 : 0));
       const isCancelled = String(meetup.status).toLowerCase() === 'cancelled';
-
       if (currentStatus === FilterStatus.CANCEL) return isCancelled;
       if (currentStatus === FilterStatus.END) return now > end && !isCancelled;
       if (currentStatus === FilterStatus.ACTIVE)
@@ -192,11 +164,8 @@ const MyMeetups: React.FC = () => {
     });
   };
 
-  const filteredMeetups = useMemo(
-    () => getFilteredMeetups(),
-    [currentStatus, allMeetups]
-  );
-  // 渲染活动卡片
+  const filteredMeetups = useMemo(() => getFilteredMeetups(), [currentStatus, allMeetups]);
+
   const renderMeetupCard = (meetup: Meetup) => {
     const start = new Date(meetup.datetime);
     const now = new Date();
@@ -215,13 +184,8 @@ const MyMeetups: React.FC = () => {
     const mm = String(minutes).padStart(2, '0');
     const formattedTime12 = `${ampm} ${hour12}:${mm}`;
 
-    const statusLabel = isCancelled
-      ? '已取消'
-      : now < start
-      ? '即将开始'
-      : now > end
-      ? '已结束'
-      : '进行中';
+    const statusLabel =
+      isCancelled ? '已取消' : now < start ? '即将开始' : now > end ? '已结束' : '进行中';
     const statusColor = isCancelled
       ? 'error'
       : statusLabel === '已结束'
@@ -279,11 +243,7 @@ const MyMeetups: React.FC = () => {
           )}
         </Box>
 
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ mb: 3, lineHeight: 1.5, wordBreak: 'break-all' }}
-        >
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.5, wordBreak: 'break-all' }}>
           {escapeHtml(meetup.description)}
         </Typography>
 
@@ -336,7 +296,6 @@ const MyMeetups: React.FC = () => {
     );
   };
 
-  // 渲染加载状态
   if (authChecking) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -351,12 +310,7 @@ const MyMeetups: React.FC = () => {
           <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
             我的活动
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            component={Link}
-            to="/create-meetup"
-          >
+          <Button variant="contained" color="primary" component={Link} to="/create-meetup">
             发起新活动
           </Button>
         </Box>
@@ -365,7 +319,6 @@ const MyMeetups: React.FC = () => {
     );
   }
 
-  // 渲染未登录状态
   if (!getCurrentUser()) {
     const redirectUrl = encodeURIComponent(window.location.href);
     return (
@@ -381,19 +334,11 @@ const MyMeetups: React.FC = () => {
           <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
             我的活动
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            component={Link}
-            to="/create-meetup"
-          >
+          <Button variant="contained" color="primary" component={Link} to="/create-meetup">
             发起新活动
           </Button>
         </Box>
-        <Empty
-          message="请先登录"
-          description="您需要登录后才能查看和管理自己的活动"
-        />
+        <Empty message="请先登录" description="您需要登录后才能查看和管理自己的活动" />
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <Button
             variant="contained"
@@ -409,14 +354,12 @@ const MyMeetups: React.FC = () => {
     );
   }
 
-  // 获取适当的网格列数
   const getGridColumns = () => {
     if (isMobile) return 1;
     if (isTablet) return 2;
     return 3;
   };
 
-  // 渲染活动内容
   return (
     <Container maxWidth="lg" sx={{ py: 4, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Box
@@ -432,49 +375,31 @@ const MyMeetups: React.FC = () => {
         <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
           我的活动
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          component={Link}
-          to="/create-meetup"
-        >
+        <Button variant="contained" color="primary" component={Link} to="/create-meetup">
           发起新活动
         </Button>
       </Box>
 
       <Box sx={{ mb: 4 }}>
         {isMobileScreen ? (
-          // 移动端使用下拉选择器
           <FormControl fullWidth sx={{ minWidth: 120 }}>
             <InputLabel id="status-select-label">活动状态</InputLabel>
-            <Select
-              labelId="status-select-label"
-              id="status-select"
-              value={currentStatus}
-              label="活动状态"
-            >
+            <Select labelId="status-select-label" id="status-select" value={currentStatus} label="活动状态">
               <MenuItem value="all" onClick={() => handleSelectChange('all')}>
                 全部
               </MenuItem>
-              <MenuItem
-                value="active"
-                onClick={() => handleSelectChange('active')}
-              >
+              <MenuItem value="active" onClick={() => handleSelectChange('active')}>
                 进行中
               </MenuItem>
               <MenuItem value="end" onClick={() => handleSelectChange('end')}>
                 已完成
               </MenuItem>
-              <MenuItem
-                value="cancelled"
-                onClick={() => handleSelectChange('cancelled')}
-              >
+              <MenuItem value="cancelled" onClick={() => handleSelectChange('cancelled')}>
                 已取消
               </MenuItem>
             </Select>
           </FormControl>
         ) : (
-          // 桌面端使用ToggleButtonGroup
           <ToggleButtonGroup
             value={currentStatus}
             exclusive
@@ -508,20 +433,13 @@ const MyMeetups: React.FC = () => {
         {loading ? (
           <Loading message="加载活动中..." size={40} />
         ) : error ? (
-          <ErrorCard
-            message="加载失败"
-            description={error}
-            onRetry={loadMyMeetups}
-            retryText="重试"
-          />
+          <ErrorCard message="加载失败" description={error} onRetry={loadMyMeetups} retryText="重试" />
         ) : (
           <>
             {filteredMeetups.length === 0 ? (
               <Empty
                 message={`暂无${getStatusText(currentStatus)}活动`}
-                description={`您还没有${getStatusText(
-                  currentStatus
-                )}的活动，快去发起一个吧！`}
+                description={`您还没有${getStatusText(currentStatus)}的活动，快去发起一个吧！`}
               />
             ) : (
               <Grid

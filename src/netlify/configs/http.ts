@@ -139,7 +139,7 @@ class HttpClient {
       success: true,
       data: data.data || data,
       message: data.message,
-      details: data.details || undefined,
+      detail: data.details || undefined,
     });
   }
 
@@ -203,7 +203,7 @@ class HttpClient {
         success: false,
         statusCode: -1,
         error: error.message || 'Network error',
-        details: error,
+        detail: error,
       };
     }
   }
