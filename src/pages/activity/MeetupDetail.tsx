@@ -238,7 +238,7 @@ const MeetupDetail: React.FC = () => {
         navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
         return;
       }
-      const userInfo: UserInfo = JSON.parse(userInfoStr);
+      const userInfo: UserInfo = JSON.parse(userInfoStr || "{}");
 
       // 检查是否已经报名
       const isAlreadyRegistered = await checkRSVPStatus(
@@ -328,16 +328,25 @@ const MeetupDetail: React.FC = () => {
       const userInfoStr =
         localStorage.getItem("userInfo") || localStorage.getItem("userData");
       let username: string | undefined;
+      let user_id: number | string | undefined;
       try {
         const u = userInfoStr ? JSON.parse(userInfoStr) : null;
         username = u?.username || undefined;
+        user_id = u?.id ?? undefined;
       } catch {}
+      if (!user_id) {
+        const uidStr = localStorage.getItem("userId");
+        if (uidStr && uidStr !== "null" && uidStr !== "undefined") {
+          const asNum = Number(uidStr);
+          user_id = Number.isFinite(asNum) ? asNum : uidStr;
+        }
+      }
 
       const payload = {
         meetup_id: Number(meetup.id),
         wechat_id: rsvpForm.wechatId.trim(),
         name: rsvpForm.name.trim(),
-        username,
+        user_id,
       };
 
       const response = await api.rsvp.create(payload);

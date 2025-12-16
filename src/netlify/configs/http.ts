@@ -110,11 +110,11 @@ class HttpClient {
     } catch (error) {
       // 非JSON响应处理
       const textResponse = await response.text().catch(() => '');
-      return Promise.reject({
+      return Promise.resolve({
         success: false,
-        statusCode: -1,
+        statusCode: response.status,
         error: 'Invalid response format',
-        details: { text: textResponse },
+        detail: textResponse,
       });
     }
 
@@ -125,11 +125,11 @@ class HttpClient {
         data.message ||
         `HTTP Error: ${response.status} ${response.statusText}`;
 
-      return Promise.reject({
+      return Promise.resolve({
         success: false,
-        statusCode: -1,
+        statusCode: response.status,
         error: errorMessage,
-        details: data,
+        detail: typeof data === 'string' ? data : JSON.stringify(data),
       });
     }
 

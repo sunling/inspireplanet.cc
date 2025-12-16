@@ -246,10 +246,24 @@ const Meetups: React.FC = () => {
 
     try {
       // 使用统一的api对象提交报名信息
+      let user_id: number | string | undefined;
+      try {
+        const userStr = localStorage.getItem("userInfo") || localStorage.getItem("userData");
+        const u = userStr ? JSON.parse(userStr) : null;
+        user_id = u?.id ?? undefined;
+      } catch {}
+      if (!user_id) {
+        const uidStr = localStorage.getItem("userId");
+        if (uidStr && uidStr !== "null" && uidStr !== "undefined") {
+          const asNum = Number(uidStr);
+          user_id = Number.isFinite(asNum) ? asNum : uidStr;
+        }
+      }
       const response = await api.rsvp.create({
         meetup_id: Number(currentMeetupId),
         wechat_id: rsvpForm.wechatId.trim(),
         name: rsvpForm.name.trim(),
+        user_id,
       });
 
       if (!response.success) {

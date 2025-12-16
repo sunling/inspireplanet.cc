@@ -1,6 +1,7 @@
 import { supabase } from '../../database/supabase';
 import dotenv from 'dotenv';
 import { getCommonHttpHeader } from '../../utils/http';
+import jwt from 'jsonwebtoken';
 dotenv.config();
 
 export async function handler(event: any, context: any) {
@@ -50,6 +51,18 @@ export async function handler(event: any, context: any) {
   }
 }
 
+function getUserIdFromAuth(event: any) {
+  const auth = (event.headers as any)?.authorization || (event.headers as any)?.Authorization;
+  if (!auth || !String(auth).startsWith('Bearer ')) return null;
+  const token = String(auth).substring(7);
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
+    return decoded.userId || decoded.user_id || null;
+  } catch {
+    return null;
+  }
+}
+
 // 创建RSVP
 async function createRSVP(event: any, headers: any) {
   try {
@@ -57,6 +70,9 @@ async function createRSVP(event: any, headers: any) {
     const meetupIdNum = Number(rsvpData.meetup_id);
     const wechatId = String(rsvpData.wechat_id || '').trim();
     const name = String(rsvpData.name || '').trim();
+    const authUserId = getUserIdFromAuth(event);
+    const providedUserId = rsvpData.user_id !== undefined ? rsvpData.user_id : null;
+    const userId = authUserId ?? providedUserId ?? null;
 
     // 验证必填字段
     const requiredFields = ['meetup_id', 'name', 'wechat_id'];
@@ -119,12 +135,13 @@ async function createRSVP(event: any, headers: any) {
     }
 
     // 检查是否已经报名
-    const { data: existingRSVP, error: checkError } = await supabase
+    const { data: existingList, error: checkError } = await supabase
       .from('meetup_rsvps')
       .select('id, status')
       .eq('meetup_id', meetupIdNum)
       .eq('wechat_id', wechatId)
-      .single();
+      .limit(1);
+    const existingRSVP = Array.isArray(existingList) && existingList.length > 0 ? existingList[0] : null;
 
     if (existingRSVP && existingRSVP.status === 'confirmed') {
       return {
@@ -170,7 +187,7 @@ async function createRSVP(event: any, headers: any) {
         .update({
           name,
           status: 'confirmed',
-          username: (rsvpData.username || null) as any,
+          user_id: userId as any,
         })
         .eq('id', existingRSVP.id)
         .select();
@@ -185,7 +202,7 @@ async function createRSVP(event: any, headers: any) {
             meetup_id: meetupIdNum,
             name,
             wechat_id: wechatId,
-            username: (rsvpData.username || null) as any,
+            user_id: userId as any,
             status: 'confirmed',
           },
         ])
@@ -244,7 +261,7 @@ async function getRSVPs(event: any, headers: any) {
     }
 
     if (user_id) {
-      query = query.eq('username', user_id);
+      query = query.eq('user_id', isNaN(Number(user_id)) ? user_id : Number(user_id));
     }
 
     if (wechat_id) {
