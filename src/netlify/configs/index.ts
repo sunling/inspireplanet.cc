@@ -262,6 +262,25 @@ export const api = {
       return http.post<any>(API_MAP.MEETUPS.RSVP, rsvpData);
     },
 
+    update: async (
+      id: string | number,
+      data: Partial<import('../types').Participant>
+    ): Promise<ApiResponse<{ rsvp: import('../types').Participant }>> => {
+      return http.put<{ rsvp: import('../types').Participant }>(
+        API_MAP.MEETUPS.RSVP,
+        data,
+        { params: { id } as any }
+      );
+    },
+
+    getByUserId: async (
+      userId: string | number
+    ): Promise<ApiResponse<{ rsvps: Participant[] }>> => {
+      return http.get<{ rsvps: Participant[] }>(API_MAP.MEETUPS.RSVP, {
+        user_id: userId,
+      } as any);
+    },
+
     getByMeetupId: async (
       meetupId: string
     ): Promise<ApiResponse<{ rsvps: Participant[] }>> => {
@@ -276,6 +295,23 @@ export const api = {
       return http.get<{ rsvps: Participant[] }>(API_MAP.MEETUPS.RSVP, {
         wechat_id: wechatId,
       });
+    },
+
+    cancel: async (
+      id: string | number
+    ): Promise<ApiResponse<{ success: boolean }>> => {
+      return http.delete<{ success: boolean }>(API_MAP.MEETUPS.RSVP, {
+        id,
+      } as any);
+    },
+    cancelByMeetupWechat: async (
+      meetupId: string | number,
+      wechatId: string
+    ): Promise<ApiResponse<{ success: boolean }>> => {
+      return http.delete<{ success: boolean }>(API_MAP.MEETUPS.RSVP, {
+        meetup_id: meetupId,
+        wechat_id: wechatId,
+      } as any);
     },
   },
 
