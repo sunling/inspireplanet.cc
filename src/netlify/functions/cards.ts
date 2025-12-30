@@ -126,17 +126,17 @@ async function save(
 
     // 准备插入数据库的记录
     const record = {
-      Font: cardData.font || "",
-      Title: cardData.title,
-      Quote: cardData.quote,
-      ImagePath: cardData.imagePath || "",
-      Detail: cardData.detail,
-      Upload: cardData.upload || "",
-      Creator: cardData.creator || "",
-      Created: new Date().toISOString(),
-      GradientClass: cardData.gradientClass || "",
-      Username: cardData.username || null,
-      LikesCount: 0,
+      font: cardData.font || "",
+      title: cardData.title,
+      quote: cardData.quote,
+      image_path: cardData.imagePath || "",
+      detail: cardData.detail,
+      upload: cardData.upload || "",
+      creator: cardData.creator || "",
+      created: new Date().toISOString(),
+      gradient_class: cardData.gradientClass || "",
+      username: cardData.username || null,
+      likes_count: 0,
     };
 
     // 插入Supabase
@@ -246,7 +246,7 @@ async function fetch(
     }
 
     // 应用排序
-    query = query.order("Created", { ascending: false }).limit(25);
+    query = query.order("created", { ascending: false }).limit(25);
 
     // 执行查询
     const { data, error } = await query;
@@ -260,17 +260,17 @@ async function fetch(
 
     const records = (data || []).map((row, index) => ({
       id: row.id || `row_${index}`,
-      title: row.Title,
-      quote: row.Quote,
-      detail: row.Detail,
-      font: row.Font,
-      imagePath: row.ImagePath,
-      upload: row.Upload,
-      creator: row.Creator,
-      created: row.Created,
-      gradientClass: row.GradientClass,
-      username: row.Username,
-      likesCount: row.LikesCount || 0,
+      title: row.title,
+      quote: row.quote,
+      detail: row.detail,
+      font: row.font,
+      imagePath: row.image_path,
+      upload: row.upload,
+      creator: row.creator,
+      created: row.created,
+      gradientClass: row.gradient_class,
+      username: row.username,
+      likesCount: row.likes_count || 0,
     }));
 
     // 更新缓存
@@ -331,7 +331,7 @@ async function like(
     // 读取当前计数
     const { data: card, error: fetchError } = await supabase
       .from("cards")
-      .select("id, LikesCount")
+      .select("id, likes_count")
       .eq("id", cardId)
       .single();
     if (fetchError || !card) {
@@ -340,11 +340,11 @@ async function like(
         body: JSON.stringify({ success: false, error: "Card Not Found" }),
       };
     }
-    const current = Number(card.LikesCount) || 0;
+    const current = Number(card.likes_count) || 0;
     const next = current + 1;
     const { error: updateError } = await supabase
       .from("cards")
-      .update({ LikesCount: next })
+      .update({ likes_count: next })
       .eq("id", cardId);
     if (updateError) {
       return {
@@ -421,8 +421,8 @@ async function update(
     // 验证用户权限（检查用户名是否匹配）
     if (
       cardData.username &&
-      existingCard.Username &&
-      cardData.username !== existingCard.Username
+      existingCard.username &&
+      cardData.username !== existingCard.username
     ) {
       return {
         statusCode: 403,
@@ -434,15 +434,15 @@ async function update(
 
     // 准备更新数据
     const updateData = {
-      Title: cardData.title,
-      Quote: cardData.quote,
-      Detail: cardData.detail,
-      Creator: cardData.creator || existingCard.Creator,
-      Font: cardData.font || existingCard.Font,
-      GradientClass: cardData.gradientClass || existingCard.GradientClass,
-      ImagePath: cardData.imagePath || existingCard.ImagePath,
-      Upload: cardData.upload || existingCard.Upload,
-      Username: cardData.username || existingCard.Username,
+      title: cardData.title,
+      quote: cardData.quote,
+      detail: cardData.detail,
+      creator: cardData.creator || existingCard.creator,
+      font: cardData.font || existingCard.font,
+      gradient_class: cardData.gradientClass || existingCard.gradient_class,
+      image_path: cardData.imagePath || existingCard.image_path,
+      upload: cardData.upload || existingCard.upload,
+      username: cardData.username || existingCard.username,
     };
 
     // 更新Supabase中的卡片
