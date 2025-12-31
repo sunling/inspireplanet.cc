@@ -12,15 +12,12 @@
   
 [functions]
   node_bundler = "esbuild"
-  ignore_text = "*.test.ts"
 
 [build.environment]
   NODE_VERSION = "20"
 
-[[redirects]]
-  from = "/.netlify/functions/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+# Removed invalid redirect for /.netlify/functions/*
+# Netlify handles function routing automatically
 
 [[redirects]]
   from = "/*"
