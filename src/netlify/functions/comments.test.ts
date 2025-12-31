@@ -71,6 +71,7 @@ mockLimit.mockReturnValue({
 describe('comments function', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.JWT_SECRET = 'test-secret';
     
     // Default chain
     mockFrom.mockReturnValue({ select: mockSelect, insert: mockInsert });

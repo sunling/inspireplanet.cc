@@ -1,11 +1,9 @@
 // netlify/functions/commentsHandler.ts
 import { supabase } from '../../database/supabase';
-import dotenv from 'dotenv';
 import { NetlifyContext, NetlifyEvent } from '../types/http';
 import { sanitizeInput } from '../../utils/helper';
 import jwt from 'jsonwebtoken';
 import { createNotification } from './notifications';
-dotenv.config();
 
 // 定义数据接口
 export interface Comment {
@@ -38,16 +36,23 @@ export interface CommentsResponse {
   details?: string;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
-
 function getUserId(event: any) {
   const auth = event.headers?.authorization || event.headers?.Authorization;
-  if (!auth || !String(auth).startsWith('Bearer ')) return null;
+  if (!auth || !String(auth).startsWith('Bearer ')) {
+    console.log('Missing or invalid Authorization header');
+    return null;
+  }
   const token = String(auth).substring(7);
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      console.error('JWT_SECRET is not defined');
+      return null;
+    }
+    const decoded = jwt.verify(token, secret) as any;
     return decoded.userId || decoded.user_id || null;
-  } catch {
+  } catch (e: any) {
+    console.error('Token verification failed:', e.message);
     return null;
   }
 }

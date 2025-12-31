@@ -9,7 +9,9 @@ function getUserId(event: any) {
   if (!auth || !auth.startsWith('Bearer ')) return null
   const token = auth.substring(7)
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any
+    const secret = process.env.JWT_SECRET || JWT_SECRET
+    if (!secret) return null
+    const decoded = jwt.verify(token, secret) as any
     return decoded.userId || decoded.user_id || null
   } catch {
     return null
@@ -76,6 +78,7 @@ export async function createNotification(userId: string | number, title: string,
     console.error('[notifications] insert failed:', error.message)
     return
   }
+  console.log('[notifications] created successfully for user:', uid)
   try {
     const { data: user } = await supabase
       .from('users')

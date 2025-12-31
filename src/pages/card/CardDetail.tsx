@@ -255,6 +255,15 @@ const CardDetail: React.FC = () => {
       });
 
       if (!response.success) {
+        if (response.statusCode === 401) {
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("userInfo");
+          localStorage.removeItem("userToken");
+          showSnackbar.error("登录已过期，请重新登录");
+          const redirect = `/card-detail?id=${cardId}`;
+          navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
+          return;
+        }
         const text = "提交评论失败：" + (response.error || "未知错误");
         showSnackbar.warning(text);
         return;
@@ -305,13 +314,27 @@ const CardDetail: React.FC = () => {
     }
   };
 
+  // 回复评论
+  const handleReplyClick = (name: string) => {
+    setCommentForm((prev) => ({ ...prev, content: `@${name} ` }));
+    setTimeout(() => {
+      try {
+        commentInputRef.current?.focus();
+        const el = commentInputRef.current as any;
+        if (el && el.setSelectionRange) {
+          const len = el.value.length;
+          el.setSelectionRange(len, len);
+        }
+      } catch {}
+    }, 50);
+  };
+
   // 处理Markdown内容
   const renderMarkdown = (text: string | undefined | null) => {
     if (!text) return "";
     try {
       marked.setOptions({ breaks: true });
       const html = marked.parse(sanitizeContent(text));
-      // console.log('html', html);
       return (
         <Fragment>
           <span dangerouslySetInnerHTML={{ __html: html as string }} />
@@ -637,7 +660,13 @@ const CardDetail: React.FC = () => {
                         />
                       </Typography>
                       <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
-                        <Button size="small" variant="text" onClick={() => handleReplyClick(comment.name || comment.Name)}>
+                        <Button
+                          size="small"
+                          variant="text"
+                          onClick={() =>
+                            handleReplyClick(comment.name || comment.Name)
+                          }
+                        >
                           回复
                         </Button>
                       </Box>
@@ -697,16 +726,3 @@ const CardDetail: React.FC = () => {
 };
 
 export default CardDetail;
-  const handleReplyClick = (name: string) => {
-    setCommentForm({ content: `@${name} ` });
-    setTimeout(() => {
-      try {
-        commentInputRef.current?.focus();
-        const el = commentInputRef.current as any;
-        if (el && el.setSelectionRange) {
-          const len = el.value.length;
-          el.setSelectionRange(len, len);
-        }
-      } catch {}
-    }, 50);
-  };
