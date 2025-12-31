@@ -43,13 +43,13 @@ export async function handler(
       const digits = (episodeParam.match(/\d+/)?.[0]) || '';
       if (digits) {
         // 兼容 EP43、第43期 等格式，按数字模糊匹配
-        query = query.ilike('Episode', `%${digits}%`);
+        query = query.ilike('episode', `%${digits}%`);
       } else {
         // 无数字，则使用模糊匹配整个字符串
-        query = query.ilike('Episode', `%${episodeParam}%`);
+        query = query.ilike('episode', `%${episodeParam}%`);
       }
     }
-    query = query.order('Created', { ascending: false });
+    query = query.order('created', { ascending: false });
     if (limitParam && !Number.isNaN(limitParam)) {
       query = query.limit(limitParam);
     }
@@ -67,13 +67,13 @@ export async function handler(
 
     const records = (data || []).map((row: any, index: number) => ({
       id: row.id || `row_${index}`,
-      episode: row.Episode,
-      title: row.Title,
-      name: row.Name,
-      quote: row.Quote,
-      detail: row.Detail,
-      created: row.Created,
-      imagePath: row.ImagePath,
+      episode: row.episode,
+      title: row.title,
+      name: row.name,
+      quote: row.quote,
+      detail: row.detail,
+      created: row.created,
+      imagePath: row.image_path,
     }));
 
     return {

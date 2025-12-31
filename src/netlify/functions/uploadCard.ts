@@ -77,13 +77,13 @@ export async function handler(
 
     // Prepare the record for Supabase
     const weeklyCardRecord = {
-      Episode: record.episode,
-      Name: record.name,
-      Title: record.title,
-      Quote: record.quote,
-      Detail: record.detail,
-      ImagePath: imagePath,
-      Created: new Date().toISOString(),
+      episode: record.episode,
+      name: record.name,
+      title: record.title,
+      quote: record.quote,
+      detail: record.detail,
+      image_path: imagePath,
+      created: new Date().toISOString(),
     };
 
     // Insert into Supabase

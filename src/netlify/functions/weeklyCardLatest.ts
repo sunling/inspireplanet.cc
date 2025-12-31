@@ -48,8 +48,8 @@ export async function handler(
     // 获取最新一期的episode编号
     const { data: latestEpisode, error: episodeError } = await supabase
       .from('weekly_cards')
-      .select('Episode')
-      .order('Episode', { ascending: false })
+      .select('episode')
+      .order('episode', { ascending: false })
       .limit(1);
 
     if (episodeError) {
@@ -76,14 +76,14 @@ export async function handler(
       };
     }
 
-    const latestEpisodeNumber = latestEpisode[0].Episode;
+    const latestEpisodeNumber = latestEpisode[0].episode;
 
     // 获取该期的所有卡片
     const { data, error } = await supabase
       .from('weekly_cards')
       .select('*')
-      .eq('Episode', latestEpisodeNumber)
-      .order('Created', { ascending: false });
+      .eq('episode', latestEpisodeNumber)
+      .order('created', { ascending: false });
 
     if (error) {
       console.error('Error fetching weekly cards:', error);
@@ -101,13 +101,13 @@ export async function handler(
     // 格式化返回数据
     const records = (data || []).map((row: any, index: number) => ({
       id: row.id || `row_${index}`,
-      episode: row.Episode,
-      title: row.Title,
-      name: row.Name,
-      quote: row.Quote,
-      detail: row.Detail,
-      created: row.Created,
-      imagePath: row.ImagePath,
+      episode: row.episode,
+      title: row.title,
+      name: row.name,
+      quote: row.quote,
+      detail: row.detail,
+      created: row.created,
+      imagePath: row.image_path,
     }));
 
     return {
