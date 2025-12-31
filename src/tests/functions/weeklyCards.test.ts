@@ -1,6 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handler } from './weeklyCards';
+import { handler } from '../../netlify/functions/weeklyCards';
+import { supabase } from '../../database/supabase';
 
 // Hoist mocks
 const { 

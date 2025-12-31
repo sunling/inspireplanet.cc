@@ -1,6 +1,7 @@
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handler } from './cards';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { handler } from '../../netlify/functions/cards';
+import { supabase } from '../../database/supabase';
 
 // Hoist mocks so they are available in vi.mock
 const { 

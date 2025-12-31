@@ -1,6 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handler } from './comments';
+import { handler } from '../../netlify/functions/comments';
+import { supabase } from '../../database/supabase';
 import jwt from 'jsonwebtoken';
 
 // Hoist mocks

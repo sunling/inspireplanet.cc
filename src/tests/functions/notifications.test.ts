@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { handler, createNotification } from './notifications';
+import { handler, createNotification } from '../../netlify/functions/notifications';
 import jwt from 'jsonwebtoken';
 
 // Hoist mocks

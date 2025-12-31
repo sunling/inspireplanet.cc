@@ -138,16 +138,33 @@ async function createRSVP(event: any, headers: any) {
     }
 
     // 检查是否已经报名
-    const { data: existingList, error: checkError } = await supabase
-      .from("meetup_rsvps")
-      .select("id, status")
-      .eq("meetup_id", meetupIdNum)
-      .eq("wechat_id", wechatId)
-      .limit(1);
-    const existingRSVP =
-      Array.isArray(existingList) && existingList.length > 0
-        ? existingList[0]
-        : null;
+    let existingRSVP = null;
+
+    // 1. 如果已登录，优先通过 user_id 查找（即使用户换了微信号）
+    if (userId) {
+      const { data: byUser } = await supabase
+        .from("meetup_rsvps")
+        .select("id, status, wechat_id")
+        .eq("meetup_id", meetupIdNum)
+        .eq("user_id", userId)
+        .limit(1);
+      if (byUser && byUser.length > 0) {
+        existingRSVP = byUser[0];
+      }
+    }
+
+    // 2. 如果没找到，再通过 wechat_id 查找
+    if (!existingRSVP) {
+      const { data: byWechat } = await supabase
+        .from("meetup_rsvps")
+        .select("id, status, user_id")
+        .eq("meetup_id", meetupIdNum)
+        .eq("wechat_id", wechatId)
+        .limit(1);
+      if (byWechat && byWechat.length > 0) {
+        existingRSVP = byWechat[0];
+      }
+    }
 
     if (existingRSVP && existingRSVP.status === "confirmed") {
       return {
@@ -194,6 +211,7 @@ async function createRSVP(event: any, headers: any) {
           name,
           status: "confirmed",
           user_id: userId as any,
+          wechat_id: wechatId, // 确保更新微信号
         })
         .eq("id", existingRSVP.id)
         .select();

@@ -12,6 +12,7 @@
   
 [functions]
   node_bundler = "esbuild"
+  ignore_text = "*.test.ts"
 
 [build.environment]
   NODE_VERSION = "20"
