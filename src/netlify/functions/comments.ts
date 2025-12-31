@@ -73,8 +73,8 @@ export async function handler(
       const { data, error } = await supabase
         .from('comments')
         .select('*')
-        .eq('CardId', cardId)
-        .order('Created', { ascending: false });
+        .eq('card_id', cardId)
+        .order('created', { ascending: false });
 
       if (error) {
         console.error('Error fetching comments:', error);
@@ -93,9 +93,9 @@ export async function handler(
           success: true,
           comments: data.map((row) => ({
             id: row.id,
-            name: row.Name || '',
-            comment: row.Comment || '',
-            created: row.Created,
+            name: row.name || '',
+            comment: row.comment || '',
+            created: row.created,
           })),
         }),
       };
@@ -152,12 +152,12 @@ export async function handler(
       } catch {}
 
       const record: Record<string, any> = {
-        CardId: commentData.cardId,
-        Name: displayName || '匿名用户',
-        Comment: sanitizedComment,
-        Created: new Date().toISOString(),
+        card_id: commentData.cardId,
+        name: displayName || '匿名用户',
+        comment: sanitizedComment,
+        created: new Date().toISOString(),
       };
-      if (uid) record.UserId = uid;
+      if (uid) record.user_id = uid;
 
       // Insert into Supabase
       const { data, error } = await supabase
