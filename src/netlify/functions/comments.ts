@@ -180,12 +180,12 @@ export async function handler(
       try {
         const { data: cardRow } = await supabase
           .from('cards')
-          .select('id, Title, Username, Creator')
+          .select('id, title, username, creator')
           .eq('id', commentData.cardId)
           .single();
         let ownerId: string | number | null = null;
-        const ownerUsername = cardRow?.Username || null;
-        const ownerCreator = cardRow?.Creator || null;
+        const ownerUsername = cardRow?.username || null;
+        const ownerCreator = cardRow?.creator || null;
         if (ownerUsername) {
           const { data: ownerUser } = await supabase
             .from('users')
@@ -206,7 +206,7 @@ export async function handler(
         if (ownerId && (!uid || String(ownerId) !== String(uid))) {
           const title = '卡片收到新评论';
           const snippet = sanitizedComment.length > 80 ? `${sanitizedComment.slice(0, 80)}...` : sanitizedComment;
-          const content = `${displayName} 评论了你的卡片《${cardRow?.Title || ''}》：${snippet}`;
+          const content = `${displayName} 评论了你的卡片《${cardRow?.title || ''}》：${snippet}`;
           const path = `/card-detail?id=${commentData.cardId}`;
           await createNotification(ownerId, title, content, path);
         }
