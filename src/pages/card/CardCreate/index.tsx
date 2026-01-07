@@ -652,12 +652,21 @@ const CreateCard: React.FC = () => {
                   </CardContent>
                   <CardActions
                     sx={{
-                      justifyContent: "center",
+                      justifyContent: "space-between",
+                      px: 3,
+                      pb: 2,
                       color: getFontColorForGradient(
                         cardData?.gradientClass || ""
                       ),
                     }}
                   >
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      {new Date().toLocaleDateString("zh-CN", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </Typography>
                     <Typography variant="body2">
                       ——作者：{cardData.creator || "匿名"}
                     </Typography>
