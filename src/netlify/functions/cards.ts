@@ -12,6 +12,7 @@ interface CardData {
   creator?: string;
   gradientClass?: string;
   username?: string | null;
+  updateTime?: string;
 }
 import jwt from 'jsonwebtoken';
 
@@ -28,6 +29,7 @@ export interface CardRecord {
   created: string;
   gradientClass: string;
   username: string | null;
+  updateTime?: string;
 }
 
 // 内存缓存
@@ -418,11 +420,11 @@ async function update(
       };
     }
 
-    // 验证用户权限（检查用户名是否匹配）
+    // 验证用户权限（检查创建人是否匹配）
     if (
-      cardData.username &&
-      existingCard.username &&
-      cardData.username !== existingCard.username
+      !cardData.creator ||
+      !existingCard.creator ||
+      cardData.creator !== existingCard.creator
     ) {
       return {
         statusCode: 403,
@@ -450,31 +452,30 @@ async function update(
       .from('cards')
       .update(updateData)
       .eq('id', cardData.id)
-      .select();
+      .select(); // 指定选择所有字段
 
     if (error) {
-      console.error('Supabase update error:', error);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'Failed to update card in database' }),
+        body: JSON.stringify({ error: error }),
       };
     }
 
-    console.log('Card updated successfully:', data?.[0]);
+    console.log('Card updated successfully:', data);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
         message: 'Card updated successfully',
-        card: data?.[0],
+        detail: data,
       }),
     };
   } catch (error: any) {
     console.error('Update card error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Internal server error' }),
+      body: JSON.stringify({ error: error }),
     };
   }
 }

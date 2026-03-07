@@ -50,36 +50,37 @@ const CardEdit: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 模拟获取卡片数据
-  useEffect(() => {
-    const fetchCardData = async () => {
-      try {
-        if (!id) return;
-        setLoading(true);
-        // 使用统一的api对象获取卡片数据
-        const response = await api.cards.getById(id);
-        if (!response.success) {
-          showSnackbar.error('获取卡片失败');
-        }
-
-        const data = response.data?.records[0];
-
-        if (data && typeof data === 'object') {
-          setCardData(data);
-          setError('');
-        } else {
-          setError('获取卡片数据格式错误');
-        }
-      } catch (err) {
-        setError('获取卡片数据失败，请稍后重试');
-        console.error('获取卡片数据失败:', err);
-      } finally {
-        setLoading(false);
+  const fetchCardData = async (id: string) => {
+    try {
+      if (!id) return;
+      setLoading(true);
+      // 使用统一的api对象获取卡片数据
+      const response = await api.cards.getById(id);
+      if (!response.success) {
+        showSnackbar.error('获取卡片失败');
       }
-    };
 
+      const data = response.data?.records[0];
+      console.log('获取卡片详情:', data);
+
+      if (data && typeof data === 'object') {
+        setCardData(data);
+        setError('');
+      } else {
+        setError('获取卡片数据格式错误');
+      }
+    } catch (err) {
+      setError('获取卡片数据失败，请稍后重试');
+      console.error('获取卡片数据失败:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 获取卡片数据
+  useEffect(() => {
     if (id) {
-      fetchCardData();
+      fetchCardData(id);
     } else {
       setLoading(false);
       setError('卡片ID不存在');
@@ -105,12 +106,28 @@ const CardEdit: React.FC = () => {
 
     try {
       setLoading(true);
-      // 在实际应用中，这里应该是API调用
-      // 模拟API延迟
-      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // 保存成功后返回卡片详情页
-      navigate(`/card-detail?id=${id}`);
+      // 前端净化输入，防止注入攻击
+      const sanitizedTitle = DOMPurify.sanitize(cardData.title);
+      const sanitizedQuote = DOMPurify.sanitize(cardData.quote);
+      const sanitizedDetail = DOMPurify.sanitize(cardData.detail || '');
+
+      const cardToSubmit = {
+        ...cardData,
+        title: sanitizedTitle,
+        quote: sanitizedQuote,
+        detail: sanitizedDetail,
+      };
+
+      // 调用API提交卡片
+      const response = await api.cards.update(cardToSubmit);
+      if (!response.success) {
+        showSnackbar.error('修改卡片失败');
+      }
+
+      console.log('修改卡片的返回:', response);
+
+      fetchCardData(cardData.id || '');
     } catch (err) {
       setError('保存卡片失败，请稍后重试');
       console.error('保存卡片失败:', err);
