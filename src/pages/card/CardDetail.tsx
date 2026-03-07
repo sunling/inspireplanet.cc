@@ -20,6 +20,8 @@ import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
 import ErrorCard from '@/components/ErrorCard';
 import { useGlobalSnackbar } from '@/context/app';
+import { getUserId, loginOut } from '@/utils/user';
+import { snakeToCamel } from '@/utils/helper';
 
 const CardDetail: React.FC = () => {
   const location = useLocation();
@@ -31,7 +33,6 @@ const CardDetail: React.FC = () => {
     return searchParams.get('id');
   };
 
-  const cardId = getCardId();
   const cardRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
   const { isMobile } = useResponsive();
@@ -73,20 +74,10 @@ const CardDetail: React.FC = () => {
       const cardData = response?.data?.records[0];
 
       // 规范化卡片数据格式
-      const normalizedCard: CardItem = {
-        id: cardData.id || '',
-        title: cardData.title || '未命名卡片',
-        quote: cardData.quote || '',
-        detail: cardData.detail,
-        imagePath: cardData.imagePath || cardData.upload,
-        creator: cardData.creator,
-        font: cardData.font,
-        gradientClass: cardData.gradientClass || 'card-gradient-1',
-        created: cardData.created || new Date().toISOString(),
-        username: cardData.username || cardData.creator,
-      };
+      const normalizedCard: CardItem = snakeToCamel(cardData);
 
       setCard(normalizedCard);
+      checkEditPermission(normalizedCard);
     } catch (error) {
       console.error('获取卡片失败:', error);
       const text = '获取卡片失败';
@@ -137,18 +128,9 @@ const CardDetail: React.FC = () => {
   const checkEditPermission = (cardData: CardItem) => {
     try {
       // 支持多种用户数据存储键名
-      const userData =
-        localStorage.getItem('userInfo') || localStorage.getItem('userData');
-      if (!userData) {
-        setCanEdit(false);
-        return;
-      }
+      const userId = getUserId();
 
-      const user = JSON.parse(userData);
-      const currentUsername = user.username || '';
-      const cardUsername = cardData.username || '';
-
-      setCanEdit(currentUsername && currentUsername === cardUsername);
+      setCanEdit(userId && userId == cardData.userId);
     } catch (e) {
       console.error('解析用户信息失败:', e);
       setCanEdit(false);
@@ -221,7 +203,7 @@ const CardDetail: React.FC = () => {
   const handleEdit = () => {
     const cardId = getCardId();
     if (cardId) {
-      navigate(`/card-edit?id=${cardId}`);
+      navigate(`/card-edit/${cardId}`);
     }
   };
 
@@ -256,9 +238,7 @@ const CardDetail: React.FC = () => {
 
       if (!response.success) {
         if (response.statusCode === 401) {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('userInfo');
-          localStorage.removeItem('userToken');
+          loginOut();
           showSnackbar.error('登录已过期，请重新登录');
           const redirect = `/card-detail?id=${cardId}`;
           navigate(`/login?redirect=${encodeURIComponent(redirect)}`);

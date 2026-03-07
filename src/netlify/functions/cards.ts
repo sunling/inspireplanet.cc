@@ -1,39 +1,14 @@
+import { snakeToCamel } from '@/utils/helper';
 import { supabase } from '../../database/supabase';
+import { CardItem } from '../types';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
-// 本地定义 CardData 接口，避免从缺失的模块导入
-interface CardData {
-  id?: string;
-  title: string;
-  quote: string;
-  detail: string;
-  font?: string;
-  imagePath?: string;
-  upload?: string;
-  creator?: string;
-  gradientClass?: string;
-  username?: string | null;
-}
-import jwt from 'jsonwebtoken';
 
-// 定义数据库卡片记录接口
-export interface CardRecord {
-  id: string;
-  title: string;
-  quote: string;
-  detail: string;
-  font: string;
-  imagePath: string;
-  upload: string;
-  creator: string;
-  created: string;
-  gradientClass: string;
-  username: string | null;
-}
+import jwt from 'jsonwebtoken';
 
 // 内存缓存
 interface Cache {
-  allCards: CardRecord[] | null;
-  cardsByIds: Record<string, CardRecord[]>;
+  allCards: CardItem[] | null;
+  cardsByIds: Record<string, CardItem[]>;
 }
 
 const cache: Cache = {
@@ -114,7 +89,7 @@ async function save(
     }
 
     // 解析请求体
-    const cardData: CardData = JSON.parse(event.body || '{}');
+    const cardData: CardItem = JSON.parse(event.body || '{}');
 
     // 验证必填字段
     if (!cardData.title || !cardData.quote || !cardData.detail) {
@@ -137,6 +112,8 @@ async function save(
       gradient_class: cardData.gradientClass || '',
       username: cardData.username || null,
       likes_count: 0,
+      user_id: cardData.userId || null,
+      update_time: new Date().toDateString(),
     };
 
     // 插入Supabase
@@ -258,20 +235,7 @@ async function fetch(
       };
     }
 
-    const records = (data || []).map((row, index) => ({
-      id: row.id || `row_${index}`,
-      title: row.title,
-      quote: row.quote,
-      detail: row.detail,
-      font: row.font,
-      imagePath: row.image_path,
-      upload: row.upload,
-      creator: row.creator,
-      created: row.created,
-      gradientClass: row.gradient_class,
-      username: row.username,
-      likesCount: row.likes_count || 0,
-    }));
+    const records = (data || []).map((row, index) => snakeToCamel(row));
 
     // 更新缓存
     if (idParam) {
@@ -387,7 +351,7 @@ async function update(
     }
 
     // 解析请求体
-    const cardData: CardData = JSON.parse(event.body || '{}');
+    const cardData: CardItem = JSON.parse(event.body || '{}');
 
     // 验证必填字段
     if (
@@ -418,12 +382,8 @@ async function update(
       };
     }
 
-    // 验证用户权限（检查用户名是否匹配）
-    if (
-      cardData.username &&
-      existingCard.username &&
-      cardData.username !== existingCard.username
-    ) {
+    // 验证用户权限（检查创建人是否匹配）
+    if (cardData.userId !== existingCard.user_id) {
       return {
         statusCode: 403,
         body: JSON.stringify({
@@ -443,6 +403,7 @@ async function update(
       image_path: cardData.imagePath || existingCard.image_path,
       upload: cardData.upload || existingCard.upload,
       username: cardData.username || existingCard.username,
+      update_time: new Date().toDateString(),
     };
 
     // 更新Supabase中的卡片
@@ -450,31 +411,30 @@ async function update(
       .from('cards')
       .update(updateData)
       .eq('id', cardData.id)
-      .select();
+      .select(); // 指定选择所有字段
 
     if (error) {
-      console.error('Supabase update error:', error);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'Failed to update card in database' }),
+        body: JSON.stringify({ error: error }),
       };
     }
 
-    console.log('Card updated successfully:', data?.[0]);
+    console.log('Card updated successfully:', data);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
         message: 'Card updated successfully',
-        card: data?.[0],
+        detail: data,
       }),
     };
   } catch (error: any) {
     console.error('Update card error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Internal server error' }),
+      body: JSON.stringify({ error: error }),
     };
   }
 }
@@ -484,7 +444,7 @@ async function update(
  * @param card 卡片数据
  * @returns 哈希值
  */
-function generateHash(card: CardData): string | null {
+function generateHash(card: CardItem): string | null {
   if (!card.title || !card.quote || !card.detail) return null;
 
   const normalized = [

@@ -14,19 +14,9 @@ import {
 import useResponsive from '../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../context/app';
 import { api } from '@/netlify/configs';
+import { getUserId } from '@/utils/user';
 
-interface MeetupData {
-  title: string;
-  description: string;
-  type: string;
-  datetime: string;
-  location: string;
-  duration: string;
-  maxParticipants: string;
-  organizer: string;
-  contact: string;
-  qrImageUrl: string;
-}
+import { Meetup, MeetupList, MeetupMode } from '@/netlify/functions/meetup';
 
 interface FormErrors {
   [key: string]: string | undefined;
@@ -98,31 +88,31 @@ const CreateMeetup: React.FC = () => {
   tomorrow.setHours(19, 0, 0, 0);
 
   // 使用React状态管理表单数据
-  const [formValues, setFormValues] = useState<MeetupData>({
+  const [formValues, setFormValues] = useState<Meetup>({
     title: '',
     description: '',
-    type: '',
+    mode: MeetupMode.ONLINE,
     datetime: formatDateTimeLocal(tomorrow),
     location: '',
     duration: '',
-    maxParticipants: '',
-    organizer: getCurrentUser()?.name || '',
-    contact: '',
-    qrImageUrl: '',
+    maxPpl: null,
+    creator: getCurrentUser()?.name || '',
+    wechatId: '',
+    cover: '',
   });
 
   // 表单验证函数
-  const validateForm = (values: MeetupData): FormErrors => {
+  const validateForm = (values: Meetup): FormErrors => {
     const newErrors: FormErrors = {};
 
     // 必填字段验证
     if (!values.title.trim()) newErrors.title = '此字段为必填项';
     if (!values.description.trim()) newErrors.description = '此字段为必填项';
-    if (!values.type) newErrors.type = '此字段为必填项';
+    if (!values.mode) newErrors.mode = '此字段为必填项';
     if (!values.datetime) newErrors.datetime = '此字段为必填项';
-    if (!values.organizer.trim()) newErrors.organizer = '此字段为必填项';
-    if (!values.contact.trim()) newErrors.contact = '此字段为必填项';
-    if (!values.qrImageUrl) newErrors.qrImageUrl = '请上传活动群二维码';
+    if (!values.creator.trim()) newErrors.creator = '此字段为必填项';
+    if (!values.wechatId.trim()) newErrors.wechatId = '此字段为必填项';
+    if (!values.cover) newErrors.cover = '请上传活动群二维码';
 
     // 日期时间验证
     if (values.datetime && new Date(values.datetime) <= new Date()) {
@@ -148,22 +138,19 @@ const CreateMeetup: React.FC = () => {
     setSubmitLoading(true);
     try {
       // 上传二维码图片
-      const qrImageUrl = await uploadQRImage(formValues.qrImageUrl);
-      if (!qrImageUrl) return;
+      const cover = await uploadQRImage(formValues.cover);
+      if (!cover) return;
 
       // 准备活动数据
       const localDateTime = new Date(formValues.datetime);
-      const user = getCurrentUser();
 
       const submitData = {
         ...formValues,
         datetime: localDateTime.toISOString(),
         duration: formValues.duration ? parseFloat(formValues.duration) : null,
-        maxParticipants: formValues.maxParticipants
-          ? parseInt(formValues.maxParticipants)
-          : null,
-        qrImageUrl,
-        createdBy: user?.username || user?.email || null,
+        maxPpl: formValues.maxPpl ? formValues.maxPpl : null,
+        cover,
+        userId: getUserId(),
       };
 
       // 提交活动数据
@@ -184,8 +171,6 @@ const CreateMeetup: React.FC = () => {
       setSubmitLoading(false);
     }
   };
-
-  // 所有表单字段的处理逻辑现在已在FormField组件内部使用useCallback实现，确保函数引用稳定并优化中文输入法支持
 
   // 处理快捷日期时间选择
   const handleQuickDateTimeSelect = (type: string) => {
@@ -243,7 +228,7 @@ const CreateMeetup: React.FC = () => {
     if (!file.type.startsWith('image/')) {
       setErrors((prev) => ({
         ...prev,
-        qrImageUrl: '请上传图片文件',
+        cover: '请上传图片文件',
       }));
       showSnackbar.error('请上传图片文件');
 
@@ -254,7 +239,7 @@ const CreateMeetup: React.FC = () => {
     if (file.size > 5 * 1024 * 1024) {
       setErrors((prev) => ({
         ...prev,
-        qrImageUrl: '图片大小不能超过5MB',
+        cover: '图片大小不能超过5MB',
       }));
 
       showSnackbar.error('图片大小不能超过5MB');
@@ -270,12 +255,12 @@ const CreateMeetup: React.FC = () => {
         setQrPreview(base64Image);
         setFormValues((prev) => ({
           ...prev,
-          qrImageUrl: base64Image,
+          cover: base64Image,
         }));
         // 清除错误
         setErrors((prev) => {
           const newErrors = { ...prev };
-          delete newErrors.qrImageUrl;
+          delete newErrors.cover;
           return newErrors;
         });
       }
@@ -385,28 +370,22 @@ const CreateMeetup: React.FC = () => {
               </Typography>
               <TextField
                 fullWidth
-                id="type"
-                name="type"
-                value={formValues.type}
+                id="mode"
+                name="mode"
+                placeholder="选择活动类型"
+                value={formValues.mode}
                 onChange={handleInputChange}
-                error={!!errors['type']}
-                helperText={errors['type']}
+                error={!!errors['mode']}
+                helperText={errors['mode']}
                 required
                 select
                 size={isMobile ? 'small' : 'medium'}
               >
-                <MenuItem key="empty" value="">
-                  选择活动类型
-                </MenuItem>
-                <MenuItem key="online" value="online">
-                  线上活动
-                </MenuItem>
-                <MenuItem key="offline" value="offline">
-                  线下活动
-                </MenuItem>
-                <MenuItem key="hybrid" value="hybrid">
-                  线上线下结合
-                </MenuItem>
+                {MeetupList.map((item) => (
+                  <MenuItem key={item.value} value={item.value}>
+                    {item.label}
+                  </MenuItem>
+                ))}
               </TextField>
             </Box>
           </Box>
@@ -516,10 +495,10 @@ const CreateMeetup: React.FC = () => {
                 </Typography>
                 <TextField
                   fullWidth
-                  id="maxParticipants"
-                  name="maxParticipants"
+                  id="maxPpl"
+                  name="maxPpl"
                   type="number"
-                  value={formValues.maxParticipants}
+                  value={formValues.maxPpl}
                   onChange={handleInputChange}
                   placeholder="不限制可留空"
                   size={isMobile ? 'small' : 'medium'}
@@ -546,12 +525,12 @@ const CreateMeetup: React.FC = () => {
               </Typography>
               <TextField
                 fullWidth
-                id="organizer"
-                name="organizer"
+                id="creator"
+                name="creator"
                 type="text"
-                error={!!errors['organizer']}
-                helperText={errors['organizer']}
-                value={formValues.organizer}
+                error={!!errors['creator']}
+                helperText={errors['creator']}
+                value={formValues.creator}
                 onChange={handleInputChange}
                 required
                 placeholder="您的姓名"
@@ -564,12 +543,12 @@ const CreateMeetup: React.FC = () => {
               </Typography>
               <TextField
                 fullWidth
-                id="contact"
-                name="contact"
+                id="wechatId"
+                name="wechatId"
                 type="text"
-                error={!!errors['contact']}
-                helperText={errors['contact']}
-                value={formValues.contact}
+                error={!!errors['wechatId']}
+                helperText={errors['wechatId']}
+                value={formValues.wechatId}
                 onChange={handleInputChange}
                 required
                 placeholder="请输入微信号"
@@ -596,7 +575,7 @@ const CreateMeetup: React.FC = () => {
                     handleQRFile(e.dataTransfer.files[0]);
                 }}
                 sx={{
-                  border: !!errors['qrImageUrl']
+                  border: !!errors['cover']
                     ? '2px dashed #d32f2f'
                     : '2px dashed #ddd',
                   borderRadius: 1,

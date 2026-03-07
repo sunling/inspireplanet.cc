@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { api, http } from '../../netlify/configs';
+import { api } from '../../netlify/configs';
 import {
   Box,
   Container,
@@ -24,8 +24,10 @@ import { useGlobalSnackbar } from '../../context/app';
 import ErrorCard from '../../components/ErrorCard';
 import Loading from '../../components/Loading';
 import Empty from '../../components/Empty';
-import { Meetup } from '../../netlify/types/index';
+
 import { isUpcoming, formatTime, formatDate } from '../../utils';
+import { Meetup, MeetupLabelMap } from '@/netlify/functions/meetup';
+import { getUserId, isLogin } from '@/utils/user';
 
 const Meetups: React.FC = () => {
   const navigate = useNavigate();
@@ -58,20 +60,8 @@ const Meetups: React.FC = () => {
 
   // 检查用户登录状态并显示创建按钮
   useEffect(() => {
-    const checkAuthAndShowCreateButton = () => {
-      try {
-        const token =
-          localStorage.getItem('userToken') ||
-          localStorage.getItem('authToken');
-        if (token) {
-          setShowCreateButton(true);
-        }
-      } catch (error) {
-        console.error('检查认证状态失败:', error);
-      }
-    };
+    setShowCreateButton(isLogin());
 
-    checkAuthAndShowCreateButton();
     loadMeetups();
   }, []);
 
@@ -138,7 +128,7 @@ const Meetups: React.FC = () => {
 
     // 类型过滤
     if (typeFilter) {
-      filtered = filtered.filter((meetup) => meetup.type === typeFilter);
+      filtered = filtered.filter((meetup) => meetup.mode === typeFilter);
     }
 
     // 搜索过滤
@@ -248,26 +238,11 @@ const Meetups: React.FC = () => {
     if (!currentMeetupId) return;
 
     try {
-      // 使用统一的api对象提交报名信息
-      let user_id: number | string | undefined;
-      try {
-        const userStr =
-          localStorage.getItem('userInfo') || localStorage.getItem('userData');
-        const u = userStr ? JSON.parse(userStr) : null;
-        user_id = u?.id ?? undefined;
-      } catch {}
-      if (!user_id) {
-        const uidStr = localStorage.getItem('userId');
-        if (uidStr && uidStr !== 'null' && uidStr !== 'undefined') {
-          const asNum = Number(uidStr);
-          user_id = Number.isFinite(asNum) ? asNum : uidStr;
-        }
-      }
       const response = await api.rsvp.create({
         meetup_id: Number(currentMeetupId),
         wechat_id: rsvpForm.wechatId.trim(),
         name: rsvpForm.name.trim(),
-        user_id,
+        user_id: getUserId(),
       });
 
       if (!response.success) {
@@ -282,7 +257,10 @@ const Meetups: React.FC = () => {
       setMeetups((prev: Meetup[]) =>
         prev.map((meetup) =>
           meetup.id === currentMeetupId
-            ? { ...meetup, participant_count: meetup.participant_count + 1 }
+            ? {
+                ...meetup,
+                participantCount: (meetup.participantCount ?? 0) + 1,
+              }
             : meetup
         )
       );
@@ -312,22 +290,6 @@ const Meetups: React.FC = () => {
   const showQRCode = (qrImageUrl: string) => {
     setCurrentQRUrl(qrImageUrl);
     setShowQRModal(true);
-  };
-
-  // 获取活动类型标签
-  const getTypeLabel = (type: string): string => {
-    switch (type) {
-      case 'online':
-        return '线上活动';
-      case 'offline':
-        return '线下活动';
-      case 'culture':
-        return '文化活动';
-      case 'outdoor':
-        return '户外活动';
-      default:
-        return '其他活动';
-    }
   };
 
   // 获取活动类型颜色
@@ -405,7 +367,7 @@ const Meetups: React.FC = () => {
           const isUpcomingMeetup = isUpcoming(meetup.datetime);
           const formattedDate = formatDate(meetup.datetime);
           const formattedTime = formatTime(meetup.datetime);
-          const typeColor = getTypeColor(meetup.type);
+          const typeColor = getTypeColor(meetup.mode);
 
           return (
             <li key={meetup.id}>
@@ -433,7 +395,7 @@ const Meetups: React.FC = () => {
                     }}
                   >
                     <Chip
-                      label={getTypeLabel(meetup.type)}
+                      label={MeetupLabelMap[meetup.mode]}
                       color={typeColor}
                       size={isMobile ? 'small' : 'medium'}
                     />
@@ -498,7 +460,7 @@ const Meetups: React.FC = () => {
                       👤
                     </Typography>
                     <Typography variant="body2">
-                      组织者：{meetup.organizer}
+                      组织者：{meetup.creator}
                     </Typography>
                   </Box>
                 </CardContent>
@@ -519,7 +481,7 @@ const Meetups: React.FC = () => {
                       }
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleJoinMeetup(meetup.id, meetup.qr_image_url);
+                        handleJoinMeetup(meetup.id!, meetup.cover);
                       }}
                       sx={{ fontWeight: 600 }}
                     >
@@ -537,10 +499,8 @@ const Meetups: React.FC = () => {
                     查看详情
                   </Button>
                   <Typography variant="caption" color="text.secondary">
-                    {meetup.participant_count}
-                    {Number(meetup.max_participants) > 0
-                      ? '/' + meetup.max_participants
-                      : ''}{' '}
+                    {meetup.participantCount}
+                    {Number(meetup.maxPpl) > 0 ? '/' + meetup.maxPpl : ''}
                     人参加
                   </Typography>
                 </CardActions>

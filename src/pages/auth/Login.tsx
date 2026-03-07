@@ -18,6 +18,7 @@ import {
 import useResponsive from '@/hooks/useResponsive';
 import { api } from '@/netlify/configs';
 import { useGlobalSnackbar } from '@/context/app';
+import { setUserAuth } from '@/utils/user';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -159,10 +160,7 @@ const Login: React.FC = () => {
 
       // 保存用户信息和token到localStorage
       const { token, user } = response.data || {};
-      localStorage.setItem('authToken', token || '');
-      localStorage.setItem('userData', JSON.stringify(user || {}));
-      localStorage.setItem('userInfo', JSON.stringify(user || {})); // 兼容旧的userInfo存储键名
-      localStorage.setItem('userId', user?.id || ''); // 兼容旧的userId存储
+      setUserAuth(token || '', user || {});
 
       setSuccess(currentMode === 'login' ? '登录成功' : '注册成功');
 

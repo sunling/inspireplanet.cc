@@ -14,19 +14,8 @@ import {
 import useResponsive from '../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../context/app';
 import { api } from '@/netlify/configs';
-
-interface MeetupData {
-  title: string;
-  description: string;
-  type: string;
-  datetime: string;
-  location: string;
-  duration: string;
-  maxParticipants: string;
-  organizer: string;
-  contact: string;
-  qrImageUrl: string; // can be http url or base64 for new upload
-}
+import { Meetup, MeetupList, MeetupMode } from '@/netlify/functions/meetup';
+import { getUserId, getUserName } from '@/utils/user';
 
 interface FormErrors {
   [key: string]: string | undefined;
@@ -60,17 +49,17 @@ const EditMeetup: React.FC = () => {
   );
   const meetupId = searchParams.get('id') || '';
 
-  const [formValues, setFormValues] = useState<MeetupData>({
+  const [formValues, setFormValues] = useState<Meetup>({
     title: '',
     description: '',
-    type: '',
+    mode: MeetupMode.ONLINE,
     datetime: formatDateTimeLocal(new Date()),
     location: '',
     duration: '',
-    maxParticipants: '',
-    organizer: '',
-    contact: '',
-    qrImageUrl: '',
+    maxPpl: null,
+    creator: getUserName() || '',
+    wechatId: '',
+    cover: '',
   });
 
   const [existingQrUrl, setExistingQrUrl] = useState<string>('');
@@ -90,43 +79,45 @@ const EditMeetup: React.FC = () => {
       }
       const start = new Date(record.datetime);
       setFormValues({
-        title: record.title || '',
-        description: record.description || '',
-        type: record.type || record.mode || '',
+        ...record,
         datetime: formatDateTimeLocal(start),
-        location: record.location || '',
-        duration: String(record.duration ?? ''),
-        maxParticipants: String(record.max_participants ?? ''),
-        organizer: record.organizer || record.creator || '',
-        contact: record.contact || record.wechat_id || '',
-        qrImageUrl: record.qr_image_url || record.cover || '',
       });
-      setExistingQrUrl(record.qr_image_url || record.cover || '');
-      setQrPreview(record.qr_image_url || record.cover || '');
+      setExistingQrUrl(record.cover || '');
+      setQrPreview(record.cover || '');
     };
     load();
   }, [meetupId]);
 
-  const validateForm = (values: MeetupData): FormErrors => {
+  // 表单验证函数
+  const validateForm = (values: Meetup): FormErrors => {
     const newErrors: FormErrors = {};
-    if (!values.title.trim()) newErrors.title = '此字段为必填项';
-    if (!values.description.trim()) newErrors.description = '此字段为必填项';
-    if (!values.type) newErrors.type = '此字段为必填项';
+
+    // 必填字段验证
+    if (!values.title?.trim()) newErrors.title = '此字段为必填项';
+    if (!values.description?.trim()) newErrors.description = '此字段为必填项';
+    if (!values.mode) newErrors.mode = '此字段为必填项';
     if (!values.datetime) newErrors.datetime = '此字段为必填项';
-    if (!values.organizer.trim()) newErrors.organizer = '此字段为必填项';
-    if (!values.contact.trim()) newErrors.contact = '此字段为必填项';
+    if (!values.creator?.trim()) newErrors.creator = '此字段为必填项';
+    if (!values.wechatId?.trim()) newErrors.wechatId = '此字段为必填项';
+    if (!values.cover) newErrors.cover = '请上传活动群二维码';
+
+    // 日期时间验证
+    if (values.datetime && new Date(values.datetime) <= new Date()) {
+      newErrors.datetime = '活动时间必须是未来时间';
+    }
     setErrors(newErrors);
+
     return newErrors;
   };
 
   const handleQRFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
-      setErrors((prev) => ({ ...prev, qrImageUrl: '请上传图片文件' }));
+      setErrors((prev) => ({ ...prev, cover: '请上传图片文件' }));
       showSnackbar.error('请上传图片文件');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, qrImageUrl: '图片大小不能超过5MB' }));
+      setErrors((prev) => ({ ...prev, cover: '图片大小不能超过5MB' }));
       showSnackbar.error('图片大小不能超过5MB');
       return;
     }
@@ -135,10 +126,10 @@ const EditMeetup: React.FC = () => {
       if (e.target?.result) {
         const base64Image = e.target.result as string;
         setQrPreview(base64Image);
-        setFormValues((prev) => ({ ...prev, qrImageUrl: base64Image }));
+        setFormValues((prev) => ({ ...prev, cover: base64Image }));
         setErrors((prev) => {
           const next = { ...prev };
-          delete next.qrImageUrl;
+          delete next.cover;
           return next;
         });
       }
@@ -148,7 +139,7 @@ const EditMeetup: React.FC = () => {
 
   const uploadQRImageIfNeeded = async (): Promise<string> => {
     try {
-      const val = formValues.qrImageUrl || '';
+      const val = formValues.cover || '';
       if (!val) return '';
       if (/^https?:\/\//i.test(val)) return val; // keep existing URL
       const response = await api.images.upload(val);
@@ -188,16 +179,15 @@ const EditMeetup: React.FC = () => {
       const updateData: any = {
         title: formValues.title,
         description: formValues.description,
-        type: formValues.type,
+        mode: formValues.mode,
         datetime: localDateTime.toISOString(),
         location: formValues.location || null,
         duration: formValues.duration ? parseFloat(formValues.duration) : null,
-        max_participants: formValues.maxParticipants
-          ? parseInt(formValues.maxParticipants)
-          : null,
-        organizer: formValues.organizer,
-        contact: formValues.contact,
-        qr_image_url: qrUrl || existingQrUrl || null,
+        maxPpl: formValues.maxPpl ? formValues.maxPpl : null,
+        creator: formValues.creator,
+        wechatId: formValues.wechatId,
+        cover: qrUrl || existingQrUrl || null,
+        userId: getUserId(),
       };
 
       const response = await api.meetups.update(meetupId, updateData);
@@ -282,25 +272,21 @@ const EditMeetup: React.FC = () => {
               </Typography>
               <TextField
                 fullWidth
-                id="type"
-                name="type"
-                value={formValues.type}
+                id="mode"
+                name="mode"
+                value={formValues.mode}
                 onChange={handleInputChange}
-                error={!!errors['type']}
-                helperText={errors['type']}
+                error={!!errors['mode']}
+                helperText={errors['mode']}
                 required
                 select
                 size={isMobile ? 'small' : 'medium'}
               >
-                <MenuItem key="online" value="online">
-                  线上活动
-                </MenuItem>
-                <MenuItem key="offline" value="offline">
-                  线下活动
-                </MenuItem>
-                <MenuItem key="hybrid" value="hybrid">
-                  线上线下结合
-                </MenuItem>
+                {MeetupList.map((item) => (
+                  <MenuItem key={item.value} value={item.value}>
+                    {item.label}
+                  </MenuItem>
+                ))}
               </TextField>
             </Box>
           </Box>
@@ -377,10 +363,10 @@ const EditMeetup: React.FC = () => {
                 </Typography>
                 <TextField
                   fullWidth
-                  id="maxParticipants"
-                  name="maxParticipants"
+                  id="maxPpl"
+                  name="maxPpl"
                   type="number"
-                  value={formValues.maxParticipants}
+                  value={formValues.maxPpl}
                   onChange={handleInputChange}
                   placeholder="不限制可留空"
                   size={isMobile ? 'small' : 'medium'}
@@ -399,12 +385,12 @@ const EditMeetup: React.FC = () => {
               </Typography>
               <TextField
                 fullWidth
-                id="organizer"
-                name="organizer"
+                id="creator"
+                name="creator"
                 type="text"
-                error={!!errors['organizer']}
-                helperText={errors['organizer']}
-                value={formValues.organizer}
+                error={!!errors['creator']}
+                helperText={errors['creator']}
+                value={formValues.creator}
                 onChange={handleInputChange}
                 required
                 placeholder="您的姓名"
@@ -417,12 +403,12 @@ const EditMeetup: React.FC = () => {
               </Typography>
               <TextField
                 fullWidth
-                id="contact"
-                name="contact"
+                id="wechatId"
+                name="wechatId"
                 type="text"
-                error={!!errors['contact']}
-                helperText={errors['contact']}
-                value={formValues.contact}
+                error={!!errors['wechatId']}
+                helperText={errors['wechatId']}
+                value={formValues.wechatId}
                 onChange={handleInputChange}
                 required
                 placeholder="请输入微信号"
@@ -448,7 +434,7 @@ const EditMeetup: React.FC = () => {
                     handleQRFile(e.dataTransfer.files[0]);
                 }}
                 sx={{
-                  border: !!errors['qrImageUrl']
+                  border: !!errors['cover']
                     ? '2px dashed #d32f2f'
                     : '2px dashed #ddd',
                   borderRadius: 1,
