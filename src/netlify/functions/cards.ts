@@ -395,11 +395,7 @@ async function update(
     }
 
     // 验证用户权限（检查创建人是否匹配）
-    if (
-      !cardData.creator ||
-      !existingCard.creator ||
-      cardData.creator !== existingCard.creator
-    ) {
+    if (cardData.userId !== existingCard.user_id) {
       return {
         statusCode: 403,
         body: JSON.stringify({

@@ -24,6 +24,26 @@ export const getUserId = () => {
   return null;
 };
 
+// 获取用户名
+export const getUserName = () => {
+  const userInfo = localStorage.getItem('userInfo');
+  if (userInfo) {
+    const parsedUserInfo = JSON.parse(userInfo);
+    return parsedUserInfo.name;
+  }
+  return null;
+};
+
+// 获取用户信息
+export const getUserInfo = () => {
+  const userInfo = localStorage.getItem('userInfo');
+  if (userInfo) {
+    const parsedUserInfo = JSON.parse(userInfo);
+    return parsedUserInfo;
+  }
+  return null;
+};
+
 // 退出登录
 export const loginOut = () => {
   localStorage.removeItem('authToken');

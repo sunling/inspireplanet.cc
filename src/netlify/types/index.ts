@@ -83,33 +83,6 @@ export enum MeetupMode {
   'OFFLINE' = 'offline',
 }
 
-// 聚会数据接口
-export interface Meetup {
-  id: string;
-  title: string;
-  description: string;
-  type: MeetupType;
-  mode?: MeetupMode;
-  datetime: string;
-  location?: string;
-  max_ppl?: number;
-  max_participants?: number;
-  duration?: number;
-  organizer: string;
-  creator?: string;
-  contact: string;
-  qr_image_url?: string;
-  status: MeetupStatus;
-  created_at: string;
-  participant_count: number;
-  cover?: string;
-  wechat_id?: string;
-  user_id?: string;
-  qrcode?: string;
-  // todo: 会议费用,目前未看到接口返回
-  fee?: string | number | null | undefined;
-}
-
 // 参与者接口
 export interface Participant {
   id?: string;
@@ -122,9 +95,11 @@ export interface Participant {
 
 // 用户信息接口
 export interface UserInfo {
+  id?: string;
   name?: string;
-  wechat_id?: string;
   username?: string;
+  wechatId?: string;
+  email?: string;
 }
 
 export interface PeopleUser {

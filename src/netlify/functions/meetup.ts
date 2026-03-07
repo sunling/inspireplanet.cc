@@ -1,4 +1,5 @@
 // src/netlify/functions/meetupHandler.ts
+import { camelToSnake } from '@/utils/helper';
 import { supabase } from '../../database/supabase';
 import { getCommonHttpHeader } from '../../utils/http';
 import { NetlifyContext, NetlifyEvent } from '../types/http';
@@ -8,41 +9,22 @@ export interface Meetup {
   id?: string;
   title: string;
   description: string;
-  type?: string;
-  mode?: string;
-  datetime: string | Date;
-  location?: string | null;
-  duration?: number | null;
-  max_participants?: number | null;
-  max_ppl?: number | null;
-  organizer?: string;
-  creator?: string;
-  contact?: string;
-  wechat_id?: string;
-  qr_image_url?: string | null;
-  cover?: string | null;
-  status: string;
-  user_id?: string | null;
-  created_by?: string | null;
-  participant_count?: number;
-  category?: string;
-  fee?: string | null;
-  notes?: string | null;
+  location?: string;
+  datetime: string;
+  wechatId: string;
+  createdAt?: string;
+  qrcode?: string;
+  status?: string;
+  duration?: string;
+  maxPpl?: number | null;
+  mode: string;
+  cover: string;
+  userId?: string;
+  creator: string;
+  participantCount?: number;
 }
 
-export interface MeetupRequest {
-  title: string;
-  description: string;
-  type: string;
-  datetime: string;
-  organizer: string;
-  contact: string;
-  location?: string;
-  duration?: number;
-  maxParticipants?: number;
-  qrImageUrl?: string;
-  createdBy?: string;
-}
+export interface MeetupRequest extends Omit<Meetup, 'id'> {}
 
 export interface MeetupResponse {
   success: boolean;
@@ -52,6 +34,30 @@ export interface MeetupResponse {
   message?: string;
   details?: string;
 }
+
+export enum MeetupMode {
+  ONLINE = 'online',
+  OFFLINE = 'offline',
+  HYBRID = 'hybrid',
+  CULTURE = 'culture',
+  OUTDOOR = 'outdoor',
+}
+
+export const MeetupLabelMap: Record<string, string> = {
+  [MeetupMode.ONLINE]: '线上活动',
+  [MeetupMode.OFFLINE]: '线下活动',
+  [MeetupMode.HYBRID]: '线上线下结合',
+  [MeetupMode.CULTURE]: '文化活动',
+  [MeetupMode.OUTDOOR]: '户外活动',
+};
+
+export const MeetupList = [
+  { label: MeetupLabelMap[MeetupMode.ONLINE], value: MeetupMode.ONLINE },
+  { label: MeetupLabelMap[MeetupMode.OFFLINE], value: MeetupMode.OFFLINE },
+  { label: MeetupLabelMap[MeetupMode.HYBRID], value: MeetupMode.HYBRID },
+  { label: MeetupLabelMap[MeetupMode.CULTURE], value: MeetupMode.CULTURE },
+  { label: MeetupLabelMap[MeetupMode.OUTDOOR], value: MeetupMode.OUTDOOR },
+];
 
 export async function handler(
   event: NetlifyEvent,
@@ -130,16 +136,9 @@ async function createMeetup(
     const meetupData: MeetupRequest = JSON.parse(event.body);
 
     // 验证必填字段
-    const { title, description, type, datetime, organizer, contact } =
+    const { title, description, mode, datetime, creator, wechatId } =
       meetupData;
-    if (
-      !title ||
-      !description ||
-      !type ||
-      !datetime ||
-      !organizer ||
-      !contact
-    ) {
+    if (!title || !description || !mode || !datetime || !creator || !wechatId) {
       return {
         statusCode: 400,
         headers,
@@ -175,7 +174,7 @@ async function createMeetup(
     }
 
     // 插入到数据库
-    const maxRaw = meetupData.maxParticipants as any;
+    const maxRaw = meetupData.maxPpl as any;
     const maxParsed = typeof maxRaw === 'number' ? maxRaw : Number(maxRaw);
     const sanitizedMax =
       Number.isFinite(maxParsed) && maxParsed > 0 ? maxParsed : null;
@@ -186,16 +185,16 @@ async function createMeetup(
         {
           title,
           description,
-          mode: type,
+          mode: mode,
           datetime: meetupDateTime.toISOString(),
           location: meetupData.location?.trim() || null,
           duration: meetupData.duration || null,
           max_ppl: sanitizedMax,
-          creator: organizer,
-          wechat_id: contact,
-          cover: meetupData.qrImageUrl || null,
+          creator: creator,
+          wechat_id: wechatId,
+          cover: meetupData.cover || null,
           status: 'active',
-          user_id: meetupData.createdBy || null,
+          user_id: meetupData.userId || null,
         },
       ])
       .select();
@@ -322,13 +321,7 @@ async function getMeetups(
       const normalized: Meetup[] = data.map((m: Meetup) => {
         const meetup: Meetup = {
           ...m,
-          // 前端 meetups.html 期望的字段
-          type: m.type || m.mode || undefined,
-          organizer: m.organizer || m.creator || undefined,
-          contact: m.contact || m.wechat_id || undefined,
-          qr_image_url: m.qr_image_url || m.cover || undefined,
-          max_participants: m.max_participants || m.max_ppl || undefined,
-          participant_count: countsByMeetupId[m.id || ''] || 0,
+          participantCount: countsByMeetupId[m.id || ''] || 0,
         };
         return meetup;
       });
@@ -421,11 +414,7 @@ async function updateMeetup(
     }
 
     // 验证权限（只有创建者可以修改）
-    if (
-      updateData.created_by &&
-      existingMeetup.created_by &&
-      updateData.created_by !== existingMeetup.created_by
-    ) {
+    if (updateData.userId != existingMeetup.user_id) {
       return {
         statusCode: 403,
         headers,
@@ -439,45 +428,12 @@ async function updateMeetup(
     // 准备更新数据（兼容前端字段，映射到数据库实际列名）
     const updateRecord: Record<string, any> = {};
 
-    if (updateData.title !== undefined) updateRecord.title = updateData.title;
-    if (updateData.description !== undefined)
-      updateRecord.description = updateData.description;
-    if (updateData.datetime !== undefined)
-      updateRecord.datetime = updateData.datetime;
-    if (updateData.location !== undefined)
-      updateRecord.location = updateData.location || null;
-    if (updateData.duration !== undefined)
-      updateRecord.duration = updateData.duration;
-    // 前端可能传 type，数据库列为 mode
-    if (updateData.type !== undefined) updateRecord.mode = updateData.type;
-    if (updateData.mode !== undefined) updateRecord.mode = updateData.mode;
-    // 人数上限：前端可能传 max_participants，数据库列为 max_ppl
-    if (updateData.max_participants !== undefined) {
-      const mp = Number(updateData.max_participants as any);
-      updateRecord.max_ppl = Number.isFinite(mp) && mp > 0 ? mp : null;
-    }
-    if (updateData.max_ppl !== undefined)
-      updateRecord.max_ppl = updateData.max_ppl;
-    // 组织者：前端传 organizer，数据库列为 creator
-    if (updateData.organizer !== undefined)
-      updateRecord.creator = updateData.organizer;
-    if (updateData.creator !== undefined)
-      updateRecord.creator = updateData.creator;
-    // 联系方式：前端传 contact，数据库列为 wechat_id
-    if (updateData.contact !== undefined)
-      updateRecord.wechat_id = updateData.contact;
-    if (updateData.wechat_id !== undefined)
-      updateRecord.wechat_id = updateData.wechat_id;
-    // 群二维码：前端传 qr_image_url，数据库列为 cover
-    if (updateData.qr_image_url !== undefined)
-      updateRecord.cover = updateData.qr_image_url || null;
-    if (updateData.cover !== undefined)
-      updateRecord.cover = updateData.cover || null;
-    // 状态与其他可选字段
-    if (updateData.status !== undefined)
-      updateRecord.status = updateData.status;
-    if ((updateData as any).notes !== undefined)
-      updateRecord.notes = (updateData as any).notes;
+    Object.keys(updateData).forEach((key) => {
+      const value = (updateData as Record<string, any>)[key];
+      if (value) {
+        updateRecord[camelToSnake(key)] = value;
+      }
+    });
 
     // 更新数据库
     const { data, error } = await supabase
