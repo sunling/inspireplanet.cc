@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
-import { Box, Typography, Button, TextField, Card, IconButton } from '@mui/material';
+import React, { useState, useRef } from 'react';
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Card,
+  IconButton,
+} from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DOMPurify from 'dompurify';
@@ -8,6 +15,7 @@ import { marked } from 'marked';
 import { CardItem } from '@/netlify/types';
 import { getFontColorForGradient, gradientStyles } from '@/constants/gradient';
 import useResponsive from '@/hooks/useResponsive';
+import TextCollapse from '../TextCollapse';
 
 interface InspireCardProps {
   card: CardItem;
@@ -26,11 +34,12 @@ const InspireCard: React.FC<InspireCardProps> = ({
   const [showCommentForm, setShowCommentForm] = useState<boolean>(!!canComment);
   const [commentName, setCommentName] = useState<string>('');
   const [commentText, setCommentText] = useState<string>('');
+
   const { isMobile } = useResponsive();
 
   // 获取字体颜色和渐变样式
   const fontColor = getFontColorForGradient(
-    card.gradientClass || 'card-gradient-1'
+    card.gradientClass || 'card-gradient-1',
   );
   const gradientClass = card.gradientClass || 'card-gradient-1';
 
@@ -50,19 +59,25 @@ const InspireCard: React.FC<InspireCardProps> = ({
     });
   };
 
-  const [likes, setLikes] = useState<number>(Number((card as any).likesCount) || 0);
+  const [likes, setLikes] = useState<number>(
+    Number((card as any).likesCount) || 0,
+  );
 
   const handleLike = async () => {
     try {
       const token = localStorage.getItem('authToken');
       if (!token) {
-        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        const redirect = encodeURIComponent(
+          window.location.pathname + window.location.search,
+        );
         window.location.href = `/login?redirect=${redirect}`;
         return;
       }
-      const res = await (await import('@/netlify/configs')).api.cards.like(card.id);
+      const res = await (
+        await import('@/netlify/configs')
+      ).api.cards.like(card.id);
       if (res.success) {
-        setLikes(res.data?.likesCount || (likes + 1));
+        setLikes(res.data?.likesCount || likes + 1);
         try {
           const setKey = 'likedCardIds';
           const raw = localStorage.getItem(setKey);
@@ -109,6 +124,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
             loading="lazy"
             sx={{
               width: '100%',
+              maxWidth: '80vw',
               height: 'auto',
               borderRadius: '4px',
               mb: 2,
@@ -150,20 +166,30 @@ const InspireCard: React.FC<InspireCardProps> = ({
             },
           }}
         >
-          <Typography variant="body1" sx={{ fontStyle: 'italic', color: fontColor, whiteSpace: 'pre-line' }}>
-            {card.quote || ''}
+          <Typography
+            variant="body1"
+            sx={{
+              fontStyle: 'italic',
+              color: fontColor,
+              whiteSpace: 'pre-line',
+            }}
+          >
+            <TextCollapse
+              html={DOMPurify.sanitize(
+                card.quote ? marked.parse(card.quote).toString() : '',
+              )}
+              maxLines={8}
+            />
           </Typography>
         </Box>
 
         {/* 卡片详情 */}
         {card.detail && (
-          <Box
-            sx={{ mb: 2, '& *': { color: 'inherit !important' } }}
-            dangerouslySetInnerHTML={{
-              __html: DOMPurify.sanitize(
-                card.detail ? marked.parse(card.detail).toString() : ''
-              ),
-            }}
+          <TextCollapse
+            html={DOMPurify.sanitize(
+              card.detail ? marked.parse(card.detail).toString() : '',
+            )}
+            maxLines={8}
           />
         )}
 
@@ -179,108 +205,122 @@ const InspireCard: React.FC<InspireCardProps> = ({
 
       {/* 操作栏：点赞与评论 */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-        <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleLike(); }}>
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleLike();
+          }}
+        >
           <FavoriteIcon fontSize="small" color="error" />
         </IconButton>
         <Typography variant="caption">{likes}</Typography>
-        <IconButton size="small" onClick={(e) => { e.stopPropagation(); onCardClick(card.id); }}>
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation();
+            onCardClick(card.id);
+          }}
+        >
           <ChatBubbleOutlineIcon fontSize="small" />
         </IconButton>
       </Box>
 
       {/* 卡片操作区域：仅在允许评论时显示浮层 */}
       {canComment && (
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.7)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: 'var(--spacing-md)',
-          opacity: 0,
-          '&:hover': {
-            opacity: 1,
-            transition: 'opacity 0.3s ease',
-          },
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <Button
-          variant="contained"
-          color="primary"
-          size={isMobile ? 'small' : 'medium'}
-          sx={{ mb: 2 }}
-          onClick={() => onCardClick(card.id)}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 'var(--spacing-md)',
+            opacity: 0,
+            '&:hover': {
+              opacity: 1,
+              transition: 'opacity 0.3s ease',
+            },
+          }}
+          onClick={(e) => e.stopPropagation()}
         >
-          查看详情
-        </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            size={isMobile ? 'small' : 'medium'}
+            sx={{ mb: 2 }}
+            onClick={() => onCardClick(card.id)}
+          >
+            查看详情
+          </Button>
 
-        {showCommentForm && onSubmitComment && (
-          <Box
-            sx={{
-              width: '100%',
-              backgroundColor: 'white',
-              padding: 2,
-              borderRadius: '4px',
-              mb: 2,
+          {showCommentForm && onSubmitComment && (
+            <Box
+              sx={{
+                width: '100%',
+                backgroundColor: 'white',
+                padding: 2,
+                borderRadius: '4px',
+                mb: 2,
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                sx={{ mb: 1, color: 'var(--text)', fontWeight: 'bold' }}
+              >
+                添加评论
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="你的名字"
+                value={commentName}
+                onChange={(e) => setCommentName(e.target.value)}
+                margin="dense"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                size="small"
+                placeholder="写下你的想法..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                margin="dense"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                size="small"
+                onClick={() =>
+                  onSubmitComment?.(card.id, commentName, commentText)
+                }
+              >
+                提交评论
+              </Button>
+            </Box>
+          )}
+
+          <Button
+            variant="contained"
+            color="success"
+            size={isMobile ? 'small' : 'medium'}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowCommentForm(!showCommentForm);
             }}
           >
-            <Typography
-              variant="subtitle2"
-              sx={{ mb: 1, color: 'var(--text)', fontWeight: 'bold' }}
-            >
-              添加评论
-            </Typography>
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="你的名字"
-              value={commentName}
-              onChange={(e) => setCommentName(e.target.value)}
-              margin="dense"
-              onClick={(e) => e.stopPropagation()}
-            />
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              size="small"
-              placeholder="写下你的想法..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              margin="dense"
-              onClick={(e) => e.stopPropagation()}
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              fullWidth
-              size="small"
-              onClick={() => onSubmitComment?.(card.id, commentName, commentText)}
-            >
-              提交评论
-            </Button>
-          </Box>
-        )}
-
-        <Button
-          variant="contained"
-          color="success"
-          size={isMobile ? 'small' : 'medium'}
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowCommentForm(!showCommentForm);
-          }}
-        >
-          {showCommentForm ? '取消' : '添加评论'}
-        </Button>
-      </Box>
+            {showCommentForm ? '取消' : '添加评论'}
+          </Button>
+        </Box>
       )}
     </Box>
   );
