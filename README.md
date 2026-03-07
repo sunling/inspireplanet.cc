@@ -13,40 +13,6 @@
 - 包管理：Yarn Classic（1.x）
 - Node 版本：建议使用 Node 20（本地与部署）
 
-## 目录结构
-
-```
-./
-├── index.html                 # Vite 应用入口
-├── netlify.toml               # Netlify 本地开发与部署配置
-├── package.json               # 项目依赖与脚本
-├── vite.config.mjs            # Vite 配置（ESM）
-├── src/                       # 现代前端应用（React + TS）
-│   ├── App.tsx
-│   ├── main.tsx
-│   ├── routes/                # 路由入口
-│   ├── pages/                 # 页面模块（activity/auth/card/...）
-│   ├── components/            # 组件（Header/Footer 等）
-│   ├── context/               # 全局状态/上下文
-│   ├── database/              # Supabase 客户端
-│   ├── hooks/                 # 自定义 hooks
-│   ├── styles/                # 全局与页面样式
-│   ├── utils/                 # 工具方法
-│   └── netlify/               # 服务端相关定义
-│       ├── configs/           # 函数配置（如权限、CORS 等）
-│       ├── functions/         # Netlify 函数源码（TypeScript）
-│       └── types/             # 函数类型与接口
-├── public/                    # 静态资源与小工具
-│   ├── images/                # 公共图片资源
-│   ├── scripts/               # 独立脚本（如二维码生成）
-│   └── tests/                 # 简单静态测试页
-├── backup/                    # 旧版静态页面备份
-│   ├── *.html, *.js, images/  # 过往版本页面与脚本
-│   └── netlify/functions/     # 旧版函数示例（仅参考）
-├── docs/                      # 历史文档与静态示例页
-├── user_uploads/              # 本地开发时生成/上传的图片
-└── yarn.lock                  # Yarn 锁文件
-```
 
 ## Netlify 函数
 
@@ -106,6 +72,8 @@ cp .env.example .env
 > Netlify 本地开发（`netlify dev`）会自动读取根目录的 `.env` 文件，无需手动 `source`。
 
 ## 本地开发
+
+**前置条件：** 需提前安装 [Node.js 20](https://nodejs.org/) 和 [Yarn 1.x](https://classic.yarnpkg.com/en/docs/install)（`npm install -g yarn`）
 
 1. 克隆仓库
 
@@ -174,12 +142,6 @@ cp .env.example .env
 ## 贡献
 
 欢迎贡献！如有建议或问题，请提交 Issue 或 Pull Request。
-
-## 致谢
-
-为启发星球 ✨ 用心打造。
-
-作者：([Sun ling](https://sunling.github.io/)).
 
 ## 第三方工具
 
