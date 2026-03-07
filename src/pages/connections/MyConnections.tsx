@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Container,
@@ -15,13 +15,13 @@ import {
   MenuItem,
   Grid,
   Chip,
-} from "@mui/material";
-import { api } from "@/netlify/configs";
-import { useGlobalSnackbar } from "@/context/app";
+} from '@mui/material';
+import { api } from '@/netlify/configs';
+import { useGlobalSnackbar } from '@/context/app';
 
 type SelectSlot = {
   datetime_iso: string;
-  mode: "online" | "offline";
+  mode: 'online' | 'offline';
   meeting_url?: string;
   location_text?: string;
 };
@@ -33,14 +33,14 @@ const AcceptDialog: React.FC<{
 }> = ({ open, onClose, invite }) => {
   const show = useGlobalSnackbar();
   const [slot, setSlot] = useState<SelectSlot>({
-    datetime_iso: "",
-    mode: "online",
+    datetime_iso: '',
+    mode: 'online',
   });
   const timeZone = useMemo(() => {
     try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone || "本地时区";
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区';
     } catch {
-      return "本地时区";
+      return '本地时区';
     }
   }, []);
   const canSubmit = useMemo(() => {
@@ -59,20 +59,20 @@ const AcceptDialog: React.FC<{
         meeting_url: slot.meeting_url || null,
         location_text: slot.location_text || null,
       });
-      if (!createRes.success) throw new Error(createRes.error || "确认失败");
-      show.success("已确认日程");
+      if (!createRes.success) throw new Error(createRes.error || '确认失败');
+      show.success('已确认日程');
       onClose();
     } catch (e: any) {
-      show.error(e.message || "网络错误");
+      show.error(e.message || '网络错误');
     }
   };
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>确认会面</DialogTitle>
       <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {!!(invite?.proposed_slots || []).length && (
-            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
               <Typography
                 sx={{ width: 88 }}
                 variant="body2"
@@ -80,11 +80,11 @@ const AcceptDialog: React.FC<{
               >
                 候选时间
               </Typography>
-              <Box sx={{ flex: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Box sx={{ flex: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 {(invite?.proposed_slots || []).map((s: any, idx: number) => {
                   const d = new Date(s.datetime_iso);
                   const label = `${d.toLocaleString()} · ${
-                    s.mode === "online" ? "线上" : "线下"
+                    s.mode === 'online' ? '线上' : '线下'
                   }`;
                   const selected =
                     slot.datetime_iso === s.datetime_iso &&
@@ -93,8 +93,8 @@ const AcceptDialog: React.FC<{
                     <Chip
                       key={idx}
                       label={label}
-                      color={selected ? "primary" : "default"}
-                      variant={selected ? "filled" : "outlined"}
+                      color={selected ? 'primary' : 'default'}
+                      variant={selected ? 'filled' : 'outlined'}
                       onClick={() =>
                         setSlot({
                           datetime_iso: s.datetime_iso,
@@ -109,7 +109,7 @@ const AcceptDialog: React.FC<{
               </Box>
             </Box>
           )}
-          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
             <Typography
               sx={{ width: 88 }}
               variant="body2"
@@ -128,7 +128,7 @@ const AcceptDialog: React.FC<{
                 inputProps={{
                   min: (() => {
                     const d = new Date();
-                    const pad = (n: number) => String(n).padStart(2, "0");
+                    const pad = (n: number) => String(n).padStart(2, '0');
                     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
                       d.getDate()
                     )}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -141,13 +141,13 @@ const AcceptDialog: React.FC<{
                 helperText={
                   !!slot.datetime_iso &&
                   new Date(slot.datetime_iso).getTime() <= Date.now()
-                    ? "会面时间不能早于当前时间"
-                    : "时间为你的当地时间（" + timeZone + ")"
+                    ? '会面时间不能早于当前时间'
+                    : '时间为你的当地时间（' + timeZone + ')'
                 }
               />
             </Box>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
             <Typography
               sx={{ width: 88 }}
               variant="body2"
@@ -169,8 +169,8 @@ const AcceptDialog: React.FC<{
               </TextField>
             </Box>
           </Box>
-          {slot.mode === "online" ? (
-            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+          {slot.mode === 'online' ? (
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
               <Typography
                 sx={{ width: 88 }}
                 variant="body2"
@@ -182,7 +182,7 @@ const AcceptDialog: React.FC<{
                 <TextField
                   fullWidth
                   placeholder="https://..."
-                  value={slot.meeting_url || ""}
+                  value={slot.meeting_url || ''}
                   onChange={(e) =>
                     setSlot((prev) => ({
                       ...prev,
@@ -195,7 +195,7 @@ const AcceptDialog: React.FC<{
               </Box>
             </Box>
           ) : (
-            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
               <Typography
                 sx={{ width: 88 }}
                 variant="body2"
@@ -207,7 +207,7 @@ const AcceptDialog: React.FC<{
                 <TextField
                   fullWidth
                   placeholder="具体地址或地点描述"
-                  value={slot.location_text || ""}
+                  value={slot.location_text || ''}
                   onChange={(e) =>
                     setSlot((prev) => ({
                       ...prev,
@@ -234,17 +234,17 @@ const AcceptDialog: React.FC<{
 
 const MyConnections: React.FC = () => {
   const show = useGlobalSnackbar();
-  const [tab, setTab] = useState<"received" | "sent" | "meetings">("received");
+  const [tab, setTab] = useState<'received' | 'sent' | 'meetings'>('received');
   const [invitesReceived, setInvitesReceived] = useState<any[]>([]);
   const [invitesSent, setInvitesSent] = useState<any[]>([]);
   const [meetings, setMeetings] = useState<any[]>([]);
   const [myProfile, setMyProfile] = useState<any>(null);
   const [recvStatusFilter, setRecvStatusFilter] = useState<
-    "" | "pending" | "accepted" | "declined" | "cancelled"
-  >("");
+    '' | 'pending' | 'accepted' | 'declined' | 'cancelled'
+  >('');
   const [sentStatusFilter, setSentStatusFilter] = useState<
-    "" | "pending" | "accepted" | "declined" | "cancelled"
-  >("");
+    '' | 'pending' | 'accepted' | 'declined' | 'cancelled'
+  >('');
   const [acceptState, setAcceptState] = useState<{
     open: boolean;
     invite: any | null;
@@ -254,20 +254,20 @@ const MyConnections: React.FC = () => {
   >({});
   const loadInvites = async () => {
     const [recv, sent] = await Promise.all([
-      api.oneonone.invites.list("invitee", recvStatusFilter || undefined),
-      api.oneonone.invites.list("inviter", sentStatusFilter || undefined),
+      api.oneonone.invites.list('invitee', recvStatusFilter || undefined),
+      api.oneonone.invites.list('inviter', sentStatusFilter || undefined),
     ]);
     if (recv.success) setInvitesReceived(recv.data?.invites || []);
-    else show.error(recv.error || "加载收到的邀请失败");
+    else show.error(recv.error || '加载收到的邀请失败');
     if (sent.success) setInvitesSent(sent.data?.invites || []);
-    else show.error(sent.error || "加载发出的邀请失败");
+    else show.error(sent.error || '加载发出的邀请失败');
   };
   const loadMeetings = async () => {
     const res = await api.oneonone.meetings.list();
     if (res.success) {
       const all = res.data?.meetings || [];
       setMeetings(all);
-    } else show.error(res.error || "加载会面失败");
+    } else show.error(res.error || '加载会面失败');
   };
   useEffect(() => {
     loadInvites();
@@ -282,15 +282,15 @@ const MyConnections: React.FC = () => {
   }, []);
   const timeZone = useMemo(() => {
     try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone || "本地时区";
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区';
     } catch {
-      return "本地时区";
+      return '本地时区';
     }
   }, []);
   useEffect(() => {
     loadInvites();
   }, [recvStatusFilter, sentStatusFilter]);
-  const lastMissingRef = React.useRef<string>("");
+  const lastMissingRef = React.useRef<string>('');
   useEffect(() => {
     const hydrate = async () => {
       const ids = new Set<string>([] as any);
@@ -298,7 +298,7 @@ const MyConnections: React.FC = () => {
       invitesSent.forEach((i) => ids.add(String(i.invitee_id)));
       const missing = Array.from(ids).filter((id) => !peopleMap[id]);
       if (missing.length === 0) return;
-      const missingStr = [...missing].sort().join(",");
+      const missingStr = [...missing].sort().join(',');
       if (missingStr === lastMissingRef.current) return;
       lastMissingRef.current = missingStr;
       const r = await api.people.getByIds(missing);
@@ -317,11 +317,11 @@ const MyConnections: React.FC = () => {
     return u.name || `@${u.username}`;
   };
   const decline = async (id: string) => {
-    const res = await api.oneonone.invites.update(id, { status: "declined" });
+    const res = await api.oneonone.invites.update(id, { status: 'declined' });
     if (res.success) {
-      show.success("已拒绝");
+      show.success('已拒绝');
       loadInvites();
-    } else show.error(res.error || "操作失败");
+    } else show.error(res.error || '操作失败');
   };
   const [updateState, setUpdateState] = useState<{
     open: boolean;
@@ -332,17 +332,17 @@ const MyConnections: React.FC = () => {
     onClose: () => void;
     meeting: any;
   }> = ({ open, onClose, meeting }) => {
-    const [time, setTime] = useState<string>(meeting?.final_datetime_iso || "");
-    const [mode, setMode] = useState<"online" | "offline">(
-      meeting?.mode || "online"
+    const [time, setTime] = useState<string>(meeting?.final_datetime_iso || '');
+    const [mode, setMode] = useState<'online' | 'offline'>(
+      meeting?.mode || 'online'
     );
-    const [url, setUrl] = useState<string>(meeting?.meeting_url || "");
-    const [loc, setLoc] = useState<string>(meeting?.location_text || "");
+    const [url, setUrl] = useState<string>(meeting?.meeting_url || '');
+    const [loc, setLoc] = useState<string>(meeting?.location_text || '');
     const timeZone = useMemo(() => {
       try {
-        return Intl.DateTimeFormat().resolvedOptions().timeZone || "本地时区";
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区';
       } catch {
-        return "本地时区";
+        return '本地时区';
       }
     }, []);
     const canSave = useMemo(() => {
@@ -359,17 +359,17 @@ const MyConnections: React.FC = () => {
         location_text: loc || null,
       });
       if (res.success) {
-        show.success("会面信息已更新");
+        show.success('会面信息已更新');
         onClose();
         loadMeetings();
-      } else show.error(res.error || "更新失败");
+      } else show.error(res.error || '更新失败');
     };
     return (
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
         <DialogTitle>修改会面信息</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
               <Typography
                 sx={{ width: 88 }}
                 variant="body2"
@@ -386,7 +386,7 @@ const MyConnections: React.FC = () => {
                   inputProps={{
                     min: (() => {
                       const d = new Date();
-                      const pad = (n: number) => String(n).padStart(2, "0");
+                      const pad = (n: number) => String(n).padStart(2, '0');
                       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
                         d.getDate()
                       )}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -395,13 +395,13 @@ const MyConnections: React.FC = () => {
                   error={!!time && new Date(time).getTime() <= Date.now()}
                   helperText={
                     !!time && new Date(time).getTime() <= Date.now()
-                      ? "会面时间不能早于当前时间"
-                      : "时间为你的当地时间（" + timeZone + ")"
+                      ? '会面时间不能早于当前时间'
+                      : '时间为你的当地时间（' + timeZone + ')'
                   }
                 />
               </Box>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
               <Typography
                 sx={{ width: 88 }}
                 variant="body2"
@@ -421,8 +421,8 @@ const MyConnections: React.FC = () => {
                 </TextField>
               </Box>
             </Box>
-            {mode === "online" ? (
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+            {mode === 'online' ? (
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
                 <Typography
                   sx={{ width: 88 }}
                   variant="body2"
@@ -442,7 +442,7 @@ const MyConnections: React.FC = () => {
                 </Box>
               </Box>
             ) : (
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
                 <Typography
                   sx={{ width: 88 }}
                   variant="body2"
@@ -474,18 +474,18 @@ const MyConnections: React.FC = () => {
     );
   };
   const cancelSent = async (id: string) => {
-    const res = await api.oneonone.invites.update(id, { status: "cancelled" });
+    const res = await api.oneonone.invites.update(id, { status: 'cancelled' });
     if (res.success) {
-      show.success("已取消邀请");
+      show.success('已取消邀请');
       loadInvites();
-    } else show.error(res.error || "操作失败");
+    } else show.error(res.error || '操作失败');
   };
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: '100vh',
         py: 6,
-        background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
       }}
     >
       <Container maxWidth="md">
@@ -498,19 +498,19 @@ const MyConnections: React.FC = () => {
             <Tab value="sent" label="我发出的邀请" />
             <Tab value="meetings" label="会面" />
           </Tabs>
-          {tab === "received" && (
+          {tab === 'received' && (
             <Box>
-              <Box sx={{ mb: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Box sx={{ mb: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 {(
-                  ["", "pending", "accepted", "declined", "cancelled"] as const
+                  ['', 'pending', 'accepted', 'declined', 'cancelled'] as const
                 ).map((st) => (
                   <Chip
-                    key={st || "all"}
+                    key={st || 'all'}
                     size="small"
-                    label={st ? statusLabel(st) : "全部"}
+                    label={st ? statusLabel(st) : '全部'}
                     clickable
-                    color={recvStatusFilter === st ? "primary" : "default"}
-                    variant={recvStatusFilter === st ? "filled" : "outlined"}
+                    color={recvStatusFilter === st ? 'primary' : 'default'}
+                    variant={recvStatusFilter === st ? 'filled' : 'outlined'}
                     onClick={() => setRecvStatusFilter(st)}
                   />
                 ))}
@@ -519,13 +519,13 @@ const MyConnections: React.FC = () => {
                 <Box
                   key={i.id}
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                     py: 1.5,
-                    borderBottom: "1px solid #eee",
+                    borderBottom: '1px solid #eee',
                     opacity:
-                      i.status === "cancelled" || i.status === "declined"
+                      i.status === 'cancelled' || i.status === 'declined'
                         ? 0.7
                         : 1,
                     backgroundColor: rowBg(i.status),
@@ -546,9 +546,9 @@ const MyConnections: React.FC = () => {
                       <Box
                         sx={{
                           mt: 1,
-                          display: "flex",
+                          display: 'flex',
                           gap: 1,
-                          flexWrap: "wrap",
+                          flexWrap: 'wrap',
                         }}
                       >
                         {(i.proposed_slots || [])
@@ -564,19 +564,19 @@ const MyConnections: React.FC = () => {
                       </Box>
                     )}
                     <Box sx={{ mt: 0.5 }}>
-                      {i.status === "accepted" ? (
+                      {i.status === 'accepted' ? (
                         <Chip size="small" color="success" label="已接受" />
-                      ) : i.status === "declined" ? (
+                      ) : i.status === 'declined' ? (
                         <Chip size="small" variant="outlined" label="已拒绝" />
-                      ) : i.status === "cancelled" ? (
+                      ) : i.status === 'cancelled' ? (
                         <Chip size="small" variant="outlined" label="已取消" />
                       ) : (
                         <Chip size="small" variant="outlined" label="待处理" />
                       )}
                     </Box>
                   </Box>
-                  <Box sx={{ display: "flex", gap: 1 }}>
-                    {i.status === "pending" ? (
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    {i.status === 'pending' ? (
                       <>
                         <Button
                           variant="contained"
@@ -594,10 +594,10 @@ const MyConnections: React.FC = () => {
                           拒绝
                         </Button>
                       </>
-                    ) : i.status === "accepted" ? (
+                    ) : i.status === 'accepted' ? (
                       <Button
                         variant="outlined"
-                        onClick={() => setTab("meetings")}
+                        onClick={() => setTab('meetings')}
                       >
                         查看会面
                       </Button>
@@ -607,19 +607,19 @@ const MyConnections: React.FC = () => {
               ))}
             </Box>
           )}
-          {tab === "sent" && (
+          {tab === 'sent' && (
             <Box>
-              <Box sx={{ mb: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Box sx={{ mb: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 {(
-                  ["", "pending", "accepted", "declined", "cancelled"] as const
+                  ['', 'pending', 'accepted', 'declined', 'cancelled'] as const
                 ).map((st) => (
                   <Chip
-                    key={st || "all"}
+                    key={st || 'all'}
                     size="small"
-                    label={st ? statusLabel(st) : "全部"}
+                    label={st ? statusLabel(st) : '全部'}
                     clickable
-                    color={sentStatusFilter === st ? "primary" : "default"}
-                    variant={sentStatusFilter === st ? "filled" : "outlined"}
+                    color={sentStatusFilter === st ? 'primary' : 'default'}
+                    variant={sentStatusFilter === st ? 'filled' : 'outlined'}
                     onClick={() => setSentStatusFilter(st)}
                   />
                 ))}
@@ -628,13 +628,13 @@ const MyConnections: React.FC = () => {
                 <Box
                   key={i.id}
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                     py: 1.5,
-                    borderBottom: "1px solid #eee",
+                    borderBottom: '1px solid #eee',
                     opacity:
-                      i.status === "cancelled" || i.status === "declined"
+                      i.status === 'cancelled' || i.status === 'declined'
                         ? 0.7
                         : 1,
                     backgroundColor: rowBg(i.status),
@@ -655,9 +655,9 @@ const MyConnections: React.FC = () => {
                       <Box
                         sx={{
                           mt: 1,
-                          display: "flex",
+                          display: 'flex',
                           gap: 1,
-                          flexWrap: "wrap",
+                          flexWrap: 'wrap',
                         }}
                       >
                         {(i.proposed_slots || [])
@@ -673,19 +673,19 @@ const MyConnections: React.FC = () => {
                       </Box>
                     )}
                     <Box sx={{ mt: 0.5 }}>
-                      {i.status === "accepted" ? (
+                      {i.status === 'accepted' ? (
                         <Chip size="small" color="success" label="已接受" />
-                      ) : i.status === "declined" ? (
+                      ) : i.status === 'declined' ? (
                         <Chip size="small" variant="outlined" label="已拒绝" />
-                      ) : i.status === "cancelled" ? (
+                      ) : i.status === 'cancelled' ? (
                         <Chip size="small" variant="outlined" label="已取消" />
                       ) : (
                         <Chip size="small" variant="outlined" label="待处理" />
                       )}
                     </Box>
                   </Box>
-                  <Box sx={{ display: "flex", gap: 1 }}>
-                    {i.status === "pending" ? (
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    {i.status === 'pending' ? (
                       <Button
                         variant="outlined"
                         color="error"
@@ -693,10 +693,10 @@ const MyConnections: React.FC = () => {
                       >
                         取消邀请
                       </Button>
-                    ) : i.status === "accepted" ? (
+                    ) : i.status === 'accepted' ? (
                       <Button
                         variant="outlined"
-                        onClick={() => setTab("meetings")}
+                        onClick={() => setTab('meetings')}
                       >
                         查看会面
                       </Button>
@@ -706,21 +706,21 @@ const MyConnections: React.FC = () => {
               ))}
             </Box>
           )}
-          {tab === "meetings" && (
+          {tab === 'meetings' && (
             <Box>
               {meetings.map((m) => (
                 <Box
                   key={m.id}
                   sx={{
                     py: 1,
-                    borderBottom: "1px solid #eee",
-                    display: "flex",
-                    alignItems: "center",
+                    borderBottom: '1px solid #eee',
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: 1,
                   }}
                 >
                   <Typography variant="body2" sx={{ flex: 1 }}>
-                    与{" "}
+                    与{' '}
                     {(() => {
                       const inv = m.one_on_one_invites;
                       const me = myProfile?.user_id;
@@ -728,11 +728,11 @@ const MyConnections: React.FC = () => {
                         ? me && String(inv.inviter_id) === String(me)
                           ? inv.invitee_id
                           : inv.inviter_id
-                        : "?";
+                        : '?';
                       return displayName(other);
-                    })()}{" "}
-                    在{" "}
-                    {m.mode === "online" ? (
+                    })()}{' '}
+                    在{' '}
+                    {m.mode === 'online' ? (
                       m.meeting_url ? (
                         <>
                           线上会议（
@@ -746,16 +746,16 @@ const MyConnections: React.FC = () => {
                           ）
                         </>
                       ) : (
-                        "线上会议"
+                        '线上会议'
                       )
                     ) : (
-                      m.location_text || "线下地点未提供"
-                    )}{" "}
-                    于 {new Date(m.final_datetime_iso).toLocaleString()}{" "}
+                      m.location_text || '线下地点未提供'
+                    )}{' '}
+                    于 {new Date(m.final_datetime_iso).toLocaleString()}{' '}
                     会面（当地时区：{timeZone}）
                   </Typography>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    {m.status === "cancelled" ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {m.status === 'cancelled' ? (
                       <Chip
                         size="small"
                         variant="outlined"
@@ -765,7 +765,7 @@ const MyConnections: React.FC = () => {
                       <Chip size="small" variant="outlined" label="已安排" />
                     )}
                     {new Date(m.final_datetime_iso).getTime() > Date.now() &&
-                      m.status !== "cancelled" && (
+                      m.status !== 'cancelled' && (
                         <Button
                           size="small"
                           variant="text"
@@ -780,15 +780,15 @@ const MyConnections: React.FC = () => {
                       size="small"
                       color="error"
                       variant="text"
-                      disabled={m.status === "cancelled"}
+                      disabled={m.status === 'cancelled'}
                       onClick={async () => {
                         const res = await api.oneonone.meetings.update(m.id, {
-                          status: "cancelled",
+                          status: 'cancelled',
                         });
                         if (res.success) {
-                          show.success("会面已取消");
+                          show.success('会面已取消');
                           loadMeetings();
-                        } else show.error(res.error || "取消失败");
+                        } else show.error(res.error || '取消失败');
                       }}
                     >
                       取消
@@ -825,29 +825,29 @@ const MyConnections: React.FC = () => {
 export default MyConnections;
 const formatSlot = (s: {
   datetime_iso: string;
-  mode: "online" | "offline";
+  mode: 'online' | 'offline';
 }) => {
   try {
     const d = new Date(s.datetime_iso);
     const t = d.toLocaleString();
-    return `${t} · ${s.mode === "online" ? "线上" : "线下"}`;
+    return `${t} · ${s.mode === 'online' ? '线上' : '线下'}`;
   } catch {
     return `${s.datetime_iso} · ${s.mode}`;
   }
 };
 const rowBg = (status: string) => {
-  if (status === "pending") return "rgba(255, 215, 0, 0.08)";
-  if (status === "accepted") return "rgba(46, 204, 113, 0.08)";
-  if (status === "declined" || status === "cancelled")
-    return "rgba(149, 165, 166, 0.15)";
-  return "transparent";
+  if (status === 'pending') return 'rgba(255, 215, 0, 0.08)';
+  if (status === 'accepted') return 'rgba(46, 204, 113, 0.08)';
+  if (status === 'declined' || status === 'cancelled')
+    return 'rgba(149, 165, 166, 0.15)';
+  return 'transparent';
 };
 const statusLabel = (
-  s: "pending" | "accepted" | "declined" | "cancelled" | string
+  s: 'pending' | 'accepted' | 'declined' | 'cancelled' | string
 ) => {
-  if (s === "pending") return "待处理";
-  if (s === "accepted") return "已接受";
-  if (s === "declined") return "已拒绝";
-  if (s === "cancelled") return "已取消";
+  if (s === 'pending') return '待处理';
+  if (s === 'accepted') return '已接受';
+  if (s === 'declined') return '已拒绝';
+  if (s === 'cancelled') return '已取消';
   return s;
 };

@@ -1,5 +1,5 @@
-import { supabase } from "../../database/supabase";
-import { NetlifyContext, NetlifyEvent, NetlifyResponse } from "../types/http";
+import { supabase } from '../../database/supabase';
+import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
 // 本地定义 CardData 接口，避免从缺失的模块导入
 interface CardData {
   id?: string;
@@ -13,7 +13,7 @@ interface CardData {
   gradientClass?: string;
   username?: string | null;
 }
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
 
 // 定义数据库卡片记录接口
 export interface CardRecord {
@@ -51,30 +51,30 @@ export async function handler(
   event: NetlifyEvent,
   context: NetlifyContext
 ): Promise<NetlifyResponse> {
-  if (event.httpMethod === "POST") {
+  if (event.httpMethod === 'POST') {
     const body = event.body ? JSON.parse(event.body) : {};
-    const action = body.action || "";
-    if (action === "like") {
+    const action = body.action || '';
+    if (action === 'like') {
       cache.allCards = null;
       cache.cardsByIds = {};
       return await like(event, context);
     }
     cache.allCards = null;
     cache.cardsByIds = {};
-    console.log("Saving card");
+    console.log('Saving card');
     return await save(event, context);
-  } else if (event.httpMethod === "PUT") {
+  } else if (event.httpMethod === 'PUT') {
     cache.allCards = null;
     cache.cardsByIds = {};
-    console.log("Updating card");
+    console.log('Updating card');
     return await update(event, context);
-  } else if (event.httpMethod === "GET") {
-    console.log("Fetching cards");
+  } else if (event.httpMethod === 'GET') {
+    console.log('Fetching cards');
     return await fetch(event, context);
   } else {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: "Method Not Allowed" }),
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
     };
   }
 }
@@ -84,7 +84,7 @@ function getUserId(event: any) {
   const auth =
     (event.headers as any)?.authorization ||
     (event.headers as any)?.Authorization;
-  if (!auth || !String(auth).startsWith("Bearer ")) return null;
+  if (!auth || !String(auth).startsWith('Bearer ')) return null;
   const token = String(auth).substring(7);
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
@@ -106,51 +106,51 @@ async function save(
 ): Promise<NetlifyResponse> {
   try {
     // 只允许POST请求
-    if (event.httpMethod !== "POST") {
+    if (event.httpMethod !== 'POST') {
       return {
         statusCode: 405,
-        body: JSON.stringify({ error: "Method Not Allowed" }),
+        body: JSON.stringify({ error: 'Method Not Allowed' }),
       };
     }
 
     // 解析请求体
-    const cardData: CardData = JSON.parse(event.body || "{}");
+    const cardData: CardData = JSON.parse(event.body || '{}');
 
     // 验证必填字段
     if (!cardData.title || !cardData.quote || !cardData.detail) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Missing required fields" }),
+        body: JSON.stringify({ error: 'Missing required fields' }),
       };
     }
 
     // 准备插入数据库的记录
     const record = {
-      font: cardData.font || "",
+      font: cardData.font || '',
       title: cardData.title,
       quote: cardData.quote,
-      image_path: cardData.imagePath || "",
+      image_path: cardData.imagePath || '',
       detail: cardData.detail,
-      upload: cardData.upload || "",
-      creator: cardData.creator || "",
+      upload: cardData.upload || '',
+      creator: cardData.creator || '',
       created: new Date().toISOString(),
-      gradient_class: cardData.gradientClass || "",
+      gradient_class: cardData.gradientClass || '',
       username: cardData.username || null,
       likes_count: 0,
     };
 
     // 插入Supabase
     const { data, error } = await supabase
-      .from("cards")
+      .from('cards')
       .insert([record])
       .select();
 
     if (error) {
-      console.error("Error inserting card:", error);
+      console.error('Error inserting card:', error);
       return {
         statusCode: 500,
         body: JSON.stringify({
-          error: "Failed to submit card",
+          error: 'Failed to submit card',
           details: error.message,
           success: false,
         }),
@@ -160,17 +160,17 @@ async function save(
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: "Card submitted successfully",
+        message: 'Card submitted successfully',
         success: true,
         id: data?.[0]?.id,
       }),
     };
   } catch (error: any) {
-    console.error("Function error:", error);
+    console.error('Function error:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({
-        error: "Internal Server Error",
+        error: 'Internal Server Error',
         message: error.message,
         success: false,
       }),
@@ -195,12 +195,12 @@ async function fetch(
 
     if (idParam) {
       // 检查是否是逗号分隔的ID列表
-      if (idParam.includes(",")) {
+      if (idParam.includes(',')) {
         const ids = idParam
-          .split(",")
+          .split(',')
           .map((id) => id.trim())
           .filter((id) => id);
-        const cacheKey = ids.sort().join(",");
+        const cacheKey = ids.sort().join(',');
 
         if (cache.cardsByIds[cacheKey]) {
           return {
@@ -211,7 +211,7 @@ async function fetch(
       } else {
         // 单个ID
         if (cache.cardsByIds[idParam]) {
-          console.log("Cache hit for ID:", idParam);
+          console.log('Cache hit for ID:', idParam);
           return {
             statusCode: 200,
             body: JSON.stringify({ records: cache.cardsByIds[idParam] }),
@@ -220,7 +220,7 @@ async function fetch(
       }
     } else if (cache.allCards) {
       // 返回缓存中的所有卡片
-      console.log("Cache hit for all cards");
+      console.log('Cache hit for all cards');
       return {
         statusCode: 200,
         body: JSON.stringify({ records: cache.allCards }),
@@ -228,25 +228,25 @@ async function fetch(
     }
 
     // 构建查询
-    let query = supabase.from("cards").select("*");
+    let query = supabase.from('cards').select('*');
 
     // 如果存在id参数，按id过滤
     if (idParam) {
       // 检查是否是逗号分隔的ID列表
-      if (idParam.includes(",")) {
+      if (idParam.includes(',')) {
         const ids = idParam
-          .split(",")
+          .split(',')
           .map((id) => id.trim())
           .filter((id) => id);
-        query = query.in("id", ids);
+        query = query.in('id', ids);
       } else {
         // 单个ID
-        query = query.eq("id", idParam);
+        query = query.eq('id', idParam);
       }
     }
 
     // 应用排序
-    query = query.order("created", { ascending: false }).limit(25);
+    query = query.order('created', { ascending: false }).limit(25);
 
     // 执行查询
     const { data, error } = await query;
@@ -275,12 +275,12 @@ async function fetch(
 
     // 更新缓存
     if (idParam) {
-      if (idParam.includes(",")) {
+      if (idParam.includes(',')) {
         const ids = idParam
-          .split(",")
+          .split(',')
           .map((id) => id.trim())
           .filter((id) => id);
-        const cacheKey = ids.sort().join(",");
+        const cacheKey = ids.sort().join(',');
         cache.cardsByIds[cacheKey] = records;
       } else {
         cache.cardsByIds[idParam] = records;
@@ -291,8 +291,8 @@ async function fetch(
 
     const responseBody = JSON.stringify({ records });
     console.log(
-      "Response payload size: ",
-      Buffer.byteLength(responseBody, "utf8")
+      'Response payload size: ',
+      Buffer.byteLength(responseBody, 'utf8')
     );
 
     return {
@@ -300,7 +300,7 @@ async function fetch(
       body: responseBody,
     };
   } catch (error: any) {
-    console.error("Fetch error:", error);
+    console.error('Fetch error:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message }),
@@ -317,7 +317,7 @@ async function like(
     if (!userId) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ success: false, error: "Unauthorized" }),
+        body: JSON.stringify({ success: false, error: 'Unauthorized' }),
       };
     }
     const payload = event.body ? JSON.parse(event.body) : {};
@@ -325,27 +325,27 @@ async function like(
     if (!cardId) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ success: false, error: "Missing cardId" }),
+        body: JSON.stringify({ success: false, error: 'Missing cardId' }),
       };
     }
     // 读取当前计数
     const { data: card, error: fetchError } = await supabase
-      .from("cards")
-      .select("id, likes_count")
-      .eq("id", cardId)
+      .from('cards')
+      .select('id, likes_count')
+      .eq('id', cardId)
       .single();
     if (fetchError || !card) {
       return {
         statusCode: 404,
-        body: JSON.stringify({ success: false, error: "Card Not Found" }),
+        body: JSON.stringify({ success: false, error: 'Card Not Found' }),
       };
     }
     const current = Number(card.likes_count) || 0;
     const next = current + 1;
     const { error: updateError } = await supabase
-      .from("cards")
+      .from('cards')
       .update({ likes_count: next })
-      .eq("id", cardId);
+      .eq('id', cardId);
     if (updateError) {
       return {
         statusCode: 500,
@@ -361,7 +361,7 @@ async function like(
       statusCode: 500,
       body: JSON.stringify({
         success: false,
-        error: e.message || "Server Error",
+        error: e.message || 'Server Error',
       }),
     };
   }
@@ -379,15 +379,15 @@ async function update(
 ): Promise<NetlifyResponse> {
   try {
     // 只允许PUT请求
-    if (event.httpMethod !== "PUT") {
+    if (event.httpMethod !== 'PUT') {
       return {
         statusCode: 405,
-        body: JSON.stringify({ error: "Method Not Allowed" }),
+        body: JSON.stringify({ error: 'Method Not Allowed' }),
       };
     }
 
     // 解析请求体
-    const cardData: CardData = JSON.parse(event.body || "{}");
+    const cardData: CardData = JSON.parse(event.body || '{}');
 
     // 验证必填字段
     if (
@@ -399,22 +399,22 @@ async function update(
       return {
         statusCode: 400,
         body: JSON.stringify({
-          error: "Missing required fields: id, title, quote, detail",
+          error: 'Missing required fields: id, title, quote, detail',
         }),
       };
     }
 
     // 检查卡片是否存在并获取当前数据
     const { data: existingCard, error: fetchError } = await supabase
-      .from("cards")
-      .select("*")
-      .eq("id", cardData.id)
+      .from('cards')
+      .select('*')
+      .eq('id', cardData.id)
       .single();
 
     if (fetchError || !existingCard) {
       return {
         statusCode: 404,
-        body: JSON.stringify({ error: "Card not found" }),
+        body: JSON.stringify({ error: 'Card not found' }),
       };
     }
 
@@ -427,7 +427,7 @@ async function update(
       return {
         statusCode: 403,
         body: JSON.stringify({
-          error: "Permission denied: You can only edit your own cards",
+          error: 'Permission denied: You can only edit your own cards',
         }),
       };
     }
@@ -447,34 +447,34 @@ async function update(
 
     // 更新Supabase中的卡片
     const { data, error } = await supabase
-      .from("cards")
+      .from('cards')
       .update(updateData)
-      .eq("id", cardData.id)
+      .eq('id', cardData.id)
       .select();
 
     if (error) {
-      console.error("Supabase update error:", error);
+      console.error('Supabase update error:', error);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: "Failed to update card in database" }),
+        body: JSON.stringify({ error: 'Failed to update card in database' }),
       };
     }
 
-    console.log("Card updated successfully:", data?.[0]);
+    console.log('Card updated successfully:', data?.[0]);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
-        message: "Card updated successfully",
+        message: 'Card updated successfully',
         card: data?.[0],
       }),
     };
   } catch (error: any) {
-    console.error("Update card error:", error);
+    console.error('Update card error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Internal server error" }),
+      body: JSON.stringify({ error: 'Internal server error' }),
     };
   }
 }
@@ -488,11 +488,11 @@ function generateHash(card: CardData): string | null {
   if (!card.title || !card.quote || !card.detail) return null;
 
   const normalized = [
-    card.title.trim().replace(/\s+/g, " "),
-    card.quote.trim().replace(/\s+/g, " "),
-    card.detail.trim().replace(/\s+/g, " "),
-  ].join("|");
+    card.title.trim().replace(/\s+/g, ' '),
+    card.quote.trim().replace(/\s+/g, ' '),
+    card.detail.trim().replace(/\s+/g, ' '),
+  ].join('|');
 
   // 使用简单的base64编码作为哈希
-  return Buffer.from(normalized).toString("base64");
+  return Buffer.from(normalized).toString('base64');
 }

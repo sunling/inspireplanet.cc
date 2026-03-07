@@ -36,11 +36,13 @@ export async function handler(
 
     const params = event.queryStringParameters || {};
     const episodeParam = params.episode;
-    const limitParam = params.limit ? parseInt(params.limit as string, 10) : undefined;
+    const limitParam = params.limit
+      ? parseInt(params.limit as string, 10)
+      : undefined;
 
     let query = supabase.from('weekly_cards').select('*');
     if (episodeParam) {
-      const digits = (episodeParam.match(/\d+/)?.[0]) || '';
+      const digits = episodeParam.match(/\d+/)?.[0] || '';
       if (digits) {
         // 兼容 EP43、第43期 等格式，按数字模糊匹配
         query = query.ilike('episode', `%${digits}%`);

@@ -54,7 +54,10 @@ const EditMeetup: React.FC = () => {
   const [qrPreview, setQrPreview] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const searchParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  );
   const meetupId = searchParams.get('id') || '';
 
   const [formValues, setFormValues] = useState<MeetupData>({
@@ -155,13 +158,17 @@ const EditMeetup: React.FC = () => {
       }
       return response.data?.url || '';
     } catch (error) {
-      showSnackbar.error(error instanceof Error ? error.message : '上传二维码失败');
+      showSnackbar.error(
+        error instanceof Error ? error.message : '上传二维码失败'
+      );
       return '';
     }
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormValues((prev) => ({ ...prev, [name]: value }));
@@ -212,89 +219,245 @@ const EditMeetup: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ maxWidth: 800, mx: 'auto', bgcolor: 'white', p: 4, borderRadius: 2, boxShadow: 1 }}>
+      <Box
+        sx={{
+          maxWidth: 800,
+          mx: 'auto',
+          bgcolor: 'white',
+          p: 4,
+          borderRadius: 2,
+          boxShadow: 1,
+        }}
+      >
         <Typography variant="body1" color="text.secondary" paragraph>
           修改活动信息
         </Typography>
 
         <form>
           <Box sx={{ mb: 4, p: 3, borderRadius: 1, boxShadow: 1 }}>
-            <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>基本信息</Typography>
+            <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>
+              基本信息
+            </Typography>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>活动标题</Typography>
-              <TextField fullWidth id="title" name="title" type="text" value={formValues.title} helperText={errors['title']} error={!!errors['title']} onChange={handleInputChange} required placeholder="输入活动标题" size={isMobile ? 'small' : 'medium'} />
+              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                活动标题
+              </Typography>
+              <TextField
+                fullWidth
+                id="title"
+                name="title"
+                type="text"
+                value={formValues.title}
+                helperText={errors['title']}
+                error={!!errors['title']}
+                onChange={handleInputChange}
+                required
+                placeholder="输入活动标题"
+                size={isMobile ? 'small' : 'medium'}
+              />
             </Box>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>活动描述</Typography>
-              <TextField fullWidth id="description" name="description" type="text" value={formValues.description} onChange={handleInputChange} error={!!errors['description']} helperText={errors['description']} required placeholder="详细描述活动内容、目标和亮点" multiline minRows={4} size={isMobile ? 'small' : 'medium'} />
+              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                活动描述
+              </Typography>
+              <TextField
+                fullWidth
+                id="description"
+                name="description"
+                type="text"
+                value={formValues.description}
+                onChange={handleInputChange}
+                error={!!errors['description']}
+                helperText={errors['description']}
+                required
+                placeholder="详细描述活动内容、目标和亮点"
+                multiline
+                minRows={4}
+                size={isMobile ? 'small' : 'medium'}
+              />
             </Box>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>活动类型</Typography>
-              <TextField fullWidth id="type" name="type" value={formValues.type} onChange={handleInputChange} error={!!errors['type']} helperText={errors['type']} required select size={isMobile ? 'small' : 'medium'}>
-                <MenuItem key="online" value="online">线上活动</MenuItem>
-                <MenuItem key="offline" value="offline">线下活动</MenuItem>
-                <MenuItem key="hybrid" value="hybrid">线上线下结合</MenuItem>
+              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                活动类型
+              </Typography>
+              <TextField
+                fullWidth
+                id="type"
+                name="type"
+                value={formValues.type}
+                onChange={handleInputChange}
+                error={!!errors['type']}
+                helperText={errors['type']}
+                required
+                select
+                size={isMobile ? 'small' : 'medium'}
+              >
+                <MenuItem key="online" value="online">
+                  线上活动
+                </MenuItem>
+                <MenuItem key="offline" value="offline">
+                  线下活动
+                </MenuItem>
+                <MenuItem key="hybrid" value="hybrid">
+                  线上线下结合
+                </MenuItem>
               </TextField>
             </Box>
           </Box>
 
-          <Card sx={{ mb: 4, boxShadow: 1, borderRadius: 2, overflow: 'hidden' }}>
+          <Card
+            sx={{ mb: 4, boxShadow: 1, borderRadius: 2, overflow: 'hidden' }}
+          >
             <Box sx={{ p: 2 }}>
-              <Typography variant="h6" fontWeight="bold">时间地点</Typography>
+              <Typography variant="h6" fontWeight="bold">
+                时间地点
+              </Typography>
             </Box>
             <CardContent>
               <Box sx={{ mb: 3 }}>
-                <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>活动时间</Typography>
-                <TextField fullWidth id="datetime" name="datetime" type="datetime-local" error={!!errors['datetime']} helperText={errors['datetime']} value={formValues.datetime} onChange={handleInputChange} required size={isMobile ? 'small' : 'medium'} />
+                <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                  活动时间
+                </Typography>
+                <TextField
+                  fullWidth
+                  id="datetime"
+                  name="datetime"
+                  type="datetime-local"
+                  error={!!errors['datetime']}
+                  helperText={errors['datetime']}
+                  value={formValues.datetime}
+                  onChange={handleInputChange}
+                  required
+                  size={isMobile ? 'small' : 'medium'}
+                />
               </Box>
 
               <Grid container spacing={2} sx={{ mb: 3 }}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Box sx={{ mb: 3 }}>
-                    <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>活动地点</Typography>
-                    <TextField fullWidth id="location" name="location" type="text" error={!!errors['location']} helperText={errors['location']} value={formValues.location} onChange={handleInputChange} placeholder="线下活动请填写具体地址，线上活动可填写平台名称" size={isMobile ? 'small' : 'medium'} />
+                    <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                      活动地点
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      id="location"
+                      name="location"
+                      type="text"
+                      error={!!errors['location']}
+                      helperText={errors['location']}
+                      value={formValues.location}
+                      onChange={handleInputChange}
+                      placeholder="线下活动请填写具体地址，线上活动可填写平台名称"
+                      size={isMobile ? 'small' : 'medium'}
+                    />
                   </Box>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Box sx={{ mb: 3 }}>
-                    <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>活动时长（小时）</Typography>
-                    <TextField fullWidth id="duration" name="duration" type="number" value={formValues.duration} onChange={handleInputChange} placeholder="例如：2" size={isMobile ? 'small' : 'medium'} />
+                    <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                      活动时长（小时）
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      id="duration"
+                      name="duration"
+                      type="number"
+                      value={formValues.duration}
+                      onChange={handleInputChange}
+                      placeholder="例如：2"
+                      size={isMobile ? 'small' : 'medium'}
+                    />
                   </Box>
                 </Grid>
               </Grid>
 
               <Box sx={{ mb: 3 }}>
-                <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>最大参与人数</Typography>
-                <TextField fullWidth id="maxParticipants" name="maxParticipants" type="number" value={formValues.maxParticipants} onChange={handleInputChange} placeholder="不限制可留空" size={isMobile ? 'small' : 'medium'} />
+                <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                  最大参与人数
+                </Typography>
+                <TextField
+                  fullWidth
+                  id="maxParticipants"
+                  name="maxParticipants"
+                  type="number"
+                  value={formValues.maxParticipants}
+                  onChange={handleInputChange}
+                  placeholder="不限制可留空"
+                  size={isMobile ? 'small' : 'medium'}
+                />
               </Box>
             </CardContent>
           </Card>
 
           <Box sx={{ mb: 4, p: 3, borderRadius: 1, boxShadow: 1 }}>
-            <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>联系方式</Typography>
+            <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>
+              联系方式
+            </Typography>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>组织者姓名</Typography>
-              <TextField fullWidth id="organizer" name="organizer" type="text" error={!!errors['organizer']} helperText={errors['organizer']} value={formValues.organizer} onChange={handleInputChange} required placeholder="您的姓名" size={isMobile ? 'small' : 'medium'} />
+              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                组织者姓名
+              </Typography>
+              <TextField
+                fullWidth
+                id="organizer"
+                name="organizer"
+                type="text"
+                error={!!errors['organizer']}
+                helperText={errors['organizer']}
+                value={formValues.organizer}
+                onChange={handleInputChange}
+                required
+                placeholder="您的姓名"
+                size={isMobile ? 'small' : 'medium'}
+              />
             </Box>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>微信号</Typography>
-              <TextField fullWidth id="contact" name="contact" type="text" error={!!errors['contact']} helperText={errors['contact']} value={formValues.contact} onChange={handleInputChange} required placeholder="请输入微信号" size={isMobile ? 'small' : 'medium'} />
+              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                微信号
+              </Typography>
+              <TextField
+                fullWidth
+                id="contact"
+                name="contact"
+                type="text"
+                error={!!errors['contact']}
+                helperText={errors['contact']}
+                value={formValues.contact}
+                onChange={handleInputChange}
+                required
+                placeholder="请输入微信号"
+                size={isMobile ? 'small' : 'medium'}
+              />
             </Box>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>活动群二维码</Typography>
+              <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                活动群二维码
+              </Typography>
               <Box
                 className={`qr-upload ${dragover ? 'dragover' : ''}`}
                 onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragover(true); }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragover(true);
+                }}
                 onDragLeave={() => setDragover(false)}
-                onDrop={(e) => { e.preventDefault(); setDragover(false); if (e.dataTransfer.files.length > 0) handleQRFile(e.dataTransfer.files[0]); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragover(false);
+                  if (e.dataTransfer.files.length > 0)
+                    handleQRFile(e.dataTransfer.files[0]);
+                }}
                 sx={{
-                  border: !!errors['qrImageUrl'] ? '2px dashed #d32f2f' : '2px dashed #ddd',
+                  border: !!errors['qrImageUrl']
+                    ? '2px dashed #d32f2f'
+                    : '2px dashed #ddd',
                   borderRadius: 1,
                   padding: '2rem',
                   textAlign: 'center',
                   cursor: 'pointer',
-                  backgroundColor: dragover ? 'rgba(255, 127, 80, 0.05)' : 'transparent',
+                  backgroundColor: dragover
+                    ? 'rgba(255, 127, 80, 0.05)'
+                    : 'transparent',
                   transition: 'all 0.2s',
                   '&:hover': { backgroundColor: 'rgba(255, 127, 80, 0.05)' },
                 }}
@@ -303,22 +466,47 @@ const EditMeetup: React.FC = () => {
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
-                  onChange={(e) => { if (e.target.files && e.target.files.length > 0) { handleQRFile(e.target.files[0]); } }}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      handleQRFile(e.target.files[0]);
+                    }
+                  }}
                   style={{ display: 'none' }}
                 />
                 {qrPreview ? (
-                  <Box component="img" src={qrPreview} alt="二维码预览" sx={{ maxWidth: '200px', maxHeight: '200px', margin: '0 auto', borderRadius: 1 }} />
+                  <Box
+                    component="img"
+                    src={qrPreview}
+                    alt="二维码预览"
+                    sx={{
+                      maxWidth: '200px',
+                      maxHeight: '200px',
+                      margin: '0 auto',
+                      borderRadius: 1,
+                    }}
+                  />
                 ) : (
                   <>
-                    <Typography variant="body2" sx={{ mb: 1 }}>点击上传或拖拽上传群二维码</Typography>
-                    <Typography variant="caption" color="text.secondary">支持 JPG/PNG，最大 5MB</Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      点击上传或拖拽上传群二维码
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      支持 JPG/PNG，最大 5MB
+                    </Typography>
                   </>
                 )}
               </Box>
             </Box>
           </Box>
 
-          <Button type="submit" variant="contained" fullWidth disabled={submitLoading} onClick={handleSubmit} sx={{ py: 1.5, fontSize: '1.1rem', fontWeight: 600 }}>
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            disabled={submitLoading}
+            onClick={handleSubmit}
+            sx={{ py: 1.5, fontSize: '1.1rem', fontWeight: 600 }}
+          >
             {submitLoading ? '保存中...' : '💾 保存修改'}
           </Button>
         </form>

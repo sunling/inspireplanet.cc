@@ -5,17 +5,20 @@ import React, {
   useRef,
   useCallback,
   useMemo,
-} from "react";
-import styles from "./index.module.css";
-import { useResponsive } from "../../hooks/useResponsive";
-import { WeeklyCard } from "@/netlify/types";
-import { Box, IconButton } from "@mui/material";
-import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-import DownloadIcon from "@mui/icons-material/Download";
-import { getRandomGradientClass, getFontColorForGradient } from "@/constants/gradient";
-import DOMPurify from "dompurify";
-import { marked } from "marked";
+} from 'react';
+import styles from './index.module.css';
+import { useResponsive } from '../../hooks/useResponsive';
+import { WeeklyCard } from '@/netlify/types';
+import { Box, IconButton } from '@mui/material';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import DownloadIcon from '@mui/icons-material/Download';
+import {
+  getRandomGradientClass,
+  getFontColorForGradient,
+} from '@/constants/gradient';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 export interface CarouselItem extends WeeklyCard {
   category?: string;
 }
@@ -32,12 +35,12 @@ export interface CarouselProps {
 
 const Carousel: React.FC<CarouselProps> = ({
   items,
-  height = "600px",
+  height = '600px',
   autoPlay = true,
   autoPlayInterval = 3000,
   showIndicators = true,
   showPlayButton = true,
-  className = "",
+  className = '',
 }) => {
   const { isMobile, isTablet } = useResponsive();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -50,7 +53,7 @@ const Carousel: React.FC<CarouselProps> = ({
 
   // 响应式高度计算
   const getResponsiveHeight = useCallback(() => {
-    if (typeof height === "number") {
+    if (typeof height === 'number') {
       if (isMobile) return `${Math.min(height, 400)}px`;
       if (isTablet) return `${Math.min(height, 520)}px`;
       return `${height}px`;
@@ -60,15 +63,15 @@ const Carousel: React.FC<CarouselProps> = ({
 
   const direction = useMemo(() => {
     if (isMobile || isTablet) {
-      return "vertical";
+      return 'vertical';
     }
-    return "horizontal";
+    return 'horizontal';
   }, [isMobile, isTablet]);
 
   // 计算根样式
   const rootStyle = {
-    height: direction === "vertical" ? "auto" : getResponsiveHeight(),
-    minHeight: "300px",
+    height: direction === 'vertical' ? 'auto' : getResponsiveHeight(),
+    minHeight: '300px',
   };
 
   // 下一张
@@ -130,20 +133,20 @@ const Carousel: React.FC<CarouselProps> = ({
     try {
       const el = firstRefs.current[index];
       if (!el) return;
-      const { default: html2canvas } = await import("html2canvas");
+      const { default: html2canvas } = await import('html2canvas');
       const canvas = await html2canvas(el, {
         backgroundColor: null,
         scale: 3,
         useCORS: true,
         logging: false,
       });
-      const link = document.createElement("a");
-      const safeTitle = (items[index]?.title || "weekly-card").replace(
+      const link = document.createElement('a');
+      const safeTitle = (items[index]?.title || 'weekly-card').replace(
         /[^a-zA-Z0-9\u4e00-\u9fa5]/g,
-        "-"
+        '-'
       );
       link.download = `weekly-card-${safeTitle}.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (_) {}
   };
@@ -164,7 +167,7 @@ const Carousel: React.FC<CarouselProps> = ({
 
   return (
     <section
-      className={`${styles["component__carousel"]} ${className}`}
+      className={`${styles['component__carousel']} ${className}`}
       style={rootStyle}
     >
       <div
@@ -174,7 +177,7 @@ const Carousel: React.FC<CarouselProps> = ({
       >
         {items.map((e, index) => {
           const bgClass =
-            gradientClassesRef.current[index] || "card-gradient-1";
+            gradientClassesRef.current[index] || 'card-gradient-1';
           const fontColor = getFontColorForGradient(bgClass);
           return (
             <Box
@@ -199,7 +202,7 @@ const Carousel: React.FC<CarouselProps> = ({
                   alt={e.title || `Slide ${index + 1}`}
                   loading="lazy"
                 />
-                {direction === "horizontal" && (
+                {direction === 'horizontal' && (
                   <div className={styles[`cover-overlay`]}>
                     <div className={styles[`cover-title`]}>{e.title}</div>
                     <IconButton
@@ -209,13 +212,13 @@ const Carousel: React.FC<CarouselProps> = ({
                         downloadSlide(index);
                       }}
                       sx={{
-                        position: "absolute",
+                        position: 'absolute',
                         right: 12,
                         bottom: 12,
-                        backgroundColor: "#b2bceaff",
-                        color: "#fff",
+                        backgroundColor: '#b2bceaff',
+                        color: '#fff',
                         opacity: 0.85,
-                        "&:hover": { opacity: 1 },
+                        '&:hover': { opacity: 1 },
                       }}
                       size="small"
                     >
@@ -223,33 +226,53 @@ const Carousel: React.FC<CarouselProps> = ({
                     </IconButton>
                   </div>
                 )}
-                {direction === "vertical" && (
+                {direction === 'vertical' && (
                   <>
-                    <div className={styles["vertical-episode"]}>{`${e.episode}. ${e.name}`}</div>
-                    <div className={styles["vertical-title"]} style={{ color: fontColor }}>{e.title}</div>
                     <div
-                      className={styles["vertical-quote"]}
-                      style={{
-                        backgroundColor: `${fontColor}10`,
-                        ["--quoteColor" as any]: fontColor,
-                      }}
+                      className={styles['vertical-episode']}
+                    >{`${e.episode}. ${e.name}`}</div>
+                    <div
+                      className={styles['vertical-title']}
+                      style={{ color: fontColor }}
                     >
-                      <span style={{ color: fontColor, fontStyle: "italic", whiteSpace: "pre-line" }}>{e.quote}</span>
+                      {e.title}
                     </div>
                     <div
-                      className={styles["vertical-detail"]}
+                      className={styles['vertical-quote']}
+                      style={{
+                        backgroundColor: `${fontColor}10`,
+                        ['--quoteColor' as any]: fontColor,
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: fontColor,
+                          fontStyle: 'italic',
+                          whiteSpace: 'pre-line',
+                        }}
+                      >
+                        {e.quote}
+                      </span>
+                    </div>
+                    <div
+                      className={styles['vertical-detail']}
                       style={{ color: fontColor }}
                       dangerouslySetInnerHTML={{
                         __html: DOMPurify.sanitize(
-                          e.detail ? marked.parse(e.detail).toString() : ""
+                          e.detail ? marked.parse(e.detail).toString() : ''
                         ),
                       }}
                     />
-                    <div className={styles["vertical-meta"]} style={{ color: fontColor }}>
+                    <div
+                      className={styles['vertical-meta']}
+                      style={{ color: fontColor }}
+                    >
                       <span>{e.name}</span>
-                      <span>{new Date(e.created).toLocaleDateString("zh-CN")}</span>
+                      <span>
+                        {new Date(e.created).toLocaleDateString('zh-CN')}
+                      </span>
                     </div>
-                    <div className={styles["vertical-actions"]}>
+                    <div className={styles['vertical-actions']}>
                       <IconButton
                         aria-label="下载"
                         onClick={(ev) => {
@@ -257,10 +280,10 @@ const Carousel: React.FC<CarouselProps> = ({
                           downloadSlide(index);
                         }}
                         sx={{
-                          backgroundColor: "#b2bceaff",
-                          color: "#fff",
+                          backgroundColor: '#b2bceaff',
+                          color: '#fff',
                           opacity: 0.9,
-                          "&:hover": { opacity: 1 },
+                          '&:hover': { opacity: 1 },
                         }}
                         size="small"
                       >
@@ -285,7 +308,7 @@ const Carousel: React.FC<CarouselProps> = ({
                   className={styles[`${direction}-item-desc`]}
                   dangerouslySetInnerHTML={{
                     __html: DOMPurify.sanitize(
-                      e.detail ? marked.parse(e.detail).toString() : ""
+                      e.detail ? marked.parse(e.detail).toString() : ''
                     ),
                   }}
                 />
@@ -296,8 +319,8 @@ const Carousel: React.FC<CarouselProps> = ({
         {showPlayButton && (
           <div className={styles[`${direction}-carousel-action`]}>
             <IconButton
-              className={styles["carousel-arrow-left"]}
-              sx={{ color: "var(--primary)" }}
+              className={styles['carousel-arrow-left']}
+              sx={{ color: 'var(--primary)' }}
               onClick={prevSlide}
               aria-label="上一张"
             >
@@ -305,9 +328,9 @@ const Carousel: React.FC<CarouselProps> = ({
             </IconButton>
 
             <IconButton
-              className={styles["carousel-arrow-right"]}
+              className={styles['carousel-arrow-right']}
               onClick={nextSlide}
-              sx={{ color: "var(--primary)" }}
+              sx={{ color: 'var(--primary)' }}
               aria-label="下一张"
             >
               <ArrowForwardIosIcon fontSize="small" />
@@ -318,14 +341,14 @@ const Carousel: React.FC<CarouselProps> = ({
         {showIndicators && (
           <Box
             className={styles[`${direction}-carousel-indicate`]}
-            sx={{ display: { xs: "none", sm: "block" } }}
+            sx={{ display: { xs: 'none', sm: 'block' } }}
           >
             {items.length > 1 && (
               <Box
                 sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
                   gap: 1,
                   mt: 2,
                 }}
@@ -335,11 +358,11 @@ const Carousel: React.FC<CarouselProps> = ({
                   return (
                     <IconButton
                       key={index}
-                      className={styles["indicate-icon"]}
+                      className={styles['indicate-icon']}
                       sx={{
-                        backgroundColor: isActive ? "#ff5a36" : "#ffb6c1",
-                        "&:hover": {
-                          backgroundColor: "#ff5a36",
+                        backgroundColor: isActive ? '#ff5a36' : '#ffb6c1',
+                        '&:hover': {
+                          backgroundColor: '#ff5a36',
                         },
                       }}
                       size="small"

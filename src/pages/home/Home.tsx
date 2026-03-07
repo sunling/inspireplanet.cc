@@ -1,26 +1,36 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 
-import { Link } from "react-router-dom";
-import { Container, Button, Box, Typography, Paper, IconButton } from "@mui/material";
-import { useResponsive } from "../../hooks/useResponsive";
-import { ChevronRight, Star } from "@mui/icons-material";
-import Carousel from "../../components/Carousel";
-import Empty from "../../components/Empty/index";
-import Loading from "../../components/Loading/index";
-import { api } from "../../netlify/configs";
-import { WeeklyCard } from "../../netlify/types/index";
-import styles from "./home.module.css";
-import ErrorCard from "../../components/ErrorCard/index";
-import { getFontColorForGradient, getRandomGradientClass } from "@/constants/gradient";
-import DOMPurify from "dompurify";
-import { marked } from "marked";
-import html2canvas from "html2canvas";
+import { Link } from 'react-router-dom';
+import {
+  Container,
+  Button,
+  Box,
+  Typography,
+  Paper,
+  IconButton,
+} from '@mui/material';
+import { useResponsive } from '../../hooks/useResponsive';
+import { ChevronRight, Star } from '@mui/icons-material';
+import Carousel from '../../components/Carousel';
+import Empty from '../../components/Empty/index';
+import Loading from '../../components/Loading/index';
+import { api } from '../../netlify/configs';
+import { WeeklyCard } from '../../netlify/types/index';
+import styles from './home.module.css';
+import ErrorCard from '../../components/ErrorCard/index';
+import {
+  getFontColorForGradient,
+  getRandomGradientClass,
+} from '@/constants/gradient';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
+import html2canvas from 'html2canvas';
 
 const Home: React.FC = () => {
   const [cards, setCards] = useState<WeeklyCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { isMobile } = useResponsive();
+  const { isMobile, isTablet } = useResponsive();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [gradients, setGradients] = useState<string[]>([]);
   marked.setOptions({ breaks: true });
@@ -44,8 +54,8 @@ const Home: React.FC = () => {
       setGradients(formattedCards.map(() => getRandomGradientClass()));
       setIsLoading(false);
     } catch (err) {
-      console.error("加载卡片错误:", err);
-      setError("加载卡片失败，请稍后重试");
+      console.error('加载卡片错误:', err);
+      setError('加载卡片失败，请稍后重试');
       setIsLoading(false);
     }
   };
@@ -72,10 +82,13 @@ const Home: React.FC = () => {
       useCORS: true,
       logging: false,
     });
-    const link = document.createElement("a");
-    const safeTitle = (cards[currentIndex]?.title || "card").replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "-");
+    const link = document.createElement('a');
+    const safeTitle = (cards[currentIndex]?.title || 'card').replace(
+      /[^a-zA-Z0-9\u4e00-\u9fa5]/g,
+      '-'
+    );
     link.download = `weekly-card-${safeTitle}.png`;
-    link.href = canvas.toDataURL("image/png");
+    link.href = canvas.toDataURL('image/png');
     link.click();
   };
 
@@ -105,9 +118,9 @@ const Home: React.FC = () => {
       );
     }
 
-    if (isMobile) {
+    if (isMobile || isTablet) {
       const card = cards[currentIndex];
-      const gradientClass = gradients[currentIndex] || "card-gradient-1";
+      const gradientClass = gradients[currentIndex] || 'card-gradient-1';
       const fontColor = getFontColorForGradient(gradientClass);
       return (
         <Box sx={{ px: 1 }}>
@@ -116,18 +129,18 @@ const Home: React.FC = () => {
             id={`home-mobile-card-${card.id}`}
             className={gradientClass}
             sx={{
-              borderRadius: "12px",
-              overflow: "hidden",
+              borderRadius: '12px',
+              overflow: 'hidden',
               p: 3,
               color: fontColor,
-              position: "relative",
-              display: "flex",
-              flexDirection: "column",
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
             <Typography
               variant="h6"
-              sx={{ fontWeight: "bold", mb: 2, color: fontColor }}
+              sx={{ fontWeight: 'bold', mb: 2, color: fontColor }}
             >
               {card.title}
             </Typography>
@@ -136,58 +149,74 @@ const Home: React.FC = () => {
               sx={{
                 backgroundColor: `${fontColor}10`,
                 p: 2,
-                borderRadius: "8px",
+                borderRadius: '8px',
                 mb: 3,
-                fontStyle: "italic",
-                position: "relative",
+                fontStyle: 'italic',
+                position: 'relative',
                 pl: 4,
-                "&::before": {
+                '&::before': {
                   content: '"“"',
-                  position: "absolute",
+                  position: 'absolute',
                   left: 8,
                   top: -10,
-                  fontSize: "2.2rem",
+                  fontSize: '2.2rem',
                   lineHeight: 1,
                   color: fontColor,
                   opacity: 0.2,
                 },
               }}
             >
-              <Typography variant="body1" sx={{ color: fontColor, whiteSpace: "pre-line" }}>
+              <Typography
+                variant="body1"
+                sx={{ color: fontColor, whiteSpace: 'pre-line' }}
+              >
                 {card.quote}
               </Typography>
             </Box>
 
             <Box sx={{ mb: 3 }}>
               <img
-                src={card.imagePath || "/images/mistyblue.png"}
+                src={card.imagePath || '/images/mistyblue.png'}
                 alt={card.title}
                 style={{
-                  width: "100%",
-                  height: "auto",
-                  borderRadius: "8px",
-                  maxHeight: "240px",
-                  objectFit: "cover",
+                  width: '100%',
+                  height: 'auto',
+                  borderRadius: '8px',
+                  maxHeight: '240px',
+                  objectFit: 'cover',
                 }}
               />
             </Box>
 
-            <Box sx={{ fontSize: "1rem", lineHeight: 1.6, mb: 3 }}>
+            <Box sx={{ fontSize: '1rem', lineHeight: 1.6, mb: 3 }}>
               <div
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(
-                    card.detail ? marked.parse(card.detail).toString() : ""
+                    card.detail ? marked.parse(card.detail).toString() : ''
                   ),
                 }}
               />
             </Box>
 
-            <Box sx={{ mt: "auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="caption" sx={{ color: fontColor, opacity: 0.8 }}>
+            <Box
+              sx={{
+                mt: 'auto',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{ color: fontColor, opacity: 0.8 }}
+              >
                 — {card.name}
               </Typography>
-              <Typography variant="caption" sx={{ color: fontColor, opacity: 0.8 }}>
-                {new Date(card.created).toLocaleDateString("zh-CN")}
+              <Typography
+                variant="caption"
+                sx={{ color: fontColor, opacity: 0.8 }}
+              >
+                {new Date(card.created).toLocaleDateString('zh-CN')}
               </Typography>
             </Box>
 
@@ -195,13 +224,13 @@ const Home: React.FC = () => {
               aria-label="下载"
               onClick={() => handleDownloadMobile(card.id)}
               sx={{
-                position: "absolute",
+                position: 'absolute',
                 bottom: 10,
                 right: 10,
-                backgroundColor: "#667eea",
-                color: "white",
+                backgroundColor: '#667eea',
+                color: 'white',
                 opacity: 0.8,
-                "&:hover": { opacity: 1 },
+                '&:hover': { opacity: 1 },
               }}
               size="small"
             >
@@ -223,30 +252,30 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className={styles["home-container"]}>
+    <div className={styles['home-container']}>
       <Container maxWidth="lg">
         {/* 轮播部分 */}
-        <section className={styles["carousel-section"]}>
-          <div className={styles["section-header"]}>
+        <section className={styles['carousel-section']}>
+          <div className={styles['section-header']}>
             {/* <h2 className={styles["section-title"]}>最新启发卡片</h2> */}
             {/* <p className={styles["section-description"]}>
               探索来自社区的灵感与智慧，发现新的思考方式和生活感悟
             </p> */}
           </div>
 
-          <div className={styles["carousel-container"]}>
+          <div className={styles['carousel-container']}>
             {renderCarouselContent()}
           </div>
 
           {/* 查看全部按钮 */}
-          <div className={styles["view-all-container"]}>
+          <div className={styles['view-all-container']}>
             <Button
               variant="contained"
               component={Link}
               to="/cards"
               endIcon={<ChevronRight />}
-              className={`${styles["view-all-button"]} ${
-                isMobile ? styles["mobile-button"] : ""
+              className={`${styles['view-all-button']} ${
+                isMobile ? styles['mobile-button'] : ''
               }`}
             >
               <Star fontSize="inherit" />

@@ -210,7 +210,10 @@ export async function handler(
         }
         if (ownerId && (!uid || String(ownerId) !== String(uid))) {
           const title = '卡片收到新评论';
-          const snippet = sanitizedComment.length > 80 ? `${sanitizedComment.slice(0, 80)}...` : sanitizedComment;
+          const snippet =
+            sanitizedComment.length > 80
+              ? `${sanitizedComment.slice(0, 80)}...`
+              : sanitizedComment;
           const content = `${displayName} 评论了你的卡片《${cardRow?.title || ''}》：${snippet}`;
           const path = `/card-detail?id=${commentData.cardId}`;
           await createNotification(ownerId, title, content, path);

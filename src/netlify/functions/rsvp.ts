@@ -1,7 +1,7 @@
-import { supabase } from "../../database/supabase";
-import dotenv from "dotenv";
-import { getCommonHttpHeader } from "../../utils/http";
-import jwt from "jsonwebtoken";
+import { supabase } from '../../database/supabase';
+import dotenv from 'dotenv';
+import { getCommonHttpHeader } from '../../utils/http';
+import jwt from 'jsonwebtoken';
 dotenv.config();
 
 export async function handler(event: any, context: any) {
@@ -9,23 +9,23 @@ export async function handler(event: any, context: any) {
   const headers = getCommonHttpHeader();
 
   // Handle preflight requests
-  if (event.httpMethod === "OPTIONS") {
+  if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
       headers,
-      body: "",
+      body: '',
     };
   }
 
   try {
     switch (event.httpMethod) {
-      case "POST":
+      case 'POST':
         return await createRSVP(event, headers);
-      case "GET":
+      case 'GET':
         return await getRSVPs(event, headers);
-      case "PUT":
+      case 'PUT':
         return await updateRSVP(event, headers);
-      case "DELETE":
+      case 'DELETE':
         return await deleteRSVP(event, headers);
       default:
         return {
@@ -33,18 +33,18 @@ export async function handler(event: any, context: any) {
           headers,
           body: JSON.stringify({
             success: false,
-            error: "不支持的HTTP方法",
+            error: '不支持的HTTP方法',
           }),
         };
     }
   } catch (error) {
-    console.error("RSVP Handler error:", error);
+    console.error('RSVP Handler error:', error);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
         success: false,
-        error: "服务器内部错误",
+        error: '服务器内部错误',
         details: error instanceof Error ? error.message : String(error),
       }),
     };
@@ -55,7 +55,7 @@ function getUserIdFromAuth(event: any) {
   const auth =
     (event.headers as any)?.authorization ||
     (event.headers as any)?.Authorization;
-  if (!auth || !String(auth).startsWith("Bearer ")) return null;
+  if (!auth || !String(auth).startsWith('Bearer ')) return null;
   const token = String(auth).substring(7);
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
@@ -70,15 +70,15 @@ async function createRSVP(event: any, headers: any) {
   try {
     const rsvpData = JSON.parse(event.body);
     const meetupIdNum = Number(rsvpData.meetup_id);
-    const wechatId = String(rsvpData.wechat_id || "").trim();
-    const name = String(rsvpData.name || "").trim();
+    const wechatId = String(rsvpData.wechat_id || '').trim();
+    const name = String(rsvpData.name || '').trim();
     const authUserId = getUserIdFromAuth(event);
     const providedUserId =
       rsvpData.user_id !== undefined ? rsvpData.user_id : null;
     const userId = authUserId ?? providedUserId ?? null;
 
     // 验证必填字段
-    const requiredFields = ["meetup_id", "name", "wechat_id"];
+    const requiredFields = ['meetup_id', 'name', 'wechat_id'];
     for (const field of requiredFields) {
       if (!rsvpData[field]) {
         return {
@@ -96,7 +96,7 @@ async function createRSVP(event: any, headers: any) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ success: false, error: "活动ID不合法" }),
+        body: JSON.stringify({ success: false, error: '活动ID不合法' }),
       };
     }
 
@@ -104,15 +104,15 @@ async function createRSVP(event: any, headers: any) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ success: false, error: "姓名或微信号不合法" }),
+        body: JSON.stringify({ success: false, error: '姓名或微信号不合法' }),
       };
     }
 
     // 检查活动是否存在
     const { data: meetup, error: meetupError } = await supabase
-      .from("meetups")
-      .select("id, max_ppl, status")
-      .eq("id", meetupIdNum)
+      .from('meetups')
+      .select('id, max_ppl, status')
+      .eq('id', meetupIdNum)
       .single();
 
     if (meetupError || !meetup) {
@@ -121,18 +121,18 @@ async function createRSVP(event: any, headers: any) {
         headers,
         body: JSON.stringify({
           success: false,
-          error: "活动不存在",
+          error: '活动不存在',
         }),
       };
     }
 
-    if (meetup.status === "cancelled") {
+    if (meetup.status === 'cancelled') {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          error: "活动已取消",
+          error: '活动已取消',
         }),
       };
     }
@@ -143,10 +143,10 @@ async function createRSVP(event: any, headers: any) {
     // 1. 如果已登录，优先通过 user_id 查找（即使用户换了微信号）
     if (userId) {
       const { data: byUser } = await supabase
-        .from("meetup_rsvps")
-        .select("id, status, wechat_id")
-        .eq("meetup_id", meetupIdNum)
-        .eq("user_id", userId)
+        .from('meetup_rsvps')
+        .select('id, status, wechat_id')
+        .eq('meetup_id', meetupIdNum)
+        .eq('user_id', userId)
         .limit(1);
       if (byUser && byUser.length > 0) {
         existingRSVP = byUser[0];
@@ -156,23 +156,23 @@ async function createRSVP(event: any, headers: any) {
     // 2. 如果没找到，再通过 wechat_id 查找
     if (!existingRSVP) {
       const { data: byWechat } = await supabase
-        .from("meetup_rsvps")
-        .select("id, status, user_id")
-        .eq("meetup_id", meetupIdNum)
-        .eq("wechat_id", wechatId)
+        .from('meetup_rsvps')
+        .select('id, status, user_id')
+        .eq('meetup_id', meetupIdNum)
+        .eq('wechat_id', wechatId)
         .limit(1);
       if (byWechat && byWechat.length > 0) {
         existingRSVP = byWechat[0];
       }
     }
 
-    if (existingRSVP && existingRSVP.status === "confirmed") {
+    if (existingRSVP && existingRSVP.status === 'confirmed') {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          error: "您已经报名了这个活动",
+          error: '您已经报名了这个活动',
         }),
       };
     }
@@ -182,20 +182,20 @@ async function createRSVP(event: any, headers: any) {
     const enforceLimit = Number.isFinite(maxLimit) && maxLimit > 0;
     if (enforceLimit) {
       const { count, error: countError } = await supabase
-        .from("meetup_rsvps")
-        .select("*", { count: "exact", head: true })
-        .eq("meetup_id", meetupIdNum)
-        .eq("status", "confirmed");
+        .from('meetup_rsvps')
+        .select('*', { count: 'exact', head: true })
+        .eq('meetup_id', meetupIdNum)
+        .eq('status', 'confirmed');
 
       if (countError) {
-        console.error("Count error:", countError);
+        console.error('Count error:', countError);
       } else if (count !== null && count >= maxLimit) {
         return {
           statusCode: 400,
           headers,
           body: JSON.stringify({
             success: false,
-            error: "活动人数已满",
+            error: '活动人数已满',
           }),
         };
       }
@@ -206,28 +206,28 @@ async function createRSVP(event: any, headers: any) {
     if (existingRSVP) {
       // 更新现有RSVP
       const { data, error } = await supabase
-        .from("meetup_rsvps")
+        .from('meetup_rsvps')
         .update({
           name,
-          status: "confirmed",
+          status: 'confirmed',
           user_id: userId as any,
           wechat_id: wechatId, // 确保更新微信号
         })
-        .eq("id", existingRSVP.id)
+        .eq('id', existingRSVP.id)
         .select();
 
       result = { data, error };
     } else {
       // 创建新RSVP
       const { data, error } = await supabase
-        .from("meetup_rsvps")
+        .from('meetup_rsvps')
         .insert([
           {
             meetup_id: meetupIdNum,
             name,
             wechat_id: wechatId,
             user_id: userId as any,
-            status: "confirmed",
+            status: 'confirmed',
           },
         ])
         .select();
@@ -236,13 +236,13 @@ async function createRSVP(event: any, headers: any) {
     }
 
     if (result.error) {
-      console.error("Database error:", result.error);
+      console.error('Database error:', result.error);
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({
           success: false,
-          error: "报名失败",
+          error: '报名失败',
           details: result.error.message,
         }),
       };
@@ -253,18 +253,18 @@ async function createRSVP(event: any, headers: any) {
       headers,
       body: JSON.stringify({
         success: true,
-        message: "报名成功",
+        message: '报名成功',
         rsvp: result.data?.[0] || null,
       }),
     };
   } catch (error) {
-    console.error("Create RSVP error:", error);
+    console.error('Create RSVP error:', error);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
         success: false,
-        error: "报名失败",
+        error: '报名失败',
         details: error instanceof Error ? error.message : String(error),
       }),
     };
@@ -278,45 +278,46 @@ async function getRSVPs(event: any, headers: any) {
     const { meetup_id, user_id, wechat_id, status } = params;
     const meetupIdNum = meetup_id !== undefined ? Number(meetup_id) : undefined;
 
-    let query = supabase.from("meetup_rsvps").select("*");
+    let query = supabase.from('meetup_rsvps').select('*');
 
     if (meetupIdNum !== undefined && Number.isFinite(meetupIdNum)) {
-      query = query.eq("meetup_id", meetupIdNum);
+      query = query.eq('meetup_id', meetupIdNum);
     }
 
     if (user_id) {
       query = query.eq(
-        "user_id",
+        'user_id',
         isNaN(Number(user_id)) ? user_id : Number(user_id)
       );
     }
 
     if (wechat_id) {
-      query = query.eq("wechat_id", wechat_id);
+      query = query.eq('wechat_id', wechat_id);
     }
 
-    const statusTrimmed = status !== undefined ? String(status).trim() : undefined;
-    if (!statusTrimmed || statusTrimmed === "confirmed") {
-      query = query.eq("status", "confirmed");
-    } else if (statusTrimmed === "cancelled") {
-      query = query.eq("status", "cancelled");
-    } else if (statusTrimmed === "all") {
+    const statusTrimmed =
+      status !== undefined ? String(status).trim() : undefined;
+    if (!statusTrimmed || statusTrimmed === 'confirmed') {
+      query = query.eq('status', 'confirmed');
+    } else if (statusTrimmed === 'cancelled') {
+      query = query.eq('status', 'cancelled');
+    } else if (statusTrimmed === 'all') {
       // 不加状态过滤
     } else {
-      query = query.eq("status", statusTrimmed);
+      query = query.eq('status', statusTrimmed);
     }
-    query = query.order("created_at", { ascending: false });
+    query = query.order('created_at', { ascending: false });
 
     const { data, error } = await query;
 
     if (error) {
-      console.error("Database error:", error);
+      console.error('Database error:', error);
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({
           success: false,
-          error: "获取报名信息失败",
+          error: '获取报名信息失败',
           details: error.message,
         }),
       };
@@ -331,20 +332,20 @@ async function getRSVPs(event: any, headers: any) {
       }),
     };
   } catch (error) {
-    console.error("Get RSVPs error:", error);
+    console.error('Get RSVPs error:', error);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
         success: false,
-        error: "获取报名信息失败",
+        error: '获取报名信息失败',
         details: error instanceof Error ? error.message : String(error),
       }),
     };
   }
 }
 
-  // 更新RSVP状态
+// 更新RSVP状态
 async function updateRSVP(event: any, headers: any) {
   try {
     const params = event.queryStringParameters || {};
@@ -357,7 +358,7 @@ async function updateRSVP(event: any, headers: any) {
         headers,
         body: JSON.stringify({
           success: false,
-          error: "缺少RSVP ID",
+          error: '缺少RSVP ID',
         }),
       };
     }
@@ -367,7 +368,7 @@ async function updateRSVP(event: any, headers: any) {
     const hasNum = Number.isFinite(idNum);
 
     // 准备更新数据
-    const allowedFields = ["status", "name"];
+    const allowedFields = ['status', 'name'];
     const updateRecord = {};
     allowedFields.forEach((field) => {
       if (updateData[field] !== undefined) {
@@ -382,22 +383,22 @@ async function updateRSVP(event: any, headers: any) {
         headers,
         body: JSON.stringify({
           success: false,
-          error: "无可更新字段",
+          error: '无可更新字段',
         }),
       };
     }
 
     let pre = await supabase
-      .from("meetup_rsvps")
-      .select("id")
-      .eq("id", idTrimmed as any)
+      .from('meetup_rsvps')
+      .select('id')
+      .eq('id', idTrimmed as any)
       .limit(1);
     let preData = pre.data || [];
     if ((!preData || preData.length === 0) && hasNum) {
       pre = await supabase
-        .from("meetup_rsvps")
-        .select("id")
-        .eq("id", idNum as any)
+        .from('meetup_rsvps')
+        .select('id')
+        .eq('id', idNum as any)
         .limit(1);
       preData = pre.data || [];
     }
@@ -407,32 +408,32 @@ async function updateRSVP(event: any, headers: any) {
         headers,
         body: JSON.stringify({
           success: false,
-          error: "RSVP不存在",
+          error: 'RSVP不存在',
         }),
       };
     }
     let { data, error } = await supabase
-      .from("meetup_rsvps")
+      .from('meetup_rsvps')
       .update(updateRecord)
-      .eq("id", idTrimmed as any)
+      .eq('id', idTrimmed as any)
       .select();
     if ((!data || data.length === 0) && hasNum && !error) {
       const second = await supabase
-        .from("meetup_rsvps")
+        .from('meetup_rsvps')
         .update(updateRecord)
-        .eq("id", idNum as any)
+        .eq('id', idNum as any)
         .select();
       data = second.data;
       error = second.error;
     }
     if (error) {
-      console.error("Database update error:", error);
+      console.error('Database update error:', error);
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({
           success: false,
-          error: "更新RSVP失败",
+          error: '更新RSVP失败',
           details: error.message,
         }),
       };
@@ -443,19 +444,19 @@ async function updateRSVP(event: any, headers: any) {
       headers,
       body: JSON.stringify({
         success: true,
-        message: "RSVP更新成功",
+        message: 'RSVP更新成功',
         affected: Array.isArray(data) ? data.length : 0,
         rsvp: Array.isArray(data) && data.length > 0 ? data[0] : null,
       }),
     };
   } catch (error) {
-    console.error("Update RSVP error:", error);
+    console.error('Update RSVP error:', error);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
         success: false,
-        error: "更新RSVP失败",
+        error: '更新RSVP失败',
         details: error instanceof Error ? error.message : String(error),
       }),
     };

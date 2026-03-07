@@ -1,24 +1,19 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { handler } from '../../netlify/functions/weeklyCards';
 import { supabase } from '../../database/supabase';
 
 // Hoist mocks
-const { 
-  mockFrom, 
-  mockSelect, 
-  mockIlike, 
-  mockOrder, 
-  mockLimit 
-} = vi.hoisted(() => {
-  return {
-    mockFrom: vi.fn(),
-    mockSelect: vi.fn(),
-    mockIlike: vi.fn(),
-    mockOrder: vi.fn(),
-    mockLimit: vi.fn(),
-  };
-});
+const { mockFrom, mockSelect, mockIlike, mockOrder, mockLimit } = vi.hoisted(
+  () => {
+    return {
+      mockFrom: vi.fn(),
+      mockSelect: vi.fn(),
+      mockIlike: vi.fn(),
+      mockOrder: vi.fn(),
+      mockLimit: vi.fn(),
+    };
+  }
+);
 
 // Mock module
 vi.mock('../../database/supabase', () => ({
@@ -65,15 +60,15 @@ describe('weeklyCards function', () => {
         quote: 'Weekly Quote',
         detail: 'Weekly Detail',
         created: '2023-01-01',
-        image_path: 'weekly/path.png' // snake_case
-      }
+        image_path: 'weekly/path.png', // snake_case
+      },
     ];
 
     // Mock limit (end of chain)
     mockLimit.mockResolvedValue({ data: mockDbData, error: null });
     // Also mock order in case limit is not called (though code calls limit if limitParam is present)
     // Wait, the code calls limit if limitParam is present. If not, await query is called on result of order.
-    // So order should also return a promise-like object if awaited directly? 
+    // So order should also return a promise-like object if awaited directly?
     // Or we just test the case where it returns data.
     // In the code: `const { data, error } = await query;`
     // If limit is not called, query is the result of order().
@@ -81,11 +76,11 @@ describe('weeklyCards function', () => {
 
     const event = {
       httpMethod: 'GET',
-      queryStringParameters: {}
+      queryStringParameters: {},
     } as any;
 
     const response = await handler(event, {} as any);
-    
+
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
     const card = body.records[0];
@@ -102,7 +97,7 @@ describe('weeklyCards function', () => {
 
     const event = {
       httpMethod: 'GET',
-      queryStringParameters: { episode: 'EP01' }
+      queryStringParameters: { episode: 'EP01' },
     } as any;
 
     await handler(event, {} as any);

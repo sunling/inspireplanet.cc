@@ -13,15 +13,23 @@ function getEnvVars(): EnvVars {
   try {
     // 首先尝试服务端环境变量（Netlify Functions）
     if (typeof process !== 'undefined' && process.env) {
-      const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
+      const url =
+        process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
       // 在服务端优先使用服务角色密钥（不受RLS限制）
-      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-      const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
-      
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+      const anonKey =
+        process.env.SUPABASE_ANON_KEY ||
+        process.env.VITE_SUPABASE_ANON_KEY ||
+        '';
+
       if (!serviceKey) {
-        console.warn('⚠️ Warning: SUPABASE_SERVICE_ROLE_KEY is not set. Database operations may fail due to RLS policies.');
+        console.warn(
+          '⚠️ Warning: SUPABASE_SERVICE_ROLE_KEY is not set. Database operations may fail due to RLS policies.'
+        );
       } else {
-        console.log('✅ Using SUPABASE_SERVICE_ROLE_KEY for database connection.');
+        console.log(
+          '✅ Using SUPABASE_SERVICE_ROLE_KEY for database connection.'
+        );
       }
 
       return {

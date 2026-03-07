@@ -176,8 +176,7 @@ async function createMeetup(
 
     // 插入到数据库
     const maxRaw = meetupData.maxParticipants as any;
-    const maxParsed =
-      typeof maxRaw === 'number' ? maxRaw : Number(maxRaw);
+    const maxParsed = typeof maxRaw === 'number' ? maxRaw : Number(maxRaw);
     const sanitizedMax =
       Number.isFinite(maxParsed) && maxParsed > 0 ? maxParsed : null;
 
@@ -443,9 +442,12 @@ async function updateMeetup(
     if (updateData.title !== undefined) updateRecord.title = updateData.title;
     if (updateData.description !== undefined)
       updateRecord.description = updateData.description;
-    if (updateData.datetime !== undefined) updateRecord.datetime = updateData.datetime;
-    if (updateData.location !== undefined) updateRecord.location = updateData.location || null;
-    if (updateData.duration !== undefined) updateRecord.duration = updateData.duration;
+    if (updateData.datetime !== undefined)
+      updateRecord.datetime = updateData.datetime;
+    if (updateData.location !== undefined)
+      updateRecord.location = updateData.location || null;
+    if (updateData.duration !== undefined)
+      updateRecord.duration = updateData.duration;
     // 前端可能传 type，数据库列为 mode
     if (updateData.type !== undefined) updateRecord.mode = updateData.type;
     if (updateData.mode !== undefined) updateRecord.mode = updateData.mode;
@@ -454,19 +456,28 @@ async function updateMeetup(
       const mp = Number(updateData.max_participants as any);
       updateRecord.max_ppl = Number.isFinite(mp) && mp > 0 ? mp : null;
     }
-    if (updateData.max_ppl !== undefined) updateRecord.max_ppl = updateData.max_ppl;
+    if (updateData.max_ppl !== undefined)
+      updateRecord.max_ppl = updateData.max_ppl;
     // 组织者：前端传 organizer，数据库列为 creator
-    if (updateData.organizer !== undefined) updateRecord.creator = updateData.organizer;
-    if (updateData.creator !== undefined) updateRecord.creator = updateData.creator;
+    if (updateData.organizer !== undefined)
+      updateRecord.creator = updateData.organizer;
+    if (updateData.creator !== undefined)
+      updateRecord.creator = updateData.creator;
     // 联系方式：前端传 contact，数据库列为 wechat_id
-    if (updateData.contact !== undefined) updateRecord.wechat_id = updateData.contact;
-    if (updateData.wechat_id !== undefined) updateRecord.wechat_id = updateData.wechat_id;
+    if (updateData.contact !== undefined)
+      updateRecord.wechat_id = updateData.contact;
+    if (updateData.wechat_id !== undefined)
+      updateRecord.wechat_id = updateData.wechat_id;
     // 群二维码：前端传 qr_image_url，数据库列为 cover
-    if (updateData.qr_image_url !== undefined) updateRecord.cover = updateData.qr_image_url || null;
-    if (updateData.cover !== undefined) updateRecord.cover = updateData.cover || null;
+    if (updateData.qr_image_url !== undefined)
+      updateRecord.cover = updateData.qr_image_url || null;
+    if (updateData.cover !== undefined)
+      updateRecord.cover = updateData.cover || null;
     // 状态与其他可选字段
-    if (updateData.status !== undefined) updateRecord.status = updateData.status;
-    if ((updateData as any).notes !== undefined) updateRecord.notes = (updateData as any).notes;
+    if (updateData.status !== undefined)
+      updateRecord.status = updateData.status;
+    if ((updateData as any).notes !== undefined)
+      updateRecord.notes = (updateData as any).notes;
 
     // 更新数据库
     const { data, error } = await supabase

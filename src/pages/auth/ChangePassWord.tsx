@@ -330,14 +330,14 @@ const ChangePassWord: React.FC = () => {
                         passwordStrength === 'weak'
                           ? '#f8d7da'
                           : passwordStrength === 'medium'
-                          ? '#fff3cd'
-                          : '#d4edda',
+                            ? '#fff3cd'
+                            : '#d4edda',
                       color:
                         passwordStrength === 'weak'
                           ? '#721c24'
                           : passwordStrength === 'medium'
-                          ? '#856404'
-                          : '#155724',
+                            ? '#856404'
+                            : '#155724',
                       fontSize: '0.875rem',
                     }}
                   >
@@ -345,8 +345,8 @@ const ChangePassWord: React.FC = () => {
                     {passwordStrength === 'weak'
                       ? '弱'
                       : passwordStrength === 'medium'
-                      ? '中等'
-                      : '强'}
+                        ? '中等'
+                        : '强'}
                   </Box>
                 )}
 
