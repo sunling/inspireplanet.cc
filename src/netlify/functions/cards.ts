@@ -1,3 +1,4 @@
+import { snakeToCamel } from '@/utils/helper';
 import { supabase } from '../../database/supabase';
 import { CardItem } from '../types';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
@@ -234,20 +235,7 @@ async function fetch(
       };
     }
 
-    const records = (data || []).map((row, index) => ({
-      id: row.id || `row_${index}`,
-      title: row.title,
-      quote: row.quote,
-      detail: row.detail,
-      font: row.font,
-      imagePath: row.image_path,
-      upload: row.upload,
-      creator: row.creator,
-      created: row.created,
-      gradientClass: row.gradient_class,
-      username: row.username,
-      likesCount: row.likes_count || 0,
-    }));
+    const records = (data || []).map((row, index) => snakeToCamel(row));
 
     // 更新缓存
     if (idParam) {
