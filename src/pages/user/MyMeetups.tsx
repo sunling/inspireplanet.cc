@@ -51,7 +51,7 @@ const MyMeetups: React.FC = () => {
   const [myRsvps, setMyRsvps] = useState<Participant[]>([]);
   const [rsvpMeetups, setRsvpMeetups] = useState<Meetup[]>([]);
   const [currentStatus, setCurrentStatus] = useState<FilterStatus>(
-    FilterStatus.ALL
+    FilterStatus.ALL,
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +101,7 @@ const MyMeetups: React.FC = () => {
           meetup.creator === curUser?.username ||
           meetup.organizer === curUser?.name ||
           meetup.user_id === curUser?.username ||
-          meetup.user_id === curUser?.name
+          meetup.user_id === curUser?.name,
       );
       setAllMeetups(userMeetups as Meetup[]);
 
@@ -136,29 +136,31 @@ const MyMeetups: React.FC = () => {
         showSnackbar.error(res.error || '获取报名信息失败');
         return;
       }
-      const rsvps = (res.data?.rsvps || []).filter((r: any) => r && r.meetup_id);
+      const rsvps = (res.data?.rsvps || []).filter(
+        (r: any) => r && r.meetup_id,
+      );
       setMyRsvps(rsvps as Participant[]);
 
       const ids = Array.from(
         new Set(
           rsvps
             .map((r: any) => String(r.meetup_id))
-            .filter((id: string) => !!id)
-        )
+            .filter((id: string) => !!id),
+        ),
       );
 
       const existingMap = new Map(
-        (allMeetupsList || []).map((m) => [String(m.id), m])
+        (allMeetupsList || []).map((m) => [String(m.id), m]),
       );
       const missingIds = ids.filter((id) => !existingMap.has(id));
 
       let fetchedMeetups: Meetup[] = [];
       if (missingIds.length > 0) {
         const results = await Promise.all(
-          missingIds.map((id) => api.meetups.getById(id))
+          missingIds.map((id) => api.meetups.getById(id)),
         );
         fetchedMeetups = results.flatMap((resp) =>
-          resp.success ? (resp.data?.meetups || []) : []
+          resp.success ? resp.data?.meetups || [] : [],
         ) as Meetup[];
       }
 
@@ -166,7 +168,7 @@ const MyMeetups: React.FC = () => {
         .map(
           (id) =>
             existingMap.get(id) ||
-            fetchedMeetups.find((m) => String(m.id) === id)
+            fetchedMeetups.find((m) => String(m.id) === id),
         )
         .filter(Boolean) as Meetup[];
 
@@ -177,7 +179,10 @@ const MyMeetups: React.FC = () => {
     }
   };
 
-  const handleStatusChange = (_: React.MouseEvent<HTMLElement>, newStatus: any) => {
+  const handleStatusChange = (
+    _: React.MouseEvent<HTMLElement>,
+    newStatus: any,
+  ) => {
     if (newStatus !== null) {
       setCurrentStatus(newStatus);
     }
@@ -231,7 +236,10 @@ const MyMeetups: React.FC = () => {
     });
   };
 
-  const filteredMeetups = useMemo(() => getFilteredMeetups(), [currentStatus, allMeetups]);
+  const filteredMeetups = useMemo(
+    () => getFilteredMeetups(),
+    [currentStatus, allMeetups],
+  );
 
   const renderMeetupCard = (meetup: Meetup) => {
     const start = new Date(meetup.datetime);
@@ -241,7 +249,15 @@ const MyMeetups: React.FC = () => {
     const end = new Date(start.getTime() + (hasDur ? dur * 3600 * 1000 : 0));
     const isCancelled = String(meetup.status).toLowerCase() === 'cancelled';
 
-    const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const weekdayNames = [
+      '周日',
+      '周一',
+      '周二',
+      '周三',
+      '周四',
+      '周五',
+      '周六',
+    ];
     const weekday = weekdayNames[start.getDay()];
     const formattedDate = formatDate(start.toISOString());
     const hours = start.getHours();
@@ -251,15 +267,20 @@ const MyMeetups: React.FC = () => {
     const mm = String(minutes).padStart(2, '0');
     const formattedTime12 = `${ampm} ${hour12}:${mm}`;
 
-    const statusLabel =
-      isCancelled ? '已取消' : now < start ? '即将开始' : now > end ? '已结束' : '进行中';
+    const statusLabel = isCancelled
+      ? '已取消'
+      : now < start
+        ? '即将开始'
+        : now > end
+          ? '已结束'
+          : '进行中';
     const statusColor = isCancelled
       ? 'error'
       : statusLabel === '已结束'
-      ? 'info'
-      : statusLabel === '即将开始'
-      ? 'success'
-      : 'primary';
+        ? 'info'
+        : statusLabel === '即将开始'
+          ? 'success'
+          : 'primary';
 
     return (
       <Paper
@@ -289,10 +310,16 @@ const MyMeetups: React.FC = () => {
         </Typography>
 
         <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography
+            variant="body2"
+            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+          >
             📅 {formattedDate}（{weekday}）
           </Typography>
-          <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography
+            variant="body2"
+            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+          >
             🕐 {formattedTime12}
           </Typography>
           {meetup.location && (
@@ -310,7 +337,11 @@ const MyMeetups: React.FC = () => {
           )}
         </Box>
 
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.5, wordBreak: 'break-all' }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mb: 3, lineHeight: 1.5, wordBreak: 'break-all' }}
+        >
           {escapeHtml(meetup.description)}
         </Typography>
 
@@ -332,7 +363,7 @@ const MyMeetups: React.FC = () => {
             >
               👁️ 查看
             </Button>
-            {statusLabel !== '已结束' && !isCancelled && (
+            {canEdit(meetup) && statusLabel !== '已结束' && !isCancelled && (
               <>
                 <Button
                   size={isMobile ? 'small' : 'medium'}
@@ -356,7 +387,10 @@ const MyMeetups: React.FC = () => {
           </Box>
           <Typography variant="caption" color="text.secondary">
             {meetup.participant_count || 0}
-            {Number(meetup.max_participants) > 0 ? '/' + meetup.max_participants : ''} 人参加
+            {Number(meetup.max_participants) > 0
+              ? '/' + meetup.max_participants
+              : ''}{' '}
+            人参加
           </Typography>
         </Box>
       </Paper>
@@ -368,16 +402,23 @@ const MyMeetups: React.FC = () => {
     if (!window.confirm('确定要取消报名吗？')) return;
     try {
       // 优先按报名记录ID取消，失败再按活动ID+微信号取消
-      let res = rsvp?.id ? await api.rsvp.cancel(rsvp.id as any) : ({ success: false, statusCode: 0 } as any);
+      let res = rsvp?.id
+        ? await api.rsvp.cancel(rsvp.id as any)
+        : ({ success: false, statusCode: 0 } as any);
       if (!res.success && meetupId && rsvp?.wechat_id) {
-        const fallback = await api.rsvp.cancelByMeetupWechat(meetupId as any, rsvp.wechat_id as any);
+        const fallback = await api.rsvp.cancelByMeetupWechat(
+          meetupId as any,
+          rsvp.wechat_id as any,
+        );
         res = fallback;
       }
       if (!res.success) {
         showSnackbar.error(res.error || '取消报名失败');
         return;
       }
-      const newRsvps = (myRsvps || []).filter((x) => String(x.id) !== String(rsvp?.id));
+      const newRsvps = (myRsvps || []).filter(
+        (x) => String(x.id) !== String(rsvp?.id),
+      );
       setMyRsvps(newRsvps);
       const ids = Array.from(new Set(newRsvps.map((r) => String(r.meetup_id))));
       setRsvpMeetups((prev) => prev.filter((m) => ids.includes(String(m.id))));
@@ -387,6 +428,17 @@ const MyMeetups: React.FC = () => {
     }
   };
 
+  // 在将来时间才可以编辑活动
+  const canEdit = (meetup: Meetup) => {
+    const start = new Date(meetup.datetime);
+    const now = new Date();
+    const dur = Number(meetup.duration);
+    const hasDur = Number.isFinite(dur) && dur > 0;
+    const end = new Date(start.getTime() + (hasDur ? dur * 3600 * 1000 : 0));
+
+    return now.valueOf() < end.valueOf();
+  };
+
   const renderRsvpMeetupCard = (meetup: Meetup, rsvp?: Participant) => {
     const start = new Date(meetup.datetime);
     const now = new Date();
@@ -394,7 +446,15 @@ const MyMeetups: React.FC = () => {
     const hasDur = Number.isFinite(dur) && dur > 0;
     const end = new Date(start.getTime() + (hasDur ? dur * 3600 * 1000 : 0));
     const isCancelled = String(meetup.status).toLowerCase() === 'cancelled';
-    const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const weekdayNames = [
+      '周日',
+      '周一',
+      '周二',
+      '周三',
+      '周四',
+      '周五',
+      '周六',
+    ];
     const weekday = weekdayNames[start.getDay()];
     const formattedDate = formatDate(start.toISOString());
     const hours = start.getHours();
@@ -403,15 +463,20 @@ const MyMeetups: React.FC = () => {
     const hour12 = hours % 12 || 12;
     const mm = String(minutes).padStart(2, '0');
     const formattedTime12 = `${ampm} ${hour12}:${mm}`;
-    const statusLabel =
-      isCancelled ? '已取消' : now < start ? '即将开始' : now > end ? '已结束' : '进行中';
+    const statusLabel = isCancelled
+      ? '已取消'
+      : now < start
+        ? '即将开始'
+        : now > end
+          ? '已结束'
+          : '进行中';
     const statusColor = isCancelled
       ? 'error'
       : statusLabel === '已结束'
-      ? 'info'
-      : statusLabel === '即将开始'
-      ? 'success'
-      : 'primary';
+        ? 'info'
+        : statusLabel === '即将开始'
+          ? 'success'
+          : 'primary';
 
     return (
       <Paper
@@ -439,10 +504,16 @@ const MyMeetups: React.FC = () => {
           {escapeHtml(meetup.title)}
         </Typography>
         <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography
+            variant="body2"
+            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+          >
             📅 {formattedDate}（{weekday}）
           </Typography>
-          <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography
+            variant="body2"
+            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+          >
             🕐 {formattedTime12}
           </Typography>
           {meetup.location && (
@@ -459,10 +530,21 @@ const MyMeetups: React.FC = () => {
             </Typography>
           )}
         </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.5, wordBreak: 'break-all' }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mb: 3, lineHeight: 1.5, wordBreak: 'break-all' }}
+        >
           {escapeHtml(meetup.description)}
         </Typography>
-        <Box sx={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box
+          sx={{
+            marginTop: 'auto',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               size={isMobile ? 'small' : 'medium'}
@@ -473,7 +555,7 @@ const MyMeetups: React.FC = () => {
             >
               👁️ 查看
             </Button>
-            {!isCancelled && rsvp?.id && (
+            {canEdit(meetup) && !isCancelled && rsvp?.id && (
               <Button
                 size={isMobile ? 'small' : 'medium'}
                 color="error"
@@ -486,7 +568,10 @@ const MyMeetups: React.FC = () => {
           </Box>
           <Typography variant="caption" color="text.secondary">
             {meetup.participant_count || 0}
-            {Number(meetup.max_participants) > 0 ? '/' + meetup.max_participants : ''} 人参加
+            {Number(meetup.max_participants) > 0
+              ? '/' + meetup.max_participants
+              : ''}{' '}
+            人参加
           </Typography>
         </Box>
       </Paper>
@@ -507,7 +592,12 @@ const MyMeetups: React.FC = () => {
           <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
             我的活动
           </Typography>
-          <Button variant="contained" color="primary" component={Link} to="/create-meetup">
+          <Button
+            variant="contained"
+            color="primary"
+            component={Link}
+            to="/create-meetup"
+          >
             发起新活动
           </Button>
         </Box>
@@ -531,11 +621,19 @@ const MyMeetups: React.FC = () => {
           <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
             我的活动
           </Typography>
-          <Button variant="contained" color="primary" component={Link} to="/create-meetup">
+          <Button
+            variant="contained"
+            color="primary"
+            component={Link}
+            to="/create-meetup"
+          >
             发起新活动
           </Button>
         </Box>
-        <Empty message="请先登录" description="您需要登录后才能查看和管理自己的活动" />
+        <Empty
+          message="请先登录"
+          description="您需要登录后才能查看和管理自己的活动"
+        />
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <Button
             variant="contained"
@@ -558,7 +656,15 @@ const MyMeetups: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Container
+      maxWidth="lg"
+      sx={{
+        py: 4,
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Box
         sx={{
           display: 'flex',
@@ -572,7 +678,12 @@ const MyMeetups: React.FC = () => {
         <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
           我的活动
         </Typography>
-        <Button variant="contained" color="primary" component={Link} to="/create-meetup">
+        <Button
+          variant="contained"
+          color="primary"
+          component={Link}
+          to="/create-meetup"
+        >
           发起新活动
         </Button>
       </Box>
@@ -581,17 +692,28 @@ const MyMeetups: React.FC = () => {
         {isMobileScreen ? (
           <FormControl fullWidth sx={{ minWidth: 120 }}>
             <InputLabel id="status-select-label">活动状态</InputLabel>
-            <Select labelId="status-select-label" id="status-select" value={currentStatus} label="活动状态">
+            <Select
+              labelId="status-select-label"
+              id="status-select"
+              value={currentStatus}
+              label="活动状态"
+            >
               <MenuItem value="all" onClick={() => handleSelectChange('all')}>
                 全部
               </MenuItem>
-              <MenuItem value="active" onClick={() => handleSelectChange('active')}>
+              <MenuItem
+                value="active"
+                onClick={() => handleSelectChange('active')}
+              >
                 进行中
               </MenuItem>
               <MenuItem value="end" onClick={() => handleSelectChange('end')}>
                 已完成
               </MenuItem>
-              <MenuItem value="cancelled" onClick={() => handleSelectChange('cancelled')}>
+              <MenuItem
+                value="cancelled"
+                onClick={() => handleSelectChange('cancelled')}
+              >
                 已取消
               </MenuItem>
             </Select>
@@ -630,7 +752,12 @@ const MyMeetups: React.FC = () => {
         {loading ? (
           <Loading message="加载活动中..." size={40} />
         ) : error ? (
-          <ErrorCard message="加载失败" description={error} onRetry={loadMyMeetups} retryText="重试" />
+          <ErrorCard
+            message="加载失败"
+            description={error}
+            onRetry={loadMyMeetups}
+            retryText="重试"
+          />
         ) : (
           <>
             {filteredMeetups.length === 0 ? (
@@ -681,7 +808,7 @@ const MyMeetups: React.FC = () => {
                 >
                   {rsvpMeetups.map((meetup) => {
                     const r = (myRsvps || []).find(
-                      (x) => String(x.meetup_id) === String(meetup.id)
+                      (x) => String(x.meetup_id) === String(meetup.id),
                     );
                     return (
                       <Grid
