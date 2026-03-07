@@ -21,7 +21,7 @@ const TextCollapse: React.FC<TextCollapseProps> = ({
   useEffect(() => {
     if (ref.current) {
       const lineHeight = parseFloat(
-        window.getComputedStyle(ref.current).lineHeight || '24',
+        window.getComputedStyle(ref.current).lineHeight || '24'
       );
       const maxHeight = lineHeight * maxLines;
       setIsOverflow(ref.current.scrollHeight > maxHeight);

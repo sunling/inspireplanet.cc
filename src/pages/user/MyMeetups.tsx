@@ -51,7 +51,7 @@ const MyMeetups: React.FC = () => {
   const [myRsvps, setMyRsvps] = useState<Participant[]>([]);
   const [rsvpMeetups, setRsvpMeetups] = useState<Meetup[]>([]);
   const [currentStatus, setCurrentStatus] = useState<FilterStatus>(
-    FilterStatus.ALL,
+    FilterStatus.ALL
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +101,7 @@ const MyMeetups: React.FC = () => {
           meetup.creator === curUser?.username ||
           meetup.organizer === curUser?.name ||
           meetup.user_id === curUser?.username ||
-          meetup.user_id === curUser?.name,
+          meetup.user_id === curUser?.name
       );
       setAllMeetups(userMeetups as Meetup[]);
 
@@ -137,7 +137,7 @@ const MyMeetups: React.FC = () => {
         return;
       }
       const rsvps = (res.data?.rsvps || []).filter(
-        (r: any) => r && r.meetup_id,
+        (r: any) => r && r.meetup_id
       );
       setMyRsvps(rsvps as Participant[]);
 
@@ -145,22 +145,22 @@ const MyMeetups: React.FC = () => {
         new Set(
           rsvps
             .map((r: any) => String(r.meetup_id))
-            .filter((id: string) => !!id),
-        ),
+            .filter((id: string) => !!id)
+        )
       );
 
       const existingMap = new Map(
-        (allMeetupsList || []).map((m) => [String(m.id), m]),
+        (allMeetupsList || []).map((m) => [String(m.id), m])
       );
       const missingIds = ids.filter((id) => !existingMap.has(id));
 
       let fetchedMeetups: Meetup[] = [];
       if (missingIds.length > 0) {
         const results = await Promise.all(
-          missingIds.map((id) => api.meetups.getById(id)),
+          missingIds.map((id) => api.meetups.getById(id))
         );
         fetchedMeetups = results.flatMap((resp) =>
-          resp.success ? resp.data?.meetups || [] : [],
+          resp.success ? resp.data?.meetups || [] : []
         ) as Meetup[];
       }
 
@@ -168,7 +168,7 @@ const MyMeetups: React.FC = () => {
         .map(
           (id) =>
             existingMap.get(id) ||
-            fetchedMeetups.find((m) => String(m.id) === id),
+            fetchedMeetups.find((m) => String(m.id) === id)
         )
         .filter(Boolean) as Meetup[];
 
@@ -181,7 +181,7 @@ const MyMeetups: React.FC = () => {
 
   const handleStatusChange = (
     _: React.MouseEvent<HTMLElement>,
-    newStatus: any,
+    newStatus: any
   ) => {
     if (newStatus !== null) {
       setCurrentStatus(newStatus);
@@ -238,7 +238,7 @@ const MyMeetups: React.FC = () => {
 
   const filteredMeetups = useMemo(
     () => getFilteredMeetups(),
-    [currentStatus, allMeetups],
+    [currentStatus, allMeetups]
   );
 
   const renderMeetupCard = (meetup: Meetup) => {
@@ -408,7 +408,7 @@ const MyMeetups: React.FC = () => {
       if (!res.success && meetupId && rsvp?.wechat_id) {
         const fallback = await api.rsvp.cancelByMeetupWechat(
           meetupId as any,
-          rsvp.wechat_id as any,
+          rsvp.wechat_id as any
         );
         res = fallback;
       }
@@ -417,7 +417,7 @@ const MyMeetups: React.FC = () => {
         return;
       }
       const newRsvps = (myRsvps || []).filter(
-        (x) => String(x.id) !== String(rsvp?.id),
+        (x) => String(x.id) !== String(rsvp?.id)
       );
       setMyRsvps(newRsvps);
       const ids = Array.from(new Set(newRsvps.map((r) => String(r.meetup_id))));
@@ -808,7 +808,7 @@ const MyMeetups: React.FC = () => {
                 >
                   {rsvpMeetups.map((meetup) => {
                     const r = (myRsvps || []).find(
-                      (x) => String(x.meetup_id) === String(meetup.id),
+                      (x) => String(x.meetup_id) === String(meetup.id)
                     );
                     return (
                       <Grid

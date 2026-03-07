@@ -39,7 +39,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
 
   // 获取字体颜色和渐变样式
   const fontColor = getFontColorForGradient(
-    card.gradientClass || 'card-gradient-1',
+    card.gradientClass || 'card-gradient-1'
   );
   const gradientClass = card.gradientClass || 'card-gradient-1';
 
@@ -60,7 +60,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
   };
 
   const [likes, setLikes] = useState<number>(
-    Number((card as any).likesCount) || 0,
+    Number((card as any).likesCount) || 0
   );
 
   const handleLike = async () => {
@@ -68,7 +68,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
       const token = localStorage.getItem('authToken');
       if (!token) {
         const redirect = encodeURIComponent(
-          window.location.pathname + window.location.search,
+          window.location.pathname + window.location.search
         );
         window.location.href = `/login?redirect=${redirect}`;
         return;
@@ -176,7 +176,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
           >
             <TextCollapse
               html={DOMPurify.sanitize(
-                card.quote ? marked.parse(card.quote).toString() : '',
+                card.quote ? marked.parse(card.quote).toString() : ''
               )}
               maxLines={8}
             />
@@ -187,7 +187,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
         {card.detail && (
           <TextCollapse
             html={DOMPurify.sanitize(
-              card.detail ? marked.parse(card.detail).toString() : '',
+              card.detail ? marked.parse(card.detail).toString() : ''
             )}
             maxLines={8}
           />

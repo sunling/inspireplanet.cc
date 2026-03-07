@@ -47,7 +47,7 @@ const Home: React.FC = () => {
       const records = response?.data?.records || [];
 
       const formattedCards: WeeklyCard[] = records.filter(
-        (card: WeeklyCard) => card.title && card.quote,
+        (card: WeeklyCard) => card.title && card.quote
       ); // 过滤无效卡片
 
       setCards(formattedCards);
@@ -85,7 +85,7 @@ const Home: React.FC = () => {
     const link = document.createElement('a');
     const safeTitle = (cards[currentIndex]?.title || 'card').replace(
       /[^a-zA-Z0-9\u4e00-\u9fa5]/g,
-      '-',
+      '-'
     );
     link.download = `weekly-card-${safeTitle}.png`;
     link.href = canvas.toDataURL('image/png');
@@ -192,7 +192,7 @@ const Home: React.FC = () => {
               <div
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(
-                    card.detail ? marked.parse(card.detail).toString() : '',
+                    card.detail ? marked.parse(card.detail).toString() : ''
                   ),
                 }}
               />

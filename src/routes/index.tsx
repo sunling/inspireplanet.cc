@@ -110,7 +110,10 @@ const router = createBrowserRouter(
         { path: 'meetups', element: createLazyRoute(<Meetups />) },
         { path: 'people', element: createLazyRoute(<PeopleDirectory />) },
         { path: 'weekly-cards', element: createLazyRoute(<WeeklyCards />) },
-        { path: 'weekly-cards/:episode', element: createLazyRoute(<WeeklyCards />) },
+        {
+          path: 'weekly-cards/:episode',
+          element: createLazyRoute(<WeeklyCards />),
+        },
         { path: 'card-detail', element: createLazyRoute(<CardDetail />) },
         {
           path: 'meetup-detail',
@@ -137,10 +140,19 @@ const router = createBrowserRouter(
           element: createProtectedRoute(<EditMeetup />),
         },
         { path: 'my-meetups', element: createProtectedRoute(<MyMeetups />) },
-        { path: 'connections', element: createProtectedRoute(<MyConnections />) },
+        {
+          path: 'connections',
+          element: createProtectedRoute(<MyConnections />),
+        },
         { path: 'profile', element: createProtectedRoute(<Profile />) },
-        { path: 'notifications', element: createProtectedRoute(<Notifications />) },
-        { path: 'bulk-weekly-upload', element: createProtectedRoute(<BulkWeeklyUpload />) },
+        {
+          path: 'notifications',
+          element: createProtectedRoute(<Notifications />),
+        },
+        {
+          path: 'bulk-weekly-upload',
+          element: createProtectedRoute(<BulkWeeklyUpload />),
+        },
         {
           path: 'change-password',
           element: createProtectedRoute(<ChangePassWord />),

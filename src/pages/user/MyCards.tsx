@@ -4,7 +4,15 @@ import { api } from '@/netlify/configs';
 import { CardItem } from '@/netlify/types';
 import { formatDate, getCurrentUser } from '@/utils';
 import DOMPurify from 'dompurify';
-import { Box, Container, Typography, Button, Grid, Paper, Chip } from '@mui/material';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Grid,
+  Paper,
+  Chip,
+} from '@mui/material';
 import InspireCard from '@/components/InspireCard';
 import useResponsive from '@/hooks/useResponsive';
 import { useGlobalSnackbar } from '@/context/app';
@@ -39,7 +47,9 @@ const MyCards: React.FC = () => {
       title: DOMPurify.sanitize(card.title),
       quote: DOMPurify.sanitize(card.quote),
       detail: card.detail ? DOMPurify.sanitize(card.detail) : undefined,
-      imagePath: card.imagePath ? DOMPurify.sanitize(card.imagePath) : undefined,
+      imagePath: card.imagePath
+        ? DOMPurify.sanitize(card.imagePath)
+        : undefined,
       font: DOMPurify.sanitize(card.font),
       creator: DOMPurify.sanitize(card.creator),
       username: DOMPurify.sanitize(card.username),
@@ -84,7 +94,9 @@ const MyCards: React.FC = () => {
     return formatDate(new Date(dateString).toISOString());
   };
 
-  const groupCardsByDate = (cards: CardItem[]): { [key: string]: CardItem[] } => {
+  const groupCardsByDate = (
+    cards: CardItem[]
+  ): { [key: string]: CardItem[] } => {
     const grouped: { [key: string]: CardItem[] } = {};
     cards.forEach((card) => {
       const date = new Date(card.created).toDateString();
@@ -113,7 +125,10 @@ const MyCards: React.FC = () => {
       return <Empty description="登录后才能查看您创建的卡片" />;
     }
     return (
-      <Empty description="创建一张卡片，记录下您的启发时刻" message="创建卡片" />
+      <Empty
+        description="创建一张卡片，记录下您的启发时刻"
+        message="创建卡片"
+      />
     );
   };
 
@@ -131,7 +146,12 @@ const MyCards: React.FC = () => {
     return (
       <Box sx={{ minHeight: '100vh', bgcolor: 'var(--bg-light)', py: 4 }}>
         <Container maxWidth="lg">
-          <Typography variant="h6" color="error" textAlign="center" sx={{ py: 10 }}>
+          <Typography
+            variant="h6"
+            color="error"
+            textAlign="center"
+            sx={{ py: 10 }}
+          >
             {error}
           </Typography>
         </Container>
@@ -171,7 +191,10 @@ const MyCards: React.FC = () => {
         </Paper>
 
         {cards.length === 0 ? (
-          <Paper elevation={1} sx={{ p: 6, textAlign: 'center', borderRadius: 2 }}>
+          <Paper
+            elevation={1}
+            sx={{ p: 6, textAlign: 'center', borderRadius: 2 }}
+          >
             {renderEmptyState()}
           </Paper>
         ) : (
@@ -196,7 +219,10 @@ const MyCards: React.FC = () => {
                         alignItems: 'center',
                       }}
                     >
-                      <Typography variant="h6" sx={{ color: '#555', fontWeight: 'bold' }}>
+                      <Typography
+                        variant="h6"
+                        sx={{ color: '#555', fontWeight: 'bold' }}
+                      >
                         {formatDate(date)}
                       </Typography>
                       <Chip
@@ -209,18 +235,31 @@ const MyCards: React.FC = () => {
                     <Box sx={{ p: 2 }}>
                       <Grid container spacing={3}>
                         {dateCards.map((card) => (
-                          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={card.id}>
+                          <Grid
+                            size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                            key={card.id}
+                          >
                             <InspireCard
                               card={card as any}
                               canComment={false}
-                              onCardClick={(id) => navigate(`/card-detail?id=${id}`)}
+                              onCardClick={(id) =>
+                                navigate(`/card-detail?id=${id}`)
+                              }
                               onSubmitComment={async (id, name, comment) => {
                                 try {
-                                  const res = await api.comments.create({ cardId: id, name, comment });
+                                  const res = await api.comments.create({
+                                    cardId: id,
+                                    name,
+                                    comment,
+                                  });
                                   if (res.success) {
-                                    showSnackbar.success(res.message || '评论提交成功！');
+                                    showSnackbar.success(
+                                      res.message || '评论提交成功！'
+                                    );
                                   } else {
-                                    showSnackbar.error(res.error || '提交评论失败');
+                                    showSnackbar.error(
+                                      res.error || '提交评论失败'
+                                    );
                                   }
                                 } catch (e: any) {
                                   showSnackbar.error(e.message || '网络错误');

@@ -1,107 +1,107 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-
-<head>
-  <meta charset="UTF-8">
-  <title>创建启发卡片 - 启发星球</title>
-  <link rel="stylesheet" href="/styles/main.css">
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: var(--font-sans);
-      min-height: 100vh;
-      background: var(--bg-light);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 40px;
-      padding-top: 60px;
-      animation: fadeIn 1s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
+  <head>
+    <meta charset="UTF-8" />
+    <title>创建启发卡片 - 启发星球</title>
+    <link rel="stylesheet" href="/styles/main.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: var(--font-sans);
+        min-height: 100vh;
+        background: var(--bg-light);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 40px;
+        padding-top: 60px;
+        animation: fadeIn 1s ease forwards;
       }
 
-      to {
-        opacity: 1;
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+
+        to {
+          opacity: 1;
+        }
       }
-    }
 
-    .banner {
-      text-align: center;
-    }
+      .banner {
+        text-align: center;
+      }
 
-    .banner h1 {
-      font-size: 32px;
-      color: var(--text);
-      margin-bottom: 10px;
-    }
+      .banner h1 {
+        font-size: 32px;
+        color: var(--text);
+        margin-bottom: 10px;
+      }
 
-    .banner p {
-      font-size: 18px;
-      color: var(--text-light);
-      margin: 0;
-    }
+      .banner p {
+        font-size: 18px;
+        color: var(--text-light);
+        margin: 0;
+      }
 
-    .links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 30px;
-      justify-content: center;
-    }
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        justify-content: center;
+      }
 
-    .link-box {
-      background: white;
-      border-radius: var(--radius);
-      padding: 30px 40px;
-      box-shadow: var(--shadow-lg);
-      text-align: center;
-      width: 280px;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      text-decoration: none;
-      border: 1px solid rgba(255, 127, 80, 0.05);
-    }
+      .link-box {
+        background: white;
+        border-radius: var(--radius);
+        padding: 30px 40px;
+        box-shadow: var(--shadow-lg);
+        text-align: center;
+        width: 280px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        border: 1px solid rgba(255, 127, 80, 0.05);
+      }
 
-    .link-box:hover {
-      transform: translateY(-8px);
-      box-shadow: var(--shadow-lg);
-    }
+      .link-box:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-lg);
+      }
 
-    .link-box a {
-      display: block;
-      font-size: 22px;
-      font-weight: bold;
-      color: var(--primary);
-      text-decoration: none;
-    }
+      .link-box a {
+        display: block;
+        font-size: 22px;
+        font-weight: bold;
+        color: var(--primary);
+        text-decoration: none;
+      }
 
-    .link-box span {
-      display: block;
-      margin-top: 8px;
-      font-size: 16px;
-      color: var(--text-lighter);
-    }
-  </style>
-</head>
+      .link-box span {
+        display: block;
+        margin-top: 8px;
+        font-size: 16px;
+        color: var(--text-lighter);
+      }
+    </style>
+  </head>
 
-<body>
-  <div class="banner">
-    <h1>启发星球 ✨ Inspiration Planet</h1>
-    <p>记录每一次被点燃的时刻</p>
-    <p>📢工具已升级，请点击下面的链接去体验</p>
-  </div>
-
-  <div class="links">
-    <div class="link-box">
-      <a href="https://inspiration-planet.netlify.app/">点击这里</a>
-      <span>创作你的卡片，查看他人分享的卡片，封面制作，每周会议金句卡片结合...</span>
+  <body>
+    <div class="banner">
+      <h1>启发星球 ✨ Inspiration Planet</h1>
+      <p>记录每一次被点燃的时刻</p>
+      <p>📢工具已升级，请点击下面的链接去体验</p>
     </div>
-  </div>
-</body>
 
+    <div class="links">
+      <div class="link-box">
+        <a href="https://inspiration-planet.netlify.app/">点击这里</a>
+        <span
+          >创作你的卡片，查看他人分享的卡片，封面制作，每周会议金句卡片结合...</span
+        >
+      </div>
+    </div>
+  </body>
 </html>

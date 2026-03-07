@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Container,
@@ -14,14 +14,14 @@ import {
   Grid,
   Chip,
   Avatar,
-} from "@mui/material";
+} from '@mui/material';
 
-import useResponsive from "@/hooks/useResponsive";
-import { api } from "@/netlify/configs";
-import { useGlobalSnackbar } from "@/context/app";
-import { DateTime } from "luxon";
+import useResponsive from '@/hooks/useResponsive';
+import { api } from '@/netlify/configs';
+import { useGlobalSnackbar } from '@/context/app';
+import { DateTime } from 'luxon';
 
-type Slot = { datetime_iso: string; mode: "online" | "offline" };
+type Slot = { datetime_iso: string; mode: 'online' | 'offline' };
 
 const InviteDialog: React.FC<{
   open: boolean;
@@ -29,38 +29,48 @@ const InviteDialog: React.FC<{
   inviteeId: string;
 }> = ({ open, onClose, inviteeId }) => {
   const show = useGlobalSnackbar();
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const [slots, setSlots] = useState<Slot[]>([
-    { datetime_iso: "", mode: "online" },
+    { datetime_iso: '', mode: 'online' },
   ]);
   const timeZone = useMemo(() => {
     try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone || "本地时区";
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区';
     } catch {
-      return "本地时区";
+      return '本地时区';
     }
   }, []);
   const presets = useMemo(() => {
     const now = DateTime.local();
     const fmt = (dt: DateTime) => dt.toFormat("yyyy-LL-dd'T'HH:mm");
     const items: Array<{ label: string; value: string }> = [];
-    const tonight20 = now.set({ hour: 20, minute: 0, second: 0, millisecond: 0 });
-    if (tonight20 > now) items.push({ label: "今晚 20:00", value: fmt(tonight20) });
-    const tomorrow20 = now.plus({ days: 1 }).set({ hour: 20, minute: 0, second: 0, millisecond: 0 });
-    items.push({ label: "明晚 20:00", value: fmt(tomorrow20) });
+    const tonight20 = now.set({
+      hour: 20,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    });
+    if (tonight20 > now)
+      items.push({ label: '今晚 20:00', value: fmt(tonight20) });
+    const tomorrow20 = now
+      .plus({ days: 1 })
+      .set({ hour: 20, minute: 0, second: 0, millisecond: 0 });
+    items.push({ label: '明晚 20:00', value: fmt(tomorrow20) });
     const nextWeekdayAt = (weekday: number, hour: number, minute: number) => {
       const base = now;
       const delta = (weekday + 7 - base.weekday) % 7;
-      const target = base.plus({ days: delta || 7 }).set({ hour, minute, second: 0, millisecond: 0 });
+      const target = base
+        .plus({ days: delta || 7 })
+        .set({ hour, minute, second: 0, millisecond: 0 });
       if (delta > 0 || target > now) return target;
       return target.plus({ days: 7 });
     };
     const sat10 = nextWeekdayAt(6, 10, 0);
     const sat15 = nextWeekdayAt(6, 15, 0);
     const sun10 = nextWeekdayAt(7, 10, 0);
-    items.push({ label: "周六 10:00", value: fmt(sat10) });
-    items.push({ label: "周六 15:00", value: fmt(sat15) });
-    items.push({ label: "周日 10:00", value: fmt(sun10) });
+    items.push({ label: '周六 10:00', value: fmt(sat10) });
+    items.push({ label: '周六 15:00', value: fmt(sat15) });
+    items.push({ label: '周日 10:00', value: fmt(sun10) });
     return items;
   }, []);
   const canSubmit = useMemo(
@@ -72,7 +82,7 @@ const InviteDialog: React.FC<{
   };
   const addSlot = () => {
     if (slots.length < 3)
-      setSlots((prev) => [...prev, { datetime_iso: "", mode: "online" }]);
+      setSlots((prev) => [...prev, { datetime_iso: '', mode: 'online' }]);
   };
   const removeSlot = (idx: number) => {
     setSlots((prev) => prev.filter((_, i) => i !== idx));
@@ -85,11 +95,11 @@ const InviteDialog: React.FC<{
         proposed_slots: slots.filter((s) => s.datetime_iso),
       };
       const res = await api.oneonone.invites.create(payload);
-      if (!res.success) throw new Error(res.error || "邀请失败");
-      show.success("邀请已发送");
+      if (!res.success) throw new Error(res.error || '邀请失败');
+      show.success('邀请已发送');
       onClose();
     } catch (e: any) {
-      show.error(e.message || "网络错误");
+      show.error(e.message || '网络错误');
     }
   };
   return (
@@ -117,10 +127,14 @@ const InviteDialog: React.FC<{
                     setSlot(idx, { datetime_iso: e.target.value })
                   }
                 />
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ mt: 0.5, display: 'block' }}
+                >
                   时间为你的当地时间（{timeZone}）
                 </Typography>
-                <Box sx={{ mt: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
+                <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   {presets.map((p) => (
                     <Chip
                       key={p.label}
@@ -183,11 +197,11 @@ const Directory: React.FC = () => {
       profile?: any;
     }>
   >([]);
-  const [q, setQ] = useState("");
-  const [themeFilter, setThemeFilter] = useState<string>("");
-  const [offeringFilter, setOfferingFilter] = useState("");
-  const [seekingFilter, setSeekingFilter] = useState("");
-  const [cityFilter, setCityFilter] = useState("");
+  const [q, setQ] = useState('');
+  const [themeFilter, setThemeFilter] = useState<string>('');
+  const [offeringFilter, setOfferingFilter] = useState('');
+  const [seekingFilter, setSeekingFilter] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
   const [myProfile, setMyProfile] = useState<any>(null);
   const [openInvite, setOpenInvite] = useState<{
     open: boolean;
@@ -205,7 +219,7 @@ const Directory: React.FC = () => {
         city: cityFilter || undefined,
       });
       if (res.success) setUsers(res.data?.users || []);
-      else show.error(res.error || "加载失败");
+      else show.error(res.error || '加载失败');
     };
     load();
   }, [q, themeFilter, offeringFilter, seekingFilter, cityFilter]);
@@ -216,29 +230,36 @@ const Directory: React.FC = () => {
     };
     loadMy();
   }, []);
-  const lastMissingRef = React.useRef<string>("");
+  const lastMissingRef = React.useRef<string>('');
   useEffect(() => {
     const hydrate = async () => {
       const withoutProfile = users.filter((u) => !u.profile);
       if (withoutProfile.length === 0) return;
-      const missingIds = withoutProfile.map((u) => String(u.id)).sort().join(",");
+      const missingIds = withoutProfile
+        .map((u) => String(u.id))
+        .sort()
+        .join(',');
       if (missingIds === lastMissingRef.current) return;
       lastMissingRef.current = missingIds;
       const ids = withoutProfile.map((u) => u.id);
       const r = await api.people.getByIds(ids as any);
-      const list = r.success ? (r.data?.users || []) : [];
+      const list = r.success ? r.data?.users || [] : [];
       const byId: Record<string, any> = {};
-      list.forEach((u: any) => { byId[String(u.id)] = u; });
-      setUsers((prev) => prev.map((u) => (byId[String(u.id)] ? byId[String(u.id)] : u)));
+      list.forEach((u: any) => {
+        byId[String(u.id)] = u;
+      });
+      setUsers((prev) =>
+        prev.map((u) => (byId[String(u.id)] ? byId[String(u.id)] : u))
+      );
     };
     hydrate();
   }, [users]);
   const toggleTheme = (t: string) => {
-    setThemeFilter((prev) => (prev === t ? "" : t));
+    setThemeFilter((prev) => (prev === t ? '' : t));
   };
   const toggleSameCity = () => {
-    const c = myProfile?.city || "";
-    setCityFilter((prev) => (prev === c ? "" : c));
+    const c = myProfile?.city || '';
+    setCityFilter((prev) => (prev === c ? '' : c));
   };
   const getMatchScore = (p: any) => {
     if (!p) return 0;
@@ -262,19 +283,19 @@ const Directory: React.FC = () => {
     );
   }, [users, myProfile]);
   const getInitials = (name: string) => {
-    if (!name) return "?";
+    if (!name) return '?';
     const parts = name.trim().split(/\s+/);
-    const a = parts[0] || "";
-    const b = parts[1] || "";
-    const init = (a[0] || "") + (b[0] || "");
+    const a = parts[0] || '';
+    const b = parts[1] || '';
+    const init = (a[0] || '') + (b[0] || '');
     return init || name[0];
   };
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: '100vh',
         py: 6,
-        background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
       }}
     >
       <Container maxWidth="md">
@@ -291,18 +312,18 @@ const Directory: React.FC = () => {
             <Typography variant="body2" color="text.secondary">
               在这里你可以找到已注册的伙伴，基于主题进行匹配，发起一对一邀请，确认线上或线下会面。
             </Typography>
-            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
               <Chip
                 size="small"
                 label="完善资料"
-                onClick={() => window.location.assign("/profile")}
+                onClick={() => window.location.assign('/profile')}
               />
               <Chip size="small" label="选择主题筛选" />
               <Chip size="small" label="发起邀请" />
               <Chip
                 size="small"
                 label="在“我的连接”处理"
-                onClick={() => window.location.assign("/connections")}
+                onClick={() => window.location.assign('/connections')}
               />
               <Chip size="small" label="确认会面" />
             </Box>
@@ -311,14 +332,14 @@ const Directory: React.FC = () => {
           <Typography variant="subtitle1" sx={{ mb: 1 }}>
             按主题筛选
           </Typography>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2 }}>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
             {presetTopics.map((t) => (
               <Chip
                 key={t}
                 label={t}
                 clickable
-                color={themeFilter === t ? "primary" : "default"}
-                variant={themeFilter === t ? "filled" : "outlined"}
+                color={themeFilter === t ? 'primary' : 'default'}
+                variant={themeFilter === t ? 'filled' : 'outlined'}
                 onClick={() => toggleTheme(t)}
               />
             ))}
@@ -356,9 +377,9 @@ const Directory: React.FC = () => {
                 <Chip
                   size="small"
                   label={`同城：${myProfile.city}`}
-                  color={cityFilter === myProfile.city ? "primary" : "default"}
+                  color={cityFilter === myProfile.city ? 'primary' : 'default'}
                   variant={
-                    cityFilter === myProfile.city ? "filled" : "outlined"
+                    cityFilter === myProfile.city ? 'filled' : 'outlined'
                   }
                   onClick={toggleSameCity}
                 />
@@ -368,16 +389,16 @@ const Directory: React.FC = () => {
                 sx={{ ml: 1 }}
                 label="清除筛选"
                 onClick={() => {
-                  setOfferingFilter("");
-                  setSeekingFilter("");
-                  setCityFilter("");
-                  setThemeFilter("");
+                  setOfferingFilter('');
+                  setSeekingFilter('');
+                  setCityFilter('');
+                  setThemeFilter('');
                 }}
               />
             </Grid>
           </Grid>
           {sortedUsers.length === 0 ? (
-            <Box sx={{ py: 6, textAlign: "center", color: "text.secondary" }}>
+            <Box sx={{ py: 6, textAlign: 'center', color: 'text.secondary' }}>
               <Typography variant="body2">
                 暂时没有匹配的用户，尝试更换筛选或关键词。
               </Typography>
@@ -387,7 +408,7 @@ const Directory: React.FC = () => {
               {sortedUsers.map((u) => (
                 <Grid item xs={12} sm={6} md={4} key={u.id}>
                   <Paper sx={{ p: 2 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       <Avatar sx={{ width: 48, height: 48 }}>
                         {getInitials(String(u.name))}
                       </Avatar>
@@ -410,16 +431,16 @@ const Directory: React.FC = () => {
                           <>
                             <Typography
                               variant="caption"
-                              sx={{ display: "block", fontWeight: 600 }}
+                              sx={{ display: 'block', fontWeight: 600 }}
                             >
                               感兴趣
                             </Typography>
                             <Box
                               sx={{
                                 mt: 0.5,
-                                display: "flex",
+                                display: 'flex',
                                 gap: 1,
-                                flexWrap: "wrap",
+                                flexWrap: 'wrap',
                               }}
                             >
                               {(u.profile.interests || [])
@@ -439,16 +460,16 @@ const Directory: React.FC = () => {
                           <>
                             <Typography
                               variant="caption"
-                              sx={{ mt: 1, display: "block", fontWeight: 600 }}
+                              sx={{ mt: 1, display: 'block', fontWeight: 600 }}
                             >
                               擅长
                             </Typography>
                             <Box
                               sx={{
                                 mt: 0.5,
-                                display: "flex",
+                                display: 'flex',
                                 gap: 1,
-                                flexWrap: "wrap",
+                                flexWrap: 'wrap',
                               }}
                             >
                               {(u.profile.expertise || [])
@@ -479,26 +500,26 @@ const Directory: React.FC = () => {
                         {!!(u.profile.offerings || []).length && (
                           <Typography variant="caption" color="text.secondary">
                             可提供：
-                            {(u.profile.offerings || []).slice(0, 3).join("、")}
-                            {(u.profile.offerings || []).length > 3 ? "…" : ""}
+                            {(u.profile.offerings || []).slice(0, 3).join('、')}
+                            {(u.profile.offerings || []).length > 3 ? '…' : ''}
                           </Typography>
                         )}
                         {!!(u.profile.seeking || []).length && (
                           <Typography
                             variant="caption"
                             color="text.secondary"
-                            sx={{ display: "block" }}
+                            sx={{ display: 'block' }}
                           >
                             寻找帮助：
-                            {(u.profile.seeking || []).slice(0, 3).join("、")}
-                            {(u.profile.seeking || []).length > 3 ? "…" : ""}
+                            {(u.profile.seeking || []).slice(0, 3).join('、')}
+                            {(u.profile.seeking || []).length > 3 ? '…' : ''}
                           </Typography>
                         )}
                         {!!u.profile.availability_text && (
                           <Typography
                             variant="caption"
                             color="text.secondary"
-                            sx={{ display: "block" }}
+                            sx={{ display: 'block' }}
                           >
                             可约：{u.profile.availability_text}
                           </Typography>
@@ -507,8 +528,8 @@ const Directory: React.FC = () => {
                     )}
                     <Box
                       sx={{
-                        display: "flex",
-                        justifyContent: "flex-end",
+                        display: 'flex',
+                        justifyContent: 'flex-end',
                         gap: 1,
                         mt: 2,
                       }}
@@ -546,14 +567,14 @@ const Directory: React.FC = () => {
 
 export default Directory;
 const presetTopics = [
-  "职业发展与求职",
-  "个人品牌与表达",
-  "内容运营与增长",
-  "学习与知识管理",
-  "高效协作与远程",
-  "产品与创新创业",
-  "工具与低代码",
-  "心理健康与自我",
-  "财商与生活规划",
-  "社区与人脉连接",
+  '职业发展与求职',
+  '个人品牌与表达',
+  '内容运营与增长',
+  '学习与知识管理',
+  '高效协作与远程',
+  '产品与创新创业',
+  '工具与低代码',
+  '心理健康与自我',
+  '财商与生活规划',
+  '社区与人脉连接',
 ];

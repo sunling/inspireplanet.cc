@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, Fragment } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import DOMPurify from "dompurify";
-import { marked } from "marked";
+import React, { useState, useEffect, useRef, Fragment } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 
 import {
   Box,
@@ -11,15 +11,15 @@ import {
   Button,
   TextField,
   Divider,
-} from "@mui/material";
-import useResponsive from "@/hooks/useResponsive";
-import { CardItem, Comment } from "@/netlify/types";
-import { api } from "@/netlify/configs";
-import { getFontColorForGradient } from "@/constants/gradient";
-import Loading from "@/components/Loading";
-import Empty from "@/components/Empty";
-import ErrorCard from "@/components/ErrorCard";
-import { useGlobalSnackbar } from "@/context/app";
+} from '@mui/material';
+import useResponsive from '@/hooks/useResponsive';
+import { CardItem, Comment } from '@/netlify/types';
+import { api } from '@/netlify/configs';
+import { getFontColorForGradient } from '@/constants/gradient';
+import Loading from '@/components/Loading';
+import Empty from '@/components/Empty';
+import ErrorCard from '@/components/ErrorCard';
+import { useGlobalSnackbar } from '@/context/app';
 
 const CardDetail: React.FC = () => {
   const location = useLocation();
@@ -28,7 +28,7 @@ const CardDetail: React.FC = () => {
   // 从查询参数获取卡片ID
   const getCardId = (): string | null => {
     const searchParams = new URLSearchParams(location.search);
-    return searchParams.get("id");
+    return searchParams.get('id');
   };
 
   const cardId = getCardId();
@@ -46,7 +46,7 @@ const CardDetail: React.FC = () => {
 
   // 评论表单状态
   const [commentForm, setCommentForm] = useState({
-    content: "",
+    content: '',
   });
   const [submittingComment, setSubmittingComment] = useState(false);
 
@@ -58,10 +58,10 @@ const CardDetail: React.FC = () => {
       // 使用统一API封装获取卡片详情
       const response = await api.cards.getById(cardId);
 
-      console.log("加载卡片详情返回", response);
+      console.log('加载卡片详情返回', response);
 
       if (!response.success) {
-        const text = "获取卡片失败：" + (response.error || "未知错误");
+        const text = '获取卡片失败：' + (response.error || '未知错误');
         showSnackbar.error(text);
         return;
       }
@@ -74,23 +74,23 @@ const CardDetail: React.FC = () => {
 
       // 规范化卡片数据格式
       const normalizedCard: CardItem = {
-        id: cardData.id || "",
-        title: cardData.title || "未命名卡片",
-        quote: cardData.quote || "",
+        id: cardData.id || '',
+        title: cardData.title || '未命名卡片',
+        quote: cardData.quote || '',
         detail: cardData.detail,
         imagePath: cardData.imagePath || cardData.upload,
         creator: cardData.creator,
         font: cardData.font,
-        gradientClass: cardData.gradientClass || "card-gradient-1",
+        gradientClass: cardData.gradientClass || 'card-gradient-1',
         created: cardData.created || new Date().toISOString(),
         username: cardData.username || cardData.creator,
       };
 
       setCard(normalizedCard);
     } catch (error) {
-      console.error("获取卡片失败:", error);
-      const text = "获取卡片失败";
-      setError("获取卡片详情失败");
+      console.error('获取卡片失败:', error);
+      const text = '获取卡片失败';
+      setError('获取卡片详情失败');
       showSnackbar.error(text);
       return null;
     } finally {
@@ -103,10 +103,10 @@ const CardDetail: React.FC = () => {
     try {
       // 使用统一的api对象获取评论
       const response = await api.comments.getByCardId(cardId);
-      console.log("fetchComments返回", response);
+      console.log('fetchComments返回', response);
 
       if (!response.success) {
-        const text = "获取评论失败：" + (response.error || "未知错误");
+        const text = '获取评论失败：' + (response.error || '未知错误');
         showSnackbar.error(text);
         return;
       }
@@ -117,8 +117,8 @@ const CardDetail: React.FC = () => {
       const list = commentData.map(
         (comment: any): Comment => ({
           id: comment.id,
-          name: comment.name || comment.creator || "匿名用户",
-          comment: comment.comment || comment.content || "",
+          name: comment.name || comment.creator || '匿名用户',
+          comment: comment.comment || comment.content || '',
           created: comment.created || new Date().toISOString(),
           cardId: comment.cardId || cardId, // 确保cardId存在
           createdAt: comment.comment.created || new Date().toISOString(),
@@ -126,8 +126,8 @@ const CardDetail: React.FC = () => {
       );
       setComments(list);
     } catch (error) {
-      console.error("获取评论失败:", error);
-      showSnackbar.error("获取评论失败");
+      console.error('获取评论失败:', error);
+      showSnackbar.error('获取评论失败');
 
       return [];
     }
@@ -138,19 +138,19 @@ const CardDetail: React.FC = () => {
     try {
       // 支持多种用户数据存储键名
       const userData =
-        localStorage.getItem("userInfo") || localStorage.getItem("userData");
+        localStorage.getItem('userInfo') || localStorage.getItem('userData');
       if (!userData) {
         setCanEdit(false);
         return;
       }
 
       const user = JSON.parse(userData);
-      const currentUsername = user.username || "";
-      const cardUsername = cardData.username || "";
+      const currentUsername = user.username || '';
+      const cardUsername = cardData.username || '';
 
       setCanEdit(currentUsername && currentUsername === cardUsername);
     } catch (e) {
-      console.error("解析用户信息失败:", e);
+      console.error('解析用户信息失败:', e);
       setCanEdit(false);
     }
   };
@@ -160,7 +160,7 @@ const CardDetail: React.FC = () => {
     const initPage = async () => {
       const cardId = getCardId();
       if (!cardId) {
-        const text = "未找到卡片ID，请返回卡片列表页面重试。";
+        const text = '未找到卡片ID，请返回卡片列表页面重试。';
         setError(text);
 
         showSnackbar.error(text);
@@ -177,7 +177,7 @@ const CardDetail: React.FC = () => {
   // 下载卡片为图片
   const handleDownloadCard = async () => {
     if (!card) {
-      showSnackbar.error("卡片数据加载失败，无法下载");
+      showSnackbar.error('卡片数据加载失败，无法下载');
       return;
     }
 
@@ -185,14 +185,14 @@ const CardDetail: React.FC = () => {
       setDownloading(true);
 
       // 导入downloadCard函数
-      const { downloadCard: utilsDownloadCard } = await import("@/utils/share");
+      const { downloadCard: utilsDownloadCard } = await import('@/utils/share');
 
       // 使用cardRef获取DOM元素
       const cardElement =
-        document.getElementById("detail-card") || cardRef.current;
+        document.getElementById('detail-card') || cardRef.current;
 
       if (!cardElement) {
-        showSnackbar.error("找不到卡片元素，下载失败");
+        showSnackbar.error('找不到卡片元素，下载失败');
         return;
       }
 
@@ -200,18 +200,18 @@ const CardDetail: React.FC = () => {
       const success = await utilsDownloadCard(
         cardElement,
         `inspiration-${
-          card.title?.replace(/[^\w\u4e00-\u9fa5]/g, "-") || "card"
+          card.title?.replace(/[^\w\u4e00-\u9fa5]/g, '-') || 'card'
         }`
       );
 
       if (success) {
-        showSnackbar.success("图片下载成功！");
+        showSnackbar.success('图片下载成功！');
       } else {
-        showSnackbar.error("图片下载失败，请稍后重试");
+        showSnackbar.error('图片下载失败，请稍后重试');
       }
     } catch (error) {
-      console.error("下载过程中出错:", error);
-      showSnackbar.error("下载过程中发生错误，请稍后重试");
+      console.error('下载过程中出错:', error);
+      showSnackbar.error('下载过程中发生错误，请稍后重试');
     } finally {
       setDownloading(false);
     }
@@ -228,19 +228,19 @@ const CardDetail: React.FC = () => {
   // 提交评论
   const handleCommentSubmit = async () => {
     const cardId = getCardId();
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem('authToken');
     if (!token) {
-      const redirect = cardId ? `/card-detail?id=${cardId}` : "/cards";
+      const redirect = cardId ? `/card-detail?id=${cardId}` : '/cards';
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
       return;
     }
     if (!commentForm.content.trim()) {
-      showSnackbar.warning("请输入评论内容");
+      showSnackbar.warning('请输入评论内容');
       return;
     }
 
     if (!cardId) {
-      showSnackbar.warning("卡片ID无效");
+      showSnackbar.warning('卡片ID无效');
       return;
     }
 
@@ -248,7 +248,7 @@ const CardDetail: React.FC = () => {
 
     try {
       // 使用统一API封装提交评论
-      console.log("正在提交评论...");
+      console.log('正在提交评论...');
       const response = await api.comments.create({
         cardId: cardId,
         comment: commentForm.content,
@@ -256,15 +256,15 @@ const CardDetail: React.FC = () => {
 
       if (!response.success) {
         if (response.statusCode === 401) {
-          localStorage.removeItem("authToken");
-          localStorage.removeItem("userInfo");
-          localStorage.removeItem("userToken");
-          showSnackbar.error("登录已过期，请重新登录");
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userInfo');
+          localStorage.removeItem('userToken');
+          showSnackbar.error('登录已过期，请重新登录');
           const redirect = `/card-detail?id=${cardId}`;
           navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
           return;
         }
-        const text = "提交评论失败：" + (response.error || "未知错误");
+        const text = '提交评论失败：' + (response.error || '未知错误');
         showSnackbar.warning(text);
         return;
       }
@@ -272,13 +272,13 @@ const CardDetail: React.FC = () => {
       await fetchComments(cardId);
 
       // 重置表单
-      setCommentForm({ content: "" });
+      setCommentForm({ content: '' });
 
-      showSnackbar.success("评论提交成功！");
+      showSnackbar.success('评论提交成功！');
     } catch (error: any) {
-      console.error("提交评论失败:", error.message || error);
+      console.error('提交评论失败:', error.message || error);
 
-      showSnackbar.error("提交评论失败，请稍后重试");
+      showSnackbar.error('提交评论失败，请稍后重试');
     } finally {
       setSubmittingComment(false);
     }
@@ -287,29 +287,29 @@ const CardDetail: React.FC = () => {
   // 格式化日期
   const formatCommentDate = (dateString: string) => {
     try {
-      if (!dateString) return "日期未知";
+      if (!dateString) return '日期未知';
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
-        return "日期未知";
+        return '日期未知';
       }
       return `${date.getFullYear()}年${
         date.getMonth() + 1
       }月${date.getDate()}日 ${date.getHours()}:${String(
         date.getMinutes()
-      ).padStart(2, "0")}`;
+      ).padStart(2, '0')}`;
     } catch (e) {
-      console.error("日期格式化错误:", e);
-      return "日期未知";
+      console.error('日期格式化错误:', e);
+      return '日期未知';
     }
   };
 
   // 清理和处理内容
   const sanitizeContent = (content: string | undefined | null) => {
-    if (!content) return "";
+    if (!content) return '';
     try {
       return DOMPurify.sanitize(String(content));
     } catch (e) {
-      console.error("内容净化错误:", e);
+      console.error('内容净化错误:', e);
       return String(content);
     }
   };
@@ -331,7 +331,7 @@ const CardDetail: React.FC = () => {
 
   // 处理Markdown内容
   const renderMarkdown = (text: string | undefined | null) => {
-    if (!text) return "";
+    if (!text) return '';
     try {
       marked.setOptions({ breaks: true });
       const html = marked.parse(sanitizeContent(text));
@@ -348,16 +348,16 @@ const CardDetail: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: '100vh',
         py: { xs: 4, sm: 8 },
-        background: "#eff3fb",
+        background: '#eff3fb',
       }}
     >
       <Container maxWidth="md">
         {isLoading ? (
           <Loading message="加载卡片中..." />
         ) : error ? (
-          <section style={{ marginTop: "2rem" }}>
+          <section style={{ marginTop: '2rem' }}>
             <ErrorCard
               message="加载失败"
               description={error}
@@ -366,13 +366,13 @@ const CardDetail: React.FC = () => {
               }}
               retryText="重试"
             />
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
               <Button
                 variant="contained"
-                onClick={() => navigate("/cards")}
+                onClick={() => navigate('/cards')}
                 sx={{
-                  backgroundColor: "var(--primary)",
-                  "&:hover": { backgroundColor: "#5a67d8" },
+                  backgroundColor: 'var(--primary)',
+                  '&:hover': { backgroundColor: '#5a67d8' },
                 }}
               >
                 返回卡片列表
@@ -385,109 +385,109 @@ const CardDetail: React.FC = () => {
               elevation={3}
               sx={{
                 mb: 6,
-                borderRadius: "16px",
-                overflow: "hidden",
-                backgroundColor: "rgba(255, 255, 255, 0.95)",
-                backdropFilter: "blur(10px)",
+                borderRadius: '16px',
+                overflow: 'hidden',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
               }}
             >
               <div className="card-container">
                 <div
                   id="detail-card"
                   ref={cardRef}
-                  className={`card ${card?.gradientClass || "card-gradient-1"}`}
+                  className={`card ${card?.gradientClass || 'card-gradient-1'}`}
                   style={{
-                    fontFamily: card?.font || "Noto Sans SC, sans-serif",
+                    fontFamily: card?.font || 'Noto Sans SC, sans-serif',
                     color: getFontColorForGradient(
-                      card?.gradientClass || "card-gradient-1"
+                      card?.gradientClass || 'card-gradient-1'
                     ),
-                    padding: isMobile ? "24px" : "40px",
-                    minHeight: "300px",
-                    transition: "transform 0.3s ease",
+                    padding: isMobile ? '24px' : '40px',
+                    minHeight: '300px',
+                    transition: 'transform 0.3s ease',
                   }}
                   onMouseEnter={(e) => {
                     if (!isMobile) {
                       (e.currentTarget as HTMLDivElement).style.transform =
-                        "translateY(-5px)";
+                        'translateY(-5px)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isMobile) {
                       (e.currentTarget as HTMLDivElement).style.transform =
-                        "translateY(0)";
+                        'translateY(0)';
                     }
                   }}
                 >
                   <Box sx={{ mb: 3 }}>
                     <Typography
-                      variant={isMobile ? "h5" : "h4"}
+                      variant={isMobile ? 'h5' : 'h4'}
                       component="h1"
                       sx={{
-                        fontWeight: "bold",
+                        fontWeight: 'bold',
                         mb: 3,
                         color: getFontColorForGradient(
-                          card?.gradientClass || "card-gradient-1"
+                          card?.gradientClass || 'card-gradient-1'
                         ),
                       }}
                     >
-                      {card ? sanitizeContent(card.title) : ""}
+                      {card ? sanitizeContent(card.title) : ''}
                     </Typography>
                     <Box
                       sx={{
                         backgroundColor: `${getFontColorForGradient(
-                          card?.gradientClass || "card-gradient-1"
+                          card?.gradientClass || 'card-gradient-1'
                         )}10`,
                         p: 3,
-                        borderRadius: "8px",
+                        borderRadius: '8px',
                         mb: 3,
-                        fontStyle: "italic",
-                        position: "relative",
+                        fontStyle: 'italic',
+                        position: 'relative',
                         pl: 4,
-                        "&::before": {
+                        '&::before': {
                           content: '"“"',
-                          position: "absolute",
+                          position: 'absolute',
                           left: 12,
                           top: -10,
-                          fontSize: "2.6rem",
+                          fontSize: '2.6rem',
                           lineHeight: 1,
                           color: getFontColorForGradient(
-                            card?.gradientClass || "card-gradient-1"
+                            card?.gradientClass || 'card-gradient-1'
                           ),
                           opacity: 0.2,
                         },
                       }}
                     >
                       <Typography
-                        variant={isMobile ? "body1" : "h6"}
+                        variant={isMobile ? 'body1' : 'h6'}
                         sx={{
                           color: getFontColorForGradient(
-                            card?.gradientClass || "card-gradient-1"
+                            card?.gradientClass || 'card-gradient-1'
                           ),
-                          whiteSpace: "pre-line",
+                          whiteSpace: 'pre-line',
                         }}
                       >
-                        {sanitizeContent(card?.quote || "")}
+                        {sanitizeContent(card?.quote || '')}
                       </Typography>
                     </Box>
                     <Box sx={{ mb: 3 }}>
                       <img
-                        src={card?.imagePath || "/images/mistyblue.png"}
-                        alt={card?.title || ""}
+                        src={card?.imagePath || '/images/mistyblue.png'}
+                        alt={card?.title || ''}
                         style={{
-                          width: "100%",
-                          height: "auto",
-                          borderRadius: "8px",
-                          maxHeight: "400px",
-                          objectFit: "cover",
-                          transition: isMobile ? "none" : "transform 0.5s ease",
+                          width: '100%',
+                          height: 'auto',
+                          borderRadius: '8px',
+                          maxHeight: '400px',
+                          objectFit: 'cover',
+                          transition: isMobile ? 'none' : 'transform 0.5s ease',
                         }}
                         onMouseOver={(e) =>
                           !isMobile &&
-                          (e.currentTarget.style.transform = "scale(1.05)")
+                          (e.currentTarget.style.transform = 'scale(1.05)')
                         }
                         onMouseOut={(e) =>
                           !isMobile &&
-                          (e.currentTarget.style.transform = "scale(1)")
+                          (e.currentTarget.style.transform = 'scale(1)')
                         }
                       />
                     </Box>
@@ -498,7 +498,7 @@ const CardDetail: React.FC = () => {
                           variant="body1"
                           sx={{
                             color: getFontColorForGradient(
-                              card?.gradientClass || "card-gradient-1"
+                              card?.gradientClass || 'card-gradient-1'
                             ),
                             lineHeight: 1.8,
                           }}
@@ -511,10 +511,10 @@ const CardDetail: React.FC = () => {
                   <Box
                     sx={{
                       mt: 4,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      flexDirection: isMobile ? "column" : "row",
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexDirection: isMobile ? 'column' : 'row',
                       gap: 2,
                     }}
                   >
@@ -522,27 +522,27 @@ const CardDetail: React.FC = () => {
                       variant="body2"
                       sx={{
                         color: getFontColorForGradient(
-                          card?.gradientClass || "card-gradient-1"
+                          card?.gradientClass || 'card-gradient-1'
                         ),
                         opacity: 0.8,
                       }}
                     >
                       {card?.creator
                         ? `— ${sanitizeContent(card.creator)}`
-                        : ""}
+                        : ''}
                     </Typography>
                     <Typography
                       variant="body2"
                       sx={{
                         color: getFontColorForGradient(
-                          card?.gradientClass || "card-gradient-1"
+                          card?.gradientClass || 'card-gradient-1'
                         ),
                         opacity: 0.8,
                       }}
                     >
                       {card
-                        ? new Date(card.created).toLocaleDateString("zh-CN")
-                        : ""}
+                        ? new Date(card.created).toLocaleDateString('zh-CN')
+                        : ''}
                     </Typography>
                   </Box>
                 </div>
@@ -552,10 +552,10 @@ const CardDetail: React.FC = () => {
             <Box
               sx={{
                 mb: 6,
-                display: "flex",
+                display: 'flex',
                 gap: { xs: 1, sm: 2 },
-                flexWrap: "wrap",
-                justifyContent: "center",
+                flexWrap: 'wrap',
+                justifyContent: 'center',
               }}
             >
               <Button
@@ -565,11 +565,11 @@ const CardDetail: React.FC = () => {
                 loading={downloading}
                 onClick={handleDownloadCard}
                 sx={{
-                  backgroundColor: "#3182ce",
-                  "&:hover": { backgroundColor: "#2c5aa0" },
+                  backgroundColor: '#3182ce',
+                  '&:hover': { backgroundColor: '#2c5aa0' },
                   py: 1.5,
                   px: { xs: 3, sm: 4 },
-                  minWidth: { xs: "auto", sm: "140px" },
+                  minWidth: { xs: 'auto', sm: '140px' },
                 }}
               >
                 下载卡片
@@ -581,11 +581,11 @@ const CardDetail: React.FC = () => {
                   variant="contained"
                   onClick={handleEdit}
                   sx={{
-                    backgroundColor: "#e53e3e",
-                    "&:hover": { backgroundColor: "#c53030" },
+                    backgroundColor: '#e53e3e',
+                    '&:hover': { backgroundColor: '#c53030' },
                     py: 1.5,
                     px: { xs: 3, sm: 4 },
-                    minWidth: { xs: "auto", sm: "140px" },
+                    minWidth: { xs: 'auto', sm: '140px' },
                   }}
                 >
                   编辑卡片
@@ -597,15 +597,15 @@ const CardDetail: React.FC = () => {
               elevation={3}
               sx={{
                 p: { xs: 3, sm: 4 },
-                borderRadius: "16px",
-                backgroundColor: "rgba(255, 255, 255, 0.95)",
-                backdropFilter: "blur(10px)",
+                borderRadius: '16px',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
               }}
             >
               <Typography
-                variant={isMobile ? "h6" : "h5"}
+                variant={isMobile ? 'h6' : 'h5'}
                 component="h2"
-                sx={{ mb: 4, color: "var(--primary)" }}
+                sx={{ mb: 4, color: 'var(--primary)' }}
               >
                 评论
               </Typography>
@@ -621,28 +621,28 @@ const CardDetail: React.FC = () => {
                       sx={{
                         p: 3,
                         mb: 3,
-                        borderRadius: "8px",
-                        backgroundColor: "rgba(255, 255, 255, 0.8)",
-                        transition: "box-shadow 0.3s ease",
-                        "&:hover": {
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                        transition: 'box-shadow 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                         },
                       }}
                     >
                       <Box
                         sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
                           mb: 1,
-                          flexDirection: isMobile ? "column" : "row",
+                          flexDirection: isMobile ? 'column' : 'row',
                           gap: 1,
-                          textAlign: isMobile ? "center" : "left",
+                          textAlign: isMobile ? 'center' : 'left',
                         }}
                       >
                         <Typography
                           variant="subtitle1"
-                          sx={{ fontWeight: "bold", color: "var(--primary)" }}
+                          sx={{ fontWeight: 'bold', color: 'var(--primary)' }}
                         >
                           {sanitizeContent(comment.name || comment.Name)}
                         </Typography>
@@ -655,11 +655,11 @@ const CardDetail: React.FC = () => {
                           dangerouslySetInnerHTML={{
                             __html: sanitizeContent(
                               comment.comment || comment.created
-                            ).replace(/\n/g, "<br>"),
+                            ).replace(/\n/g, '<br>'),
                           }}
                         />
                       </Typography>
-                      <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
+                      <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
                         <Button
                           size="small"
                           variant="text"
@@ -677,7 +677,7 @@ const CardDetail: React.FC = () => {
 
               <Divider sx={{ mb: 4 }} />
 
-              <Typography variant="h6" sx={{ mb: 3, color: "var(--primary)" }}>
+              <Typography variant="h6" sx={{ mb: 3, color: 'var(--primary)' }}>
                 添加评论
               </Typography>
 
@@ -698,7 +698,7 @@ const CardDetail: React.FC = () => {
                   placeholder="写下您的想法..."
                   margin="normal"
                   variant="outlined"
-                  size={isMobile ? "small" : "medium"}
+                  size={isMobile ? 'small' : 'medium'}
                   sx={{ mb: 3 }}
                 />
 
@@ -710,11 +710,11 @@ const CardDetail: React.FC = () => {
                   fullWidth={isMobile}
                   sx={{
                     mt: 3,
-                    "&:hover": { backgroundColor: "#5a67d8" },
+                    '&:hover': { backgroundColor: '#5a67d8' },
                     py: 1.2,
                   }}
                 >
-                  {submittingComment ? "提交中..." : "提交评论"}
+                  {submittingComment ? '提交中...' : '提交评论'}
                 </Button>
               </Box>
             </Paper>

@@ -163,8 +163,13 @@ export const api = {
       });
     },
 
-    like: async (cardId: string): Promise<ApiResponse<{ success: boolean; likesCount: number }>> => {
-      return http.post<{ success: boolean; likesCount: number }>(API_MAP.CARDS.ROOT, { action: 'like', cardId });
+    like: async (
+      cardId: string
+    ): Promise<ApiResponse<{ success: boolean; likesCount: number }>> => {
+      return http.post<{ success: boolean; likesCount: number }>(
+        API_MAP.CARDS.ROOT,
+        { action: 'like', cardId }
+      );
     },
 
     delete: async (id: string): Promise<ApiResponse<{ success: boolean }>> => {
@@ -222,10 +227,15 @@ export const api = {
 
   // 会议相关API
   meetups: {
-    getAll: async (
-      params?: { status?: string; limit?: number; offset?: number }
-    ): Promise<ApiResponse<{ meetups: Meetup[] }>> => {
-      return http.get<{ meetups: Meetup[] }>(API_MAP.MEETUPS.ROOT, params as any);
+    getAll: async (params?: {
+      status?: string;
+      limit?: number;
+      offset?: number;
+    }): Promise<ApiResponse<{ meetups: Meetup[] }>> => {
+      return http.get<{ meetups: Meetup[] }>(
+        API_MAP.MEETUPS.ROOT,
+        params as any
+      );
     },
 
     getById: async (
@@ -316,105 +326,146 @@ export const api = {
   },
 
   people: {
-    list: async (
-      params?: { q?: string; offering?: string; seeking?: string; interest?: string; expertise?: string; theme?: string }
-    ): Promise<ApiResponse<{ users: import('../types').PeopleUser[] }>> => {
+    list: async (params?: {
+      q?: string;
+      offering?: string;
+      seeking?: string;
+      interest?: string;
+      expertise?: string;
+      theme?: string;
+    }): Promise<ApiResponse<{ users: import('../types').PeopleUser[] }>> => {
       return http.get<{ users: import('../types').PeopleUser[] }>(
         API_MAP.PEOPLE.LIST,
         params as any
-      )
+      );
     },
     getById: async (
       id: string | number
     ): Promise<ApiResponse<{ users: import('../types').PeopleUser[] }>> => {
-      return http.get<{ users: import('../types').PeopleUser[] }>(API_MAP.PEOPLE.LIST, { id } as any)
+      return http.get<{ users: import('../types').PeopleUser[] }>(
+        API_MAP.PEOPLE.LIST,
+        { id } as any
+      );
     },
     getByIds: async (
       ids: Array<string | number>
     ): Promise<ApiResponse<{ users: import('../types').PeopleUser[] }>> => {
-      return http.get<{ users: import('../types').PeopleUser[] }>(API_MAP.PEOPLE.LIST, { ids: ids.map(String).join(',') } as any)
+      return http.get<{ users: import('../types').PeopleUser[] }>(
+        API_MAP.PEOPLE.LIST,
+        { ids: ids.map(String).join(',') } as any
+      );
     },
   },
 
   oneonone: {
     invites: {
       create: async (
-        data: Partial<import('../types').OneOnOneInvite> & { invitee_id: string }
-      ): Promise<ApiResponse<{ invite: import('../types').OneOnOneInvite }>> => {
+        data: Partial<import('../types').OneOnOneInvite> & {
+          invitee_id: string;
+        }
+      ): Promise<
+        ApiResponse<{ invite: import('../types').OneOnOneInvite }>
+      > => {
         return http.post<{ invite: import('../types').OneOnOneInvite }>(
           API_MAP.ONEONONE.INVITES,
           data
-        )
+        );
       },
       list: async (
         role: 'inviter' | 'invitee' = 'invitee',
         status?: 'pending' | 'accepted' | 'declined' | 'cancelled'
-      ): Promise<ApiResponse<{ invites: import('../types').OneOnOneInvite[] }>> => {
-        const params: Record<string, any> = { role }
-        if (status) params.status = status
+      ): Promise<
+        ApiResponse<{ invites: import('../types').OneOnOneInvite[] }>
+      > => {
+        const params: Record<string, any> = { role };
+        if (status) params.status = status;
         return http.get<{ invites: import('../types').OneOnOneInvite[] }>(
           API_MAP.ONEONONE.INVITES,
           params
-        )
+        );
       },
       update: async (
         id: string,
         data: Partial<import('../types').OneOnOneInvite>
-      ): Promise<ApiResponse<{ invite: import('../types').OneOnOneInvite }>> => {
+      ): Promise<
+        ApiResponse<{ invite: import('../types').OneOnOneInvite }>
+      > => {
         return http.put<{ invite: import('../types').OneOnOneInvite }>(
           API_MAP.ONEONONE.INVITES,
           { id, ...data }
-        )
+        );
       },
     },
     meetings: {
       create: async (
         data: Partial<import('../types').OneOnOneMeeting>
-      ): Promise<ApiResponse<{ meeting: import('../types').OneOnOneMeeting }>> => {
+      ): Promise<
+        ApiResponse<{ meeting: import('../types').OneOnOneMeeting }>
+      > => {
         return http.post<{ meeting: import('../types').OneOnOneMeeting }>(
           API_MAP.ONEONONE.MEETINGS,
           data
-        )
+        );
       },
-      list: async (): Promise<ApiResponse<{ meetings: import('../types').OneOnOneMeeting[] }>> => {
+      list: async (): Promise<
+        ApiResponse<{ meetings: import('../types').OneOnOneMeeting[] }>
+      > => {
         return http.get<{ meetings: import('../types').OneOnOneMeeting[] }>(
           API_MAP.ONEONONE.MEETINGS
-        )
+        );
       },
       update: async (
         id: string,
         data: Partial<import('../types').OneOnOneMeeting>
-      ): Promise<ApiResponse<{ meeting: import('../types').OneOnOneMeeting }>> => {
+      ): Promise<
+        ApiResponse<{ meeting: import('../types').OneOnOneMeeting }>
+      > => {
         return http.put<{ meeting: import('../types').OneOnOneMeeting }>(
           API_MAP.ONEONONE.MEETINGS,
           { id, ...data }
-        )
+        );
       },
     },
   },
 
   notifications: {
-    list: async (
-      params?: { status?: 'unread' | 'read'; limit?: number; offset?: number }
-    ): Promise<ApiResponse<{ notifications: any[] }>> => {
-      return http.get<{ notifications: any[] }>(API_MAP.NOTIFICATIONS.ROOT, params as any)
+    list: async (params?: {
+      status?: 'unread' | 'read';
+      limit?: number;
+      offset?: number;
+    }): Promise<ApiResponse<{ notifications: any[] }>> => {
+      return http.get<{ notifications: any[] }>(
+        API_MAP.NOTIFICATIONS.ROOT,
+        params as any
+      );
     },
-    markRead: async (id: string): Promise<ApiResponse<{ success: boolean }>> => {
-      return http.put<{ success: boolean }>(API_MAP.NOTIFICATIONS.ROOT, { id })
+    markRead: async (
+      id: string
+    ): Promise<ApiResponse<{ success: boolean }>> => {
+      return http.put<{ success: boolean }>(API_MAP.NOTIFICATIONS.ROOT, { id });
     },
     markAllRead: async (): Promise<ApiResponse<{ success: boolean }>> => {
-      return http.put<{ success: boolean }>(API_MAP.NOTIFICATIONS.ROOT, { all: true })
+      return http.put<{ success: boolean }>(API_MAP.NOTIFICATIONS.ROOT, {
+        all: true,
+      });
     },
   },
 
   profile: {
-    getMy: async (): Promise<ApiResponse<{ profile: import('../types').UserProfile | null }>> => {
-      return http.get<{ profile: import('../types').UserProfile | null }>(API_MAP.PROFILE.ROOT)
+    getMy: async (): Promise<
+      ApiResponse<{ profile: import('../types').UserProfile | null }>
+    > => {
+      return http.get<{ profile: import('../types').UserProfile | null }>(
+        API_MAP.PROFILE.ROOT
+      );
     },
     upsert: async (
       data: Partial<import('../types').UserProfile>
     ): Promise<ApiResponse<{ profile: import('../types').UserProfile }>> => {
-      return http.post<{ profile: import('../types').UserProfile }>(API_MAP.PROFILE.ROOT, data)
+      return http.post<{ profile: import('../types').UserProfile }>(
+        API_MAP.PROFILE.ROOT,
+        data
+      );
     },
   },
 

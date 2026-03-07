@@ -51,7 +51,7 @@ const CreateCard: React.FC = () => {
   // 图片相关状态
   const [customImage, setCustomImage] = useState<string>('');
   const [selectedSearchImage, setSelectedSearchImage] = useState<string>(
-    '/images/mistyblue.png',
+    '/images/mistyblue.png'
   );
   const [searchImages, setSearchImages] = useState<SearchImageResult[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -97,7 +97,7 @@ const CreateCard: React.FC = () => {
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    >
   ) => {
     const { id, value } = e.target;
     setCardData((prev) => ({ ...prev, [id]: value }));
@@ -179,7 +179,7 @@ const CreateCard: React.FC = () => {
             thumb: item.thumb || item.url || '',
             title: item.title || '图片',
             description: item.description || '相关图片',
-          }),
+          })
         );
 
         setSearchImages(formattedResults);
@@ -229,7 +229,7 @@ const CreateCard: React.FC = () => {
       const link = document.createElement('a');
       const fileName = `inspire-card-${cardData.title.replace(
         /[^a-zA-Z0-9\u4e00-\u9fa5]/g,
-        '-',
+        '-'
       )}.png`;
       link.download = fileName;
       link.href = canvas.toDataURL('image/png');
@@ -582,7 +582,7 @@ const CreateCard: React.FC = () => {
                     fontFamily: cardData.font,
                     background:
                       gradientOptions.find(
-                        (g) => g.class === cardData.gradientClass,
+                        (g) => g.class === cardData.gradientClass
                       )?.class || 'var(--bg-light)',
                   }}
                 >
@@ -590,7 +590,7 @@ const CreateCard: React.FC = () => {
                     sx={{
                       flexGrow: 1,
                       color: getFontColorForGradient(
-                        cardData?.gradientClass || '',
+                        cardData?.gradientClass || ''
                       ),
                     }}
                   >
@@ -605,7 +605,7 @@ const CreateCard: React.FC = () => {
                     <Box
                       sx={{
                         backgroundColor: `${getFontColorForGradient(
-                          cardData?.gradientClass || '',
+                          cardData?.gradientClass || ''
                         )}10`,
                         p: 2,
                         borderRadius: 'var(--radius-sm)',
@@ -616,7 +616,7 @@ const CreateCard: React.FC = () => {
                         variant="body1"
                         sx={{
                           color: getFontColorForGradient(
-                            cardData?.gradientClass || '',
+                            cardData?.gradientClass || ''
                           ),
                           fontStyle: 'italic',
                           whiteSpace: 'pre-line',
@@ -642,7 +642,7 @@ const CreateCard: React.FC = () => {
                       <Box
                         sx={{
                           color: getFontColorForGradient(
-                            cardData?.gradientClass || '',
+                            cardData?.gradientClass || ''
                           ),
                           '& *': {
                             color: 'inherit !important',
@@ -652,7 +652,7 @@ const CreateCard: React.FC = () => {
                           __html: DOMPurify.sanitize(
                             cardData.detail
                               ? marked.parse(cardData.detail).toString()
-                              : '',
+                              : ''
                           ),
                         }}
                       />
@@ -664,7 +664,7 @@ const CreateCard: React.FC = () => {
                       px: 3,
                       pb: 2,
                       color: getFontColorForGradient(
-                        cardData?.gradientClass || '',
+                        cardData?.gradientClass || ''
                       ),
                     }}
                   >
