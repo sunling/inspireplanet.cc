@@ -1,41 +1,13 @@
 import { supabase } from '../../database/supabase';
+import { CardItem } from '../types';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
-// 本地定义 CardData 接口，避免从缺失的模块导入
-interface CardData {
-  id?: string;
-  title: string;
-  quote: string;
-  detail: string;
-  font?: string;
-  imagePath?: string;
-  upload?: string;
-  creator?: string;
-  gradientClass?: string;
-  username?: string | null;
-  updateTime?: string;
-}
-import jwt from 'jsonwebtoken';
 
-// 定义数据库卡片记录接口
-export interface CardRecord {
-  id: string;
-  title: string;
-  quote: string;
-  detail: string;
-  font: string;
-  imagePath: string;
-  upload: string;
-  creator: string;
-  created: string;
-  gradientClass: string;
-  username: string | null;
-  updateTime?: string;
-}
+import jwt from 'jsonwebtoken';
 
 // 内存缓存
 interface Cache {
-  allCards: CardRecord[] | null;
-  cardsByIds: Record<string, CardRecord[]>;
+  allCards: CardItem[] | null;
+  cardsByIds: Record<string, CardItem[]>;
 }
 
 const cache: Cache = {
@@ -116,7 +88,7 @@ async function save(
     }
 
     // 解析请求体
-    const cardData: CardData = JSON.parse(event.body || '{}');
+    const cardData: CardItem = JSON.parse(event.body || '{}');
 
     // 验证必填字段
     if (!cardData.title || !cardData.quote || !cardData.detail) {
@@ -139,6 +111,8 @@ async function save(
       gradient_class: cardData.gradientClass || '',
       username: cardData.username || null,
       likes_count: 0,
+      user_id: cardData.userId || null,
+      update_time: new Date().toDateString(),
     };
 
     // 插入Supabase
@@ -389,7 +363,7 @@ async function update(
     }
 
     // 解析请求体
-    const cardData: CardData = JSON.parse(event.body || '{}');
+    const cardData: CardItem = JSON.parse(event.body || '{}');
 
     // 验证必填字段
     if (
@@ -445,6 +419,7 @@ async function update(
       image_path: cardData.imagePath || existingCard.image_path,
       upload: cardData.upload || existingCard.upload,
       username: cardData.username || existingCard.username,
+      update_time: new Date().toDateString(),
     };
 
     // 更新Supabase中的卡片
@@ -485,7 +460,7 @@ async function update(
  * @param card 卡片数据
  * @returns 哈希值
  */
-function generateHash(card: CardData): string | null {
+function generateHash(card: CardItem): string | null {
   if (!card.title || !card.quote || !card.detail) return null;
 
   const normalized = [

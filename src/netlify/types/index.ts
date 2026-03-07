@@ -3,6 +3,7 @@ export * from './http';
 // 卡片数据接口 - 统一所有卡片相关的类型
 export interface CardItem {
   id: string;
+  userId?: string;
   title: string;
   quote: string;
   detail?: string;
@@ -14,6 +15,7 @@ export interface CardItem {
   created: string;
   username?: string;
   likesCount?: number;
+  updateTime?: number;
 }
 
 // 评论数据接口

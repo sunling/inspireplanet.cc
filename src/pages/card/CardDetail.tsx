@@ -20,6 +20,7 @@ import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
 import ErrorCard from '@/components/ErrorCard';
 import { useGlobalSnackbar } from '@/context/app';
+import { loginOut } from '@/utils/user';
 
 const CardDetail: React.FC = () => {
   const location = useLocation();
@@ -31,7 +32,6 @@ const CardDetail: React.FC = () => {
     return searchParams.get('id');
   };
 
-  const cardId = getCardId();
   const cardRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
   const { isMobile } = useResponsive();
@@ -257,9 +257,7 @@ const CardDetail: React.FC = () => {
 
       if (!response.success) {
         if (response.statusCode === 401) {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('userInfo');
-          localStorage.removeItem('userToken');
+          loginOut();
           showSnackbar.error('登录已过期，请重新登录');
           const redirect = `/card-detail?id=${cardId}`;
           navigate(`/login?redirect=${encodeURIComponent(redirect)}`);

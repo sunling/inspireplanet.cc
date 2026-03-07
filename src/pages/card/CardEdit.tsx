@@ -119,15 +119,16 @@ const CardEdit: React.FC = () => {
         detail: sanitizedDetail,
       };
 
-      // 调用API提交卡片
       const response = await api.cards.update(cardToSubmit);
       if (!response.success) {
-        showSnackbar.error('修改卡片失败');
+        showSnackbar.error(response.error || '更新失败');
+        return;
       }
 
       console.log('修改卡片的返回:', response);
 
-      fetchCardData(cardData.id || '');
+      showSnackbar.success('卡片已更新');
+      setTimeout(() => navigate(`/card-detail?id=${cardData.id}`), 1000);
     } catch (err) {
       setError('保存卡片失败，请稍后重试');
       console.error('保存卡片失败:', err);
