@@ -68,23 +68,42 @@
 
 ## 环境变量
 
-在项目根目录创建 `.env` 文件，包含以下变量（示例）：
+复制模板文件并填入对应的值：
 
-```
-SUPABASE_URL=Supabase 项目地址
-SUPABASE_ANON_KEY=Supabase 匿名密钥
-
-JWT_SECRET=JWT 加密密钥
-OPENROUTER_API_KEY=OpenRouter API 密钥
-UNSPLASH_ACCESS_KEY=Unsplash Access Key
-
-GITHUB_TOKEN=GitHub Token
-GITHUB_REPO_OWNER=GitHub 用户名
-GITHUB_REPO_NAME=仓库名
-GITHUB_BRANCH=main
+```bash
+cp .env.example .env
 ```
 
-提示：Netlify 本地开发会自动注入 `.env`、`netlify.toml` 以及站点后台配置中的环境变量。
+`.env` 中需要配置两类变量：
+
+**客户端变量（`VITE_` 前缀，Vite 构建时注入）**
+
+| 变量名 | 说明 |
+|---|---|
+| `VITE_URL` | 本地开发填 `http://localhost:8888` |
+| `VITE_SUPABASE_URL` | Supabase 项目地址 |
+| `VITE_SUPABASE_ANON_KEY` | Supabase 匿名密钥（anon key） |
+| `VITE_OPENROUTER_API_KEY` | OpenRouter API 密钥（用于搜图关键词生成） |
+| `VITE_UNSPLASH_ACCESS_KEY` | Unsplash Access Key（用于搜图） |
+| `VITE_JWT_SECRET` | JWT 加密密钥（与服务端保持一致） |
+
+**服务端变量（无前缀，Netlify Functions 运行时注入）**
+
+| 变量名 | 说明 |
+|---|---|
+| `URL` | 本地开发填 `http://localhost:8888` |
+| `SUPABASE_URL` | Supabase 项目地址 |
+| `SUPABASE_ANON_KEY` | Supabase 匿名密钥 |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role 密钥（绕过 RLS，后端专用） |
+| `JWT_SECRET` | JWT 加密密钥 |
+| `OPENROUTER_API_KEY` | OpenRouter API 密钥 |
+| `UNSPLASH_ACCESS_KEY` | Unsplash Access Key |
+| `GITHUB_TOKEN` | GitHub Personal Access Token（用于保存生成图片） |
+| `GITHUB_REPO_OWNER` | GitHub 用户名 |
+| `GITHUB_REPO_NAME` | 存放图片的仓库名 |
+| `GITHUB_BRANCH` | 目标分支，通常填 `main` |
+
+> Netlify 本地开发（`netlify dev`）会自动读取根目录的 `.env` 文件，无需手动 `source`。
 
 ## 本地开发
 
@@ -95,25 +114,39 @@ GITHUB_BRANCH=main
    cd inspireplanet.cc
    ```
 
-2. 安装依赖（建议 Node 20 与 Yarn 1.x）
+2. 切换 Node 版本（需 Node 20）
 
    ```bash
-   # 使用 nvm 切换到 Node 20
    nvm use 20
+   # 或使用 fnm：fnm use 20
+   ```
 
-   # 安装依赖
+3. 安装依赖（使用 Yarn 1.x）
+
+   ```bash
    yarn
    ```
 
-3. 创建并填写 `.env`（参见上文「环境变量」）
+4. 配置环境变量
 
-4. 启动本地开发
+   ```bash
+   cp .env.example .env
+   # 用编辑器打开 .env，填入各项真实值
+   ```
+
+5. 启动本地开发服务
 
    ```bash
    yarn dev
    ```
 
-5. 打开浏览器访问 `http://localhost:8888`
+   这会同时启动：
+   - Vite 开发服务器（`:5173`，热更新）
+   - Netlify Dev（`:8888`，代理 Vite + 运行 Functions）
+
+6. 打开浏览器访问 `http://localhost:8888`
+
+> 如果只需要调试前端 UI（不需要调用后端函数），可以单独运行 `yarn vite:dev`，访问 `http://localhost:5173`。
 
 ## 构建与部署
 
