@@ -87,6 +87,7 @@ const CardDetail: React.FC = () => {
       };
 
       setCard(normalizedCard);
+      checkEditPermission(normalizedCard);
     } catch (error) {
       console.error('获取卡片失败:', error);
       const text = '获取卡片失败';
@@ -221,7 +222,7 @@ const CardDetail: React.FC = () => {
   const handleEdit = () => {
     const cardId = getCardId();
     if (cardId) {
-      navigate(`/card-edit?id=${cardId}`);
+      navigate(`/card-edit/${cardId}`);
     }
   };
 
