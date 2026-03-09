@@ -11,6 +11,10 @@ import {
   Button,
   TextField,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import useResponsive from '@/hooks/useResponsive';
 import { CardItem, Comment } from '@/netlify/types';
@@ -41,8 +45,10 @@ const CardDetail: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [canEdit, setCanEdit] = useState(false);
+  const [canDelete, setCanDelete] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // 评论表单状态
   const [commentForm, setCommentForm] = useState({
@@ -87,6 +93,9 @@ const CardDetail: React.FC = () => {
       };
 
       setCard(normalizedCard);
+
+      // 检查删除权限
+      checkDeletePermission(normalizedCard);
     } catch (error) {
       console.error('获取卡片失败:', error);
       const text = '获取卡片失败';
@@ -133,14 +142,14 @@ const CardDetail: React.FC = () => {
     }
   };
 
-  // 检查用户是否可以编辑卡片
-  const checkEditPermission = (cardData: CardItem) => {
+  // 检查用户是否可以删除卡片
+  const checkDeletePermission = (cardData: CardItem) => {
     try {
       // 支持多种用户数据存储键名
       const userData =
         localStorage.getItem('userInfo') || localStorage.getItem('userData');
       if (!userData) {
-        setCanEdit(false);
+        setCanDelete(false);
         return;
       }
 
@@ -148,10 +157,11 @@ const CardDetail: React.FC = () => {
       const currentUsername = user.username || '';
       const cardUsername = cardData.username || '';
 
-      setCanEdit(currentUsername && currentUsername === cardUsername);
+      const hasPermission = currentUsername && currentUsername === cardUsername;
+      setCanDelete(hasPermission);
     } catch (e) {
       console.error('解析用户信息失败:', e);
-      setCanEdit(false);
+      setCanDelete(false);
     }
   };
 
@@ -217,12 +227,54 @@ const CardDetail: React.FC = () => {
     }
   };
 
-  // 处理编辑按钮点击
-  const handleEdit = () => {
+  // 处理删除按钮点击
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  // 确认删除
+  const handleDeleteConfirm = async () => {
     const cardId = getCardId();
-    if (cardId) {
-      navigate(`/card-edit?id=${cardId}`);
+    if (!cardId) {
+      showSnackbar.error('卡片ID无效');
+      return;
     }
+
+    setDeleting(true);
+
+    try {
+      const response = await api.cards.delete(cardId);
+
+      if (!response.success) {
+        if (response.statusCode === 403) {
+          showSnackbar.error('没有权限删除此卡片');
+        } else if (response.statusCode === 401) {
+          showSnackbar.error('请先登录');
+          setTimeout(() => {
+            navigate('/login');
+          }, 1500);
+        } else {
+          showSnackbar.error(response.error || '删除失败');
+        }
+        return;
+      }
+
+      showSnackbar.success('卡片删除成功！');
+      setTimeout(() => {
+        navigate('/cards');
+      }, 1000);
+    } catch (error: any) {
+      console.error('删除卡片失败:', error);
+      showSnackbar.error('删除失败，请稍后重试');
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  // 取消删除
+  const handleDeleteCancel = () => {
+    setShowDeleteDialog(false);
   };
 
   // 提交评论
@@ -575,23 +627,51 @@ const CardDetail: React.FC = () => {
                 下载卡片
               </Button>
 
-              {canEdit && (
+              {canDelete && (
                 <Button
-                  id="edit-btn"
+                  id="delete-btn"
                   variant="contained"
-                  onClick={handleEdit}
+                  disabled={deleting}
+                  onClick={handleDeleteClick}
                   sx={{
-                    backgroundColor: '#e53e3e',
-                    '&:hover': { backgroundColor: '#c53030' },
+                    backgroundColor: '#c53030',
+                    '&:hover': { backgroundColor: '#9b2c2c' },
                     py: 1.5,
                     px: { xs: 3, sm: 4 },
                     minWidth: { xs: 'auto', sm: '140px' },
                   }}
                 >
-                  编辑卡片
+                  {deleting ? '删除中...' : '删除卡片'}
                 </Button>
               )}
             </Box>
+
+            {/* 删除确认对话框 */}
+            <Dialog
+              open={showDeleteDialog}
+              onClose={handleDeleteCancel}
+              aria-labelledby="delete-dialog-title"
+            >
+              <DialogTitle id="delete-dialog-title">确认删除</DialogTitle>
+              <DialogContent>
+                <Typography>
+                  确定要删除这张卡片吗？此操作无法撤销。
+                </Typography>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleDeleteCancel} disabled={deleting}>
+                  取消
+                </Button>
+                <Button
+                  onClick={handleDeleteConfirm}
+                  disabled={deleting}
+                  color="error"
+                  variant="contained"
+                >
+                  {deleting ? '删除中...' : '确认删除'}
+                </Button>
+              </DialogActions>
+            </Dialog>
 
             <Paper
               elevation={3}

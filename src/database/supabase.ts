@@ -22,6 +22,12 @@ function getEnvVars(): EnvVars {
         process.env.VITE_SUPABASE_ANON_KEY ||
         '';
 
+      console.log('🔍 Environment check:', {
+        hasServiceKey: !!serviceKey,
+        serviceKeyPrefix: serviceKey ? serviceKey.substring(0, 20) + '...' : 'none',
+        hasAnonKey: !!anonKey,
+      });
+
       if (!serviceKey) {
         console.warn(
           '⚠️ Warning: SUPABASE_SERVICE_ROLE_KEY is not set. Database operations may fail due to RLS policies.'

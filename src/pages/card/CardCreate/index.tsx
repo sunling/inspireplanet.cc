@@ -80,6 +80,9 @@ const CreateCard: React.FC = () => {
         if (userInfo.name) {
           setCardData((prev) => ({ ...prev, creator: userInfo.name }));
         }
+        if (userInfo.username) {
+          setCardData((prev) => ({ ...prev, username: userInfo.username }));
+        }
       }
     } catch (error) {
       console.error('解析用户信息失败:', error);
@@ -275,6 +278,19 @@ const CreateCard: React.FC = () => {
         created: new Date().toISOString(),
         upload: customImage,
         imagePath: selectedSearchImage,
+        // 确保 username 被包含在提交数据中
+        username: cardData.username || (() => {
+          try {
+            const userInfoStr = localStorage.getItem('userInfo');
+            if (userInfoStr) {
+              const userInfo = JSON.parse(userInfoStr);
+              return userInfo.username || null;
+            }
+          } catch (error) {
+            console.error('解析用户信息失败:', error);
+          }
+          return null;
+        })(),
       };
 
       // 调用API提交卡片
