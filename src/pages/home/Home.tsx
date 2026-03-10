@@ -9,15 +9,14 @@ import {
   Paper,
   IconButton,
 } from '@mui/material';
-import { useResponsive } from '../../hooks/useResponsive';
+import { useResponsive } from '@/hooks/useResponsive';
 import { ChevronRight, Star } from '@mui/icons-material';
-import Carousel from '../../components/Carousel';
-import Empty from '../../components/Empty/index';
-import Loading from '../../components/Loading/index';
-import { api } from '../../netlify/configs';
-import { WeeklyCard } from '../../netlify/types/index';
+import Carousel from '@/components/Carousel';
+import Empty from '@/components/Empty';
+import Loading from '@/components/Loading';
+import { WeeklyCard } from '@/netlify/types';
 import styles from './home.module.css';
-import ErrorCard from '../../components/ErrorCard/index';
+import ErrorCard from '@/components/ErrorCard';
 import {
   getFontColorForGradient,
   getRandomGradientClass,
@@ -25,6 +24,7 @@ import {
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import html2canvas from 'html2canvas';
+import { weeklyCardsApi } from '@/netlify/config';
 
 const Home: React.FC = () => {
   const [cards, setCards] = useState<WeeklyCard[]>([]);
@@ -42,7 +42,7 @@ const Home: React.FC = () => {
 
     try {
       // 使用统一API封装获取最新卡片数据
-      const response = await api.weeklyCards.getLatest();
+      const response = await weeklyCardsApi.getLatest();
 
       const records = response?.data?.records || [];
 

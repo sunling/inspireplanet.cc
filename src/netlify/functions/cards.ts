@@ -1,9 +1,13 @@
-import { snakeToCamel } from '@/utils/helper';
 import { supabase } from '../../database/supabase';
-import { CardItem } from '../types';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
-
-import jwt from 'jsonwebtoken';
+import { CardItem } from '../types';
+import {
+  getCommonHttpHeader,
+  createSuccessResponse,
+  createErrorResponse,
+  handleOptionsRequest,
+  getUserIdFromAuth,
+} from '../utils/server';
 
 // 内存缓存
 interface Cache {
@@ -16,6 +20,11 @@ const cache: Cache = {
   cardsByIds: {},
 };
 
+// 定义CardAction接口
+export interface CardAction {
+  action: 'create' | 'update' | 'delete' | 'like' | 'get' | 'getAll';
+}
+
 /**
  * Netlify函数处理器
  * @param event 事件对象
@@ -26,97 +35,67 @@ export async function handler(
   event: NetlifyEvent,
   context: NetlifyContext
 ): Promise<NetlifyResponse> {
-  if (event.httpMethod === 'POST') {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const action = body.action || '';
-    if (action === 'like') {
-      cache.allCards = null;
-      cache.cardsByIds = {};
-      return await like(event, context);
+  if (event.httpMethod === 'OPTIONS') {
+    return handleOptionsRequest();
+  }
+
+  try {
+    const { action } = JSON.parse(event.body || '{}') as CardAction;
+
+    switch (action) {
+      case 'create':
+        cache.allCards = null;
+        cache.cardsByIds = {};
+        return await handleCreate(event);
+      case 'update':
+        cache.allCards = null;
+        cache.cardsByIds = {};
+        return await handleUpdate(event);
+      case 'delete':
+        cache.allCards = null;
+        cache.cardsByIds = {};
+        return await handleDelete(event);
+      case 'like':
+        cache.allCards = null;
+        cache.cardsByIds = {};
+        return await handleLike(event);
+      case 'get':
+        return await handleGet(event);
+      case 'getAll':
+        return await handleGetAll(event);
+      default:
+        return createErrorResponse('无效的操作类型');
     }
-    cache.allCards = null;
-    cache.cardsByIds = {};
-    console.log('Saving card');
-    return await save(event, context);
-  } else if (event.httpMethod === 'PUT') {
-    cache.allCards = null;
-    cache.cardsByIds = {};
-    console.log('Updating card');
-    return await update(event, context);
-  } else if (event.httpMethod === 'GET') {
-    console.log('Fetching cards');
-    return await fetch(event, context);
-  } else {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method Not Allowed' }),
-    };
+  } catch (error) {
+    console.error('Cards handler error:', error);
+    return createErrorResponse('服务器内部错误', 500);
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
-function getUserId(event: any) {
-  const auth =
-    (event.headers as any)?.authorization ||
-    (event.headers as any)?.Authorization;
-  if (!auth || !String(auth).startsWith('Bearer ')) return null;
-  const token = String(auth).substring(7);
+async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    return decoded.userId || decoded.user_id || null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * 保存新卡片
- * @param event 事件对象
- * @param context 上下文对象
- * @returns 响应对象
- */
-async function save(
-  event: NetlifyEvent,
-  context: NetlifyContext
-): Promise<NetlifyResponse> {
-  try {
-    // 只允许POST请求
-    if (event.httpMethod !== 'POST') {
-      return {
-        statusCode: 405,
-        body: JSON.stringify({ error: 'Method Not Allowed' }),
-      };
-    }
-
-    // 解析请求体
     const cardData: CardItem = JSON.parse(event.body || '{}');
 
-    // 验证必填字段
     if (!cardData.title || !cardData.quote || !cardData.detail) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required fields' }),
-      };
+      return createErrorResponse('缺少必填字段');
     }
 
-    // 准备插入数据库的记录
     const record = {
       font: cardData.font || '',
       title: cardData.title,
       quote: cardData.quote,
-      image_path: cardData.imagePath || '',
+      image_path: cardData.image_path || '',
       detail: cardData.detail,
       upload: cardData.upload || '',
       creator: cardData.creator || '',
       created: new Date().toISOString(),
-      gradient_class: cardData.gradientClass || '',
+      gradient_class: cardData.gradient_class || '',
       username: cardData.username || null,
       likes_count: 0,
-      user_id: cardData.userId || null,
+      user_id: cardData.user_id || null,
       update_time: new Date().toDateString(),
     };
 
-    // 插入Supabase
     const { data, error } = await supabase
       .from('cards')
       .insert([record])
@@ -124,251 +103,99 @@ async function save(
 
     if (error) {
       console.error('Error inserting card:', error);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: 'Failed to submit card',
-          details: error.message,
-          success: false,
-        }),
-      };
+      return createErrorResponse('提交卡片失败', 500);
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: 'Card submitted successfully',
-        success: true,
-        id: data?.[0]?.id,
-      }),
-    };
+    return createSuccessResponse({
+      message: '卡片提交成功',
+      id: data?.[0]?.id,
+    });
   } catch (error: any) {
     console.error('Function error:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: 'Internal Server Error',
-        message: error.message,
-        success: false,
-      }),
-    };
+    return createErrorResponse('服务器内部错误', 500);
   }
 }
 
-/**
- * 获取卡片
- * @param event 事件对象
- * @param context 上下文对象
- * @returns 响应对象
- */
-async function fetch(
-  event: NetlifyEvent,
-  context: NetlifyContext
-): Promise<NetlifyResponse> {
+async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    // 检查查询参数中是否有id
-    const params = event.queryStringParameters || {};
-    const idParam = params.id;
+    const body = event.body ? JSON.parse(event.body) : {};
+    const id = body.id;
 
-    if (idParam) {
-      // 检查是否是逗号分隔的ID列表
-      if (idParam.includes(',')) {
-        const ids = idParam
-          .split(',')
-          .map((id) => id.trim())
-          .filter((id) => id);
-        const cacheKey = ids.sort().join(',');
-
-        if (cache.cardsByIds[cacheKey]) {
-          return {
-            statusCode: 200,
-            body: JSON.stringify({ records: cache.cardsByIds[cacheKey] }),
-          };
-        }
-      } else {
-        // 单个ID
-        if (cache.cardsByIds[idParam]) {
-          console.log('Cache hit for ID:', idParam);
-          return {
-            statusCode: 200,
-            body: JSON.stringify({ records: cache.cardsByIds[idParam] }),
-          };
-        }
-      }
-    } else if (cache.allCards) {
-      // 返回缓存中的所有卡片
-      console.log('Cache hit for all cards');
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ records: cache.allCards }),
-      };
+    if (!id) {
+      return createErrorResponse('缺少卡片ID');
     }
 
-    // 构建查询
+    const cacheKey = String(id);
+    if (cache.cardsByIds[cacheKey]) {
+      return createSuccessResponse({ records: cache.cardsByIds[cacheKey] });
+    }
+
+    const { data, error } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', id)
+      .limit(25);
+
+    if (error) {
+      return createErrorResponse(error.message, 500);
+    }
+
+    const records = (data || []).map((row) => row);
+    cache.cardsByIds[cacheKey] = records;
+
+    return createSuccessResponse({ records });
+  } catch (error: any) {
+    console.error('Get card error:', error);
+    return createErrorResponse('服务器内部错误', 500);
+  }
+}
+
+async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
+  try {
+    const body = event.body ? JSON.parse(event.body) : {};
+    const userId = body.userId;
+
+    if (cache.allCards) {
+      return createSuccessResponse({ records: cache.allCards });
+    }
+
     let query = supabase.from('cards').select('*');
 
-    // 如果存在id参数，按id过滤
-    if (idParam) {
-      // 检查是否是逗号分隔的ID列表
-      if (idParam.includes(',')) {
-        const ids = idParam
-          .split(',')
-          .map((id) => id.trim())
-          .filter((id) => id);
-        query = query.in('id', ids);
-      } else {
-        // 单个ID
-        query = query.eq('id', idParam);
-      }
+    if (userId) {
+      query = query.eq('user_id', userId);
     }
 
-    // 应用排序
     query = query.order('created', { ascending: false }).limit(25);
 
-    // 执行查询
     const { data, error } = await query;
 
     if (error) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: error.message }),
-      };
+      return createErrorResponse(error.message, 500);
     }
 
-    const records = (data || []).map((row, index) => snakeToCamel(row));
+    const records = (data || []).map((row) => row);
+    cache.allCards = records;
 
-    // 更新缓存
-    if (idParam) {
-      if (idParam.includes(',')) {
-        const ids = idParam
-          .split(',')
-          .map((id) => id.trim())
-          .filter((id) => id);
-        const cacheKey = ids.sort().join(',');
-        cache.cardsByIds[cacheKey] = records;
-      } else {
-        cache.cardsByIds[idParam] = records;
-      }
-    } else {
-      cache.allCards = records;
-    }
-
-    const responseBody = JSON.stringify({ records });
-    console.log(
-      'Response payload size: ',
-      Buffer.byteLength(responseBody, 'utf8')
-    );
-
-    return {
-      statusCode: 200,
-      body: responseBody,
-    };
+    return createSuccessResponse({ records });
   } catch (error: any) {
-    console.error('Fetch error:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
-    };
+    console.error('Get all cards error:', error);
+    return createErrorResponse('服务器内部错误', 500);
   }
 }
 
-async function like(
-  event: NetlifyEvent,
-  context: NetlifyContext
-): Promise<NetlifyResponse> {
+async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const userId = getUserId(event);
-    if (!userId) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ success: false, error: 'Unauthorized' }),
-      };
-    }
-    const payload = event.body ? JSON.parse(event.body) : {};
-    const cardId = payload.cardId;
-    if (!cardId) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ success: false, error: 'Missing cardId' }),
-      };
-    }
-    // 读取当前计数
-    const { data: card, error: fetchError } = await supabase
-      .from('cards')
-      .select('id, likes_count')
-      .eq('id', cardId)
-      .single();
-    if (fetchError || !card) {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ success: false, error: 'Card Not Found' }),
-      };
-    }
-    const current = Number(card.likes_count) || 0;
-    const next = current + 1;
-    const { error: updateError } = await supabase
-      .from('cards')
-      .update({ likes_count: next })
-      .eq('id', cardId);
-    if (updateError) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ success: false, error: updateError.message }),
-      };
-    }
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ success: true, likesCount: next }),
-    };
-  } catch (e: any) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        success: false,
-        error: e.message || 'Server Error',
-      }),
-    };
-  }
-}
-
-/**
- * 更新卡片
- * @param event 事件对象
- * @param context 上下文对象
- * @returns 响应对象
- */
-async function update(
-  event: NetlifyEvent,
-  context: NetlifyContext
-): Promise<NetlifyResponse> {
-  try {
-    // 只允许PUT请求
-    if (event.httpMethod !== 'PUT') {
-      return {
-        statusCode: 405,
-        body: JSON.stringify({ error: 'Method Not Allowed' }),
-      };
-    }
-
-    // 解析请求体
     const cardData: CardItem = JSON.parse(event.body || '{}');
 
-    // 验证必填字段
     if (
       !cardData.id ||
       !cardData.title ||
       !cardData.quote ||
       !cardData.detail
     ) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          error: 'Missing required fields: id, title, quote, detail',
-        }),
-      };
+      return createErrorResponse('缺少必填字段: id, title, quote, detail');
     }
 
-    // 检查卡片是否存在并获取当前数据
     const { data: existingCard, error: fetchError } = await supabase
       .from('cards')
       .select('*')
@@ -376,83 +203,122 @@ async function update(
       .single();
 
     if (fetchError || !existingCard) {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ error: 'Card not found' }),
-      };
+      return createErrorResponse('卡片不存在', 404);
     }
 
-    // 验证用户权限（检查创建人是否匹配）
-    if (cardData.userId !== existingCard.user_id) {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({
-          error: 'Permission denied: You can only edit your own cards',
-        }),
-      };
+    if (cardData.user_id !== existingCard.user_id) {
+      return createErrorResponse('没有权限修改此卡片', 403);
     }
 
-    // 准备更新数据
     const updateData = {
       title: cardData.title,
       quote: cardData.quote,
       detail: cardData.detail,
       creator: cardData.creator || existingCard.creator,
       font: cardData.font || existingCard.font,
-      gradient_class: cardData.gradientClass || existingCard.gradient_class,
-      image_path: cardData.imagePath || existingCard.image_path,
+      gradient_class: cardData.gradient_class || existingCard.gradient_class,
+      image_path: cardData.image_path || existingCard.image_path,
       upload: cardData.upload || existingCard.upload,
       username: cardData.username || existingCard.username,
       update_time: new Date().toDateString(),
     };
 
-    // 更新Supabase中的卡片
     const { data, error } = await supabase
       .from('cards')
       .update(updateData)
       .eq('id', cardData.id)
-      .select(); // 指定选择所有字段
+      .select();
 
     if (error) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: error }),
-      };
+      return createErrorResponse('更新卡片失败', 500);
     }
 
-    console.log('Card updated successfully:', data);
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        message: 'Card updated successfully',
-        detail: data,
-      }),
-    };
+    return createSuccessResponse({
+      message: '卡片更新成功',
+      detail: data,
+    });
   } catch (error: any) {
     console.error('Update card error:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error }),
-    };
+    return createErrorResponse('服务器内部错误', 500);
   }
 }
 
-/**
- * 为卡片生成哈希值（用于防止重复）
- * @param card 卡片数据
- * @returns 哈希值
- */
-function generateHash(card: CardItem): string | null {
-  if (!card.title || !card.quote || !card.detail) return null;
+async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
+  try {
+    const body = event.body ? JSON.parse(event.body) : {};
+    const { id, user_id } = body;
 
-  const normalized = [
-    card.title.trim().replace(/\s+/g, ' '),
-    card.quote.trim().replace(/\s+/g, ' '),
-    card.detail.trim().replace(/\s+/g, ' '),
-  ].join('|');
+    if (!id) {
+      return createErrorResponse('缺少卡片ID');
+    }
 
-  // 使用简单的base64编码作为哈希
-  return Buffer.from(normalized).toString('base64');
+    const { data: existingCard, error: fetchError } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existingCard) {
+      return createErrorResponse('卡片不存在', 404);
+    }
+
+    if (user_id !== existingCard.user_id) {
+      return createErrorResponse('没有权限删除此卡片', 403);
+    }
+
+    const { error } = await supabase.from('cards').delete().eq('id', id);
+
+    if (error) {
+      return createErrorResponse('删除卡片失败', 500);
+    }
+
+    return createSuccessResponse({
+      message: '卡片删除成功',
+    });
+  } catch (error: any) {
+    console.error('Delete card error:', error);
+    return createErrorResponse('服务器内部错误', 500);
+  }
+}
+
+async function handleLike(event: NetlifyEvent): Promise<NetlifyResponse> {
+  try {
+    const userId = getUserIdFromAuth(event);
+    if (!userId) {
+      return createErrorResponse('未授权', 401);
+    }
+
+    const body = event.body ? JSON.parse(event.body) : {};
+    const card_id = body.card_id;
+
+    if (!card_id) {
+      return createErrorResponse('缺少卡片ID');
+    }
+
+    const { data: card, error: fetchError } = await supabase
+      .from('cards')
+      .select('id, likes_count')
+      .eq('id', card_id)
+      .single();
+
+    if (fetchError || !card) {
+      return createErrorResponse('卡片不存在', 404);
+    }
+
+    const current = Number(card.likes_count) || 0;
+    const next = current + 1;
+
+    const { error: updateError } = await supabase
+      .from('cards')
+      .update({ likes_count: next })
+      .eq('id', card_id);
+
+    if (updateError) {
+      return createErrorResponse(updateError.message, 500);
+    }
+
+    return createSuccessResponse({ likesCount: next });
+  } catch (e: any) {
+    return createErrorResponse(e.message || '服务器错误', 500);
+  }
 }

@@ -11,39 +11,39 @@ import {
   ListItemText,
   Chip,
 } from '@mui/material';
-import { api } from '@/netlify/configs';
+import { notificationsApi } from '@/netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
+import { dateTime, react } from '@/utils/helpers';
 
 const Notifications: React.FC = () => {
   const show = useGlobalSnackbar();
   const [items, setItems] = useState<any[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const timeZone = useMemo(() => {
-    try {
-      return DateTime.local().zoneName || '本地时区';
-    } catch {
-      return '本地时区';
-    }
-  }, []);
+  const timeZone = dateTime.getTimeZone();
+
   const load = async () => {
-    const res = await api.notifications.list(
+    const res = await notificationsApi.list(
       filter === 'unread' ? { status: 'unread' } : undefined
     );
-    if (res.success) setItems(res.data?.notifications || []);
-    else show.error(res.error || '加载失败');
+    react.handleApiResponse(
+      res,
+      (data) => setItems(data?.notifications || []),
+      (error) => show.error(error || '加载失败')
+    );
   };
+
   useEffect(() => {
     load();
   }, [filter]);
+
   const markRead = async (id: string) => {
-    const res = await api.notifications.markRead(id);
-    if (res.success) load();
-    else show.error(res.error || '操作失败');
+    const res = await notificationsApi.markRead(id);
+    react.handleApiResponse(res, load, (error) => show.error(error || '操作失败'));
   };
+
   const markAll = async () => {
-    const res = await api.notifications.markAllRead();
-    if (res.success) load();
-    else show.error(res.error || '操作失败');
+    const res = await notificationsApi.markAllRead();
+    react.handleApiResponse(res, load, (error) => show.error(error || '操作失败'));
   };
   return (
     <Box

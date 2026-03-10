@@ -14,14 +14,13 @@ import {
 } from '@mui/material';
 import useResponsive from '@/hooks/useResponsive';
 import { CardItem, Comment } from '@/netlify/types';
-import { api } from '@/netlify/configs';
+import { cardsApi, commentsApi } from '@/netlify/config';
 import { getFontColorForGradient } from '@/constants/gradient';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
 import ErrorCard from '@/components/ErrorCard';
 import { useGlobalSnackbar } from '@/context/app';
-import { getUserId, loginOut } from '@/utils/user';
-import { snakeToCamel } from '@/utils/helper';
+import { user } from '@/utils/helpers';
 
 const CardDetail: React.FC = () => {
   const location = useLocation();
@@ -57,7 +56,7 @@ const CardDetail: React.FC = () => {
       setIsLoading(true);
       setError(null);
       // 使用统一API封装获取卡片详情
-      const response = await api.cards.getById(cardId);
+      const response = await cardsApi.getById(cardId);
 
       console.log('加载卡片详情返回', response);
 
@@ -74,7 +73,7 @@ const CardDetail: React.FC = () => {
       const cardData = response?.data?.records[0];
 
       // 规范化卡片数据格式
-      const normalizedCard: CardItem = snakeToCamel(cardData);
+      const normalizedCard: CardItem = cardData;
 
       setCard(normalizedCard);
       checkEditPermission(normalizedCard);
@@ -93,7 +92,7 @@ const CardDetail: React.FC = () => {
   const fetchComments = async (cardId: string) => {
     try {
       // 使用统一的api对象获取评论
-      const response = await api.comments.getByCardId(cardId);
+      const response = await commentsApi.getByCardId(cardId);
       console.log('fetchComments返回', response);
 
       if (!response.success) {
@@ -128,7 +127,7 @@ const CardDetail: React.FC = () => {
   const checkEditPermission = (cardData: CardItem) => {
     try {
       // 支持多种用户数据存储键名
-      const userId = getUserId();
+      const userId = user.getId();
 
       setCanEdit(userId && userId == cardData.userId);
     } catch (e) {
@@ -231,14 +230,14 @@ const CardDetail: React.FC = () => {
     try {
       // 使用统一API封装提交评论
       console.log('正在提交评论...');
-      const response = await api.comments.create({
+      const response = await commentsApi.create({
         cardId: cardId,
         comment: commentForm.content,
       });
 
       if (!response.success) {
         if (response.statusCode === 401) {
-          loginOut();
+          user.logout();
           showSnackbar.error('登录已过期，请重新登录');
           const redirect = `/card-detail?id=${cardId}`;
           navigate(`/login?redirect=${encodeURIComponent(redirect)}`);

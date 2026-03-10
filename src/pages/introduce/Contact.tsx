@@ -7,13 +7,13 @@ import {
   Button,
   Grid,
 } from '@mui/material';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { Link as RouterLink } from 'react-router-dom';
-import { api } from '../../netlify/configs';
-import Error from '../../components/ErrorCard';
-import { useResponsive } from '../../hooks/useResponsive';
+import Error from '@/components/ErrorCard';
+import { useResponsive } from '@/hooks/useResponsive';
 import { useGlobalSnackbar } from '@/context/app';
+import { contactApi } from '@/netlify/config';
 
 interface FormData {
   name: string;
@@ -53,7 +53,7 @@ const Contact: React.FC = () => {
 
     try {
       // 使用统一API封装发送邮件
-      const response = await api.contact.sendEmail({
+      const response = await contactApi.sendEmail({
         name: formData.name,
         email: formData.email,
         message: formData.subject + '\n\n' + formData.message,

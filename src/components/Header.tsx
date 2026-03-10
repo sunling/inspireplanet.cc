@@ -63,7 +63,7 @@ const Header: React.FC<HeaderProps> = ({
     if (!token) return;
     const load = async () => {
       try {
-        const res = await import('../netlify/configs').then((m) =>
+        const res = await import('../netlify/config').then((m) =>
           m.api.notifications.list({ status: 'unread', limit: 100 })
         );
         if ((res as any).success)

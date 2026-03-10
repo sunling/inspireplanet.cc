@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { api } from '../../netlify/configs';
+import { authApi } from '@/netlify/config';
 import {
   Box,
   Container,
@@ -14,8 +14,7 @@ import {
 } from '@mui/material';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { getCurrentUser } from '@/utils';
-import { isLogin } from '@/utils/user';
+import { user, validation } from '@/utils/helpers';
 
 interface PasswordRequirements {
   length: boolean;
@@ -66,7 +65,7 @@ const ChangePassWord: React.FC = () => {
   // 检查登录状态
   useEffect(() => {
     setIsLoading(true);
-    if (!isLogin()) {
+    if (!user.isLogin()) {
       const redirect = `${location.pathname}${location.search}${location.hash}`;
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
     }
@@ -166,9 +165,9 @@ const ChangePassWord: React.FC = () => {
     setMessage(null);
 
     try {
-      const currentUser = getCurrentUser() || {};
+      const currentUser = user.getInfo() || {};
       // 使用统一的api对象修改密码
-      const response = await api.auth.changePassword({
+      const response = await authApi.changePassword({
         email: currentUser?.email || '',
         oldPassword: formData.currentPassword,
         newPassword: formData.newPassword,

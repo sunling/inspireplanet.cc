@@ -17,9 +17,10 @@ import {
 } from '@mui/material';
 
 import useResponsive from '@/hooks/useResponsive';
-import { api } from '@/netlify/configs';
 import { useGlobalSnackbar } from '@/context/app';
 import { DateTime } from 'luxon';
+import { oneOnOneApi } from '@/netlify/config';
+import { dateTime, react } from '@/utils/helpers';
 
 type Slot = { datetime_iso: string; mode: 'online' | 'offline' };
 
@@ -33,13 +34,7 @@ const InviteDialog: React.FC<{
   const [slots, setSlots] = useState<Slot[]>([
     { datetime_iso: '', mode: 'online' },
   ]);
-  const timeZone = useMemo(() => {
-    try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区';
-    } catch {
-      return '本地时区';
-    }
-  }, []);
+  const timeZone = dateTime.getTimeZone();
   const presets = useMemo(() => {
     const now = DateTime.local();
     const fmt = (dt: DateTime) => dt.toFormat("yyyy-LL-dd'T'HH:mm");
@@ -88,19 +83,20 @@ const InviteDialog: React.FC<{
     setSlots((prev) => prev.filter((_, i) => i !== idx));
   };
   const submit = async () => {
-    try {
-      const payload = {
-        invitee_id: inviteeId,
-        message,
-        proposed_slots: slots.filter((s) => s.datetime_iso),
-      };
-      const res = await api.oneonone.invites.create(payload);
-      if (!res.success) throw new Error(res.error || '邀请失败');
-      show.success('邀请已发送');
-      onClose();
-    } catch (e: any) {
-      show.error(e.message || '网络错误');
-    }
+    const payload = {
+      invitee_id: inviteeId,
+      message,
+      proposed_slots: slots.filter((s) => s.datetime_iso),
+    };
+    const res = await oneOnOneApi.invites.create(payload);
+    react.handleApiResponse(
+      res,
+      () => {
+        show.success('邀请已发送');
+        onClose();
+      },
+      (error) => show.error(error || '网络错误')
+    );
   };
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -211,7 +207,7 @@ const Directory: React.FC = () => {
 
   useEffect(() => {
     const load = async () => {
-      const res = await api.people.list({
+      const res = await peopleApi.list({
         q: q || undefined,
         theme: themeFilter || undefined,
         offering: offeringFilter || undefined,
@@ -225,7 +221,7 @@ const Directory: React.FC = () => {
   }, [q, themeFilter, offeringFilter, seekingFilter, cityFilter]);
   useEffect(() => {
     const loadMy = async () => {
-      const r = await api.profile.getMy();
+      const r = await profileApi.getMy();
       if (r.success) setMyProfile(r.data?.profile || null);
     };
     loadMy();
@@ -242,7 +238,7 @@ const Directory: React.FC = () => {
       if (missingIds === lastMissingRef.current) return;
       lastMissingRef.current = missingIds;
       const ids = withoutProfile.map((u) => u.id);
-      const r = await api.people.getByIds(ids as any);
+      const r = await peopleApi.getByIds(ids as any);
       const list = r.success ? r.data?.users || [] : [];
       const byId: Record<string, any> = {};
       list.forEach((u: any) => {

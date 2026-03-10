@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '@/netlify/configs';
 import { CardItem } from '@/netlify/types';
 import { formatDate, getCurrentUser } from '@/utils';
 import DOMPurify from 'dompurify';
@@ -18,6 +17,7 @@ import useResponsive from '@/hooks/useResponsive';
 import { useGlobalSnackbar } from '@/context/app';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
+import { cardsApi, commentsApi } from '@/netlify/config';
 
 interface ValidationResult {
   isValid: boolean;
@@ -68,7 +68,7 @@ const MyCards: React.FC = () => {
       }
       setLoading(true);
       setError(null);
-      const response = await api.cards.getAll();
+      const response = await cardsApi.getAll();
       if (!response.success) {
         showSnackbar.error(response.error || '获取卡片失败，请稍后再试');
         return [];
@@ -247,7 +247,7 @@ const MyCards: React.FC = () => {
                               }
                               onSubmitComment={async (id, name, comment) => {
                                 try {
-                                  const res = await api.comments.create({
+                                  const res = await commentsApi.create({
                                     cardId: id,
                                     name,
                                     comment,

@@ -12,6 +12,7 @@ import {
   Chip,
 } from '@mui/material';
 import { useGlobalSnackbar } from '@/context/app';
+import { cardsApi } from '@/netlify/config';
 
 type InputItem = {
   name: string;
@@ -63,24 +64,25 @@ const BulkWeeklyUpload: React.FC = () => {
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       try {
-        const res = await fetch('/.netlify/functions/uploadCard', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ record: it }),
+        const res = await cardsApi.create({
+          name: it.name,
+          title: it.title,
+          quote: it.quote,
+          detail: it.detail,
+          episode: it.episode,
         });
-        const data = await res.json();
-        if (!res.ok || !data.success) {
+        if (!res.success) {
           next.push({
             index: i,
             success: false,
-            message: data.error || '失败',
+            message: res.error || '失败',
           });
         } else {
           next.push({
             index: i,
             success: true,
-            message: data.message || '成功',
-            id: data.id,
+            message: res.message || '成功',
+            id: res.data?.id,
           });
         }
         setResults([...next]);

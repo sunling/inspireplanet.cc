@@ -12,8 +12,9 @@ import {
   StepLabel,
   Grid,
 } from '@mui/material';
-import { api } from '@/netlify/configs';
+
 import { useGlobalSnackbar } from '@/context/app';
+import { profileApi } from '@/netlify/config';
 
 const Profile: React.FC = () => {
   const show = useGlobalSnackbar();
@@ -42,7 +43,7 @@ const Profile: React.FC = () => {
 
   useEffect(() => {
     const load = async () => {
-      const res = await api.profile.getMy();
+      const res = await profileApi.getMy();
       if (res.success && res.data?.profile) {
         const p = res.data.profile;
         setBio(p.bio || '');
@@ -98,7 +99,7 @@ const Profile: React.FC = () => {
   const save = async () => {
     setLoading(true);
     try {
-      const res = await api.profile.upsert({
+      const res = await profileApi.upsert({
         bio,
         interests,
         expertise,

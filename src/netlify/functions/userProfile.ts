@@ -1,89 +1,65 @@
 import { supabase } from '../../database/supabase';
-import { getCommonHttpHeader } from '../../utils/http';
-import jwt from 'jsonwebtoken';
+import { NetlifyEvent, NetlifyResponse } from '../types/http';
+import {
+  getCommonHttpHeader,
+  createSuccessResponse,
+  createErrorResponse,
+  handleOptionsRequest,
+  getUserIdFromAuth,
+} from '../utils/server';
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
-
-function getUserId(event: any) {
-  const auth = event.headers.authorization || event.headers.Authorization;
-  if (!auth || !auth.startsWith('Bearer ')) return null;
-  const token = auth.substring(7);
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    return decoded.userId || decoded.user_id || null;
-  } catch {
-    return null;
-  }
+export interface UserProfileAction {
+  action: 'get' | 'update';
 }
 
-export async function handler(event: any) {
-  const headers = getCommonHttpHeader();
+export async function handler(
+  event: NetlifyEvent,
+  context: any
+): Promise<NetlifyResponse> {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+    return handleOptionsRequest();
   }
+
   try {
-    switch (event.httpMethod) {
-      case 'GET':
-        return await getMyProfile(event, headers);
-      case 'POST':
-        return await upsertMyProfile(event, headers);
+    const { action } = JSON.parse(event.body || '{}') as UserProfileAction;
+
+    switch (action) {
+      case 'get':
+        return await handleGet(event);
+      case 'update':
+        return await handleUpdate(event);
       default:
-        return {
-          statusCode: 405,
-          headers,
-          body: JSON.stringify({ success: false, error: 'Method Not Allowed' }),
-        };
+        return createErrorResponse('无效的操作类型');
     }
   } catch (error) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Server Error' }),
-    };
+    console.error('UserProfile handler error:', error);
+    return createErrorResponse('服务器内部错误', 500);
   }
 }
 
-async function getMyProfile(event: any, headers: Record<string, string>) {
-  const userId = getUserId(event);
-  if (!userId)
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Unauthorized' }),
-    };
+async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const userId = getUserIdFromAuth(event);
+  if (!userId) return createErrorResponse('未授权', 401);
+
   const { data, error } = await supabase
     .from('user_profiles')
     .select('*')
     .eq('user_id', userId)
     .single();
+
   if (error && error.code !== 'PGRST116') {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: error.message }),
-    };
+    return createErrorResponse(error.message, 500);
   }
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({ success: true, profile: data || null }),
-  };
+
+  return createSuccessResponse({ profile: data || null });
 }
 
-async function upsertMyProfile(event: any, headers: Record<string, string>) {
-  const userId = getUserId(event);
-  if (!userId)
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Unauthorized' }),
-    };
-  if (!event.body)
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Empty body' }),
-    };
+async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const userId = getUserIdFromAuth(event);
+  if (!userId) return createErrorResponse('未授权', 401);
+
+  if (!event.body) return createErrorResponse('请求体为空');
+
   const payload = JSON.parse(event.body);
   const record: Record<string, any> = {
     bio: payload.bio ?? null,
@@ -102,38 +78,25 @@ async function upsertMyProfile(event: any, headers: Record<string, string>) {
     .select('id')
     .eq('user_id', uid)
     .single();
+
   if (existing) {
     const { data, error } = await supabase
       .from('user_profiles')
       .update(record)
       .eq('user_id', uid)
       .select();
-    if (error)
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ success: false, error: error.message }),
-      };
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ success: true, profile: data?.[0] || null }),
-    };
+
+    if (error) return createErrorResponse(error.message, 500);
+
+    return createSuccessResponse({ profile: data?.[0] || null });
   } else {
     const { data, error } = await supabase
       .from('user_profiles')
       .insert({ user_id: uid, ...record })
       .select();
-    if (error)
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ success: false, error: error.message }),
-      };
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ success: true, profile: data?.[0] || null }),
-    };
+
+    if (error) return createErrorResponse(error.message, 500);
+
+    return createSuccessResponse({ profile: data?.[0] || null });
   }
 }

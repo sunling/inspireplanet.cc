@@ -1,37 +1,25 @@
 // src/netlify/functions/fetchWeeklyCards.ts
 import { supabase } from '../../database/supabase';
-import { getCommonHttpHeader } from '../../utils/http';
-import { NetlifyContext, NetlifyEvent } from '../types/http';
+import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
 import { WeeklyCard, WeeklyCardResponse } from '../types';
+import {
+  getCommonHttpHeader,
+  createSuccessResponse,
+  createErrorResponse,
+  handleOptionsRequest,
+} from '../utils/server';
 
 export async function handler(
   event: NetlifyEvent,
   context: NetlifyContext
-): Promise<{
-  statusCode: number;
-  headers?: Record<string, string>;
-  body: string;
-}> {
-  // 设置CORS头
-  const headers = getCommonHttpHeader();
-  // 处理预检请求
+): Promise<NetlifyResponse> {
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    };
+    return handleOptionsRequest();
   }
 
   try {
     if (event.httpMethod !== 'GET') {
-      return {
-        statusCode: 405,
-        headers,
-        body: JSON.stringify({
-          error: 'Method Not Allowed',
-        } as WeeklyCardResponse),
-      };
+      return createErrorResponse('Method Not Allowed', 405);
     }
 
     const params = event.queryStringParameters || {};
@@ -44,10 +32,8 @@ export async function handler(
     if (episodeParam) {
       const digits = episodeParam.match(/\d+/)?.[0] || '';
       if (digits) {
-        // 兼容 EP43、第43期 等格式，按数字模糊匹配
         query = query.ilike('episode', `%${digits}%`);
       } else {
-        // 无数字，则使用模糊匹配整个字符串
         query = query.ilike('episode', `%${episodeParam}%`);
       }
     }
@@ -60,11 +46,7 @@ export async function handler(
 
     if (error) {
       console.error('Error fetching weekly cards:', error);
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: error.message } as WeeklyCardResponse),
-      };
+      return createErrorResponse(error.message, 500);
     }
 
     const records = (data || []).map((row: any, index: number) => ({
@@ -78,22 +60,9 @@ export async function handler(
       imagePath: row.image_path,
     }));
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ records } as WeeklyCardResponse),
-    };
+    return createSuccessResponse({ records } as { records: WeeklyCard[] });
   } catch (error) {
     console.error('Function error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        error: 'Internal Server Error',
-        success: false,
-        records: [],
-        message: error instanceof Error ? error.message : String(error),
-      } as WeeklyCardResponse),
-    };
+    return createErrorResponse('Internal Server Error', 500);
   }
 }

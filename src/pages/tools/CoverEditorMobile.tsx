@@ -20,8 +20,9 @@ import {
   CardContent,
 } from '@mui/material';
 import useResponsive from '@/hooks/useResponsive';
-import { api } from '@/netlify/configs';
+
 import { useGlobalSnackbar } from '@/context/app';
+import { imagesApi } from '@/netlify/config';
 
 const CoverEditorMobile: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,9 +93,7 @@ const CoverEditorMobile: React.FC = () => {
     setShowSearchResults(false);
 
     try {
-      // 在实际应用中，这里会调用API搜索图片
-
-      const response = await api.images.search(searchText, 'landscape');
+      const response = await imagesApi.search(searchText, 'landscape');
       if (!response.success) {
         showSnackbar.error('查询图片失败');
         return;

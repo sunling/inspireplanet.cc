@@ -26,7 +26,7 @@ import {
   getRandomGradientClass,
 } from '@/constants/gradient';
 import { WeeklyCard } from '@/netlify/types';
-import { api } from '@/netlify/configs';
+import { weeklyCardsApi } from '@/netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
 import Empty from '@/components/Empty';
 import Loading from '@/components/Loading';
@@ -65,11 +65,11 @@ const WeeklyCards: React.FC = () => {
 
         let res: any;
         if (show === 'all') {
-          res = await api.weeklyCards.getAllLimited(100);
+          res = await weeklyCardsApi.getAllLimited(100);
         } else if (episodeParam) {
-          res = await api.weeklyCards.getByEpisode(episodeParam);
+          res = await weeklyCardsApi.getByEpisode(episodeParam);
         } else {
-          res = await api.weeklyCards.getLatest();
+          res = await weeklyCardsApi.getLatest();
         }
         console.log('获取到的周刊卡片数据:', res);
 

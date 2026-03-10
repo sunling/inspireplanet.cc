@@ -18,7 +18,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Meetup, MeetupStatus, Participant } from '@/netlify/types';
-import { api } from '@/netlify/configs';
+
 import {
   escapeHtml,
   formatDate,
@@ -31,6 +31,7 @@ import useResponsive from '@/hooks/useResponsive';
 import Empty from '@/components/Empty';
 import ErrorCard from '@/components/ErrorCard';
 import Loading from '@/components/Loading';
+import { meetupsApi, rsvpApi } from '@/netlify/config';
 
 interface UserInfo {
   username: string;
@@ -88,7 +89,7 @@ const MyMeetups: React.FC = () => {
     setError(null);
 
     try {
-      const response = await api.meetups.getAll({ status: 'all' });
+      const response = await meetupsApi.getAll({ status: 'all' });
       if (!response.success) {
         showSnackbar.error(response.error || '加载活动失败');
         return;
@@ -118,10 +119,10 @@ const MyMeetups: React.FC = () => {
     try {
       const uid = localStorage.getItem('userId');
       let res:
-        | Awaited<ReturnType<typeof api.rsvp.getByUserId>>
-        | Awaited<ReturnType<typeof api.rsvp.getByWechatId>>;
+        | Awaited<ReturnType<typeof rsvpApi.getByUserId>>
+        | Awaited<ReturnType<typeof rsvpApi.getByWechatId>>;
       if (uid && uid.trim()) {
-        res = await api.rsvp.getByUserId(uid);
+        res = await rsvpApi.getByUserId(uid);
       } else {
         const curUser = getCurrentUser();
         const wechat = (curUser as any)?.wechatId;
@@ -130,7 +131,7 @@ const MyMeetups: React.FC = () => {
           setRsvpMeetups([]);
           return;
         }
-        res = await api.rsvp.getByWechatId(wechat);
+        res = await rsvpApi.getByWechatId(wechat);
       }
       if (!res.success) {
         showSnackbar.error(res.error || '获取报名信息失败');
@@ -157,7 +158,7 @@ const MyMeetups: React.FC = () => {
       let fetchedMeetups: Meetup[] = [];
       if (missingIds.length > 0) {
         const results = await Promise.all(
-          missingIds.map((id) => api.meetups.getById(id))
+          missingIds.map((id) => meetupsApi.getById(id))
         );
         fetchedMeetups = results.flatMap((resp) =>
           resp.success ? resp.data?.meetups || [] : []
@@ -197,7 +198,7 @@ const MyMeetups: React.FC = () => {
       return;
     }
     try {
-      const response = await api.meetups.delete(meetupId);
+      const response = await meetupsApi.delete(meetupId);
       if (!response.success) {
         showSnackbar.error(response.error || '删除活动失败');
         return;
@@ -403,10 +404,10 @@ const MyMeetups: React.FC = () => {
     try {
       // 优先按报名记录ID取消，失败再按活动ID+微信号取消
       let res = rsvp?.id
-        ? await api.rsvp.cancel(rsvp.id as any)
+        ? await rsvpApi.cancel(rsvp.id as any)
         : ({ success: false, statusCode: 0 } as any);
       if (!res.success && meetupId && rsvp?.wechat_id) {
-        const fallback = await api.rsvp.cancelByMeetupWechat(
+        const fallback = await rsvpApi.cancelByMeetupWechat(
           meetupId as any,
           rsvp.wechat_id as any
         );

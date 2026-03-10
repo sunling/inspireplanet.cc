@@ -16,9 +16,9 @@ import {
   FormHelperText,
 } from '@mui/material';
 import useResponsive from '@/hooks/useResponsive';
-import { api } from '@/netlify/configs';
+import { authApi } from '@/netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
-import { setUserAuth } from '@/utils/user';
+import { user, validation } from '@/utils/helpers';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -71,28 +71,25 @@ const Login: React.FC = () => {
     }
   };
 
-  // 表单验证 - 使用MUI的表单验证方式
+  // 表单验证 - 使用工具函数
   const validateForm = (): boolean => {
     const errors: typeof formErrors = {};
     let isValid = true;
 
     // 验证邮箱
-    if (!formData.email) {
+    if (!validation.required(formData.email)) {
       errors.email = '请输入邮箱地址';
       isValid = false;
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        errors.email = '请输入有效的邮箱地址';
-        isValid = false;
-      }
+    } else if (!validation.email(formData.email)) {
+      errors.email = '请输入有效的邮箱地址';
+      isValid = false;
     }
 
     // 验证密码
-    if (!formData.password) {
+    if (!validation.required(formData.password)) {
       errors.password = '请输入密码';
       isValid = false;
-    } else if (formData.password.length < 6) {
+    } else if (!validation.length(formData.password, 6, 50)) {
       errors.password = '密码长度至少为6位';
       isValid = false;
     }
@@ -141,10 +138,10 @@ const Login: React.FC = () => {
 
       if (currentMode === 'login') {
         // 使用统一API封装进行登录
-        response = await api.auth.login(formData.email, formData.password);
+        response = await authApi.login(formData.email, formData.password);
       } else {
         // 使用统一API封装进行注册
-        response = await api.auth.register({
+        response = await authApi.register({
           name: formData.name,
           username: formData.username,
           email: formData.email,
@@ -159,8 +156,8 @@ const Login: React.FC = () => {
       }
 
       // 保存用户信息和token到localStorage
-      const { token, user } = response.data || {};
-      setUserAuth(token || '', user || {});
+      const { token, user: userData } = response.data || {};
+      user.setAuth(token || '', userData || {});
 
       setSuccess(currentMode === 'login' ? '登录成功' : '注册成功');
 

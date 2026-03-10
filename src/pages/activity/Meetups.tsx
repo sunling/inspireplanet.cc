@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { api } from '../../netlify/configs';
+
 import {
   Box,
   Container,
@@ -25,9 +25,9 @@ import ErrorCard from '../../components/ErrorCard';
 import Loading from '../../components/Loading';
 import Empty from '../../components/Empty';
 
-import { isUpcoming, formatTime, formatDate } from '../../utils';
+import { dateTime, user } from '@/utils/helpers';
 import { Meetup, MeetupLabelMap } from '@/netlify/functions/meetup';
-import { getUserId, isLogin } from '@/utils/user';
+import { rsvpApi } from '@/netlify/config';
 
 const Meetups: React.FC = () => {
   const navigate = useNavigate();
@@ -60,7 +60,7 @@ const Meetups: React.FC = () => {
 
   // 检查用户登录状态并显示创建按钮
   useEffect(() => {
-    setShowCreateButton(isLogin());
+    setShowCreateButton(user.isLogin());
 
     loadMeetups();
   }, []);
@@ -72,7 +72,7 @@ const Meetups: React.FC = () => {
 
     try {
       // 使用统一的api对象获取活动列表
-      const response = await api.meetups.getAll();
+      const response = await meetupsApi.getAll();
       console.log('loadMeetups 响应', response);
       if (!response.success) {
         showSnackbar.error('查询会议列表失败');
@@ -107,7 +107,7 @@ const Meetups: React.FC = () => {
       const user = JSON.parse(userStr || '{}');
       const wechat = (user?.wechat_id || '').trim();
       if (!wechat) return;
-      const res = await api.rsvp.getByWechatId(wechat);
+      const res = await rsvpApi.getByWechatId(wechat);
       if (res.success) {
         const ids = (res.data?.rsvps || []).map((r: any) =>
           String(r.meetup_id)
@@ -219,7 +219,7 @@ const Meetups: React.FC = () => {
       const wechat = (user?.wechat_id || '').trim();
       if (!wechat) return false;
 
-      const res = await api.rsvp.getByWechatId(wechat);
+      const res = await rsvpApi.getByWechatId(wechat);
       const rsvps = res.success ? res.data?.rsvps || [] : [];
       return rsvps.some((r: any) => String(r.meetup_id) === String(meetupId));
     } catch (error) {
@@ -238,11 +238,11 @@ const Meetups: React.FC = () => {
     if (!currentMeetupId) return;
 
     try {
-      const response = await api.rsvp.create({
+      const response = await rsvpApi.create({
         meetup_id: Number(currentMeetupId),
         wechat_id: rsvpForm.wechatId.trim(),
         name: rsvpForm.name.trim(),
-        user_id: getUserId(),
+        user_id: user.getId(),
       });
 
       if (!response.success) {
@@ -364,9 +364,9 @@ const Meetups: React.FC = () => {
         }}
       >
         {filteredMeetups.map((meetup: Meetup) => {
-          const isUpcomingMeetup = isUpcoming(meetup.datetime);
-          const formattedDate = formatDate(meetup.datetime);
-          const formattedTime = formatTime(meetup.datetime);
+          const isUpcomingMeetup = dateTime.isUpcoming(meetup.datetime);
+          const formattedDate = dateTime.formatDate(meetup.datetime);
+          const formattedTime = dateTime.formatTime(meetup.datetime);
           const typeColor = getTypeColor(meetup.mode);
 
           return (

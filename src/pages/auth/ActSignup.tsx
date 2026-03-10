@@ -15,7 +15,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { api } from '@/netlify/configs';
+import { workshopApi } from '@/netlify/config';
 
 // 创建自定义主题
 const theme = createTheme({
@@ -107,7 +107,7 @@ const ActSignup: React.FC = () => {
     try {
       // 使用统一的api对象提交报名信息
       // todo:修正类型
-      const response = await api.workshop.register(formData as any);
+      const response = await workshopApi.register(formData as any);
 
       if (response.success) {
         setSubmissionSuccess(true);

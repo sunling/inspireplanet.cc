@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { api, http } from '../../netlify/configs';
-import { MeetupStatus, Participant } from '../../netlify/types/index';
-import { isUpcoming, formatTime, formatDate } from '../../utils';
+import { authApi, meetupsApi, rsvpApi } from '@/netlify/config';
+import { MeetupStatus, Participant } from '@/netlify/types';
+import { isUpcoming, formatTime, formatDate } from '@/utils';
 import {
   Box,
   Container,
@@ -19,13 +19,12 @@ import {
   Card,
 } from '@mui/material';
 
-import ErrorCard from '../../components/ErrorCard';
-import Loading from '../../components/Loading';
-import Empty from '../../components/Empty';
-import { useGlobalSnackbar } from '../../context/app';
+import ErrorCard from '@/components/ErrorCard';
+import Loading from '@/components/Loading';
+import Empty from '@/components/Empty';
+import { useGlobalSnackbar } from '@/context/app';
 import { Meetup } from '@/netlify/functions/meetup';
 import { getUserId, getUserInfo, isLogin } from '@/utils/user';
-import { snakeToCamel } from '@/utils/helper';
 
 const MeetupDetail: React.FC = () => {
   const location = useLocation();
@@ -81,7 +80,7 @@ const MeetupDetail: React.FC = () => {
 
     try {
       // 使用统一的api客户端获取活动详情
-      const response = await api.meetups.getById(meetupId);
+      const response = await meetupsApi.getById(meetupId);
       console.log('获取活动详情原始响应:', response);
 
       if (!response.success) {
@@ -100,7 +99,7 @@ const MeetupDetail: React.FC = () => {
 
       // 处理数据格式，确保符合Meetup接口要求
       const processedMeetup: Meetup = {
-        ...snakeToCamel(meetupData),
+        ...meetupData,
         status: (meetupData.status || MeetupStatus.UPCOMING) as MeetupStatus,
         createdAt: meetupData.createdAt || new Date().toISOString(),
         participantCount: meetupData.participantCount || 0,
@@ -148,8 +147,8 @@ const MeetupDetail: React.FC = () => {
   // 加载参与者信息
   const loadParticipants = async (meetupId: string) => {
     try {
-      // 使用统一的api对象获取参与者列表
-      const response = await api.rsvp.getByMeetupId(meetupId);
+      // 使用 getByMeetupId 获取参与者列表
+      const response = await rsvpApi.getByMeetupId(meetupId);
       console.log('获取参与者列表原始响应:', response);
       if (!response.success) {
         showSnackbar.error(
@@ -190,7 +189,7 @@ const MeetupDetail: React.FC = () => {
     setIsActionLoading(true);
 
     try {
-      const verify = await api.auth.verifyToken();
+      const verify = await authApi.verifyToken();
       const valid = (verify.success && (verify.data as any)?.valid) === true;
       if (!valid) {
         showSnackbar.error('请先登录后再报名参加活动');
@@ -238,13 +237,14 @@ const MeetupDetail: React.FC = () => {
       // 若缺少微信ID，跳过预检查
       if (!wechatId) return false;
 
-      // 统一使用已存在的RSVP函数与参数命名
-      const response = await http.get('/rsvp', {
-        meetup_id: meetupId,
-        wechatId: wechatId,
-      });
-      const rsvps = (response.data && (response.data as any).rsvps) || [];
-      return Array.isArray(rsvps) && rsvps.length > 0;
+      // 使用 getByWechatId 获取该微信用户的所有报名记录
+      const response = await rsvpApi.getByWechatId(wechatId);
+      const rsvps = response.data?.rsvps || [];
+      // 过滤出特定活动的报名记录
+      const meetupRsvps = rsvps.filter(
+        (r: Participant) => String(r.meetup_id) === meetupId
+      );
+      return meetupRsvps.length > 0;
     } catch (error) {
       console.error('检查报名状态失败:', error);
       return false;
@@ -294,7 +294,7 @@ const MeetupDetail: React.FC = () => {
         user_id: getUserId(),
       };
 
-      const response = await api.rsvp.create(payload);
+      const response = await rsvpApi.create(payload);
 
       if (!response.success) {
         const msg = (response as any)?.error || '报名失败';

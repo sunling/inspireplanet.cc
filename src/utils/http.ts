@@ -1,25 +1,8 @@
-import { HttpHeaders } from '../netlify/types/http';
+// 导出 HTTP 相关工具函数
+import { http } from './helpers';
 
-export const getCommonHttpHeader = () => {
-  const headers: HttpHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Content-Type': 'application/json',
-  };
+// 保持向后兼容性
+export const getCommonHttpHeader = http.getCommonHeaders;
+export const getBaseUrl = http.getBaseUrl;
 
-  return headers;
-};
-
-export function getBaseUrl(): string {
-  if (process && process.env) {
-    // Netlify环境变量
-    if (process.env.URL) return process.env.URL;
-    // Vercel环境变量
-    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-    // 其他环境变量
-    if (process.env.NEXT_PUBLIC_URL) return process.env.NEXT_PUBLIC_URL;
-  }
-  // 本地开发回退
-  return 'http://localhost:8888';
-}
+export { http };

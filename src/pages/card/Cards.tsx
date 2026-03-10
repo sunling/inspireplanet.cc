@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Container, Typography, Grid } from '@mui/material';
 
 import useResponsive from '@/hooks/useResponsive';
-import { api } from '@/netlify/configs';
-import { groupCardsByDate } from '@/utils/helper';
-import { formatDate } from '@/utils';
+import { cardsApi } from '@/netlify/config';
+import { dateTime, react } from '@/utils/helpers';
 import Loading from '@/components/Loading';
 import ErrorCard from '@/components/ErrorCard';
 import Empty from '@/components/Empty';
@@ -20,38 +19,29 @@ const Cards: React.FC = () => {
   const { isMobile, isMedium } = useResponsive();
   const showSnackbar = useGlobalSnackbar();
 
-  const loadCards = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loadCards = react.withLoading(
+    async () => {
+      const response = await cardsApi.getAll();
 
-      const response = await api.cards.getAll();
-
-      console.log('查询所有卡片返回', response);
-
-      if (!response.success) {
-        setError('接口请求失败');
-        showSnackbar.error('接口请求失败');
-      }
-
-      let allCards = response.data?.records || [];
-
-      // 过滤有效卡片
-      const validCards = allCards.filter(
-        (card) => card && card.title && card.detail
+      react.handleApiResponse(
+        response,
+        (data) => {
+          const allCards = data?.records || [];
+          const validCards = allCards.filter(
+            (card: any) => card && card.title && card.detail
+          );
+          const grouped = dateTime.groupCardsByDate(validCards);
+          setGroupedCards(grouped);
+        },
+        (error) => {
+          setError(error);
+          showSnackbar.error(error);
+        }
       );
-
-      // 按日期分组
-      const grouped = groupCardsByDate(validCards);
-      setGroupedCards(grouped);
-    } catch (err: any) {
-      const text = err.message || '加载失败，请稍后再试';
-      setError(text);
-      showSnackbar.error(text);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    setLoading,
+    setError
+  );
 
   // 加载卡片数据
   useEffect(() => {
@@ -105,7 +95,7 @@ const Cards: React.FC = () => {
                       borderBottom: '1px solid #7aa6e7',
                     }}
                   >
-                    {formatDate(date)}
+                    {dateTime.formatDate(date)}
                   </Typography>
 
                   <Grid container spacing={4}>
