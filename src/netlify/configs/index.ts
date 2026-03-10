@@ -160,13 +160,9 @@ export const api = {
     },
 
     update: async (
-      id: string,
       cardData: Partial<CardItem>
     ): Promise<ApiResponse<CardItem>> => {
-      return http.put<CardItem>(API_MAP.CARDS.ROOT, {
-        id,
-        ...cardData,
-      });
+      return http.put<CardItem>(API_MAP.CARDS.ROOT, cardData);
     },
 
     like: async (

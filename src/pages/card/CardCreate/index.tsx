@@ -25,6 +25,7 @@ import { CardItem, SearchImageItem, SearchImageResult } from '@/netlify/types';
 import InspireCard from '@/components/InspireCard';
 import styles from './index.module.css';
 import { useGlobalSnackbar } from '@/context/app';
+import { getUserId } from '@/utils/user';
 
 const CreateCard: React.FC = () => {
   const theme = useTheme();
@@ -275,6 +276,7 @@ const CreateCard: React.FC = () => {
         created: new Date().toISOString(),
         upload: customImage,
         imagePath: selectedSearchImage,
+        userId: getUserId(),
       };
 
       // 调用API提交卡片

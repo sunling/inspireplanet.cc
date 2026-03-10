@@ -96,3 +96,5 @@ export const getCurrentUser = (): {
     return null;
   }
 };
+
+// 导出helper.ts中的函数

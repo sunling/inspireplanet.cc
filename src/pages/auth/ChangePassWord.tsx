@@ -15,6 +15,7 @@ import {
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { getCurrentUser } from '@/utils';
+import { isLogin } from '@/utils/user';
 
 interface PasswordRequirements {
   length: boolean;
@@ -65,8 +66,7 @@ const ChangePassWord: React.FC = () => {
   // 检查登录状态
   useEffect(() => {
     setIsLoading(true);
-    const token = localStorage.getItem('userToken');
-    if (!token) {
+    if (!isLogin()) {
       const redirect = `${location.pathname}${location.search}${location.hash}`;
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
     }

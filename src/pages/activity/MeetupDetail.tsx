@@ -1,14 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { api, http } from '../../netlify/configs';
-import {
-  Meetup,
-  MeetupMode,
-  MeetupStatus,
-  MeetupType,
-  Participant,
-  UserInfo,
-} from '../../netlify/types/index';
+import { MeetupStatus, Participant } from '../../netlify/types/index';
 import { isUpcoming, formatTime, formatDate } from '../../utils';
 import {
   Box,
@@ -30,6 +23,9 @@ import ErrorCard from '../../components/ErrorCard';
 import Loading from '../../components/Loading';
 import Empty from '../../components/Empty';
 import { useGlobalSnackbar } from '../../context/app';
+import { Meetup } from '@/netlify/functions/meetup';
+import { getUserId, getUserInfo, isLogin } from '@/utils/user';
+import { snakeToCamel } from '@/utils/helper';
 
 const MeetupDetail: React.FC = () => {
   const location = useLocation();
@@ -40,8 +36,6 @@ const MeetupDetail: React.FC = () => {
     const searchParams = new URLSearchParams(location.search);
     return searchParams.get('id');
   };
-
-  const id = getMeetupId();
 
   const showSnackbar = useGlobalSnackbar();
 
@@ -106,24 +100,10 @@ const MeetupDetail: React.FC = () => {
 
       // 处理数据格式，确保符合Meetup接口要求
       const processedMeetup: Meetup = {
-        id: meetupData.id,
-        title: meetupData.title || '未命名活动',
-        description: meetupData.description || '',
-        type: (meetupData.type || MeetupType.ONLINE) as MeetupType,
-        mode: meetupData.mode as MeetupMode,
-        datetime: meetupData.datetime || new Date().toISOString(),
-        location: meetupData.location,
-        fee: meetupData.fee,
-        max_ppl: meetupData.max_ppl,
-        max_participants: meetupData.max_participants,
-        duration: meetupData.duration,
-        organizer: meetupData.organizer || '未知组织者',
-        creator: meetupData.creator,
-        contact: meetupData.contact || '',
-        qr_image_url: meetupData.qr_image_url,
+        ...snakeToCamel(meetupData),
         status: (meetupData.status || MeetupStatus.UPCOMING) as MeetupStatus,
-        created_at: meetupData.created_at || new Date().toISOString(),
-        participant_count: meetupData.participant_count || 0,
+        createdAt: meetupData.createdAt || new Date().toISOString(),
+        participantCount: meetupData.participantCount || 0,
         cover: meetupData.cover,
       };
 
@@ -183,11 +163,11 @@ const MeetupDetail: React.FC = () => {
       const processedParticipants: Participant[] = rsvps
         .map((record: any) => ({
           name: record.name || '未知用户',
-          wechat_id: record.wechat_id,
-          created_at: record.created_at,
-          meetup_id: record.meetup_id,
+          wechatId: record.wechat_id || '',
+          createdAt: record.created_at,
+          meetupId: record.meetup_id,
         }))
-        .filter((item) => `${item.meetup_id}` === meetupId);
+        .filter((item) => `${item.meetupId}` === meetupId);
 
       setParticipants(processedParticipants);
     } catch (err) {
@@ -200,27 +180,7 @@ const MeetupDetail: React.FC = () => {
   const handleJoinMeetup = async () => {
     if (!meetup) return;
 
-    const rawToken =
-      localStorage.getItem('userToken') || localStorage.getItem('authToken');
-    const token =
-      rawToken && rawToken !== 'null' && rawToken !== 'undefined'
-        ? rawToken
-        : '';
-    const userInfoStr =
-      localStorage.getItem('userInfo') || localStorage.getItem('userData');
-
-    let parsedUser: any = null;
-    try {
-      parsedUser = userInfoStr ? JSON.parse(userInfoStr) : null;
-    } catch {
-      parsedUser = null;
-    }
-
-    const looksLikeJwt = typeof token === 'string' && token.includes('.');
-    const hasUserBasics =
-      parsedUser && (parsedUser.id || parsedUser.username || parsedUser.email);
-
-    if (!looksLikeJwt || !hasUserBasics) {
+    if (!isLogin()) {
       showSnackbar.error('请先登录后再报名参加活动');
       const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
@@ -238,16 +198,17 @@ const MeetupDetail: React.FC = () => {
         navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
         return;
       }
-      const userInfo: UserInfo = JSON.parse(userInfoStr || '{}');
+
+      const userInfo = getUserInfo();
 
       // 检查是否已经报名
       const isAlreadyRegistered = await checkRSVPStatus(
-        meetup.id,
-        userInfo.wechat_id || ''
+        meetup.id!,
+        userInfo.wechatId || ''
       );
       if (isAlreadyRegistered) {
-        if (meetup.qr_image_url) {
-          showQRCode(meetup.qr_image_url);
+        if (meetup.cover) {
+          showQRCode(meetup.cover);
         } else {
           showSnackbar.info('您已经报名了这个活动！请联系组织者获取群聊信息。');
         }
@@ -257,7 +218,7 @@ const MeetupDetail: React.FC = () => {
       // 显示报名确认对话框
       setRsvpForm({
         name: userInfo.name || '',
-        wechatId: userInfo.wechat_id || '',
+        wechatId: userInfo.wechatId || '',
       });
       setShowRSVPDialog(true);
     } catch (error) {
@@ -280,7 +241,7 @@ const MeetupDetail: React.FC = () => {
       // 统一使用已存在的RSVP函数与参数命名
       const response = await http.get('/rsvp', {
         meetup_id: meetupId,
-        wechat_id: wechatId,
+        wechatId: wechatId,
       });
       const rsvps = (response.data && (response.data as any).rsvps) || [];
       return Array.isArray(rsvps) && rsvps.length > 0;
@@ -314,8 +275,8 @@ const MeetupDetail: React.FC = () => {
         setSubmitStatus('success');
         setTimeout(() => {
           setShowRSVPDialog(false);
-          if (meetup.qr_image_url) {
-            showQRCode(meetup.qr_image_url!);
+          if (meetup.cover) {
+            showQRCode(meetup.cover!);
           } else {
             showSnackbar.info(
               '您已经报名了这个活动！请联系组织者获取群聊信息。'
@@ -326,29 +287,11 @@ const MeetupDetail: React.FC = () => {
         return;
       }
 
-      // 使用统一的api对象提交报名信息
-      const userInfoStr =
-        localStorage.getItem('userInfo') || localStorage.getItem('userData');
-      let username: string | undefined;
-      let user_id: number | string | undefined;
-      try {
-        const u = userInfoStr ? JSON.parse(userInfoStr) : null;
-        username = u?.username || undefined;
-        user_id = u?.id ?? undefined;
-      } catch {}
-      if (!user_id) {
-        const uidStr = localStorage.getItem('userId');
-        if (uidStr && uidStr !== 'null' && uidStr !== 'undefined') {
-          const asNum = Number(uidStr);
-          user_id = Number.isFinite(asNum) ? asNum : uidStr;
-        }
-      }
-
       const payload = {
         meetup_id: Number(meetup.id),
         wechat_id: rsvpForm.wechatId.trim(),
         name: rsvpForm.name.trim(),
-        user_id,
+        user_id: getUserId(),
       };
 
       const response = await api.rsvp.create(payload);
@@ -367,11 +310,11 @@ const MeetupDetail: React.FC = () => {
 
         // 更新报名人数
         if (meetup) {
-          setMeetup((prev) =>
+          setMeetup((prev: Meetup | null) =>
             prev
               ? {
                   ...prev,
-                  participant_count: prev.participant_count + 1,
+                  participantCount: (prev.participantCount ?? 0) + 1,
                 }
               : null
           );
@@ -380,13 +323,13 @@ const MeetupDetail: React.FC = () => {
         // 更新参与者列表
         setParticipants((prev) => [
           ...prev,
-          { name: rsvpForm.name, wechat_id: rsvpForm.wechatId },
+          { name: rsvpForm.name, wechatId: rsvpForm.wechatId },
         ]);
 
         // 显示成功消息和二维码
-        if (meetup.qr_image_url) {
+        if (meetup.cover) {
           setTimeout(() => {
-            showQRCode(meetup.qr_image_url!);
+            showQRCode(meetup.cover!);
           }, 300);
         } else {
           showSnackbar.success('报名成功！请联系组织者获取群聊信息。');
@@ -405,8 +348,8 @@ const MeetupDetail: React.FC = () => {
         setSubmitStatus('success');
         setTimeout(() => {
           setShowRSVPDialog(false);
-          if (meetup?.qr_image_url) {
-            showQRCode(meetup.qr_image_url!);
+          if (meetup?.cover) {
+            showQRCode(meetup.cover!);
           } else {
             showSnackbar.info(
               '您已经报名了这个活动！请联系组织者获取群聊信息。'
@@ -426,11 +369,11 @@ const MeetupDetail: React.FC = () => {
 
   // 显示二维码弹窗
   const showQRCode = (qrImageUrl: string) => {
-    setMeetup((prev) => {
+    setMeetup((prev: any) => {
       return prev
         ? {
             ...prev,
-            qr_image_url: qrImageUrl,
+            cover: qrImageUrl,
           }
         : null;
     });
@@ -440,16 +383,6 @@ const MeetupDetail: React.FC = () => {
   // 查看参与者列表
   const handleViewParticipants = () => {
     setShowParticipantsModal(true);
-  };
-
-  // 格式化描述文本（支持换行）
-  const formatDescription = (text: string) => {
-    return text.split('\n').map((line, index) => (
-      <div key={index}>
-        {line}
-        {index < text.split('\n').length - 1 && <br />}
-      </div>
-    ));
   };
 
   // 渲染活动详情
@@ -469,9 +402,7 @@ const MeetupDetail: React.FC = () => {
       '周六',
     ];
     const weekday = weekdayNames[new Date(meetup.datetime).getDay()];
-    const limitRaw = Number(
-      (meetup.max_ppl ?? meetup.max_participants ?? -1) as any
-    );
+    const limitRaw = Number((meetup.maxPpl ?? -1) as any);
     const isUnlimited =
       !Number.isFinite(limitRaw) || limitRaw <= 0 || limitRaw === -1;
 
@@ -482,7 +413,7 @@ const MeetupDetail: React.FC = () => {
         >
           {(() => {
             const cover = meetup.cover;
-            const qr = meetup.qr_image_url;
+            const qr = meetup.cover;
             const isQrLike =
               typeof cover === 'string' &&
               /qr|qrcode|barcode|wechat/i.test(cover);
@@ -506,16 +437,8 @@ const MeetupDetail: React.FC = () => {
           <Box sx={{ padding: { xs: '1rem', md: '1.5rem' } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
               <Chip
-                label={
-                  (meetup.mode || meetup.type) === 'online'
-                    ? '线上活动'
-                    : '线下活动'
-                }
-                color={
-                  (meetup.mode || meetup.type) === 'online'
-                    ? 'primary'
-                    : 'secondary'
-                }
+                label={meetup.mode === 'online' ? '线上活动' : '线下活动'}
+                color={meetup.mode === 'online' ? 'primary' : 'secondary'}
                 size="small"
               />
               <Chip
@@ -612,23 +535,7 @@ const MeetupDetail: React.FC = () => {
                     </span>
                   </Box>
                 )}
-                {meetup.fee != null && (
-                  <Box
-                    sx={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      bgcolor: '#f4eee6',
-                      px: 1.25,
-                      py: 0.75,
-                      borderRadius: 1,
-                    }}
-                  >
-                    <span style={{ marginRight: '0.5rem' }}>💰</span>
-                    <span>
-                      {Number(meetup.fee) > 0 ? `${meetup.fee} 元` : '免费'}
-                    </span>
-                  </Box>
-                )}
+
                 <Box
                   sx={{
                     display: 'inline-flex',
@@ -680,13 +587,9 @@ const MeetupDetail: React.FC = () => {
                 }}
               >
                 <Avatar sx={{ mr: 2, bgcolor: '#ff7f50' }}>
-                  {meetup.creator
-                    ? meetup.creator.charAt(0)
-                    : meetup.organizer.charAt(0)}
+                  {meetup.creator.charAt(0)}
                 </Avatar>
-                <Typography variant="h6">
-                  {meetup.creator || meetup.organizer}
-                </Typography>
+                <Typography variant="h6">{meetup.creator}</Typography>
               </Box>
             </Card>
 
@@ -699,7 +602,7 @@ const MeetupDetail: React.FC = () => {
                   startIcon={<span>👥</span>}
                   sx={{ textTransform: 'none' }}
                 >
-                  {meetup.participant_count || 0}
+                  {meetup.participantCount || 0}
                   {isUnlimited ? '' : `/${limitRaw}`} 人已报名
                 </Button>
               </div>
@@ -815,16 +718,16 @@ const MeetupDetail: React.FC = () => {
 
       {/* 二维码弹窗 */}
       <Dialog
-        open={showQRModal && !!meetup?.qr_image_url}
+        open={showQRModal && !!meetup?.cover}
         onClose={() => setShowQRModal(false)}
         maxWidth="sm"
         fullWidth
       >
         <DialogTitle>扫码进群</DialogTitle>
         <DialogContent sx={{ textAlign: 'center', py: 4 }}>
-          {meetup?.qr_image_url && (
+          {meetup?.cover && (
             <img
-              src={meetup.qr_image_url}
+              src={meetup.cover}
               alt="群聊二维码"
               style={{
                 maxWidth: '80%',

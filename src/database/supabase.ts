@@ -1,6 +1,14 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-dotenv.config();
+
+// 仅在Node.js环境中使用dotenv
+if (typeof process !== 'undefined' && process.env) {
+  try {
+    const dotenv = require('dotenv');
+    dotenv.config();
+  } catch (error) {
+    // 忽略dotenv加载错误
+  }
+}
 
 // 环境变量类型定义
 type EnvVars = {
