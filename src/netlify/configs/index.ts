@@ -133,8 +133,14 @@ export const api = {
 
   // 卡片相关API
   cards: {
-    getAll: async (): Promise<ApiResponse<{ records: CardItem[] }>> => {
-      return http.get<{ records: CardItem[] }>(API_MAP.CARDS.GET);
+    getAll: async (params?: {
+      page?: number;
+      limit?: number;
+    }): Promise<ApiResponse<{ records: CardItem[]; total: number }>> => {
+      return http.get<{ records: CardItem[]; total: number }>(
+        API_MAP.CARDS.GET,
+        params
+      );
     },
 
     getById: async (

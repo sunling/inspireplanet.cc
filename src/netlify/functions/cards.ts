@@ -192,6 +192,9 @@ async function fetch(
     // 检查查询参数中是否有id
     const params = event.queryStringParameters || {};
     const idParam = params.id;
+    const pageParam = params.page ? parseInt(params.page, 10) : null;
+    const limitParam = params.limit ? parseInt(params.limit, 10) : null;
+    const isPaginated = pageParam !== null && limitParam !== null;
 
     if (idParam) {
       // 检查是否是逗号分隔的ID列表
@@ -218,8 +221,8 @@ async function fetch(
           };
         }
       }
-    } else if (cache.allCards) {
-      // 返回缓存中的所有卡片
+    } else if (!isPaginated && cache.allCards) {
+      // 返回缓存中的所有卡片（无分页时）
       console.log('Cache hit for all cards');
       return {
         statusCode: 200,
@@ -228,7 +231,7 @@ async function fetch(
     }
 
     // 构建查询
-    let query = supabase.from('cards').select('*');
+    let query = supabase.from('cards').select('*', { count: 'exact' });
 
     // 如果存在id参数，按id过滤
     if (idParam) {
@@ -245,11 +248,19 @@ async function fetch(
       }
     }
 
-    // 应用排序
-    query = query.order('created', { ascending: false }).limit(25);
+    // 应用排序和分页
+    if (isPaginated && !idParam) {
+      const page = Math.max(1, pageParam!);
+      const limit = Math.min(50, Math.max(1, limitParam!));
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.order('created', { ascending: false }).range(from, to);
+    } else {
+      query = query.order('created', { ascending: false }).limit(25);
+    }
 
     // 执行查询
-    const { data, error } = await query;
+    const { data, error, count } = await query;
 
     if (error) {
       return {
@@ -273,7 +284,7 @@ async function fetch(
       likesCount: row.likes_count || 0,
     }));
 
-    // 更新缓存
+    // 更新缓存（无分页时才缓存）
     if (idParam) {
       if (idParam.includes(',')) {
         const ids = idParam
@@ -285,11 +296,11 @@ async function fetch(
       } else {
         cache.cardsByIds[idParam] = records;
       }
-    } else {
+    } else if (!isPaginated) {
       cache.allCards = records;
     }
 
-    const responseBody = JSON.stringify({ records });
+    const responseBody = JSON.stringify({ records, total: count ?? records.length });
     console.log(
       'Response payload size: ',
       Buffer.byteLength(responseBody, 'utf8')
