@@ -241,10 +241,10 @@ const MeetupDetail: React.FC = () => {
       // 统一使用已存在的RSVP函数与参数命名
       const response = await http.get('/rsvp', {
         meetup_id: meetupId,
-        wechatId: wechatId,
+        wechat_id: wechatId,
       });
       const rsvps = (response.data && (response.data as any).rsvps) || [];
-      return Array.isArray(rsvps) && rsvps.length > 0;
+      return Array.isArray(rsvps) && rsvps.some((r: any) => r.wechat_id === wechatId);
     } catch (error) {
       console.error('检查报名状态失败:', error);
       return false;
