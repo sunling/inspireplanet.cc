@@ -5,7 +5,7 @@ import {
   NetlifyResponse,
   HttpHeaders,
 } from '../types/http';
-import { Meetup } from '../types';
+
 import {
   getCommonHttpHeader,
   createSuccessResponse,
@@ -13,6 +13,26 @@ import {
   handleOptionsRequest,
   getUserIdFromAuth,
 } from '../utils/server';
+
+// 定义接口
+export interface Meetup {
+  id?: string;
+  title: string;
+  description: string;
+  location?: string;
+  datetime: string;
+  wechat_id: string;
+  created_at?: string;
+  qrcode?: string;
+  status?: string;
+  duration?: string;
+  max_ppl?: number | null;
+  mode: string;
+  cover: string;
+  user_id?: string;
+  creator: string;
+  participant_count?: number;
+}
 
 export interface MeetupRequest extends Omit<Meetup, 'id'> {}
 

@@ -117,15 +117,15 @@ const MyMeetups: React.FC = () => {
 
   const loadMyRsvps = async (allMeetupsList: Meetup[]) => {
     try {
-      const uid = localStorage.getItem('userId');
+      const curUser = getCurrentUser() as any;
+      const uid = curUser?.id;
       let res:
         | Awaited<ReturnType<typeof rsvpApi.getByUserId>>
         | Awaited<ReturnType<typeof rsvpApi.getByWechatId>>;
       if (uid && uid.trim()) {
         res = await rsvpApi.getByUserId(uid);
       } else {
-        const curUser = getCurrentUser();
-        const wechat = (curUser as any)?.wechatId;
+        const wechat = curUser?.wechat_id || curUser?.wechat;
         if (!wechat) {
           setMyRsvps([]);
           setRsvpMeetups([]);

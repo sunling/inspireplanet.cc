@@ -118,8 +118,13 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
 async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
+      const params = event.queryStringParameters || {};
+    const idParam = params.id;
     const body = event.body ? JSON.parse(event.body) : {};
     const id = body.id;
+    const pageParam = params.page ? parseInt(params.page, 10) : null;
+    const limitParam = params.limit ? parseInt(params.limit, 10) : null;
+    const isPaginated = pageParam !== null && limitParam !== null;
 
     if (!id) {
       return createErrorResponse('缺少卡片ID');
@@ -157,17 +162,74 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
 
     if (cache.allCards) {
       return createSuccessResponse({ records: cache.allCards });
+    if (idParam) {
+      // 检查是否是逗号分隔的ID列表
+      if (idParam.includes(',')) {
+        const ids = idParam
+          .split(',')
+          .map((id) => id.trim())
+          .filter((id) => id);
+        const cacheKey = ids.sort().join(',');
+
+        if (cache.cardsByIds[cacheKey]) {
+          return {
+            statusCode: 200,
+            body: JSON.stringify({ records: cache.cardsByIds[cacheKey] }),
+          };
+        }
+      } else {
+        // 单个ID
+        if (cache.cardsByIds[idParam]) {
+          console.log('Cache hit for ID:', idParam);
+          return {
+            statusCode: 200,
+            body: JSON.stringify({ records: cache.cardsByIds[idParam] }),
+          };
+        }
+      }
+    } else if (!isPaginated && cache.allCards) {
+      // 返回缓存中的所有卡片（无分页时）
+      console.log('Cache hit for all cards');
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ records: cache.allCards }),
+      };
     }
 
-    let query = supabase.from('cards').select('*');
+    let query = supabase.from('cards').select('*', { count: 'exact' });
 
     if (userId) {
       query = query.eq('user_id', userId);
     }
 
     query = query.order('created', { ascending: false }).limit(25);
+    // 如果存在id参数，按id过滤
+    if (idParam) {
+      // 检查是否是逗号分隔的ID列表
+      if (idParam.includes(',')) {
+        const ids = idParam
+          .split(',')
+          .map((id) => id.trim())
+          .filter((id) => id);
+        query = query.in('id', ids);
+      } else {
+        // 单个ID
+        query = query.eq('id', idParam);
+      }
+    }
 
-    const { data, error } = await query;
+    // 应用排序和分页
+    if (isPaginated && !idParam) {
+      const page = Math.max(1, pageParam!);
+      const limit = Math.min(50, Math.max(1, limitParam!));
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.order('created', { ascending: false }).range(from, to);
+    } else {
+      query = query.order('created', { ascending: false }).limit(25);
+    }
+
+    const { data, error, count } = await query;
 
     if (error) {
       return createErrorResponse(error.message, 500);
@@ -175,8 +237,25 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
 
     const records = (data || []).map((row) => row);
     cache.allCards = records;
+    const records = (data || []).map((row, index) => snakeToCamel(row));
 
-    return createSuccessResponse({ records });
+    // 更新缓存（无分页时才缓存）
+    if (idParam) {
+      if (idParam.includes(',')) {
+        const ids = idParam
+          .split(',')
+          .map((id) => id.trim())
+          .filter((id) => id);
+        const cacheKey = ids.sort().join(',');
+        cache.cardsByIds[cacheKey] = records;
+      } else {
+        cache.cardsByIds[idParam] = records;
+      }
+    } else if (!isPaginated) {
+      cache.allCards = records;
+    }
+
+    return createSuccessResponse({ records, total: count ?? records.length });
   } catch (error: any) {
     console.error('Get all cards error:', error);
     return createErrorResponse('服务器内部错误', 500);

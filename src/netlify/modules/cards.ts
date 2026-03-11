@@ -3,8 +3,11 @@ import { CardItem } from '../types';
 import { http } from '../config/http';
 
 export const cardsApi = {
-  getAll: async (): Promise<ApiResponse<{ records: CardItem[] }>> => {
-    return http.get<{ records: CardItem[] }>('/cards');
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<{ records: CardItem[]; total: number }>> => {
+    return http.get<{ records: CardItem[]; total: number }>('/cards', params);
   },
 
   getById: async (

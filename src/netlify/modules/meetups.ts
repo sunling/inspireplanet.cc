@@ -1,6 +1,6 @@
 import { ApiResponse } from '../types/http';
-import { Meetup } from '../types';
 import { http } from '../config/http';
+import { Meetup } from '../functions/meetup';
 
 export const meetupsApi = {
   getAll: async (params?: {

@@ -238,13 +238,14 @@ const MeetupDetail: React.FC = () => {
       if (!wechatId) return false;
 
       // 使用 getByWechatId 获取该微信用户的所有报名记录
-      const response = await rsvpApi.getByWechatId(wechatId);
+      const response = await rsvpApi.getByWechatId({
+        meetup_id: meetupId,
+        wechat_id: wechatId,
+      });
       const rsvps = response.data?.rsvps || [];
-      // 过滤出特定活动的报名记录
-      const meetupRsvps = rsvps.filter(
-        (r: Participant) => String(r.meetup_id) === meetupId
+      return (
+        Array.isArray(rsvps) && rsvps.some((r: any) => r.wechat_id === wechatId)
       );
-      return meetupRsvps.length > 0;
     } catch (error) {
       console.error('检查报名状态失败:', error);
       return false;

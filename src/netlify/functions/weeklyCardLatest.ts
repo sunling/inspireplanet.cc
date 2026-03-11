@@ -45,10 +45,11 @@ export async function handler(
 
 async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
+    // 按创建时间取最新一条，以此确定最新一期的episode编号
     const { data: latestEpisode, error: episodeError } = await supabase
       .from('weekly_cards')
       .select('episode')
-      .order('episode', { ascending: false })
+      .order('created', { ascending: false })
       .limit(1);
 
     if (episodeError) {

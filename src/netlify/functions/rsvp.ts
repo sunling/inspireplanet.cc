@@ -128,14 +128,11 @@ async function handleCreate(event: NetlifyEvent) {
 
     let result;
     if (existingRSVP) {
+      // 更新现有RSVP（触发器限制只允许更新 status 字段）
       const { data, error } = await supabase
         .from('meetup_rsvps')
-        .update({
-          name,
-          status: 'confirmed',
-          user_id: userId as any,
-          wechat_id: wechatId,
-        })
+        .update({ status: 'confirmed' })
+
         .eq('id', existingRSVP.id)
         .select();
 
@@ -446,7 +443,11 @@ async function handleDelete(event: NetlifyEvent) {
       return createErrorResponse('取消报名失败', 500);
     }
 
-    return createSuccessResponse({ message: '取消报名成功', affected: Array.isArray(data) ? data.length : 0, rsvp: Array.isArray(data) && data.length > 0 ? data[0] : null });
+    return createSuccessResponse({
+      message: '取消报名成功',
+      affected: Array.isArray(data) ? data.length : 0,
+      rsvp: Array.isArray(data) && data.length > 0 ? data[0] : null,
+    });
   } catch (error) {
     console.error('Delete RSVP error:', error);
     return createErrorResponse('取消报名失败', 500);
