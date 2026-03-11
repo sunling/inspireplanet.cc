@@ -7,6 +7,8 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
+  getActionFromEvent,
+  getDataFromEvent,
 } from '../utils/server';
 
 export interface OneOnOneMeetingAction {
@@ -22,7 +24,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as OneOnOneMeetingAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'create':
@@ -176,7 +178,7 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   const userId = getUserIdFromAuth(event);
   if (!userId) return createErrorResponse('未授权', 401);
 
-  const body = event.body ? JSON.parse(event.body) : {};
+  const body = getDataFromEvent(event);
   const { id } = body;
 
   if (!id) return createErrorResponse('缺少会面ID');

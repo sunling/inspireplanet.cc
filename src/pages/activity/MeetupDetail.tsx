@@ -100,8 +100,8 @@ const MeetupDetail: React.FC = () => {
       const processedMeetup: Meetup = {
         ...meetupData,
         status: (meetupData.status || MeetupStatus.UPCOMING) as MeetupStatus,
-        createdAt: meetupData.createdAt || new Date().toISOString(),
-        participantCount: meetupData.participantCount || 0,
+        created_at: meetupData.created_at || new Date().toISOString(),
+        participant_count: meetupData.participant_count || 0,
         cover: meetupData.cover,
       };
 
@@ -233,13 +233,9 @@ const MeetupDetail: React.FC = () => {
   ): Promise<boolean> => {
     try {
       // 若缺少微信ID，跳过预检查
-      if (!wechatId) return false;
 
       // 使用 getByWechatId 获取该微信用户的所有报名记录
-      const response = await rsvpApi.getByWechatId({
-        meetup_id: meetupId,
-        wechat_id: wechatId,
-      });
+      const response = await rsvpApi.getByWechatId(meetupId);
       const rsvps = response.data?.rsvps || [];
       return (
         Array.isArray(rsvps) && rsvps.some((r: any) => r.wechat_id === wechatId)
@@ -313,7 +309,7 @@ const MeetupDetail: React.FC = () => {
             prev
               ? {
                   ...prev,
-                  participantCount: (prev.participantCount ?? 0) + 1,
+                  participantCount: (prev.participant_count ?? 0) + 1,
                 }
               : null
           );
@@ -401,7 +397,7 @@ const MeetupDetail: React.FC = () => {
       '周六',
     ];
     const weekday = weekdayNames[new Date(meetup.datetime).getDay()];
-    const limitRaw = Number((meetup.maxPpl ?? -1) as any);
+    const limitRaw = Number((meetup.max_ppl ?? -1) as any);
     const isUnlimited =
       !Number.isFinite(limitRaw) || limitRaw <= 0 || limitRaw === -1;
 

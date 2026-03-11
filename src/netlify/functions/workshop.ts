@@ -5,6 +5,7 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
+  getActionFromEvent,
 } from '../utils/server';
 
 export interface WorkshopRegistration {
@@ -42,7 +43,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as WorkshopAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'create':

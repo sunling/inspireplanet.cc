@@ -24,7 +24,7 @@ export const oneOnOneApi = {
       if (status) params.status = status;
       return http.get<{ invites: import('../types').OneOnOneInvite[] }>(
         '/oneOnOneInvites',
-        'list',
+        'getAll',
         params
       );
     },
@@ -59,7 +59,7 @@ export const oneOnOneApi = {
     > => {
       return http.get<{ meetings: import('../types').OneOnOneMeeting[] }>(
         '/oneOnOneMeetings',
-        'list'
+        'getAll'
       );
     },
     update: async (

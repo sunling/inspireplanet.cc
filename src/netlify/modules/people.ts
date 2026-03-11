@@ -12,7 +12,7 @@ export const peopleApi = {
   }): Promise<ApiResponse<{ users: import('../types').PeopleUser[] }>> => {
     return http.get<{ users: import('../types').PeopleUser[] }>(
       '/users',
-      'list',
+      'search',
       params as any
     );
   },
@@ -21,7 +21,7 @@ export const peopleApi = {
   ): Promise<ApiResponse<{ users: import('../types').PeopleUser[] }>> => {
     return http.get<{ users: import('../types').PeopleUser[] }>(
       '/users',
-      'getById',
+      'get',
       {
         id,
       } as any
@@ -32,7 +32,7 @@ export const peopleApi = {
   ): Promise<ApiResponse<{ users: import('../types').PeopleUser[] }>> => {
     return http.get<{ users: import('../types').PeopleUser[] }>(
       '/users',
-      'getByIds',
+      'getAll',
       {
         ids: ids.map(String).join(','),
       } as any

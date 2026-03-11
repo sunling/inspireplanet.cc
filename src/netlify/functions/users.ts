@@ -5,6 +5,8 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
+  getActionFromEvent,
+  getDataFromEvent,
 } from '../utils/server';
 
 export interface UserAction {
@@ -20,7 +22,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as UserAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'get':
@@ -39,7 +41,7 @@ export async function handler(
 }
 
 async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const body = event.body ? JSON.parse(event.body) : {};
+  const body = getDataFromEvent(event);
   const { id } = body;
 
   if (!id) {
@@ -87,7 +89,7 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const body = event.body ? JSON.parse(event.body) : {};
+  const body = getDataFromEvent(event);
   const { ids = '', limit = '50', offset = '0' } = body;
 
   let filteredUserIds: Array<number | string> | null = null;
@@ -141,7 +143,7 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleSearch(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const body = event.body ? JSON.parse(event.body) : {};
+  const body = getDataFromEvent(event);
   const {
     q = '',
     limit = '50',

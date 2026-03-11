@@ -13,6 +13,7 @@ import {
   handleOptionsRequest,
   getUserIdFromAuth,
   getActionFromEvent,
+  getDataFromEvent,
 } from '../utils/server';
 
 // 定义接口
@@ -71,7 +72,7 @@ export const MeetupList = [
 ];
 
 export interface MeetupAction {
-  action: 'create' | 'get' | 'getAll' | 'update' | 'delete';
+  action: 'create' | 'getById' | 'getAll' | 'update' | 'delete';
 }
 
 export async function handler(
@@ -88,8 +89,8 @@ export async function handler(
     switch (action) {
       case 'create':
         return await handleCreate(event);
-      case 'get':
-        return await handleGet(event);
+      case 'getById':
+        return await handleGetById(event);
       case 'getAll':
         return await handleGetAll(event);
       case 'update':
@@ -171,9 +172,9 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   }
 }
 
-async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
+async function handleGetById(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
+    const body = getDataFromEvent(event);
     const { id } = body;
 
     if (!id) {
@@ -183,24 +184,23 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
     const { data, error } = await supabase
       .from('meetups')
       .select('*')
-      .eq('id', id)
-      .single();
+      .eq('id', id);
 
     if (error) {
       console.error('Database query error:', error);
       return createErrorResponse('获取活动失败', 500);
     }
 
-    if (!data) {
+    if (!data || data.length === 0) {
       return createErrorResponse('活动不存在', 404);
     }
 
     const meetup: Meetup = {
-      ...data,
+      ...data[0],
       participantCount: 0,
     };
 
-    return createSuccessResponse({ meetup });
+    return createSuccessResponse({ meetups: [meetup] });
   } catch (error) {
     console.error('Get meetup error:', error);
     return createErrorResponse('获取活动失败', 500);
@@ -209,7 +209,7 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
 
 async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
+    const body = getDataFromEvent(event);
     const { status = 'active', limit = '50', offset = '0' } = body;
 
     let query = supabase.from('meetups').select('*');

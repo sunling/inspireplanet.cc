@@ -34,7 +34,7 @@ import {
 } from '../../netlify/types';
 import { useGlobalSnackbar } from '@/context/app';
 import useResponsive from '@/hooks/useResponsive';
-import { imagesApi } from '../../netlify/config';
+import { imagesApi } from '../../../netlify/config';
 
 import styles from '../CardCreate/index.module.css';
 

@@ -9,12 +9,12 @@ export const notificationsApi = {
   }): Promise<ApiResponse<{ notifications: any[] }>> => {
     return http.get<{ notifications: any[] }>(
       '/notifications',
-      'list',
+      'getAll',
       params as any
     );
   },
   markRead: async (id: string): Promise<ApiResponse<{ success: boolean }>> => {
-    return http.put<{ success: boolean }>('/notifications', 'markRead', { id });
+    return http.put<{ success: boolean }>('/notifications', 'update', { id });
   },
   markAllRead: async (): Promise<ApiResponse<{ success: boolean }>> => {
     return http.put<{ success: boolean }>('/notifications', 'markAllRead', {

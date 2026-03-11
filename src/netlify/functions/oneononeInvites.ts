@@ -7,6 +7,8 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
+  getActionFromEvent,
+  getDataFromEvent,
 } from '../utils/server';
 
 export interface OneOnOneInviteAction {
@@ -22,7 +24,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as OneOnOneInviteAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'create':
@@ -127,7 +129,7 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('未授权', 401);
   }
 
-  const body = event.body ? JSON.parse(event.body) : {};
+  const body = getDataFromEvent(event);
   const { id } = body;
 
   if (!id) {
@@ -164,7 +166,7 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('未授权', 401);
   }
 
-  const body = event.body ? JSON.parse(event.body) : {};
+  const body = getDataFromEvent(event);
   const role = body.role || 'invitee';
   const status = body.status || '';
 
@@ -188,7 +190,7 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('未授权', 401);
   }
 
-  const body = event.body ? JSON.parse(event.body) : {};
+  const body = getDataFromEvent(event);
   const { id, status: nextStatus, selected_slot } = body;
 
   if (!id || !event.body) {

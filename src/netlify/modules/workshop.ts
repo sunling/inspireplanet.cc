@@ -8,7 +8,7 @@ export const workshopApi = {
   ): Promise<ApiResponse<{ success: boolean }>> => {
     return http.post<{ success: boolean }>(
       '/workshop',
-      'register',
+      'create',
       registrationData
     );
   },
