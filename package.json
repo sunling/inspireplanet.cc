@@ -41,6 +41,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@opentelemetry/api": "~1.8.0",
     "@types/dompurify": "^3.2.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/marked": "^6.0.0",
@@ -50,7 +51,7 @@
     "@vitejs/plugin-react": "^5.1.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.3.2",
-    "netlify-cli": "^17.10.1",
+    "netlify-cli": "14.0.0",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",

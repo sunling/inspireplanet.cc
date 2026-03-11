@@ -261,7 +261,9 @@ async function handleLogin(event: NetlifyEvent): Promise<NetlifyResponse> {
  * @param event 事件对象
  * @returns 响应对象
  */
-async function handleVerifyToken(event: NetlifyEvent): Promise<NetlifyResponse> {
+async function handleVerifyToken(
+  event: NetlifyEvent
+): Promise<NetlifyResponse> {
   try {
     const authHeader =
       event.headers.authorization || event.headers.Authorization;
@@ -279,36 +281,35 @@ async function handleVerifyToken(event: NetlifyEvent): Promise<NetlifyResponse> 
 
     // 验证用户是否仍然存在
     const {
-        data: user,
-      }: {
-        data: {
-          id: string;
-          username: string;
-          email: string;
-          name: string;
-        } | null;
-      } = await supabase
-        .from('users')
-        .select('id, username, email, name')
-        .eq('id', decoded.userId)
-        .single();
+      data: user,
+    }: {
+      data: {
+        id: string;
+        username: string;
+        email: string;
+        name: string;
+      } | null;
+    } = await supabase
+      .from('users')
+      .select('id, username, email, name')
+      .eq('id', decoded.userId)
+      .single();
 
-      if (!user) {
-        return createErrorResponse('用户不存在', 401);
-      }
-
-      return createSuccessResponse({
-        valid: true,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          name: user.name,
-        },
-      });
-    } catch (error: any) {
-      console.error('Token verification error:', error);
-      return createErrorResponse('令牌验证过程中发生错误', 500);
+    if (!user) {
+      return createErrorResponse('用户不存在', 401);
     }
+
+    return createSuccessResponse({
+      valid: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+      },
+    });
+  } catch (error: any) {
+    console.error('Token verification error:', error);
+    return createErrorResponse('令牌验证过程中发生错误', 500);
   }
 }
