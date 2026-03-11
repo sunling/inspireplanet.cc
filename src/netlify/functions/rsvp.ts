@@ -204,15 +204,10 @@ async function createRSVP(event: any, headers: any) {
     // 创建或更新RSVP
     let result;
     if (existingRSVP) {
-      // 更新现有RSVP
+      // 更新现有RSVP（触发器限制只允许更新 status 字段）
       const { data, error } = await supabase
         .from('meetup_rsvps')
-        .update({
-          name,
-          status: 'confirmed',
-          user_id: userId as any,
-          wechat_id: wechatId, // 确保更新微信号
-        })
+        .update({ status: 'confirmed' })
         .eq('id', existingRSVP.id)
         .select();
 
