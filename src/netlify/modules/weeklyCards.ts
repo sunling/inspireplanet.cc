@@ -44,7 +44,7 @@ export const weeklyCardsApi = {
   },
 
   getLatest: async (): Promise<ApiResponse<WeeklyCardResponse>> => {
-    return http.get<WeeklyCardResponse>('/weeklyCardLatest', 'getLatest');
+    return http.get<WeeklyCardResponse>('/weeklyCardLatest', 'get');
   },
 
   getByEpisode: async (

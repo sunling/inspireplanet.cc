@@ -10,6 +10,7 @@ export const oneOnOneApi = {
     ): Promise<ApiResponse<{ invite: import('../types').OneOnOneInvite }>> => {
       return http.post<{ invite: import('../types').OneOnOneInvite }>(
         '/oneOnOneInvites',
+        'create',
         data
       );
     },
@@ -23,6 +24,7 @@ export const oneOnOneApi = {
       if (status) params.status = status;
       return http.get<{ invites: import('../types').OneOnOneInvite[] }>(
         '/oneOnOneInvites',
+        'list',
         params
       );
     },
@@ -32,6 +34,7 @@ export const oneOnOneApi = {
     ): Promise<ApiResponse<{ invite: import('../types').OneOnOneInvite }>> => {
       return http.put<{ invite: import('../types').OneOnOneInvite }>(
         '/oneOnOneInvites',
+        'update',
         {
           id,
           ...data,
@@ -47,6 +50,7 @@ export const oneOnOneApi = {
     > => {
       return http.post<{ meeting: import('../types').OneOnOneMeeting }>(
         '/oneOnOneMeetings',
+        'create',
         data
       );
     },
@@ -54,7 +58,8 @@ export const oneOnOneApi = {
       ApiResponse<{ meetings: import('../types').OneOnOneMeeting[] }>
     > => {
       return http.get<{ meetings: import('../types').OneOnOneMeeting[] }>(
-        '/oneOnOneMeetings'
+        '/oneOnOneMeetings',
+        'list'
       );
     },
     update: async (
@@ -65,6 +70,7 @@ export const oneOnOneApi = {
     > => {
       return http.put<{ meeting: import('../types').OneOnOneMeeting }>(
         '/oneOnOneMeetings',
+        'update',
         {
           id,
           ...data,

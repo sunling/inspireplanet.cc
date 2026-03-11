@@ -8,28 +8,28 @@ export const meetupsApi = {
     limit?: number;
     offset?: number;
   }): Promise<ApiResponse<{ meetups: Meetup[] }>> => {
-    return http.get<{ meetups: Meetup[] }>('/meetup', params as any);
+    return http.get<{ meetups: Meetup[] }>('/meetup', 'getAll', params as any);
   },
 
   getById: async (id: string): Promise<ApiResponse<{ meetups: Meetup[] }>> => {
-    return http.get<{ meetups: Meetup[] }>('/meetup', { id });
+    return http.get<{ meetups: Meetup[] }>('/meetup', 'getById', { id });
   },
 
   create: async (meetupData: Partial<Meetup>): Promise<ApiResponse<Meetup>> => {
-    return http.post<Meetup>('/meetup', meetupData);
+    return http.post<Meetup>('/meetup', 'create', meetupData);
   },
 
   update: async (
     id: string,
     meetupData: Partial<Meetup>
   ): Promise<ApiResponse<Meetup>> => {
-    return http.put<Meetup>('/meetup', meetupData, {
+    return http.put<Meetup>('/meetup', 'update', meetupData, {
       params: { id },
     });
   },
 
   delete: async (id: string): Promise<ApiResponse<{ success: boolean }>> => {
-    return http.delete<{ success: boolean }>('/meetup', {
+    return http.delete<{ success: boolean }>('/meetup', 'delete', {
       id,
     });
   },

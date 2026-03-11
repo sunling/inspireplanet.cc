@@ -6,7 +6,8 @@ export const profileApi = {
     ApiResponse<{ profile: import('../types').UserProfile | null }>
   > => {
     return http.get<{ profile: import('../types').UserProfile | null }>(
-      '/userProfile'
+      '/userProfile',
+      'getMy'
     );
   },
   upsert: async (
@@ -14,6 +15,7 @@ export const profileApi = {
   ): Promise<ApiResponse<{ profile: import('../types').UserProfile }>> => {
     return http.post<{ profile: import('../types').UserProfile }>(
       '/userProfile',
+      'upsert',
       data
     );
   },

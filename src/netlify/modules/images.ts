@@ -6,7 +6,7 @@ export const imagesApi = {
   upload: async (
     base64Image: string
   ): Promise<ApiResponse<{ url: string }>> => {
-    return http.post<{ url: string }>('/uploadImage', {
+    return http.post<{ url: string }>('/uploadImage', 'upload', {
       base64Image,
     });
   },
@@ -17,6 +17,7 @@ export const imagesApi = {
   ): Promise<ApiResponse<{ query: string; images: SearchImageItem[] }>> => {
     return http.post<{ query: string; images: SearchImageItem[] }>(
       '/searchImage',
+      'search',
       {
         text,
         orientation,

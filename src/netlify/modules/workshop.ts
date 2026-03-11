@@ -6,7 +6,11 @@ export const workshopApi = {
   register: async (
     registrationData: Partial<Workshop>
   ): Promise<ApiResponse<{ success: boolean }>> => {
-    return http.post<{ success: boolean }>('/workshop', registrationData);
+    return http.post<{ success: boolean }>(
+      '/workshop',
+      'register',
+      registrationData
+    );
   },
 };
 

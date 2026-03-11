@@ -45,7 +45,6 @@ export interface ApiResponse<T = any> {
 
 // 定义请求配置接口
 export interface RequestConfig extends RequestInit {
-  action: string;
   params?: Record<string, any>;
   timeout?: number;
 }

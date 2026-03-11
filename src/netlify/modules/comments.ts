@@ -6,7 +6,7 @@ export const commentsApi = {
   getByCardId: async (
     cardId: string
   ): Promise<ApiResponse<{ comments: Comment[] }>> => {
-    return http.get<{ comments: Comment[] }>('/comments', {
+    return http.get<{ comments: Comment[] }>('/comments', 'getByCardId', {
       cardId,
     });
   },
@@ -16,7 +16,7 @@ export const commentsApi = {
     comment: string;
     name?: string;
   }): Promise<ApiResponse<Comment>> => {
-    return http.post<Comment>('/comments', data);
+    return http.post<Comment>('/comments', 'create', data);
   },
 };
 

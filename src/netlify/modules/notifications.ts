@@ -7,13 +7,17 @@ export const notificationsApi = {
     limit?: number;
     offset?: number;
   }): Promise<ApiResponse<{ notifications: any[] }>> => {
-    return http.get<{ notifications: any[] }>('/notifications', params as any);
+    return http.get<{ notifications: any[] }>(
+      '/notifications',
+      'list',
+      params as any
+    );
   },
   markRead: async (id: string): Promise<ApiResponse<{ success: boolean }>> => {
-    return http.put<{ success: boolean }>('/notifications', { id });
+    return http.put<{ success: boolean }>('/notifications', 'markRead', { id });
   },
   markAllRead: async (): Promise<ApiResponse<{ success: boolean }>> => {
-    return http.put<{ success: boolean }>('/notifications', {
+    return http.put<{ success: boolean }>('/notifications', 'markAllRead', {
       all: true,
     });
   },

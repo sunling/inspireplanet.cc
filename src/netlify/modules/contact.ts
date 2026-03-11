@@ -7,7 +7,7 @@ export const contactApi = {
     email: string;
     message: string;
   }): Promise<ApiResponse<{ success: boolean }>> => {
-    return http.post<{ success: boolean }>('/sendEmail', data);
+    return http.post<{ success: boolean }>('/sendEmail', 'sendEmail', data);
   },
 };
 
