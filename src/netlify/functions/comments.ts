@@ -8,6 +8,7 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
+  getActionFromEvent,
 } from '../utils/server';
 
 const { sanitizeInput } = string;
@@ -48,7 +49,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as CommentAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'create':

@@ -13,7 +13,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import Error from '@/components/ErrorCard';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useGlobalSnackbar } from '@/context/app';
-import { contactApi } from '@/netlify/config';
+import { contactApi } from '../../netlify/config';
 
 interface FormData {
   name: string;

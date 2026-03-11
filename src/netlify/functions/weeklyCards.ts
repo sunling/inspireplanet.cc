@@ -1,7 +1,7 @@
 // src/netlify/functions/fetchWeeklyCards.ts
 import { supabase } from '../../database/supabase';
+import { WeeklyCard } from '../modules/weeklyCards';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
-import { WeeklyCard, WeeklyCardResponse } from '../types';
 import {
   getCommonHttpHeader,
   createSuccessResponse,

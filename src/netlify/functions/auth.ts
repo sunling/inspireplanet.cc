@@ -17,6 +17,7 @@ import {
   verifyPassword,
   generateJwtToken,
   verifyJwtToken,
+  getActionFromEvent,
 } from '../utils/server';
 // 注意：Netlify函数会自动加载.env文件，不需要手动配置dotenv
 
@@ -84,7 +85,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as AuthAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'register':

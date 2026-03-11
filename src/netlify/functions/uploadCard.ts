@@ -5,6 +5,7 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
+  getActionFromEvent,
 } from '../utils/server';
 
 export interface WeeklyCardRecord {
@@ -56,7 +57,7 @@ function getBaseUrl(): string {
     if (typeof import.meta !== 'undefined') {
       const metaEnv = (import.meta as any).env;
       if (metaEnv) {
-        return metaEnv.VITE_URL || 'http://localhost:8888';
+        return metaEnv.URL || 'http://localhost:8888';
       }
     }
 
@@ -76,7 +77,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as UploadCardAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'create':

@@ -20,7 +20,6 @@ export default defineConfig(({ mode }) => {
     publicDir: 'public',
     // 环境变量配置
     envDir: '.', // 指定.env文件所在目录
-    envPrefix: 'VITE_', // 标准Vite环境变量前缀
     // 配置开发服务器
     server: {
       port: 5173,

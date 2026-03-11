@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import styles from './index.module.css';
 import { useResponsive } from '../../hooks/useResponsive';
-import { WeeklyCard } from '@/netlify/types';
+import { WeeklyCard } from '../../netlify/types';
 import { Box, IconButton } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';

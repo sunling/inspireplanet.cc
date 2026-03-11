@@ -1,5 +1,8 @@
 import { HttpHeaders } from '../types/http';
 import { http } from '../../utils/helpers';
+import { getActionFromEvent, getDataFromEvent } from './action';
+
+export { getActionFromEvent, getDataFromEvent };
 
 /**
  * 从请求头中获取用户ID
@@ -11,7 +14,7 @@ export function getUserIdFromAuth(event: any): string | null {
     (event.headers as any)?.authorization ||
     (event.headers as any)?.Authorization;
   if (!auth || !String(auth).startsWith('Bearer ')) return null;
-  
+
   const token = String(auth).substring(7);
   try {
     const jwt = require('jsonwebtoken');
@@ -42,7 +45,10 @@ export function verifyJwtToken(token: string): any {
  * @param expiresIn 过期时间
  * @returns string JWT令牌
  */
-export function generateJwtToken(payload: any, expiresIn: string = '7d'): string {
+export function generateJwtToken(
+  payload: any,
+  expiresIn: string = '7d'
+): string {
   try {
     const jwt = require('jsonwebtoken');
     return jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn });
@@ -82,7 +88,10 @@ export function createSuccessResponse(data: any, statusCode: number = 200) {
  * @param statusCode HTTP状态码
  * @returns NetlifyResponse 响应对象
  */
-export function createErrorResponse(error: string, statusCode: number = 400) {
+export function createErrorResponse(
+  error: string | any,
+  statusCode: number = 400
+) {
   return {
     statusCode,
     headers: getCommonHttpHeader(),
@@ -125,7 +134,10 @@ export async function hashPassword(password: string): Promise<string> {
  * @param hash 哈希值
  * @returns Promise<boolean> 是否匹配
  */
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+export async function verifyPassword(
+  password: string,
+  hash: string
+): Promise<boolean> {
   try {
     const bcrypt = require('bcryptjs');
     return await bcrypt.compare(password, hash);

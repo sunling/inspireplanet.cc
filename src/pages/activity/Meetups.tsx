@@ -30,8 +30,8 @@ import Empty from '../../components/Empty';
 
 import { dateTime, user } from '@/utils/helpers';
 import { formatTime, formatDate } from '../../utils';
-import { Meetup, MeetupLabelMap } from '@/netlify/functions/meetup';
-import { rsvpApi } from '@/netlify/config';
+import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
+import { rsvpApi } from '../../netlify/config';
 import meetupsApi from '../../netlify/modules/meetups';
 
 const PAGE_SIZE = 6;
@@ -88,14 +88,12 @@ const Meetups: React.FC = () => {
     try {
       // 使用统一的api对象获取活动列表
       const response = await meetupsApi.getAll();
-      console.log('loadMeetups 响应', response);
       if (!response.success) {
         showSnackbar.error('查询活动列表失败');
         return;
       }
       setMeetups(response.data?.meetups || []);
     } catch (err) {
-      console.error('加载活动失败:', err);
       setError('加载活动失败，请稍后再试');
       showSnackbar.error('加载活动失败，请稍后再试');
       setMeetups([]);
@@ -123,9 +121,7 @@ const Meetups: React.FC = () => {
         );
         setMyRsvpIds(new Set(ids));
       }
-    } catch (e) {
-      console.error('加载我的报名失败:', e);
-    }
+    } catch (e) {}
   };
 
   // 应用搜索和类型过滤，然后按 tab 拆分
@@ -232,7 +228,6 @@ const Meetups: React.FC = () => {
       setCurrentQRUrl(qrImageUrl || null);
       setShowRSVPDialog(true);
     } catch (error) {
-      console.error('处理报名失败:', error);
       showSnackbar.error('处理报名请求失败，请稍后重试');
     }
   };

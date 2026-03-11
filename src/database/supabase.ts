@@ -21,14 +21,10 @@ function getEnvVars(): EnvVars {
   try {
     // 首先尝试服务端环境变量（Netlify Functions）
     if (typeof process !== 'undefined' && process.env) {
-      const url =
-        process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+      const url = process.env.SUPABASE_URL || '';
       // 在服务端优先使用服务角色密钥（不受RLS限制）
       const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-      const anonKey =
-        process.env.SUPABASE_ANON_KEY ||
-        process.env.VITE_SUPABASE_ANON_KEY ||
-        '';
+      const anonKey = process.env.SUPABASE_ANON_KEY || '';
 
       if (!serviceKey) {
         console.warn(
@@ -51,8 +47,8 @@ function getEnvVars(): EnvVars {
       const metaEnv = (import.meta as any).env;
       if (metaEnv) {
         return {
-          SUPABASE_URL: metaEnv.VITE_SUPABASE_URL || '',
-          SUPABASE_ANON_KEY: metaEnv.VITE_SUPABASE_ANON_KEY || '',
+          SUPABASE_URL: metaEnv.SUPABASE_URL || '',
+          SUPABASE_ANON_KEY: metaEnv.SUPABASE_ANON_KEY || '',
         };
       }
     }
@@ -84,7 +80,7 @@ class SupabaseClientSingleton {
 
       if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
         console.error(
-          'Supabase环境变量未正确配置，请检查.env文件中的VITE_SUPABASE_URL和VITE_SUPABASE_ANON_KEY'
+          'Supabase环境变量未正确配置，请检查.env文件中的SUPABASE_URL和SUPABASE_ANON_KEY'
         );
       }
 

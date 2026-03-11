@@ -4,6 +4,7 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
+  getActionFromEvent,
 } from '../utils/server';
 
 export interface SearchImageAction {
@@ -13,17 +14,13 @@ export interface SearchImageAction {
 function getOpenRouterApiKey(): string {
   try {
     if (typeof process !== 'undefined' && process.env) {
-      return (
-        process.env.OPENROUTER_API_KEY ||
-        process.env.VITE_OPENROUTER_API_KEY ||
-        ''
-      );
+      return process.env.OPENROUTER_API_KEY || '';
     }
 
     if (typeof import.meta !== 'undefined') {
       const metaEnv = (import.meta as any).env;
       if (metaEnv) {
-        return metaEnv.VITE_OPENROUTER_API_KEY || '';
+        return metaEnv.OPENROUTER_API_KEY || '';
       }
     }
 
@@ -44,7 +41,7 @@ function getUrl(): string {
     if (typeof import.meta !== 'undefined') {
       const metaEnv = (import.meta as any).env;
       if (metaEnv) {
-        return metaEnv.VITE_URL || '';
+        return metaEnv.URL || '';
       }
     }
 
@@ -65,7 +62,7 @@ function getUnspashAccessKey(): string {
     if (typeof import.meta !== 'undefined') {
       const metaEnv = (import.meta as any).env;
       if (metaEnv) {
-        return metaEnv.VITE_UNSPLASH_ACCESS_KEY || '';
+        return metaEnv.UNSPLASH_ACCESS_KEY || '';
       }
     }
 
@@ -86,7 +83,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as SearchImageAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'search':

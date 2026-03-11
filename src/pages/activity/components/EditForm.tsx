@@ -11,9 +11,9 @@ import {
 } from '@mui/material';
 import useResponsive from '../../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../../context/app';
-import { Meetup, MeetupList, MeetupMode } from '@/netlify/functions/meetup';
+import { Meetup, MeetupList, MeetupMode } from '../../netlify/functions/meetup';
 import { getUserId } from '@/utils/user';
-import { imagesApi } from '@/netlify/config';
+import { imagesApi } from '../../netlify/config';
 
 interface FormErrors {
   [key: string]: string | undefined;

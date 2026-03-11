@@ -15,7 +15,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { workshopApi } from '@/netlify/config';
+import { workshopApi } from '../../netlify/config';
 
 // 创建自定义主题
 const theme = createTheme({

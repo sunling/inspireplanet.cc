@@ -1,11 +1,13 @@
 import { supabase } from '../../database/supabase';
-import { WeeklyCard } from '../types';
+import { WeeklyCard } from '../modules/weeklyCards';
+
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
   getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
+  getActionFromEvent,
 } from '../utils/server';
 
 export interface LatestWeeklyCardsResponse {
@@ -29,7 +31,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as WeeklyCardLatestAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'get':

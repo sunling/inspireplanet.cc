@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 
 import { useGlobalSnackbar } from '@/context/app';
-import { oneOnOneApi, peopleApi } from '@/netlify/config';
+import { oneOnOneApi, peopleApi } from '../../netlify/config';
 import { dateTime } from '@/utils/helpers';
 
 type SelectSlot = {

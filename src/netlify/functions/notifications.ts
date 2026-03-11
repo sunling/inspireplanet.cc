@@ -6,6 +6,7 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
+  getActionFromEvent,
 } from '../utils/server';
 
 export interface NotificationAction {
@@ -21,7 +22,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as NotificationAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'get':

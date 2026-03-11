@@ -22,8 +22,8 @@ import {
   getFontColorForGradient,
   getRandomGradientClass,
 } from '@/constants/gradient';
-import { WeeklyCard } from '@/netlify/types';
-import { weeklyCardsApi } from '@/netlify/config';
+import { WeeklyCard } from '../../netlify/types';
+import { weeklyCardsApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
 import Empty from '@/components/Empty';
 import Loading from '@/components/Loading';
@@ -92,7 +92,6 @@ const WeeklyCards: React.FC = () => {
           // 默认只加载最新一期
           res = await weeklyCardsApi.getLatest();
         }
-        console.log('获取到的周刊卡片数据:', res);
 
         if (!res.success) {
           setError('获取周刊卡片数据失败');
@@ -121,10 +120,8 @@ const WeeklyCards: React.FC = () => {
           return numB - numA;
         });
 
-        console.log('uniqueEpisodes:', uniqueEpisodes);
         setEpisodes(uniqueEpisodes as string[]);
       } catch (error: any) {
-        console.error('加载周刊卡片失败:', error);
         setError('加载数据失败，请稍后重试');
       } finally {
         setLoading(false);
@@ -239,7 +236,6 @@ const WeeklyCards: React.FC = () => {
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (error) {
-      console.error('下载卡片失败:', error);
       if (error instanceof Error) {
         alert(`下载失败: ${error.message}`);
       }

@@ -17,7 +17,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Meetup, MeetupStatus, Participant } from '@/netlify/types';
+import { Meetup, MeetupStatus, Participant } from '../../netlify/types';
 
 import {
   escapeHtml,
@@ -31,7 +31,7 @@ import useResponsive from '@/hooks/useResponsive';
 import Empty from '@/components/Empty';
 import ErrorCard from '@/components/ErrorCard';
 import Loading from '@/components/Loading';
-import { meetupsApi, rsvpApi } from '@/netlify/config';
+import { meetupsApi, rsvpApi } from '../../netlify/config';
 
 interface UserInfo {
   username: string;
@@ -176,7 +176,6 @@ const MyMeetups: React.FC = () => {
       setRsvpMeetups(finalMeetups);
     } catch (e) {
       // 静默错误，保持页面可用
-      console.error('加载报名活动失败:', e);
     }
   };
 

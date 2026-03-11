@@ -4,6 +4,7 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
+  getActionFromEvent,
 } from '../utils/server';
 
 export interface ImageUploadRequest {
@@ -38,7 +39,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as UploadImageAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'upload':

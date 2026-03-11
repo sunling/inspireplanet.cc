@@ -12,7 +12,7 @@ import {
   Chip,
 } from '@mui/material';
 import { useGlobalSnackbar } from '@/context/app';
-import { cardsApi } from '@/netlify/config';
+import { cardsApi } from '../../netlify/config';
 
 type InputItem = {
   name: string;

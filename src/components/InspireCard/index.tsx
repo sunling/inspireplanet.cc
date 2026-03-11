@@ -12,7 +12,7 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 
-import { CardItem } from '@/netlify/types';
+import { CardItem } from '../../netlify/types';
 import { getFontColorForGradient, gradientStyles } from '@/constants/gradient';
 import useResponsive from '@/hooks/useResponsive';
 import TextCollapse from '../TextCollapse';
@@ -74,7 +74,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
         return;
       }
       const res = await (
-        await import('@/netlify/config')
+        await import('../../netlify/config')
       ).api.cards.like(card.id);
       if (res.success) {
         setLikes(res.data?.likesCount || likes + 1);

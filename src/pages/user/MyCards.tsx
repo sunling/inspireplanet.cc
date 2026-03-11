@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CardItem } from '@/netlify/types';
+import { CardItem } from '../../netlify/types';
 import { formatDate, getCurrentUser } from '@/utils';
 import DOMPurify from 'dompurify';
 import {
@@ -17,7 +17,7 @@ import useResponsive from '@/hooks/useResponsive';
 import { useGlobalSnackbar } from '@/context/app';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
-import { cardsApi, commentsApi } from '@/netlify/config';
+import { cardsApi, commentsApi } from '../../netlify/config';
 
 interface ValidationResult {
   isValid: boolean;

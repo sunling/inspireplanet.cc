@@ -27,10 +27,14 @@ import { ArrowBack } from '@mui/icons-material';
 import TextareaAutosize from '@mui/material/TextareaAutosize';
 
 import { gradientOptions, getFontColorForGradient } from '@/constants/gradient';
-import { CardItem, SearchImageItem, SearchImageResult } from '@/netlify/types';
+import {
+  CardItem,
+  SearchImageItem,
+  SearchImageResult,
+} from '../../netlify/types';
 import { useGlobalSnackbar } from '@/context/app';
 import useResponsive from '@/hooks/useResponsive';
-import { imagesApi } from '@/netlify/config';
+import { imagesApi } from '../../netlify/config';
 
 import styles from '../CardCreate/index.module.css';
 
@@ -193,7 +197,6 @@ const EditForm = forwardRef<EditFormRef, EditFormProps>(
 
         // 调用图片搜索API
         const response = await imagesApi.search(query);
-        console.log('搜索图片响应:', response);
 
         if (!response.success) {
           showSnackbar.error(response.error || '搜索图片失败');
@@ -216,7 +219,6 @@ const EditForm = forwardRef<EditFormRef, EditFormProps>(
           showSnackbar.info('未找到相关图片');
         }
       } catch (error) {
-        console.error('搜索图片失败:', error);
         setSearchError('搜索图片失败，请稍后重试');
         showSnackbar.error('搜索图片失败，请稍后重试');
       } finally {
@@ -238,7 +240,6 @@ const EditForm = forwardRef<EditFormRef, EditFormProps>(
       try {
         await onDownload();
       } catch (error) {
-        console.error('下载卡片失败:', error);
         showSnackbar.error('下载卡片失败，请稍后重试');
       } finally {
         setIsDownloading(false);
@@ -278,7 +279,6 @@ const EditForm = forwardRef<EditFormRef, EditFormProps>(
           selectedSearchImage,
         });
       } catch (error) {
-        console.error('提交卡片失败:', error);
         showSnackbar.error('提交失败，请稍后重试');
       } finally {
         setIsSubmitting(false);

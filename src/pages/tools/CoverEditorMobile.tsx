@@ -22,7 +22,7 @@ import {
 import useResponsive from '@/hooks/useResponsive';
 
 import { useGlobalSnackbar } from '@/context/app';
-import { imagesApi } from '@/netlify/config';
+import { imagesApi } from '../../netlify/config';
 
 const CoverEditorMobile: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);

@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 
 import { useGlobalSnackbar } from '@/context/app';
-import { profileApi } from '@/netlify/config';
+import { profileApi } from '../../netlify/config';
 
 const Profile: React.FC = () => {
   const show = useGlobalSnackbar();

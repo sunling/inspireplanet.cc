@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-import { CardItem } from '@/netlify/types';
-import { cardsApi } from '@/netlify/config';
+import { CardItem } from '../../netlify/types';
+import { cardsApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
 import EditForm from './components/EditForm';
 

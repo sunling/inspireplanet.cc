@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Container, Pagination } from '@mui/material';
 
 import useResponsive from '@/hooks/useResponsive';
-import { cardsApi } from '@/netlify/config';
+import { cardsApi } from '../../netlify/config';
 
 import Loading from '@/components/Loading';
 import ErrorCard from '@/components/ErrorCard';

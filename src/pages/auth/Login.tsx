@@ -16,7 +16,7 @@ import {
   FormHelperText,
 } from '@mui/material';
 import useResponsive from '@/hooks/useResponsive';
-import { authApi } from '@/netlify/config';
+import { authApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
 import { user, validation } from '@/utils/helpers';
 

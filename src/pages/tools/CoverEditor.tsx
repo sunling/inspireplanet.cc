@@ -19,7 +19,7 @@ import {
   CardContent,
 } from '@mui/material';
 import { useGlobalSnackbar } from '@/context/app';
-import { imagesApi } from '@/netlify/config';
+import { imagesApi } from '../../netlify/config';
 
 const CoverEditor: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { authApi, meetupsApi, rsvpApi } from '@/netlify/config';
-import { MeetupStatus, Participant } from '@/netlify/types';
+import { authApi, meetupsApi, rsvpApi } from '../../netlify/config';
+import { MeetupStatus, Participant } from '../../netlify/types';
 import { isUpcoming, formatTime, formatDate } from '@/utils';
 import {
   Box,
@@ -23,7 +23,7 @@ import ErrorCard from '@/components/ErrorCard';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
 import { useGlobalSnackbar } from '@/context/app';
-import { Meetup } from '@/netlify/functions/meetup';
+import { Meetup } from '../../netlify/functions/meetup';
 import { getUserId, getUserInfo, isLogin } from '@/utils/user';
 
 const MeetupDetail: React.FC = () => {
@@ -81,7 +81,6 @@ const MeetupDetail: React.FC = () => {
     try {
       // 使用统一的api客户端获取活动详情
       const response = await meetupsApi.getById(meetupId);
-      console.log('获取活动详情原始响应:', response);
 
       if (!response.success) {
         showSnackbar.error(`获取活动详情失败: ${response.error || '未知错误'}`);
@@ -111,7 +110,6 @@ const MeetupDetail: React.FC = () => {
       // 加载参与者信息
       loadParticipants(meetupId);
     } catch (err) {
-      console.error('加载活动详情失败:', err);
       setError('加载活动详情失败，请稍后重试');
     } finally {
       setIsLoading(false);

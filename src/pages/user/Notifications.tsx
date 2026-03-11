@@ -11,7 +11,7 @@ import {
   ListItemText,
   Chip,
 } from '@mui/material';
-import { notificationsApi } from '@/netlify/config';
+import { notificationsApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
 import { dateTime, react } from '@/utils/helpers';
 
@@ -38,12 +38,16 @@ const Notifications: React.FC = () => {
 
   const markRead = async (id: string) => {
     const res = await notificationsApi.markRead(id);
-    react.handleApiResponse(res, load, (error) => show.error(error || '操作失败'));
+    react.handleApiResponse(res, load, (error) =>
+      show.error(error || '操作失败')
+    );
   };
 
   const markAll = async () => {
     const res = await notificationsApi.markAllRead();
-    react.handleApiResponse(res, load, (error) => show.error(error || '操作失败'));
+    react.handleApiResponse(res, load, (error) =>
+      show.error(error || '操作失败')
+    );
   };
   return (
     <Box

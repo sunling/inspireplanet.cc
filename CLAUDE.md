@@ -45,7 +45,6 @@ Serverless functions deployed to Netlify. Key functions:
 
 - **Supabase** with singleton pattern (`src/database/supabase.ts`)
 - Server-side uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS
-- Client-side uses `VITE_SUPABASE_ANON_KEY`
 
 ### HTTP Client (`src/netlify/configs/http.ts`)
 
@@ -64,13 +63,6 @@ Custom HTTP client that:
 - Functions must map between these formats
 
 ### Environment Variables
-
-Client-side (Vite): prefix with `VITE_`
-
-```
-VITE_SUPABASE_URL
-VITE_SUPABASE_ANON_KEY
-```
 
 Server-side (Netlify Functions): no prefix
 

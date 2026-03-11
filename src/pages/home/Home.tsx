@@ -14,7 +14,6 @@ import { ChevronRight, Star } from '@mui/icons-material';
 import Carousel from '@/components/Carousel';
 import Empty from '@/components/Empty';
 import Loading from '@/components/Loading';
-import { WeeklyCard } from '@/netlify/types';
 import styles from './home.module.css';
 import ErrorCard from '@/components/ErrorCard';
 import {
@@ -24,7 +23,8 @@ import {
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import html2canvas from 'html2canvas';
-import { weeklyCardsApi } from '@/netlify/config';
+import { weeklyCardsApi } from '../../netlify/config';
+import { WeeklyCard } from '../../netlify/modules/weeklyCards';
 
 const Home: React.FC = () => {
   const [cards, setCards] = useState<WeeklyCard[]>([]);
@@ -41,7 +41,6 @@ const Home: React.FC = () => {
     setError(null);
 
     try {
-      // 使用统一API封装获取最新卡片数据
       const response = await weeklyCardsApi.getLatest();
 
       const records = response?.data?.records || [];
@@ -54,7 +53,6 @@ const Home: React.FC = () => {
       setGradients(formattedCards.map(() => getRandomGradientClass()));
       setIsLoading(false);
     } catch (err) {
-      console.error('加载卡片错误:', err);
       setError('加载卡片失败，请稍后重试');
       setIsLoading(false);
     }

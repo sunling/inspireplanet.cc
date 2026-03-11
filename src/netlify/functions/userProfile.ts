@@ -6,6 +6,7 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
+  getActionFromEvent,
 } from '../utils/server';
 
 export interface UserProfileAction {
@@ -21,7 +22,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as UserProfileAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'get':

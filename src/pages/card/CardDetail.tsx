@@ -13,8 +13,8 @@ import {
   Divider,
 } from '@mui/material';
 import useResponsive from '@/hooks/useResponsive';
-import { CardItem, Comment } from '@/netlify/types';
-import { cardsApi, commentsApi } from '@/netlify/config';
+import { CardItem, Comment } from '../../netlify/types';
+import { cardsApi, commentsApi } from '../../netlify/config';
 import { getFontColorForGradient } from '@/constants/gradient';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';

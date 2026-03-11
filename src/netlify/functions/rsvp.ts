@@ -6,6 +6,7 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
+  getActionFromEvent,
 } from '../utils/server';
 
 export interface RsvpAction {
@@ -18,7 +19,7 @@ export async function handler(event: NetlifyEvent, context: any) {
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as RsvpAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'create':

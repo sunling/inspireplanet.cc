@@ -19,7 +19,7 @@ import {
 import useResponsive from '@/hooks/useResponsive';
 import { useGlobalSnackbar } from '@/context/app';
 import { DateTime } from 'luxon';
-import { oneOnOneApi } from '@/netlify/config';
+import { oneOnOneApi } from '../../netlify/config';
 import { dateTime, react } from '@/utils/helpers';
 
 type Slot = { datetime_iso: string; mode: 'online' | 'offline' };

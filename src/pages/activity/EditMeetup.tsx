@@ -3,8 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Typography, Container } from '@mui/material';
 import useResponsive from '../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../context/app';
-import { meetupsApi } from '@/netlify/config';
-import { Meetup, MeetupMode } from '@/netlify/functions/meetup';
+import { meetupsApi } from '../../netlify/config';
+import { Meetup, MeetupMode } from '../../netlify/functions/meetup';
 import { getUserId, getUserName } from '@/utils/user';
 import EditForm, { formatDateTimeLocal } from './components/EditForm';
 

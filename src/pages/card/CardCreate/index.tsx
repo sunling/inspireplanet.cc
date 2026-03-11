@@ -2,8 +2,8 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 
-import { CardItem } from '@/netlify/types';
-import { cardsApi } from '@/netlify/config';
+import { CardItem } from '../../netlify/types';
+import { cardsApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
 import { getUserId } from '@/utils/user';
 import { gradientOptions } from '@/constants/gradient';
@@ -43,7 +43,8 @@ const CreateCard: React.FC = () => {
     };
   };
 
-  const [initialCardData, setInitialCardData] = useState<CardItem>(getInitialCardData());
+  const [initialCardData, setInitialCardData] =
+    useState<CardItem>(getInitialCardData());
 
   // 处理表单提交
   const handleSubmit = async (

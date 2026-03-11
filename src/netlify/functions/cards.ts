@@ -7,6 +7,7 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
+  getActionFromEvent,
 } from '../utils/server';
 
 // 内存缓存
@@ -40,7 +41,7 @@ export async function handler(
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as CardAction;
+    const action = getActionFromEvent(event);
 
     switch (action) {
       case 'create':
@@ -118,7 +119,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
 async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-      const params = event.queryStringParameters || {};
+    const params = event.queryStringParameters || {};
     const idParam = params.id;
     const body = event.body ? JSON.parse(event.body) : {};
     const id = body.id;
@@ -160,8 +161,17 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
     const body = event.body ? JSON.parse(event.body) : {};
     const userId = body.userId;
 
+    // 检查查询参数中是否有id
+    const params = event.queryStringParameters || {};
+    const idParam = params.id;
+    const pageParam = params.page ? parseInt(params.page, 10) : null;
+    const limitParam = params.limit ? parseInt(params.limit, 10) : null;
+    const isPaginated = pageParam !== null && limitParam !== null;
+
     if (cache.allCards) {
       return createSuccessResponse({ records: cache.allCards });
+    }
+
     if (idParam) {
       // 检查是否是逗号分隔的ID列表
       if (idParam.includes(',')) {
@@ -237,7 +247,6 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
 
     const records = (data || []).map((row) => row);
     cache.allCards = records;
-    const records = (data || []).map((row, index) => snakeToCamel(row));
 
     // 更新缓存（无分页时才缓存）
     if (idParam) {
