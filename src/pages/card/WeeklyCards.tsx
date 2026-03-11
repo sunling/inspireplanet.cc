@@ -17,6 +17,7 @@ import {
   TextField,
   InputAdornment,
   IconButton,
+  Pagination,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import useResponsive from '@/hooks/useResponsive';
@@ -43,6 +44,10 @@ const WeeklyCards: React.FC = () => {
   const [filteredCards, setFilteredCards] = useState<WeeklyCardItem[]>([]);
   const [selectedEpisode, setSelectedEpisode] = useState<string>('all');
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingAll, setLoadingAll] = useState<boolean>(false);
+  const [showAll, setShowAll] = useState<boolean>(false);
+  const [allPage, setAllPage] = useState<number>(1);
+  const ALL_PAGE_SIZE = 10;
   const [episodes, setEpisodes] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedQuery, setDebouncedQuery] = useState<string>('');
@@ -52,6 +57,28 @@ const WeeklyCards: React.FC = () => {
   // 定义错误状态
   const [error, setError] = useState<string | null>(null);
 
+  // 加载全部往期
+  const handleShowAll = async () => {
+    if (showAll) return;
+    setLoadingAll(true);
+    try {
+      const res = await api.weeklyCards.getAllLimited(500);
+      if (res.success) {
+        const allCards = (res?.data?.records || []).map((card: WeeklyCard) => ({
+          ...card,
+          gradient: 'card-gradient-1',
+        }));
+        setCards(allCards);
+        setFilteredCards(allCards);
+        setShowAll(true);
+      }
+    } catch (e) {
+      showSnackbar.error('加载往期失败');
+    } finally {
+      setLoadingAll(false);
+    }
+  };
+
   // 加载卡片数据
   useEffect(() => {
     const loadWeeklyCards = async () => {
@@ -60,15 +87,13 @@ const WeeklyCards: React.FC = () => {
         setError(null);
 
         const params = new URLSearchParams(location.search);
-        const show = (params.get('show') || '').toLowerCase();
         const episodeParam = episodeFromPath || params.get('episode') || '';
 
         let res: any;
-        if (show === 'all') {
-          res = await api.weeklyCards.getAllLimited(100);
-        } else if (episodeParam) {
+        if (episodeParam) {
           res = await api.weeklyCards.getByEpisode(episodeParam);
         } else {
+          // 默认只加载最新一期
           res = await api.weeklyCards.getLatest();
         }
         console.log('获取到的周刊卡片数据:', res);
@@ -123,6 +148,7 @@ const WeeklyCards: React.FC = () => {
 
   // 过滤卡片（期数 + 关键字）
   useEffect(() => {
+    setAllPage(1); // 搜索变化时重置分页
     const base =
       selectedEpisode === 'all'
         ? cards
@@ -224,23 +250,36 @@ const WeeklyCards: React.FC = () => {
     }
   };
 
-  // 按期数分组卡片
-  const groupedCards = filteredCards.reduce(
-    (groups: Record<string, WeeklyCardItem[]>, card) => {
-      const episode = card.episode;
-      if (!groups[episode]) {
-        groups[episode] = [];
-      }
-      groups[episode].push(card);
-      return groups;
+  // 往期分页：先切出当页的10条，再做年份/期数分组
+  const pagedCards = showAll
+    ? filteredCards.slice((allPage - 1) * ALL_PAGE_SIZE, allPage * ALL_PAGE_SIZE)
+    : filteredCards;
+  const allTotalPages = Math.ceil(filteredCards.length / ALL_PAGE_SIZE);
+
+  // 按「年份 + 期数」两级分组
+  // 结构：{ year: { episode: cards[] } }
+  const groupedByYear = pagedCards.reduce(
+    (acc: Record<string, Record<string, WeeklyCardItem[]>>, card) => {
+      const year = new Date(card.created).getFullYear().toString();
+      const ep = card.episode;
+      if (!acc[year]) acc[year] = {};
+      if (!acc[year][ep]) acc[year][ep] = [];
+      acc[year][ep].push(card);
+      return acc;
     },
     {}
   );
 
-  // 按期数排序
-  const sortedEpisodes = Object.keys(groupedCards).sort((a, b) => {
-    return parseInt(b.replace(/\D/g, '')) - parseInt(a.replace(/\D/g, ''));
-  });
+  // 年份倒序
+  const sortedYears = Object.keys(groupedByYear).sort((a, b) => Number(b) - Number(a));
+
+  // 每年内期数倒序（按集数数字）
+  const sortedEpisodesForYear = (year: string): string[] =>
+    Object.keys(groupedByYear[year]).sort(
+      (a, b) =>
+        parseInt(b.replace(/\D/g, '') || '0') -
+        parseInt(a.replace(/\D/g, '') || '0')
+    );
 
   return (
     <Box
@@ -292,33 +331,46 @@ const WeeklyCards: React.FC = () => {
         {/* 卡片容器 */}
         {loading ? (
           <Loading size={60} />
-        ) : sortedEpisodes.length === 0 ? (
+        ) : sortedYears.length === 0 ? (
           <Empty message="暂无卡片数据" />
         ) : (
           <Grid container spacing={4}>
-            {sortedEpisodes.map((episode) => (
-              <Grid key={episode} size={{ xs: 12 }}>
-                <Typography
-                  variant="h4"
-                  component="h2"
-                  id={`episode-${episode.toLowerCase()}`}
-                  sx={{
-                    fontWeight: 'bold',
-                    paddingBottom: '1rem',
-                    marginBottom: '1.5rem',
-                    color: '#667eea',
-                    borderBottom: '1px solid #667eea',
-                  }}
-                >
-                  {episode}
-                </Typography>
+            {sortedYears.map((year) => (
+              <Grid key={year} size={{ xs: 12 }}>
+                {/* 年份标题：仅 showAll 时显示 */}
+                {showAll && (
+                  <Typography
+                    variant="h3"
+                    component="h2"
+                    sx={{ fontWeight: 'bold', mb: 3, color: '#4a4a6a' }}
+                  >
+                    {year} 年
+                  </Typography>
+                )}
 
-                <Grid
-                  container
-                  spacing={3}
-                  id={`episode-container-${episode.toLowerCase()}`}
-                >
-                  {groupedCards[episode].map((card) => {
+                {sortedEpisodesForYear(year).map((episode) => (
+                  <Box key={episode} sx={{ mb: 6 }}>
+                    <Typography
+                      variant="h5"
+                      component="h3"
+                      id={`episode-${year}-${episode.toLowerCase()}`}
+                      sx={{
+                        fontWeight: 'bold',
+                        paddingBottom: '0.75rem',
+                        marginBottom: '1.5rem',
+                        color: '#667eea',
+                        borderBottom: '1px solid #667eea',
+                      }}
+                    >
+                      {episode}
+                    </Typography>
+
+                    <Grid
+                      container
+                      spacing={3}
+                      id={`episode-container-${year}-${episode.toLowerCase()}`}
+                    >
+                      {groupedByYear[year][episode].map((card) => {
                     const fontColor = getFontColorForGradient(card.gradient);
                     const randomGradientClass = getRandomGradientClass();
                     return (
@@ -477,11 +529,41 @@ const WeeklyCards: React.FC = () => {
                         </Box>
                       </Grid>
                     );
-                  })}
-                </Grid>
+                      })}
+                    </Grid>
+                  </Box>
+                ))}
               </Grid>
             ))}
           </Grid>
+        )}
+
+        {/* 查看往期 / 分页 */}
+        {!loading && !showAll && sortedYears.length > 0 && (
+          <Box sx={{ mt: 6, textAlign: 'center' }}>
+            <Button
+              variant="outlined"
+              onClick={handleShowAll}
+              disabled={loadingAll}
+              sx={{ color: '#667eea', borderColor: '#667eea', px: 4 }}
+            >
+              {loadingAll ? '加载中…' : '查看往期'}
+            </Button>
+          </Box>
+        )}
+        {!loading && showAll && allTotalPages > 1 && (
+          <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center' }}>
+            <Pagination
+              count={allTotalPages}
+              page={allPage}
+              onChange={(_, v) => {
+                setAllPage(v);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              color="primary"
+              shape="rounded"
+            />
+          </Box>
         )}
 
         {/* 返回首页链接 */}
