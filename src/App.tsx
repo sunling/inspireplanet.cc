@@ -38,7 +38,7 @@ const App: React.FC = () => {
       try {
         const token =
           localStorage.getItem('authToken') || localStorage.getItem('token');
-        const userData = localStorage.getItem('userData');
+        const userData = localStorage.getItem('userInfo');
 
         if (token && userData) {
           setIsAuthenticated(true);
@@ -61,7 +61,7 @@ const App: React.FC = () => {
   // 退出登录函数
   const handleLogout = () => {
     localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
+    localStorage.removeItem('userInfo');
     setIsAuthenticated(false);
     setUserName('');
   };
