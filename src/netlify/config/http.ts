@@ -88,7 +88,6 @@ class HttpClient {
 
   // 请求拦截器
   private requestInterceptor(config: RequestConfig): RequestConfig {
-    debugger;
     const token = this.getAuthToken();
     if (token) {
       config.headers = {
@@ -104,7 +103,6 @@ class HttpClient {
   private async responseInterceptor<T>(
     response: Response
   ): Promise<ApiResponse<T>> {
-    debugger;
     let data: any;
 
     try {
