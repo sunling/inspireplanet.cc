@@ -72,42 +72,19 @@ const Footer: React.FC = () => {
                 alignItems: { xs: 'center', sm: 'flex-start' },
               }}
             >
-              {footerLinks.map((link, index) => {
-                if (link.isExternal) {
-                  return (
-                    <Box
-                      key={index}
-                      sx={{ display: 'flex', alignItems: 'center' }}
-                    >
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          textDecoration: 'none',
-                          color: theme.palette.text.primary,
-                          fontSize: isMobile ? '0.85rem' : '0.9rem',
-                        }}
-                      >
-                        {link.label}
-                      </a>
-                    </Box>
-                  );
-                }
-                return (
-                  <Link
-                    key={index}
-                    to={link.path!}
-                    style={{
-                      textDecoration: 'none',
-                      color: theme.palette.text.primary,
-                      fontSize: isMobile ? '0.85rem' : '0.9rem',
-                    }}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
+              {footerLinks.map((link, index) => (
+                <Link
+                  key={index}
+                  to={link.path}
+                  style={{
+                    textDecoration: 'none',
+                    color: theme.palette.text.primary,
+                    fontSize: isMobile ? '0.85rem' : '0.9rem',
+                  }}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </Box>
           </Box>
         </Box>

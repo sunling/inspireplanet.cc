@@ -1,93 +1,76 @@
 import { supabase } from '../../database/supabase';
-import { getCommonHttpHeader } from '../../utils/http';
-import jwt from 'jsonwebtoken';
 import { createNotification } from './notifications';
+import { NetlifyEvent, NetlifyResponse } from '../types/http';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  handleOptionsRequest,
+  getUserIdFromAuth,
+  getFuntionNameFromEvent,
+  getDataFromEvent,
+} from '../utils/server';
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
-
-function getUserIdFromAuth(event: any) {
-  const auth = event.headers.authorization || event.headers.Authorization;
-  if (!auth || !auth.startsWith('Bearer ')) return null;
-  const token = auth.substring(7);
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    return decoded.userId || decoded.user_id || null;
-  } catch {
-    return null;
-  }
+export interface OneOnOneInviteAction {
+  functionName: 'create' | 'get' | 'getAll' | 'update';
 }
 
-export async function handler(event: any, context: any) {
-  const headers = getCommonHttpHeader();
+export async function handler(
+  event: NetlifyEvent,
+  context: any
+): Promise<NetlifyResponse> {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+    return handleOptionsRequest();
   }
+
   try {
-    switch (event.httpMethod) {
-      case 'POST':
-        return await createInvite(event, headers);
-      case 'GET':
-        return await listInvites(event, headers);
-      case 'PUT':
-        return await updateInvite(event, headers);
+    const functionName = getFuntionNameFromEvent(event);
+
+    switch (functionName) {
+      case 'create':
+        return await handleCreate(event);
+      case 'get':
+        return await handleGet(event);
+      case 'getAll':
+        return await handleGetAll(event);
+      case 'update':
+        return await handleUpdate(event);
       default:
-        return {
-          statusCode: 405,
-          headers,
-          body: JSON.stringify({ success: false, error: 'Method Not Allowed' }),
-        };
+        return createErrorResponse('无效的操作类型');
     }
   } catch (error) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Server Error' }),
-    };
+    console.error('OneononeInvites handler error:', error);
+    return createErrorResponse('服务器内部错误', 500);
   }
 }
 
-async function createInvite(event: any, headers: Record<string, string>) {
+async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   const userId = getUserIdFromAuth(event);
   if (!userId) {
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Unauthorized' }),
-    };
+    return createErrorResponse('未授权', 401);
   }
-  if (!event.body) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Empty body' }),
-    };
-  }
-  const data = JSON.parse(event.body);
-  const invitee_id = data.invitee_id;
-  const message = data.message || '';
-  const proposed_slots = Array.isArray(data.proposed_slots)
-    ? data.proposed_slots
+
+  const requestData = getDataFromEvent(event);
+  const invitee_id = requestData.invitee_id;
+  const message = requestData.message || '';
+  const proposed_slots = Array.isArray(requestData.proposed_slots)
+    ? requestData.proposed_slots
     : [];
+
   if (!invitee_id || proposed_slots.length === 0) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Missing fields' }),
-    };
+    return createErrorResponse('缺少必填字段');
   }
+
   const now = Date.now();
   const validSlots = proposed_slots.filter((s: any) => {
     const t = new Date(s.datetime_iso).getTime();
     const m = s.mode === 'online' || s.mode === 'offline';
     return !isNaN(t) && t > now && m;
   });
+
   if (validSlots.length === 0) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Invalid slots' }),
-    };
+    return createErrorResponse('无效的时间段');
   }
+
   const { data: inserted, error } = await supabase
     .from('one_on_one_invites')
     .insert({
@@ -98,13 +81,11 @@ async function createInvite(event: any, headers: Record<string, string>) {
       status: 'pending',
     })
     .select();
+
   if (error) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: error.message }),
-    };
+    return createErrorResponse(error.message, 500);
   }
+
   const inv = inserted?.[0];
   if (inv) {
     const { data: inviterUser } = await supabase
@@ -133,111 +114,120 @@ async function createInvite(event: any, headers: Record<string, string>) {
     const msg = `来自 ${inviterName} 的邀请：${message || '（无邀请语）'}；候选时间：${slotsText}`;
     await createNotification(invitee_id, '收到邀请', msg, '/connections');
   }
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({ success: true, invite: inserted?.[0] || null }),
-  };
+
+  return createSuccessResponse({ invite: inserted?.[0] || null });
 }
 
-async function listInvites(event: any, headers: Record<string, string>) {
+async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
   const userId = getUserIdFromAuth(event);
   if (!userId) {
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Unauthorized' }),
-    };
+    return createErrorResponse('未授权', 401);
   }
-  const params = event.queryStringParameters || {};
-  const role = params.role || 'invitee';
-  const status = params.status || '';
+
+  const body = getDataFromEvent(event);
+  const { id } = body;
+
+  if (!id) {
+    return createErrorResponse('缺少邀请ID');
+  }
+
+  const { data, error } = await supabase
+    .from('one_on_one_invites')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    return createErrorResponse(error.message, 500);
+  }
+
+  if (!data) {
+    return createErrorResponse('邀请不存在', 404);
+  }
+
+  const isInvitee = data.invitee_id === userId;
+  const isInviter = data.inviter_id === userId;
+
+  if (!isInvitee && !isInviter) {
+    return createErrorResponse('无权访问', 403);
+  }
+
+  return createSuccessResponse({ invite: data });
+}
+
+async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const userId = getUserIdFromAuth(event);
+  if (!userId) {
+    return createErrorResponse('未授权', 401);
+  }
+
+  const body = getDataFromEvent(event);
+  const role = body.role || 'invitee';
+  const status = body.status || '';
+
   let query = supabase.from('one_on_one_invites').select('*');
   if (role === 'inviter') query = query.eq('inviter_id', userId);
   else query = query.eq('invitee_id', userId);
   if (status) query = query.eq('status', status);
+
   const { data, error } = await query.order('created_at', { ascending: false });
+
   if (error) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: error.message }),
-    };
+    return createErrorResponse(error.message, 500);
   }
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({ success: true, invites: data || [] }),
-  };
+
+  return createSuccessResponse({ invites: data || [] });
 }
 
-async function updateInvite(event: any, headers: Record<string, string>) {
+async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   const userId = getUserIdFromAuth(event);
   if (!userId) {
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Unauthorized' }),
-    };
+    return createErrorResponse('未授权', 401);
   }
-  const params = event.queryStringParameters || {};
-  let { id } = params as any;
-  const payloadRaw = event.body ? JSON.parse(event.body) : {};
-  if (!id && payloadRaw && payloadRaw.id) id = payloadRaw.id;
+
+  const body = getDataFromEvent(event);
+  const { id, status: nextStatus, selected_slot } = body;
+
   if (!id || !event.body) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Missing params' }),
-    };
+    return createErrorResponse('缺少参数');
   }
-  const payload = payloadRaw;
-  const nextStatus = payload.status;
-  const selected_slot = payload.selected_slot || null;
+
   const { data: existing, error: fetchError } = await supabase
     .from('one_on_one_invites')
     .select('*')
     .eq('id', id)
     .single();
+
   if (fetchError || !existing) {
-    return {
-      statusCode: 404,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Not Found' }),
-    };
+    return createErrorResponse('邀请不存在', 404);
   }
+
   const isInvitee = existing.invitee_id === userId;
   const isInviter = existing.inviter_id === userId;
+
   if (!isInvitee && !isInviter) {
-    return {
-      statusCode: 403,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Forbidden' }),
-    };
+    return createErrorResponse('无权访问', 403);
   }
+
   const allowed = ['pending', 'accepted', 'declined', 'cancelled'];
   if (!allowed.includes(nextStatus)) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Invalid status' }),
-    };
+    return createErrorResponse('无效的状态');
   }
+
   const updateRecord: Record<string, any> = { status: nextStatus };
   if (nextStatus === 'accepted' && selected_slot)
     updateRecord.selected_slot = selected_slot;
+
   const { data, error } = await supabase
     .from('one_on_one_invites')
     .update(updateRecord)
     .eq('id', id)
     .select();
+
   if (error) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: error.message }),
-    };
+    return createErrorResponse(error.message, 500);
   }
+
   const updated = data?.[0];
   if (updated) {
     if (nextStatus === 'accepted') {
@@ -308,9 +298,6 @@ async function updateInvite(event: any, headers: Record<string, string>) {
       );
     }
   }
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({ success: true, invite: data?.[0] || null }),
-  };
+
+  return createSuccessResponse({ invite: data?.[0] || null });
 }

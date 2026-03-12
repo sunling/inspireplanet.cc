@@ -1,133 +1,159 @@
 import { supabase } from '../../database/supabase';
-import { getCommonHttpHeader } from '../../utils/http';
-import jwt from 'jsonwebtoken';
+import { NetlifyEvent, NetlifyResponse } from '../types/http';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  handleOptionsRequest,
+  getUserIdFromAuth,
+  getFuntionNameFromEvent,
+  getDataFromEvent,
+} from '../utils/server';
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
-
-function getUserId(event: any) {
-  const auth = event.headers.authorization || event.headers.Authorization;
-  if (!auth || !auth.startsWith('Bearer ')) return null;
-  const token = auth.substring(7);
-  try {
-    const secret = process.env.JWT_SECRET || JWT_SECRET;
-    if (!secret) return null;
-    const decoded = jwt.verify(token, secret) as any;
-    return decoded.userId || decoded.user_id || null;
-  } catch {
-    return null;
-  }
+export interface NotificationAction {
+  functionName: 'get' | 'getAll' | 'update' | 'markAllRead';
 }
 
-export async function handler(event: any) {
-  const headers = getCommonHttpHeader();
+export async function handler(
+  event: NetlifyEvent,
+  context: any
+): Promise<NetlifyResponse> {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+    return handleOptionsRequest();
   }
+
   try {
-    switch (event.httpMethod) {
-      case 'GET':
-        return await listNotifications(event, headers);
-      case 'PUT':
-        return await updateNotification(event, headers);
+    const functionName = getFuntionNameFromEvent(event);
+
+    switch (functionName) {
+      case 'get':
+        return await handleGet(event);
+      case 'getAll':
+        return await handleGetAll(event);
+      case 'update':
+        return await handleUpdate(event);
+      case 'markAllRead':
+        return await handleMarkAllRead(event);
       default:
-        return {
-          statusCode: 405,
-          headers,
-          body: JSON.stringify({ success: false, error: 'Method Not Allowed' }),
-        };
+        return createErrorResponse('无效的操作类型');
     }
   } catch (error) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Server Error' }),
-    };
+    console.error('Notifications handler error:', error);
+    return createErrorResponse('服务器内部错误', 500);
   }
 }
 
-async function listNotifications(event: any, headers: Record<string, string>) {
-  const userId = getUserId(event);
-  if (!userId)
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Unauthorized' }),
-    };
-  const params = event.queryStringParameters || {};
-  const { status, limit = '50', offset = '0' } = params;
+async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const userId = getUserIdFromAuth(event);
+  if (!userId) {
+    return createErrorResponse('未授权', 401);
+  }
+
+  const requestData = getDataFromEvent(event);
+  const { id } = requestData;
+
+  if (!id) {
+    return createErrorResponse('缺少通知ID');
+  }
+
+  const uid = isNaN(Number(userId)) ? userId : Number(userId);
+
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', uid)
+    .single();
+
+  if (error) {
+    return createErrorResponse(error.message, 500);
+  }
+
+  if (!data) {
+    return createErrorResponse('通知不存在', 404);
+  }
+
+  return createSuccessResponse({ notification: data });
+}
+
+async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const userId = getUserIdFromAuth(event);
+  if (!userId) {
+    return createErrorResponse('未授权', 401);
+  }
+
+  const requestData = getDataFromEvent(event);
+  const { status, limit = '50', offset = '0' } = requestData;
+
   let query = supabase
     .from('notifications')
     .select('*')
     .eq('user_id', isNaN(Number(userId)) ? userId : Number(userId));
+
   if (status) query = query.eq('status', status);
+
   const { data, error } = await query
     .order('created_at', { ascending: false })
     .range(
       parseInt(offset, 10),
       parseInt(offset, 10) + parseInt(limit, 10) - 1
     );
-  if (error)
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: error.message }),
-    };
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({ success: true, notifications: data || [] }),
-  };
+
+  if (error) {
+    return createErrorResponse(error.message, 500);
+  }
+
+  return createSuccessResponse({ notifications: data || [] });
 }
 
-async function updateNotification(event: any, headers: Record<string, string>) {
-  const userId = getUserId(event);
-  if (!userId)
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Unauthorized' }),
-    };
-  const params = event.queryStringParameters || {};
-  const payload = event.body ? JSON.parse(event.body) : {};
-  const id = params.id || payload.id || null;
-  const markAll = params.all === 'true' || payload.all === true;
-  const uid = isNaN(Number(userId)) ? userId : Number(userId);
-  if (markAll) {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ status: 'read' })
-      .eq('user_id', uid)
-      .eq('status', 'unread');
-    if (error)
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ success: false, error: error.message }),
-      };
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ success: true }),
-    };
+async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const userId = getUserIdFromAuth(event);
+  if (!userId) {
+    return createErrorResponse('未授权', 401);
   }
-  if (!id)
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Missing id' }),
-    };
+
+  const requestData = getDataFromEvent(event);
+  const { id } = requestData;
+
+  if (!id) {
+    return createErrorResponse('缺少通知ID');
+  }
+
+  const uid = isNaN(Number(userId)) ? userId : Number(userId);
+
   const { error } = await supabase
     .from('notifications')
     .update({ status: 'read' })
     .eq('id', id)
     .eq('user_id', uid);
-  if (error)
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: error.message }),
-    };
-  return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+
+  if (error) {
+    return createErrorResponse(error.message, 500);
+  }
+
+  return createSuccessResponse({});
+}
+
+async function handleMarkAllRead(
+  event: NetlifyEvent
+): Promise<NetlifyResponse> {
+  const userId = getUserIdFromAuth(event);
+  if (!userId) {
+    return createErrorResponse('未授权', 401);
+  }
+
+  const uid = isNaN(Number(userId)) ? userId : Number(userId);
+
+  const { error } = await supabase
+    .from('notifications')
+    .update({ status: 'read' })
+    .eq('user_id', uid)
+    .eq('status', 'unread');
+
+  if (error) {
+    return createErrorResponse(error.message, 500);
+  }
+
+  return createSuccessResponse({});
 }
 
 export async function createNotification(

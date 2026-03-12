@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Container, Pagination } from '@mui/material';
 
 import useResponsive from '@/hooks/useResponsive';
-import { api } from '@/netlify/configs';
+import { cardsApi } from '../../netlify/config';
+
 import Loading from '@/components/Loading';
 import ErrorCard from '@/components/ErrorCard';
 import Empty from '@/components/Empty';
@@ -27,7 +28,10 @@ const Cards: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await api.cards.getAll({ page: currentPage, limit: PAGE_SIZE });
+      const response = await cardsApi.getAll({
+        page: currentPage,
+        limit: PAGE_SIZE,
+      });
 
       if (!response.success) {
         setError('接口请求失败');
@@ -35,8 +39,12 @@ const Cards: React.FC = () => {
         return;
       }
 
+      console.log('查询卡片返回:', response);
+
       const allCards = response.data?.records || [];
-      const validCards = allCards.filter((card) => card && card.title && card.detail);
+      const validCards = allCards.filter(
+        (card) => card && card.title && card.detail
+      );
       setCards(validCards);
       setTotal(response.data?.total ?? 0);
     } catch (err: any) {
@@ -103,8 +111,16 @@ const Cards: React.FC = () => {
               </Box>
 
               {totalPages > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    mt: 4,
+                    mb: 2,
+                  }}
+                >
                   <Pagination
+                    className="huili"
                     count={totalPages}
                     page={page}
                     onChange={handlePageChange}

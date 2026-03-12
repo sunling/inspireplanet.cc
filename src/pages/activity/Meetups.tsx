@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useMemo } from 'react';
-import { api } from '../../netlify/configs';
+
 import {
   Box,
   Container,
@@ -28,9 +28,15 @@ import ErrorCard from '../../components/ErrorCard';
 import Loading from '../../components/Loading';
 import Empty from '../../components/Empty';
 
-import { formatTime, formatDate } from '../../utils';
-import { Meetup, MeetupLabelMap } from '@/netlify/functions/meetup';
-import { getUserId, isLogin } from '@/utils/user';
+import {
+  formatTime,
+  formatDate,
+  isUserLoggedIn,
+  getUserId,
+  getUserInfo,
+} from '../../utils';
+import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
+import { meetupsApi, rsvpApi } from '../../netlify/config';
 
 const PAGE_SIZE = 6;
 
@@ -75,7 +81,8 @@ const Meetups: React.FC = () => {
   const [rsvpForm, setRsvpForm] = useState({ name: '', wechatId: '' });
 
   useEffect(() => {
-    setShowCreateButton(isLogin());
+    setShowCreateButton(isUserLoggedIn());
+
     loadMeetups();
   }, []);
 
@@ -83,14 +90,14 @@ const Meetups: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.meetups.getAll();
+      // 使用统一的api对象获取活动列表
+      const response = await meetupsApi.getAll();
       if (!response.success) {
         showSnackbar.error('查询活动列表失败');
         return;
       }
       setMeetups(response.data?.meetups || []);
     } catch (err) {
-      console.error('加载活动失败:', err);
       setError('加载活动失败，请稍后再试');
       showSnackbar.error('加载活动失败，请稍后再试');
       setMeetups([]);
@@ -111,16 +118,14 @@ const Meetups: React.FC = () => {
       const user = JSON.parse(userStr || '{}');
       const wechat = (user?.wechat_id || '').trim();
       if (!wechat) return;
-      const res = await api.rsvp.getByWechatId(wechat);
+      const res = await rsvpApi.getByWechatId(wechat);
       if (res.success) {
         const ids = (res.data?.rsvps || []).map((r: any) =>
           String(r.meetup_id)
         );
         setMyRsvpIds(new Set(ids));
       }
-    } catch (e) {
-      console.error('加载我的报名失败:', e);
-    }
+    } catch (e) {}
   };
 
   // 应用搜索和类型过滤，然后按 tab 拆分
@@ -185,21 +190,21 @@ const Meetups: React.FC = () => {
     type: string
   ): 'primary' | 'success' | 'info' | 'warning' | 'default' => {
     switch (type) {
-      case 'online': return 'primary';
-      case 'offline': return 'success';
-      case 'culture': return 'info';
-      case 'outdoor': return 'warning';
-      default: return 'default';
+      case 'online':
+        return 'primary';
+      case 'offline':
+        return 'success';
+      case 'culture':
+        return 'info';
+      case 'outdoor':
+        return 'warning';
+      default:
+        return 'default';
     }
   };
 
   const handleJoinMeetup = async (meetupId: string, qrImageUrl?: string) => {
-    const token =
-      localStorage.getItem('userToken') || localStorage.getItem('authToken');
-    const userInfo =
-      localStorage.getItem('userInfo') || localStorage.getItem('userData');
-
-    if (!token || !userInfo) {
+    if (!isUserLoggedIn()) {
       showSnackbar.warning('请先登录后再报名参加活动');
       const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
@@ -207,7 +212,7 @@ const Meetups: React.FC = () => {
     }
 
     try {
-      const user = JSON.parse(userInfo);
+      const user = getUserInfo();
       const isRSVPed = await checkRSVPStatus(meetupId);
       if (isRSVPed) {
         if (qrImageUrl) {
@@ -222,7 +227,6 @@ const Meetups: React.FC = () => {
       setCurrentQRUrl(qrImageUrl || null);
       setShowRSVPDialog(true);
     } catch (error) {
-      console.error('处理报名失败:', error);
       showSnackbar.error('处理报名请求失败，请稍后重试');
     }
   };
@@ -235,7 +239,8 @@ const Meetups: React.FC = () => {
       const user = JSON.parse(userStr || '{}');
       const wechat = (user?.wechat_id || '').trim();
       if (!wechat) return false;
-      const res = await api.rsvp.getByWechatId(wechat);
+
+      const res = await rsvpApi.getByWechatId(wechat);
       const rsvps = res.success ? res.data?.rsvps || [] : [];
       return rsvps.some((r: any) => String(r.meetup_id) === String(meetupId));
     } catch {
@@ -250,7 +255,7 @@ const Meetups: React.FC = () => {
     }
     if (!currentMeetupId) return;
     try {
-      const response = await api.rsvp.create({
+      const response = await rsvpApi.create({
         meetup_id: Number(currentMeetupId),
         wechat_id: rsvpForm.wechatId.trim(),
         name: rsvpForm.name.trim(),
@@ -264,18 +269,21 @@ const Meetups: React.FC = () => {
       setMeetups((prev) =>
         prev.map((m) =>
           m.id === currentMeetupId
-            ? { ...m, participantCount: (m.participantCount ?? 0) + 1 }
+            ? { ...m, participantCount: (m.participant_count ?? 0) + 1 }
             : m
         )
       );
-      setMyRsvpIds((prev) => new Set([...Array.from(prev), String(currentMeetupId)]));
+      setMyRsvpIds(
+        (prev) => new Set([...Array.from(prev), String(currentMeetupId)])
+      );
       if (currentQRUrl) {
         setTimeout(() => showQRCode(currentQRUrl), 500);
       } else {
         showSnackbar.success('报名成功！请联系组织者获取群聊信息。');
       }
     } catch (error) {
-      const msg = error instanceof Error ? error.message : '报名失败，请稍后重试';
+      const msg =
+        error instanceof Error ? error.message : '报名失败，请稍后重试';
       showSnackbar.error(msg);
     }
   };
@@ -325,21 +333,36 @@ const Meetups: React.FC = () => {
               variant="outlined"
             />
           </Box>
-          <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 600 }}>
+          <Typography
+            variant="h6"
+            component="h3"
+            gutterBottom
+            sx={{ fontWeight: 600 }}
+          >
             {meetup.title}
           </Typography>
           <Box sx={{ mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ mr: 1 }}>📅</Typography>
-              <Typography variant="body2">{formatDate(meetup.datetime)}</Typography>
+              <Typography variant="body2" sx={{ mr: 1 }}>
+                📅
+              </Typography>
+              <Typography variant="body2">
+                {formatDate(meetup.datetime)}
+              </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ mr: 1 }}>🕐</Typography>
-              <Typography variant="body2">{formatTime(meetup.datetime)}</Typography>
+              <Typography variant="body2" sx={{ mr: 1 }}>
+                🕐
+              </Typography>
+              <Typography variant="body2">
+                {formatTime(meetup.datetime)}
+              </Typography>
             </Box>
             {meetup.location && (
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" sx={{ mr: 1 }}>📍</Typography>
+                <Typography variant="body2" sx={{ mr: 1 }}>
+                  📍
+                </Typography>
                 <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
                   {meetup.location}
                 </Typography>
@@ -361,12 +384,18 @@ const Meetups: React.FC = () => {
             {meetup.description}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Typography variant="body2" sx={{ mr: 1 }}>👤</Typography>
+            <Typography variant="body2" sx={{ mr: 1 }}>
+              👤
+            </Typography>
             <Typography variant="body2">组织者：{meetup.creator}</Typography>
           </Box>
         </CardContent>
         <CardActions
-          sx={{ justifyContent: 'flex-end', p: 2, borderTop: '1px solid rgba(0,0,0,0.1)' }}
+          sx={{
+            justifyContent: 'flex-end',
+            p: 2,
+            borderTop: '1px solid rgba(0,0,0,0.1)',
+          }}
         >
           {getStatusLabel(meetup) !== '已结束' && (
             <Button
@@ -394,8 +423,8 @@ const Meetups: React.FC = () => {
             查看详情
           </Button>
           <Typography variant="caption" color="text.secondary">
-            {meetup.participantCount}
-            {Number(meetup.maxPpl) > 0 ? '/' + meetup.maxPpl : ''}
+            {meetup.participant_count}
+            {Number(meetup.max_ppl) > 0 ? '/' + meetup.max_ppl : ''}
             人参加
           </Typography>
         </CardActions>
@@ -403,7 +432,11 @@ const Meetups: React.FC = () => {
     );
   };
 
-  const renderGrid = (items: Meetup[], page: number, onPageChange: (p: number) => void) => {
+  const renderGrid = (
+    items: Meetup[],
+    page: number,
+    onPageChange: (p: number) => void
+  ) => {
     if (items.length === 0) {
       return (
         <Empty
@@ -479,7 +512,11 @@ const Meetups: React.FC = () => {
             gap: 2,
           }}
         >
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: 'primary.main' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ fontWeight: 700, color: 'primary.main' }}
+          >
             活动列表
           </Typography>
           {showCreateButton && (
@@ -587,7 +624,12 @@ const Meetups: React.FC = () => {
       </Container>
 
       {/* 报名确认对话框 */}
-      <Dialog open={showRSVPDialog} onClose={() => setShowRSVPDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={showRSVPDialog}
+        onClose={() => setShowRSVPDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle sx={{ fontWeight: 600 }}>确认报名</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 1 }}>
@@ -595,7 +637,9 @@ const Meetups: React.FC = () => {
               fullWidth
               label="姓名"
               value={rsvpForm.name}
-              onChange={(e) => setRsvpForm((prev) => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setRsvpForm((prev) => ({ ...prev, name: e.target.value }))
+              }
               margin="normal"
               variant="outlined"
               placeholder="请输入您的姓名"
@@ -605,7 +649,9 @@ const Meetups: React.FC = () => {
               fullWidth
               label="微信号"
               value={rsvpForm.wechatId}
-              onChange={(e) => setRsvpForm((prev) => ({ ...prev, wechatId: e.target.value }))}
+              onChange={(e) =>
+                setRsvpForm((prev) => ({ ...prev, wechatId: e.target.value }))
+              }
               margin="normal"
               variant="outlined"
               placeholder="请输入您的微信号"
@@ -626,8 +672,15 @@ const Meetups: React.FC = () => {
       </Dialog>
 
       {/* 二维码弹窗 */}
-      <Dialog open={showQRModal} onClose={() => setShowQRModal(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 600, textAlign: 'center' }}>扫码进群</DialogTitle>
+      <Dialog
+        open={showQRModal}
+        onClose={() => setShowQRModal(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 600, textAlign: 'center' }}>
+          扫码进群
+        </DialogTitle>
         <DialogContent>
           <Box
             sx={{
@@ -647,7 +700,11 @@ const Meetups: React.FC = () => {
                   mb: 2,
                 }}
               >
-                <img src={currentQRUrl} alt="群聊二维码" style={{ maxWidth: '200px', height: 'auto' }} />
+                <img
+                  src={currentQRUrl}
+                  alt="群聊二维码"
+                  style={{ maxWidth: '200px', height: 'auto' }}
+                />
               </Box>
             )}
             <Typography variant="body1" sx={{ textAlign: 'center' }}>

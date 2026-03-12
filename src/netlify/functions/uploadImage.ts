@@ -1,11 +1,16 @@
-import { NetlifyContext, NetlifyEvent } from '../types/http';
+import { NetlifyEvent, NetlifyResponse } from '../types/http';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  handleOptionsRequest,
+  getFuntionNameFromEvent,
+  getDataFromEvent,
+} from '../utils/server';
 
-// 定义请求体接口
 export interface ImageUploadRequest {
   base64Image: string;
 }
 
-// 定义响应接口
 export interface ImageUploadResponse {
   success: boolean;
   url?: string;
@@ -14,7 +19,6 @@ export interface ImageUploadResponse {
   details?: any;
 }
 
-// 定义GitHub API响应接口
 interface GitHubResponse {
   content?: {
     path: string;
@@ -22,56 +26,52 @@ interface GitHubResponse {
   message?: string;
 }
 
-export const handler = async (
-  event: NetlifyEvent,
-  context: NetlifyContext
-): Promise<{ statusCode: number; body: string }> => {
-  try {
-    // Only allow POST requests
-    if (event.httpMethod !== 'POST') {
-      return {
-        statusCode: 405,
-        body: JSON.stringify({
-          success: false,
-          error: 'Method Not Allowed',
-        } as ImageUploadResponse),
-      };
-    }
+export interface UploadImageAction {
+  functionName: 'upload';
+}
 
-    // Parse the request body
-    const requestBody: ImageUploadRequest = JSON.parse(event.body!);
+export async function handler(
+  event: NetlifyEvent,
+  context: any
+): Promise<NetlifyResponse> {
+  if (event.httpMethod === 'OPTIONS') {
+    return handleOptionsRequest();
+  }
+
+  try {
+    const functionName = getFuntionNameFromEvent(event);
+
+    switch (functionName) {
+      case 'upload':
+        return await handleUpload(event);
+      default:
+        return createErrorResponse('无效的操作类型');
+    }
+  } catch (error) {
+    console.error('UploadImage handler error:', error);
+    return createErrorResponse('服务器内部错误', 500);
+  }
+}
+
+async function handleUpload(event: NetlifyEvent): Promise<NetlifyResponse> {
+  try {
+    const requestBody = getDataFromEvent(event) as ImageUploadRequest;
     const base64Image: string = requestBody.base64Image;
 
-    // Validate the input
     if (!base64Image) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          success: false,
-          error: 'Missing base64Image in request body',
-        } as ImageUploadResponse),
-      };
+      return createErrorResponse('缺少base64Image参数');
     }
 
-    // Extract the base64 data part (remove the prefix like "data:image/png;base64,")
     const base64Data: string = base64Image.split(',')[1];
     if (!base64Data) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          success: false,
-          error: 'Invalid base64 image format',
-        } as ImageUploadResponse),
-      };
+      return createErrorResponse('无效的base64图片格式');
     }
 
-    // Get GitHub configuration from environment variables
     const GITHUB_TOKEN: string = process.env.GITHUB_TOKEN as string;
     const GITHUB_REPO_OWNER: string = process.env.GITHUB_REPO_OWNER as string;
     const GITHUB_REPO_NAME: string = process.env.GITHUB_REPO_NAME as string;
     const GITHUB_BRANCH: string = process.env.GITHUB_BRANCH as string;
 
-    // Validate environment variables
     if (
       !GITHUB_TOKEN ||
       !GITHUB_REPO_OWNER ||
@@ -79,24 +79,15 @@ export const handler = async (
       !GITHUB_BRANCH
     ) {
       console.error('Missing GitHub environment variables');
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          success: false,
-          error: 'Server configuration error',
-        } as ImageUploadResponse),
-      };
+      return createErrorResponse('服务器配置错误', 500);
     }
 
-    // Generate a unique filename
     const timestamp: number = Date.now();
     const randomString: string = Math.random().toString(36).substring(2, 8);
     const filename: string = `user_uploads/image_${timestamp}_${randomString}.png`;
 
-    // Prepare the GitHub API request
     const url: string = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${filename}`;
 
-    // 使用Node.js原生fetch API调用GitHub API
     const response: Response = await fetch(url, {
       method: 'PUT',
       headers: {
@@ -114,36 +105,18 @@ export const handler = async (
     const data: GitHubResponse = await response.json();
 
     if (response.ok && data.content && data.content.path) {
-      // Construct the raw.githubusercontent.com link
       const rawUrl: string = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/${GITHUB_BRANCH}/${data.content.path}`;
 
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          success: true,
-          url: rawUrl,
-        } as ImageUploadResponse),
-      };
+      return createSuccessResponse({ url: rawUrl });
     } else {
       console.error('❌ Image upload failed:', data);
-      return {
-        statusCode: response.status || 500,
-        body: JSON.stringify({
-          success: false,
-          error: data.message || 'Failed to upload image to GitHub',
-          details: data,
-        } as ImageUploadResponse),
-      };
+      return createErrorResponse(
+        data.message || '上传图片到GitHub失败',
+        response.status || 500
+      );
     }
   } catch (error: any) {
     console.error('❌ Error in uploadImageToGitHub function:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        success: false,
-        error: 'Internal Server Error',
-        message: error.message,
-      } as ImageUploadResponse),
-    };
+    return createErrorResponse('服务器内部错误', 500);
   }
-};
+}

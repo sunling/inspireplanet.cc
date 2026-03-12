@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import { downloadCard as utilsDownloadCard } from '@/utils/share';
 
 import {
   Box,
@@ -13,15 +14,14 @@ import {
   Divider,
 } from '@mui/material';
 import useResponsive from '@/hooks/useResponsive';
-import { CardItem, Comment } from '@/netlify/types';
-import { api } from '@/netlify/configs';
+import { CardItem, Comment } from '../../netlify/types';
+import { cardsApi, commentsApi } from '../../netlify/config';
 import { getFontColorForGradient } from '@/constants/gradient';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
 import ErrorCard from '@/components/ErrorCard';
 import { useGlobalSnackbar } from '@/context/app';
-import { getUserId, loginOut } from '@/utils/user';
-import { snakeToCamel } from '@/utils/helper';
+import { getUserId, isUserLoggedIn, logoutUser } from '../../utils';
 
 const CardDetail: React.FC = () => {
   const location = useLocation();
@@ -57,7 +57,7 @@ const CardDetail: React.FC = () => {
       setIsLoading(true);
       setError(null);
       // 使用统一API封装获取卡片详情
-      const response = await api.cards.getById(cardId);
+      const response = await cardsApi.getById(cardId);
 
       console.log('加载卡片详情返回', response);
 
@@ -74,7 +74,7 @@ const CardDetail: React.FC = () => {
       const cardData = response?.data?.records[0];
 
       // 规范化卡片数据格式
-      const normalizedCard: CardItem = snakeToCamel(cardData);
+      const normalizedCard: CardItem = cardData;
 
       setCard(normalizedCard);
       checkEditPermission(normalizedCard);
@@ -93,7 +93,7 @@ const CardDetail: React.FC = () => {
   const fetchComments = async (cardId: string) => {
     try {
       // 使用统一的api对象获取评论
-      const response = await api.comments.getByCardId(cardId);
+      const response = await commentsApi.getByCardId(cardId);
       console.log('fetchComments返回', response);
 
       if (!response.success) {
@@ -113,6 +113,8 @@ const CardDetail: React.FC = () => {
           created: comment.created || new Date().toISOString(),
           cardId: comment.cardId || cardId, // 确保cardId存在
           createdAt: comment.comment.created || new Date().toISOString(),
+          card_id: '',
+          created_at: '',
         })
       );
       setComments(list);
@@ -128,9 +130,9 @@ const CardDetail: React.FC = () => {
   const checkEditPermission = (cardData: CardItem) => {
     try {
       // 支持多种用户数据存储键名
-      const userId = getUserId();
+      const userId = getUserId() || '';
 
-      setCanEdit(userId && userId == cardData.userId);
+      setCanEdit(!!userId && userId == cardData.user_id);
     } catch (e) {
       console.error('解析用户信息失败:', e);
       setCanEdit(false);
@@ -165,9 +167,6 @@ const CardDetail: React.FC = () => {
 
     try {
       setDownloading(true);
-
-      // 导入downloadCard函数
-      const { downloadCard: utilsDownloadCard } = await import('@/utils/share');
 
       // 使用cardRef获取DOM元素
       const cardElement =
@@ -210,8 +209,7 @@ const CardDetail: React.FC = () => {
   // 提交评论
   const handleCommentSubmit = async () => {
     const cardId = getCardId();
-    const token = localStorage.getItem('authToken');
-    if (!token) {
+    if (!isUserLoggedIn()) {
       const redirect = cardId ? `/card-detail?id=${cardId}` : '/cards';
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
       return;
@@ -231,14 +229,14 @@ const CardDetail: React.FC = () => {
     try {
       // 使用统一API封装提交评论
       console.log('正在提交评论...');
-      const response = await api.comments.create({
+      const response = await commentsApi.create({
         cardId: cardId,
         comment: commentForm.content,
       });
 
       if (!response.success) {
         if (response.statusCode === 401) {
-          loginOut();
+          logoutUser();
           showSnackbar.error('登录已过期，请重新登录');
           const redirect = `/card-detail?id=${cardId}`;
           navigate(`/login?redirect=${encodeURIComponent(redirect)}`);

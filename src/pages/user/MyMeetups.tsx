@@ -17,20 +17,16 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Meetup, MeetupStatus, Participant } from '@/netlify/types';
-import { api } from '@/netlify/configs';
-import {
-  escapeHtml,
-  formatDate,
-  formatTime,
-  getCurrentUser,
-  isUpcoming,
-} from '@/utils';
+import { MeetupStatus, Participant } from '../../netlify/types';
+
+import { escapeHtml, formatDate, getUserInfo } from '@/utils';
 import { useGlobalSnackbar } from '@/context/app';
 import useResponsive from '@/hooks/useResponsive';
 import Empty from '@/components/Empty';
 import ErrorCard from '@/components/ErrorCard';
 import Loading from '@/components/Loading';
+import { meetupsApi, rsvpApi } from '../../netlify/config';
+import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
 
 interface UserInfo {
   username: string;
@@ -88,20 +84,20 @@ const MyMeetups: React.FC = () => {
     setError(null);
 
     try {
-      const response = await api.meetups.getAll({ status: 'all' });
+      const response = await meetupsApi.getAll({ status: 'all' });
       if (!response.success) {
         showSnackbar.error(response.error || '加载活动失败');
         return;
       }
 
       const meetups = response.data?.meetups || [];
-      const curUser = getCurrentUser() || {};
+      const curUser = getUserInfo() || {};
       const userMeetups = meetups.filter(
         (meetup: Meetup) =>
           meetup.creator === curUser?.username ||
-          meetup.organizer === curUser?.name ||
+          meetup.creator == curUser?.id ||
           meetup.user_id === curUser?.username ||
-          meetup.user_id === curUser?.name
+          meetup.user_id == curUser?.id
       );
       setAllMeetups(userMeetups as Meetup[]);
 
@@ -116,13 +112,13 @@ const MyMeetups: React.FC = () => {
 
   const loadMyRsvps = async (allMeetupsList: Meetup[]) => {
     try {
-      const curUser = getCurrentUser() as any;
+      const curUser = getUserInfo() as any;
       const uid = curUser?.id;
       let res:
-        | Awaited<ReturnType<typeof api.rsvp.getByUserId>>
-        | Awaited<ReturnType<typeof api.rsvp.getByWechatId>>;
-      if (uid) {
-        res = await api.rsvp.getByUserId(uid);
+        | Awaited<ReturnType<typeof rsvpApi.getByUserId>>
+        | Awaited<ReturnType<typeof rsvpApi.getByWechatId>>;
+      if (uid && uid.trim()) {
+        res = await rsvpApi.getByUserId(uid);
       } else {
         const wechat = curUser?.wechat_id || curUser?.wechat;
         if (!wechat) {
@@ -130,7 +126,7 @@ const MyMeetups: React.FC = () => {
           setRsvpMeetups([]);
           return;
         }
-        res = await api.rsvp.getByWechatId(wechat);
+        res = await rsvpApi.getByWechatId(wechat);
       }
       if (!res.success) {
         showSnackbar.error(res.error || '获取报名信息失败');
@@ -157,7 +153,7 @@ const MyMeetups: React.FC = () => {
       let fetchedMeetups: Meetup[] = [];
       if (missingIds.length > 0) {
         const results = await Promise.all(
-          missingIds.map((id) => api.meetups.getById(id))
+          missingIds.map((id) => meetupsApi.getById(id))
         );
         fetchedMeetups = results.flatMap((resp) =>
           resp.success ? resp.data?.meetups || [] : []
@@ -175,7 +171,6 @@ const MyMeetups: React.FC = () => {
       setRsvpMeetups(finalMeetups);
     } catch (e) {
       // 静默错误，保持页面可用
-      console.error('加载报名活动失败:', e);
     }
   };
 
@@ -197,7 +192,7 @@ const MyMeetups: React.FC = () => {
       return;
     }
     try {
-      const response = await api.meetups.delete(meetupId);
+      const response = await meetupsApi.delete(meetupId);
       if (!response.success) {
         showSnackbar.error(response.error || '删除活动失败');
         return;
@@ -299,7 +294,7 @@ const MyMeetups: React.FC = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
           <Chip label={statusLabel} color={statusColor as any} size="small" />
           <Chip
-            label={meetup.type === 'online' ? '线上活动' : '线下活动'}
+            label={MeetupLabelMap[meetup.mode]}
             variant="outlined"
             size="small"
           />
@@ -378,7 +373,7 @@ const MyMeetups: React.FC = () => {
                   size={isMobile ? 'small' : 'medium'}
                   color="error"
                   variant="outlined"
-                  onClick={() => deleteMeetup(meetup.id)}
+                  onClick={() => deleteMeetup(meetup.id!)}
                 >
                   🗑️ 取消
                 </Button>
@@ -387,10 +382,7 @@ const MyMeetups: React.FC = () => {
           </Box>
           <Typography variant="caption" color="text.secondary">
             {meetup.participant_count || 0}
-            {Number(meetup.max_participants) > 0
-              ? '/' + meetup.max_participants
-              : ''}{' '}
-            人参加
+            {Number(meetup.max_ppl) > 0 ? '/' + meetup.max_ppl : ''} 人参加
           </Typography>
         </Box>
       </Paper>
@@ -403,10 +395,10 @@ const MyMeetups: React.FC = () => {
     try {
       // 优先按报名记录ID取消，失败再按活动ID+微信号取消
       let res = rsvp?.id
-        ? await api.rsvp.cancel(rsvp.id as any)
+        ? await rsvpApi.cancel(rsvp.id as any)
         : ({ success: false, statusCode: 0 } as any);
       if (!res.success && meetupId && rsvp?.wechat_id) {
-        const fallback = await api.rsvp.cancelByMeetupWechat(
+        const fallback = await rsvpApi.cancelByMeetupWechat(
           meetupId as any,
           rsvp.wechat_id as any
         );
@@ -495,7 +487,7 @@ const MyMeetups: React.FC = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
           <Chip label={statusLabel} color={statusColor as any} size="small" />
           <Chip
-            label={meetup.type === 'online' ? '线上活动' : '线下活动'}
+            label={MeetupLabelMap[meetup.mode]}
             variant="outlined"
             size="small"
           />
@@ -568,10 +560,7 @@ const MyMeetups: React.FC = () => {
           </Box>
           <Typography variant="caption" color="text.secondary">
             {meetup.participant_count || 0}
-            {Number(meetup.max_participants) > 0
-              ? '/' + meetup.max_participants
-              : ''}{' '}
-            人参加
+            {Number(meetup.max_ppl) > 0 ? '/' + meetup.max_ppl : ''} 人参加
           </Typography>
         </Box>
       </Paper>
@@ -606,7 +595,7 @@ const MyMeetups: React.FC = () => {
     );
   }
 
-  if (!getCurrentUser()) {
+  if (!getUserInfo()) {
     const redirectUrl = encodeURIComponent(window.location.href);
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>

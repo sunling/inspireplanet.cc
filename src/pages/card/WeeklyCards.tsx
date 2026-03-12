@@ -9,10 +9,6 @@ import {
   Typography,
   Paper,
   Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Grid,
   TextField,
   InputAdornment,
@@ -26,11 +22,12 @@ import {
   getFontColorForGradient,
   getRandomGradientClass,
 } from '@/constants/gradient';
-import { WeeklyCard } from '@/netlify/types';
-import { api } from '@/netlify/configs';
+
+import { weeklyCardsApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
 import Empty from '@/components/Empty';
 import Loading from '@/components/Loading';
+import { WeeklyCard } from '../../netlify/services/weeklyCards';
 
 export interface WeeklyCardItem extends WeeklyCard {
   gradient: string;
@@ -62,7 +59,7 @@ const WeeklyCards: React.FC = () => {
     if (showAll) return;
     setLoadingAll(true);
     try {
-      const res = await api.weeklyCards.getAllLimited(500);
+      const res = await weeklyCardsApi.getAllLimited(500);
       if (res.success) {
         const allCards = (res?.data?.records || []).map((card: WeeklyCard) => ({
           ...card,
@@ -91,12 +88,11 @@ const WeeklyCards: React.FC = () => {
 
         let res: any;
         if (episodeParam) {
-          res = await api.weeklyCards.getByEpisode(episodeParam);
+          res = await weeklyCardsApi.getByEpisode(episodeParam);
         } else {
           // 默认只加载最新一期
-          res = await api.weeklyCards.getLatest();
+          res = await weeklyCardsApi.getLatest();
         }
-        console.log('获取到的周刊卡片数据:', res);
 
         if (!res.success) {
           setError('获取周刊卡片数据失败');
@@ -125,10 +121,8 @@ const WeeklyCards: React.FC = () => {
           return numB - numA;
         });
 
-        console.log('uniqueEpisodes:', uniqueEpisodes);
         setEpisodes(uniqueEpisodes as string[]);
       } catch (error: any) {
-        console.error('加载周刊卡片失败:', error);
         setError('加载数据失败，请稍后重试');
       } finally {
         setLoading(false);
@@ -243,7 +237,6 @@ const WeeklyCards: React.FC = () => {
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (error) {
-      console.error('下载卡片失败:', error);
       if (error instanceof Error) {
         alert(`下载失败: ${error.message}`);
       }
@@ -252,7 +245,10 @@ const WeeklyCards: React.FC = () => {
 
   // 往期分页：先切出当页的10条，再做年份/期数分组
   const pagedCards = showAll
-    ? filteredCards.slice((allPage - 1) * ALL_PAGE_SIZE, allPage * ALL_PAGE_SIZE)
+    ? filteredCards.slice(
+        (allPage - 1) * ALL_PAGE_SIZE,
+        allPage * ALL_PAGE_SIZE
+      )
     : filteredCards;
   const allTotalPages = Math.ceil(filteredCards.length / ALL_PAGE_SIZE);
 
@@ -271,7 +267,9 @@ const WeeklyCards: React.FC = () => {
   );
 
   // 年份倒序
-  const sortedYears = Object.keys(groupedByYear).sort((a, b) => Number(b) - Number(a));
+  const sortedYears = Object.keys(groupedByYear).sort(
+    (a, b) => Number(b) - Number(a)
+  );
 
   // 每年内期数倒序（按集数数字）
   const sortedEpisodesForYear = (year: string): string[] =>
@@ -371,164 +369,171 @@ const WeeklyCards: React.FC = () => {
                       id={`episode-container-${year}-${episode.toLowerCase()}`}
                     >
                       {groupedByYear[year][episode].map((card) => {
-                    const fontColor = getFontColorForGradient(card.gradient);
-                    const randomGradientClass = getRandomGradientClass();
-                    return (
-                      <Grid key={card.id} size={{ xs: 12, md: 6 }}>
-                        <Box
-                          sx={{
-                            position: 'relative',
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                          }}
-                        >
-                          <Paper
-                            elevation={1}
-                            id={`card-${card.id}`}
-                            className={randomGradientClass}
-                            sx={{
-                              height: '100%',
-                              borderRadius: '12px',
-                              overflow: 'hidden',
-                              p: 4,
-                              color: fontColor,
-                              position: 'relative',
-
-                              backdropFilter: 'blur(10px)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                            }}
-                          >
-                            <Typography
-                              variant="h5"
-                              component="h3"
-                              sx={{
-                                fontWeight: 'bold',
-                                mb: 2,
-                                color: fontColor,
-                              }}
-                            >
-                              {renderHighlighted(card.title, debouncedQuery)}
-                            </Typography>
-
+                        const fontColor = getFontColorForGradient(
+                          card.gradient
+                        );
+                        const randomGradientClass = getRandomGradientClass();
+                        return (
+                          <Grid key={card.id} size={{ xs: 12, md: 6 }}>
                             <Box
                               sx={{
-                                backgroundColor: `${fontColor}10`,
-                                p: 2,
-                                borderRadius: '8px',
-                                mb: 3,
-                                fontStyle: 'italic',
                                 position: 'relative',
-                                pl: 4,
-                                '&::before': {
-                                  content: '"“"',
-                                  position: 'absolute',
-                                  left: 8,
-                                  top: -10,
-                                  fontSize: '2.2rem',
-                                  lineHeight: 1,
-                                  color: fontColor,
-                                  opacity: 0.2,
-                                },
-                              }}
-                            >
-                              <Typography
-                                variant="body1"
-                                sx={{
-                                  color: fontColor,
-                                  whiteSpace: 'pre-line',
-                                }}
-                              >
-                                {card.quote}
-                              </Typography>
-                            </Box>
-
-                            <Box sx={{ mb: 3 }}>
-                              <img
-                                src={card.imagePath || '/images/mistyblue.png'}
-                                alt={card.title}
-                                style={{
-                                  width: '100%',
-                                  height: 'auto',
-                                  borderRadius: '8px',
-                                  maxHeight: '200px',
-                                  objectFit: 'cover',
-                                }}
-                              />
-                            </Box>
-
-                            <Box
-                              sx={{
-                                fontSize: '1rem',
-                                lineHeight: 1.6,
-                                mb: 3,
-                                flexGrow: 1,
-                              }}
-                            >
-                              <div
-                                dangerouslySetInnerHTML={{
-                                  __html: DOMPurify.sanitize(
-                                    card.detail
-                                      ? marked.parse(card.detail).toString()
-                                      : ''
-                                  ),
-                                }}
-                              />
-                            </Box>
-
-                            <Box
-                              sx={{
-                                mt: 'auto',
+                                height: '100%',
                                 display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
+                                flexDirection: 'column',
                               }}
                             >
-                              <Typography
-                                variant="caption"
-                                sx={{ color: fontColor, opacity: 0.8 }}
-                              >
-                                — {card.name}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                sx={{ color: fontColor, opacity: 0.8 }}
-                              >
-                                {new Date(card.created).toLocaleDateString(
-                                  'zh-CN'
-                                )}
-                              </Typography>
-                            </Box>
-                          </Paper>
+                              <Paper
+                                elevation={1}
+                                id={`card-${card.id}`}
+                                className={randomGradientClass}
+                                sx={{
+                                  height: '100%',
+                                  borderRadius: '12px',
+                                  overflow: 'hidden',
+                                  p: 4,
+                                  color: fontColor,
+                                  position: 'relative',
 
-                          <Button
-                            className="download-btn"
-                            onClick={() => handleDownloadCard(card.id)}
-                            title="下载卡片"
-                            sx={{
-                              position: 'absolute',
-                              bottom: 10,
-                              right: 10,
-                              backgroundColor: '#667eea',
-                              '&:hover': {
-                                backgroundColor: '#5a67d8',
-                                opacity: '1',
-                              },
-                              minWidth: 'auto',
-                              width: '36px',
-                              height: '36px',
-                              borderRadius: '50%',
-                              color: 'white',
-                              opacity: '0.5',
-                              p: 0,
-                            }}
-                          >
-                            <DownloadIcon fontSize="small" />
-                          </Button>
-                        </Box>
-                      </Grid>
-                    );
+                                  backdropFilter: 'blur(10px)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                }}
+                              >
+                                <Typography
+                                  variant="h5"
+                                  component="h3"
+                                  sx={{
+                                    fontWeight: 'bold',
+                                    mb: 2,
+                                    color: fontColor,
+                                  }}
+                                >
+                                  {renderHighlighted(
+                                    card.title,
+                                    debouncedQuery
+                                  )}
+                                </Typography>
+
+                                <Box
+                                  sx={{
+                                    backgroundColor: `${fontColor}10`,
+                                    p: 2,
+                                    borderRadius: '8px',
+                                    mb: 3,
+                                    fontStyle: 'italic',
+                                    position: 'relative',
+                                    pl: 4,
+                                    '&::before': {
+                                      content: '"“"',
+                                      position: 'absolute',
+                                      left: 8,
+                                      top: -10,
+                                      fontSize: '2.2rem',
+                                      lineHeight: 1,
+                                      color: fontColor,
+                                      opacity: 0.2,
+                                    },
+                                  }}
+                                >
+                                  <Typography
+                                    variant="body1"
+                                    sx={{
+                                      color: fontColor,
+                                      whiteSpace: 'pre-line',
+                                    }}
+                                  >
+                                    {card.quote}
+                                  </Typography>
+                                </Box>
+
+                                <Box sx={{ mb: 3 }}>
+                                  <img
+                                    src={
+                                      card.imagePath || '/images/mistyblue.png'
+                                    }
+                                    alt={card.title}
+                                    style={{
+                                      width: '100%',
+                                      height: 'auto',
+                                      borderRadius: '8px',
+                                      maxHeight: '200px',
+                                      objectFit: 'cover',
+                                    }}
+                                  />
+                                </Box>
+
+                                <Box
+                                  sx={{
+                                    fontSize: '1rem',
+                                    lineHeight: 1.6,
+                                    mb: 3,
+                                    flexGrow: 1,
+                                  }}
+                                >
+                                  <div
+                                    dangerouslySetInnerHTML={{
+                                      __html: DOMPurify.sanitize(
+                                        card.detail
+                                          ? marked.parse(card.detail).toString()
+                                          : ''
+                                      ),
+                                    }}
+                                  />
+                                </Box>
+
+                                <Box
+                                  sx={{
+                                    mt: 'auto',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                  }}
+                                >
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ color: fontColor, opacity: 0.8 }}
+                                  >
+                                    — {card.name}
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ color: fontColor, opacity: 0.8 }}
+                                  >
+                                    {new Date(card.created).toLocaleDateString(
+                                      'zh-CN'
+                                    )}
+                                  </Typography>
+                                </Box>
+                              </Paper>
+
+                              <Button
+                                className="download-btn"
+                                onClick={() => handleDownloadCard(card.id)}
+                                title="下载卡片"
+                                sx={{
+                                  position: 'absolute',
+                                  bottom: 10,
+                                  right: 10,
+                                  backgroundColor: '#667eea',
+                                  '&:hover': {
+                                    backgroundColor: '#5a67d8',
+                                    opacity: '1',
+                                  },
+                                  minWidth: 'auto',
+                                  width: '36px',
+                                  height: '36px',
+                                  borderRadius: '50%',
+                                  color: 'white',
+                                  opacity: '0.5',
+                                  p: 0,
+                                }}
+                              >
+                                <DownloadIcon fontSize="small" />
+                              </Button>
+                            </Box>
+                          </Grid>
+                        );
                       })}
                     </Grid>
                   </Box>

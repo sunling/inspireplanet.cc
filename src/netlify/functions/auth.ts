@@ -8,7 +8,17 @@ import {
   NetlifyEvent,
   NetlifyResponse,
 } from '../types/http';
-import { getCommonHttpHeader } from '../../utils/http';
+import {
+  getCommonHttpHeader,
+  createSuccessResponse,
+  createErrorResponse,
+  handleOptionsRequest,
+  hashPassword,
+  verifyPassword,
+  generateJwtToken,
+  verifyJwtToken,
+  getFuntionNameFromEvent,
+} from '../utils/server';
 // 注意：Netlify函数会自动加载.env文件，不需要手动配置dotenv
 
 // 定义用户接口
@@ -48,7 +58,7 @@ export interface JwtPayload {
 
 // 定义认证操作接口
 export interface AuthAction {
-  action: 'register' | 'login' | 'verify';
+  functionName: 'register' | 'login' | 'verify';
 }
 
 // JWT密钥
@@ -69,93 +79,59 @@ export async function handler(
   event: NetlifyEvent,
   context: NetlifyContext
 ): Promise<NetlifyResponse> {
-  // 设置CORS头
-  const headers: HttpHeaders = getCommonHttpHeader();
   // 处理预检请求
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    };
+    return handleOptionsRequest();
   }
 
   try {
-    const { action } = JSON.parse(event.body || '{}') as AuthAction;
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'register':
-        return await handleRegister(event, headers);
+        return await handleRegister(event);
       case 'login':
-        return await handleLogin(event, headers);
+        return await handleLogin(event);
       case 'verify':
-        return await handleVerifyToken(event, headers);
+        return await handleVerifyToken(event);
       default:
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: '无效的操作类型' }),
-        };
+        return createErrorResponse('无效的操作类型');
     }
   } catch (error) {
     console.error('Auth handler error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: '服务器内部错误' }),
-    };
+    return createErrorResponse('服务器内部错误', 500);
   }
 }
 
 /**
  * 处理用户注册
  * @param event 事件对象
- * @param headers 响应头
  * @returns 响应对象
  */
-async function handleRegister(
-  event: NetlifyEvent,
-  headers: HttpHeaders
-): Promise<NetlifyResponse> {
+async function handleRegister(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
     const registerData: RegisterRequest = JSON.parse(event.body || '{}');
     const { username, email, password, name, wechat } = registerData;
 
     // 验证输入
     if (!username || !email || !password || !name) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: '姓名、用户名、邮箱和密码都是必填项' }),
-      };
+      return createErrorResponse('姓名、用户名、邮箱和密码都是必填项');
     }
 
     // 验证邮箱格式
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: '邮箱格式不正确' }),
-      };
+      return createErrorResponse('邮箱格式不正确');
     }
 
     // 验证密码长度
     if (password.length < 6) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: '密码至少需要6个字符' }),
-      };
+      return createErrorResponse('密码至少需要6个字符');
     }
 
     // 验证用户名长度
     if (username.length < 2) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: '用户名至少需要2个字符' }),
-      };
+      return createErrorResponse('用户名至少需要2个字符');
     }
 
     // 检查邮箱是否已存在
@@ -166,11 +142,7 @@ async function handleRegister(
       .single();
 
     if (existingUser) {
-      return {
-        statusCode: 409,
-        headers,
-        body: JSON.stringify({ error: '该邮箱已被注册' }),
-      };
+      return createErrorResponse('该邮箱已被注册', 409);
     }
 
     // 检查用户名是否已存在
@@ -181,16 +153,11 @@ async function handleRegister(
       .single();
 
     if (existingUsername) {
-      return {
-        statusCode: 409,
-        headers,
-        body: JSON.stringify({ error: '该用户名已被使用' }),
-      };
+      return createErrorResponse('该用户名已被使用', 409);
     }
 
     // 加密密码
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await hashPassword(password);
 
     // 创建用户
     const { data: newUser, error: insertError } = await supabase
@@ -207,29 +174,19 @@ async function handleRegister(
 
     if (insertError || !newUser) {
       console.error('Insert error:', insertError);
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: '注册失败，请稍后重试' }),
-      };
+      return createErrorResponse('注册失败，请稍后重试', 500);
     }
 
     // 生成JWT token
-    const token = jwt.sign(
-      {
-        userId: newUser.id,
-        username: newUser.username,
-        email: newUser.email,
-        name,
-      } as JwtPayload,
-      JWT_SECRET as string,
-      { expiresIn: '7d' }
-    );
+    const token = generateJwtToken({
+      userId: newUser.id,
+      username: newUser.username,
+      email: newUser.email,
+      name,
+    } as JwtPayload);
 
-    return {
-      statusCode: 201,
-      headers,
-      body: JSON.stringify({
+    return createSuccessResponse(
+      {
         message: '注册成功',
         user: {
           id: newUser.id,
@@ -238,39 +195,28 @@ async function handleRegister(
           name,
         },
         token,
-      }),
-    };
+      },
+      201
+    );
   } catch (error: any) {
     console.error('Register error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: '注册过程中发生错误' }),
-    };
+    return createErrorResponse('注册过程中发生错误', 500);
   }
 }
 
 /**
  * 处理用户登录
  * @param event 事件对象
- * @param headers 响应头
  * @returns 响应对象
  */
-async function handleLogin(
-  event: NetlifyEvent,
-  headers: HttpHeaders
-): Promise<NetlifyResponse> {
+async function handleLogin(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
     const loginData: LoginRequest = JSON.parse(event.body || '{}');
     const { email, password } = loginData;
 
     // 验证输入
     if (!email || !password) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: '邮箱和密码都是必填项' }),
-      };
+      return createErrorResponse('邮箱和密码都是必填项');
     }
 
     // 查找用户
@@ -281,138 +227,88 @@ async function handleLogin(
       .single();
 
     if (!user) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: '邮箱或密码错误' }),
-      };
+      return createErrorResponse('邮箱或密码错误', 401);
     }
 
     // 验证密码
-    const isPasswordValid = await bcrypt.compare(password, user.password!);
+    const isPasswordValid = await verifyPassword(password, user.password!);
     if (!isPasswordValid) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: '邮箱或密码错误' }),
-      };
+      return createErrorResponse('邮箱或密码错误', 401);
     }
 
     // 生成JWT token
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        username: user.username,
-        email: user.email,
-        name: user.name,
-      } as JwtPayload,
-      JWT_SECRET as string,
-      { expiresIn: '7d' }
-    );
+    const token = generateJwtToken({
+      userId: user.id,
+      username: user.username,
+      email: user.email,
+      name: user.name,
+    } as JwtPayload);
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        message: '登录成功',
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          name: user.name,
-        },
-        token,
-      }),
-    };
+    return createSuccessResponse({
+      message: '登录成功',
+      user,
+      token,
+    });
   } catch (error: any) {
     console.error('Login error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: '登录过程中发生错误' }),
-    };
+    return createErrorResponse('登录过程中发生错误', 500);
   }
 }
 
 /**
  * 验证JWT token
  * @param event 事件对象
- * @param headers 响应头
  * @returns 响应对象
  */
 async function handleVerifyToken(
-  event: NetlifyEvent,
-  headers: HttpHeaders
+  event: NetlifyEvent
 ): Promise<NetlifyResponse> {
   try {
     const authHeader =
       event.headers.authorization || event.headers.Authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: '未提供有效的认证令牌' }),
-      };
+      return createErrorResponse('未提供有效的认证令牌', 401);
     }
 
     const token = authHeader.substring(7); // 移除 'Bearer ' 前缀
 
-    try {
-      const decoded: JwtPayload = jwt.verify(
-        token,
-        JWT_SECRET as string
-      ) as JwtPayload;
+    const decoded: JwtPayload = verifyJwtToken(token);
 
-      // 验证用户是否仍然存在
-      const {
-        data: user,
-      }: {
-        data: {
-          id: string;
-          username: string;
-          email: string;
-          name: string;
-        } | null;
-      } = await supabase
-        .from('users')
-        .select('id, username, email, name')
-        .eq('id', decoded.userId)
-        .single();
-
-      if (!user) {
-        return {
-          statusCode: 401,
-          headers,
-          body: JSON.stringify({ error: '用户不存在' }),
-        };
-      }
-
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          valid: true,
-          user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            name: user.name,
-          },
-        }),
-      };
-    } catch (jwtError: any) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: '无效的认证令牌' }),
-      };
+    if (!decoded) {
+      return createErrorResponse('令牌无效或已过期', 401);
     }
+
+    // 验证用户是否仍然存在
+    const {
+      data: user,
+    }: {
+      data: {
+        id: string;
+        username: string;
+        email: string;
+        name: string;
+      } | null;
+    } = await supabase
+      .from('users')
+      .select('id, username, email, name')
+      .eq('id', decoded.userId)
+      .single();
+
+    if (!user) {
+      return createErrorResponse('用户不存在', 401);
+    }
+
+    return createSuccessResponse({
+      valid: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+      },
+    });
   } catch (error: any) {
     console.error('Token verification error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: '令牌验证过程中发生错误' }),
-    };
+    return createErrorResponse('令牌验证过程中发生错误', 500);
   }
 }

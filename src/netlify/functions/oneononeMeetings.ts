@@ -1,66 +1,51 @@
 import { supabase } from '../../database/supabase';
-import { getCommonHttpHeader } from '../../utils/http';
-import jwt from 'jsonwebtoken';
 import { createNotification } from './notifications';
+import { NetlifyEvent, NetlifyResponse } from '../types/http';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  handleOptionsRequest,
+  getUserIdFromAuth,
+  getFuntionNameFromEvent,
+  getDataFromEvent,
+} from '../utils/server';
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
-
-function getUserIdFromAuth(event: any) {
-  const auth = event.headers.authorization || event.headers.Authorization;
-  if (!auth || !auth.startsWith('Bearer ')) return null;
-  const token = auth.substring(7);
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    return decoded.userId || decoded.user_id || null;
-  } catch {
-    return null;
-  }
+export interface OneOnOneMeetingAction {
+  functionName: 'create' | 'getAll' | 'update';
 }
 
-export async function handler(event: any, context: any) {
-  const headers = getCommonHttpHeader();
+export async function handler(
+  event: NetlifyEvent,
+  context: any
+): Promise<NetlifyResponse> {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+    return handleOptionsRequest();
   }
+
   try {
-    switch (event.httpMethod) {
-      case 'POST':
-        return await createMeeting(event, headers);
-      case 'GET':
-        return await listMeetings(event, headers);
-      case 'PUT':
-        return await updateMeeting(event, headers);
+    const functionName = getFuntionNameFromEvent(event);
+
+    switch (functionName) {
+      case 'create':
+        return await handleCreate(event);
+      case 'getAll':
+        return await handleGetAll(event);
+      case 'update':
+        return await handleUpdate(event);
       default:
-        return {
-          statusCode: 405,
-          headers,
-          body: JSON.stringify({ success: false, error: 'Method Not Allowed' }),
-        };
+        return createErrorResponse('无效的操作类型');
     }
   } catch (error) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Server Error' }),
-    };
+    console.error('OneononeMeetings handler error:', error);
+    return createErrorResponse('服务器内部错误', 500);
   }
 }
 
-async function createMeeting(event: any, headers: Record<string, string>) {
+async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   const userId = getUserIdFromAuth(event);
-  if (!userId)
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Unauthorized' }),
-    };
-  if (!event.body)
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Empty body' }),
-    };
-  const payload = JSON.parse(event.body);
+  if (!userId) return createErrorResponse('未授权', 401);
+
+  const payload = getDataFromEvent(event);
   const {
     invite_id,
     final_datetime_iso,
@@ -69,47 +54,33 @@ async function createMeeting(event: any, headers: Record<string, string>) {
     meeting_url = null,
     notes = '',
   } = payload;
+
   if (!invite_id || !final_datetime_iso || !mode) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Missing fields' }),
-    };
+    return createErrorResponse('缺少必填字段');
   }
+
   const t = new Date(final_datetime_iso).getTime();
   if (isNaN(t) || t <= Date.now()) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Invalid time' }),
-    };
+    return createErrorResponse('无效的时间');
   }
+
   const m = mode === 'online' || mode === 'offline';
-  if (!m)
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Invalid mode' }),
-    };
+  if (!m) return createErrorResponse('无效的形式');
+
   const { data: invite, error: inviteError } = await supabase
     .from('one_on_one_invites')
     .select('id, inviter_id, invitee_id, status')
     .eq('id', invite_id)
     .single();
+
   if (inviteError || !invite) {
-    return {
-      statusCode: 404,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Invite Not Found' }),
-    };
+    return createErrorResponse('邀请不存在', 404);
   }
+
   if (invite.inviter_id !== userId && invite.invitee_id !== userId) {
-    return {
-      statusCode: 403,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Forbidden' }),
-    };
+    return createErrorResponse('无权访问', 403);
   }
+
   const { data: inserted, error } = await supabase
     .from('one_on_one_meetings')
     .insert({
@@ -122,16 +93,14 @@ async function createMeeting(event: any, headers: Record<string, string>) {
       status: 'scheduled',
     })
     .select();
-  if (error)
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: error.message }),
-    };
+
+  if (error) return createErrorResponse(error.message, 500);
+
   await supabase
     .from('one_on_one_invites')
     .update({ status: 'accepted' })
     .eq('id', invite_id);
+
   const { data: inviterUser } = await supabase
     .from('users')
     .select('name, username')
@@ -179,61 +148,37 @@ async function createMeeting(event: any, headers: Record<string, string>) {
     `与 ${inviterName} 于 ${fmt(final_datetime_iso)} 会面（${whereText}）`,
     '/connections'
   );
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({ success: true, meeting: inserted?.[0] || null }),
-  };
+
+  return createSuccessResponse({ meeting: inserted?.[0] || null });
 }
 
-async function listMeetings(event: any, headers: Record<string, string>) {
+async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
   const userId = getUserIdFromAuth(event);
-  if (!userId)
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Unauthorized' }),
-    };
+  if (!userId) return createErrorResponse('未授权', 401);
+
   const { data, error } = await supabase
     .from('one_on_one_meetings')
     .select('*, one_on_one_invites!inner(inviter_id, invitee_id)')
     .order('created_at', { ascending: false });
-  if (error)
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: error.message }),
-    };
+
+  if (error) return createErrorResponse(error.message, 500);
+
   const filtered = (data || []).filter((m: any) => {
     const inv = (m as any).one_on_one_invites;
     return inv && (inv.inviter_id === userId || inv.invitee_id === userId);
   });
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({ success: true, meetings: filtered }),
-  };
+
+  return createSuccessResponse({ meetings: filtered });
 }
 
-async function updateMeeting(event: any, headers: Record<string, string>) {
+async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   const userId = getUserIdFromAuth(event);
-  if (!userId)
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Unauthorized' }),
-    };
+  if (!userId) return createErrorResponse('未授权', 401);
 
-  const params = event.queryStringParameters || {};
-  let { id } = params as any;
-  const payload = event.body ? JSON.parse(event.body) : {};
-  if (!id && payload && payload.id) id = payload.id;
-  if (!id)
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Missing meeting id' }),
-    };
+  const body = getDataFromEvent(event);
+  const { id } = body;
+
+  if (!id) return createErrorResponse('缺少会面ID');
 
   const { data: meeting, error: fetchError } = await supabase
     .from('one_on_one_meetings')
@@ -242,68 +187,49 @@ async function updateMeeting(event: any, headers: Record<string, string>) {
     )
     .eq('id', id)
     .single();
-  if (fetchError || !meeting)
-    return {
-      statusCode: 404,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Meeting Not Found' }),
-    };
+
+  if (fetchError || !meeting) return createErrorResponse('会面不存在', 404);
 
   const { data: invite } = await supabase
     .from('one_on_one_invites')
     .select('inviter_id, invitee_id')
     .eq('id', meeting.invite_id)
     .single();
+
   if (
     !invite ||
     (invite.inviter_id !== userId && invite.invitee_id !== userId)
   ) {
-    return {
-      statusCode: 403,
-      headers,
-      body: JSON.stringify({ success: false, error: 'Forbidden' }),
-    };
+    return createErrorResponse('无权访问', 403);
   }
 
   const updateRecord: Record<string, any> = {};
-  if (payload.final_datetime_iso) {
-    const t = new Date(payload.final_datetime_iso).getTime();
+  if (body.final_datetime_iso) {
+    const t = new Date(body.final_datetime_iso).getTime();
     if (isNaN(t) || t <= Date.now()) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ success: false, error: 'Invalid time' }),
-      };
+      return createErrorResponse('无效的时间');
     }
     updateRecord.final_datetime_iso = new Date(
-      payload.final_datetime_iso
+      body.final_datetime_iso
     ).toISOString();
   }
-  if (payload.mode) {
-    if (!(payload.mode === 'online' || payload.mode === 'offline')) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ success: false, error: 'Invalid mode' }),
-      };
+  if (body.mode) {
+    if (!(body.mode === 'online' || body.mode === 'offline')) {
+      return createErrorResponse('无效的形式');
     }
-    updateRecord.mode = payload.mode;
+    updateRecord.mode = body.mode;
   }
-  if (payload.meeting_url !== undefined)
-    updateRecord.meeting_url = payload.meeting_url || null;
-  if (payload.location_text !== undefined)
-    updateRecord.location_text = payload.location_text || null;
-  if (payload.notes !== undefined) updateRecord.notes = payload.notes || null;
-  if (payload.status) {
+  if (body.meeting_url !== undefined)
+    updateRecord.meeting_url = body.meeting_url || null;
+  if (body.location_text !== undefined)
+    updateRecord.location_text = body.location_text || null;
+  if (body.notes !== undefined) updateRecord.notes = body.notes || null;
+  if (body.status) {
     const allowed = ['scheduled', 'completed', 'cancelled'];
-    if (!allowed.includes(payload.status)) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ success: false, error: 'Invalid status' }),
-      };
+    if (!allowed.includes(body.status)) {
+      return createErrorResponse('无效的状态');
     }
-    updateRecord.status = payload.status;
+    updateRecord.status = body.status;
   }
 
   const { data: updated, error } = await supabase
@@ -311,12 +237,9 @@ async function updateMeeting(event: any, headers: Record<string, string>) {
     .update(updateRecord)
     .eq('id', id)
     .select();
-  if (error)
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ success: false, error: error.message }),
-    };
+
+  if (error) return createErrorResponse(error.message, 500);
+
   if (updateRecord.status === 'cancelled') {
     await supabase
       .from('one_on_one_invites')
@@ -460,9 +383,6 @@ async function updateMeeting(event: any, headers: Record<string, string>) {
       );
     }
   }
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify({ success: true, meeting: updated?.[0] || null }),
-  };
+
+  return createSuccessResponse({ meeting: updated?.[0] || null });
 }

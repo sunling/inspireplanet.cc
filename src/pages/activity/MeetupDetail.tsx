@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { api, http } from '../../netlify/configs';
-import { MeetupStatus, Participant } from '../../netlify/types/index';
-import { isUpcoming, formatTime, formatDate } from '../../utils';
+import { authApi, meetupsApi, rsvpApi } from '../../netlify/config';
+import { MeetupStatus, Participant } from '../../netlify/types';
+
 import {
   Box,
   Container,
@@ -19,13 +19,13 @@ import {
   Card,
 } from '@mui/material';
 
-import ErrorCard from '../../components/ErrorCard';
-import Loading from '../../components/Loading';
-import Empty from '../../components/Empty';
-import { useGlobalSnackbar } from '../../context/app';
-import { Meetup } from '@/netlify/functions/meetup';
-import { getUserId, getUserInfo, isLogin } from '@/utils/user';
-import { snakeToCamel } from '@/utils/helper';
+import ErrorCard from '@/components/ErrorCard';
+import Loading from '@/components/Loading';
+import Empty from '@/components/Empty';
+import { useGlobalSnackbar } from '@/context/app';
+import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
+import { getUserId, getUserInfo, isUserLoggedIn } from '@/utils';
+import { formatDate, formatDateTime, isUpcomingEvent } from '../../utils/date';
 
 const MeetupDetail: React.FC = () => {
   const location = useLocation();
@@ -53,7 +53,7 @@ const MeetupDetail: React.FC = () => {
   // RSVP表单状态
   const [rsvpForm, setRsvpForm] = useState({
     name: '',
-    wechatId: '',
+    wechat_id: '',
   });
 
   // 提交状态
@@ -81,8 +81,7 @@ const MeetupDetail: React.FC = () => {
 
     try {
       // 使用统一的api客户端获取活动详情
-      const response = await api.meetups.getById(meetupId);
-      console.log('获取活动详情原始响应:', response);
+      const response = await meetupsApi.getById(meetupId);
 
       if (!response.success) {
         showSnackbar.error(`获取活动详情失败: ${response.error || '未知错误'}`);
@@ -90,6 +89,8 @@ const MeetupDetail: React.FC = () => {
       }
 
       const list = response.data?.meetups || [];
+
+      console.log('获取活动详情原始响应:', response);
 
       if (list.length === 0) {
         showSnackbar.error('活动不存在');
@@ -100,10 +101,10 @@ const MeetupDetail: React.FC = () => {
 
       // 处理数据格式，确保符合Meetup接口要求
       const processedMeetup: Meetup = {
-        ...snakeToCamel(meetupData),
+        ...meetupData,
         status: (meetupData.status || MeetupStatus.UPCOMING) as MeetupStatus,
-        createdAt: meetupData.createdAt || new Date().toISOString(),
-        participantCount: meetupData.participantCount || 0,
+        created_at: meetupData.created_at || new Date().toISOString(),
+        participant_count: meetupData.participant_count || 0,
         cover: meetupData.cover,
       };
 
@@ -112,7 +113,6 @@ const MeetupDetail: React.FC = () => {
       // 加载参与者信息
       loadParticipants(meetupId);
     } catch (err) {
-      console.error('加载活动详情失败:', err);
       setError('加载活动详情失败，请稍后重试');
     } finally {
       setIsLoading(false);
@@ -148,8 +148,8 @@ const MeetupDetail: React.FC = () => {
   // 加载参与者信息
   const loadParticipants = async (meetupId: string) => {
     try {
-      // 使用统一的api对象获取参与者列表
-      const response = await api.rsvp.getByMeetupId(meetupId);
+      // 使用 getByMeetupId 获取参与者列表
+      const response = await rsvpApi.getByMeetupId(meetupId);
       console.log('获取参与者列表原始响应:', response);
       if (!response.success) {
         showSnackbar.error(
@@ -160,16 +160,20 @@ const MeetupDetail: React.FC = () => {
 
       const rsvps = response?.data?.rsvps || [];
       // 处理数据格式
-      const processedParticipants: Participant[] = rsvps
-        .map((record: any) => ({
-          name: record.name || '未知用户',
-          wechatId: record.wechat_id || '',
-          createdAt: record.created_at,
-          meetupId: record.meetup_id,
-        }))
-        .filter((item) => `${item.meetupId}` === meetupId);
+      const processedParticipants: Participant[] = rsvps.filter(
+        (item) => `${item.meetup_id}` === meetupId
+      );
 
       setParticipants(processedParticipants);
+
+      setMeetup((e) =>
+        e
+          ? {
+              ...e,
+              participant_count: processedParticipants?.length || 0,
+            }
+          : null
+      );
     } catch (err) {
       console.error('加载参与者信息失败:', err);
       showSnackbar.error('加载参与者信息失败，请稍后重试');
@@ -180,7 +184,7 @@ const MeetupDetail: React.FC = () => {
   const handleJoinMeetup = async () => {
     if (!meetup) return;
 
-    if (!isLogin()) {
+    if (!isUserLoggedIn()) {
       showSnackbar.error('请先登录后再报名参加活动');
       const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
@@ -190,7 +194,7 @@ const MeetupDetail: React.FC = () => {
     setIsActionLoading(true);
 
     try {
-      const verify = await api.auth.verifyToken();
+      const verify = await authApi.verifyToken();
       const valid = (verify.success && (verify.data as any)?.valid) === true;
       if (!valid) {
         showSnackbar.error('请先登录后再报名参加活动');
@@ -204,7 +208,7 @@ const MeetupDetail: React.FC = () => {
       // 检查是否已经报名
       const isAlreadyRegistered = await checkRSVPStatus(
         meetup.id!,
-        userInfo.wechatId || ''
+        userInfo?.wechat_id || ''
       );
       if (isAlreadyRegistered) {
         if (meetup.cover) {
@@ -218,7 +222,7 @@ const MeetupDetail: React.FC = () => {
       // 显示报名确认对话框
       setRsvpForm({
         name: userInfo.name || '',
-        wechatId: userInfo.wechatId || '',
+        wechat_id: userInfo.wechat_id || '',
       });
       setShowRSVPDialog(true);
     } catch (error) {
@@ -235,16 +239,12 @@ const MeetupDetail: React.FC = () => {
     wechatId: string
   ): Promise<boolean> => {
     try {
-      // 若缺少微信ID，跳过预检查
-      if (!wechatId) return false;
-
-      // 统一使用已存在的RSVP函数与参数命名
-      const response = await http.get('/rsvp', {
-        meetup_id: meetupId,
-        wechat_id: wechatId,
-      });
-      const rsvps = (response.data && (response.data as any).rsvps) || [];
-      return Array.isArray(rsvps) && rsvps.some((r: any) => r.wechat_id === wechatId);
+      // 使用 getByWechatId 获取该微信用户的所有报名记录
+      const response = await rsvpApi.getByWechatId(meetupId);
+      const rsvps = response.data?.rsvps || [];
+      return (
+        Array.isArray(rsvps) && rsvps.some((r: any) => r.wechat_id === wechatId)
+      );
     } catch (error) {
       console.error('检查报名状态失败:', error);
       return false;
@@ -260,7 +260,7 @@ const MeetupDetail: React.FC = () => {
       return;
     }
 
-    if (!rsvpForm.wechatId.trim()) {
+    if (!rsvpForm.wechat_id.trim()) {
       showSnackbar.warning('请输入您的微信号');
       return;
     }
@@ -268,7 +268,7 @@ const MeetupDetail: React.FC = () => {
     setSubmitStatus('loading');
 
     try {
-      const enteredWechat = rsvpForm.wechatId.trim();
+      const enteredWechat = rsvpForm.wechat_id.trim();
       const precheck = await checkRSVPStatus(String(meetup.id), enteredWechat);
       if (precheck) {
         // 已报名：直接视为成功并展示二维码/提示
@@ -289,12 +289,14 @@ const MeetupDetail: React.FC = () => {
 
       const payload = {
         meetup_id: Number(meetup.id),
-        wechat_id: rsvpForm.wechatId.trim(),
+        wechat_id: rsvpForm.wechat_id.trim(),
         name: rsvpForm.name.trim(),
         user_id: getUserId(),
       };
 
-      const response = await api.rsvp.create(payload);
+      const response = await rsvpApi.create(payload);
+
+      console.log('报名人员原始响应:', response);
 
       if (!response.success) {
         const msg = (response as any)?.error || '报名失败';
@@ -314,7 +316,7 @@ const MeetupDetail: React.FC = () => {
             prev
               ? {
                   ...prev,
-                  participantCount: (prev.participantCount ?? 0) + 1,
+                  participant_count: (prev.participant_count ?? 0) + 1,
                 }
               : null
           );
@@ -323,7 +325,7 @@ const MeetupDetail: React.FC = () => {
         // 更新参与者列表
         setParticipants((prev) => [
           ...prev,
-          { name: rsvpForm.name, wechatId: rsvpForm.wechatId },
+          { name: rsvpForm.name, wechat_id: rsvpForm.wechat_id },
         ]);
 
         // 显示成功消息和二维码
@@ -389,9 +391,9 @@ const MeetupDetail: React.FC = () => {
   const renderMeetupDetail = () => {
     if (!meetup) return null;
 
-    const isUpcomingMeetup = isUpcoming(meetup.datetime);
+    const isUpcomingMeetup = isUpcomingEvent(meetup.datetime);
     const formattedDate = formatDate(meetup.datetime);
-    const formattedTime = formatTime(meetup.datetime);
+    const formattedTime = formatDateTime(meetup.datetime);
     const weekdayNames = [
       '周日',
       '周一',
@@ -402,7 +404,7 @@ const MeetupDetail: React.FC = () => {
       '周六',
     ];
     const weekday = weekdayNames[new Date(meetup.datetime).getDay()];
-    const limitRaw = Number((meetup.maxPpl ?? -1) as any);
+    const limitRaw = Number((meetup.max_ppl ?? -1) as any);
     const isUnlimited =
       !Number.isFinite(limitRaw) || limitRaw <= 0 || limitRaw === -1;
 
@@ -437,7 +439,7 @@ const MeetupDetail: React.FC = () => {
           <Box sx={{ padding: { xs: '1rem', md: '1.5rem' } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
               <Chip
-                label={meetup.mode === 'online' ? '线上活动' : '线下活动'}
+                label={MeetupLabelMap[meetup.mode]}
                 color={meetup.mode === 'online' ? 'primary' : 'secondary'}
                 size="small"
               />
@@ -602,7 +604,7 @@ const MeetupDetail: React.FC = () => {
                   startIcon={<span>👥</span>}
                   sx={{ textTransform: 'none' }}
                 >
-                  {meetup.participantCount || 0}
+                  {meetup.participant_count || 0}
                   {isUnlimited ? '' : `/${limitRaw}`} 人已报名
                 </Button>
               </div>
@@ -677,9 +679,9 @@ const MeetupDetail: React.FC = () => {
             <TextField
               fullWidth
               label="微信号"
-              value={rsvpForm.wechatId}
+              value={rsvpForm.wechat_id}
               onChange={(e) =>
-                setRsvpForm((prev) => ({ ...prev, wechatId: e.target.value }))
+                setRsvpForm((prev) => ({ ...prev, wechat_id: e.target.value }))
               }
               placeholder="请输入您的微信号"
               margin="normal"

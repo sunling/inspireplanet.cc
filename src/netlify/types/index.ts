@@ -3,19 +3,19 @@ export * from './http';
 // 卡片数据接口 - 统一所有卡片相关的类型
 export interface CardItem {
   id: string;
-  userId?: string;
+  user_id?: string;
   title: string;
   quote: string;
   detail?: string;
-  imagePath?: string;
+  image_path?: string;
   creator?: string;
   font?: string;
-  gradientClass?: string;
+  gradient_class?: string;
   upload?: string;
   created: string;
   username?: string;
-  likesCount?: number;
-  updateTime?: number;
+  likes_count?: number;
+  update_time?: number;
 }
 
 // 评论数据接口
@@ -24,43 +24,6 @@ export interface CommentData {
   name: string;
   comment: string;
   created: string;
-}
-
-// 周刊卡片接口
-export interface WeeklyCard {
-  id: string;
-  episode: string;
-  name: string;
-  title: string;
-  quote: string;
-  detail: string;
-  imagePath?: string;
-  created: string;
-}
-
-// 周刊卡片记录接口（数据库用）
-export interface WeeklyCardRecord {
-  episode: string;
-  name: string;
-  title: string;
-  quote: string;
-  detail: string;
-}
-
-// 周刊卡片请求接口
-export interface WeeklyCardRequest {
-  record: WeeklyCardRecord;
-}
-
-// 周刊卡片响应接口
-export interface WeeklyCardResponse {
-  success: boolean;
-  error?: string;
-  message?: string;
-  id?: number;
-  missingFields?: string[];
-  details?: string;
-  records: WeeklyCard[];
 }
 
 export enum MeetupStatus {
@@ -98,7 +61,7 @@ export interface UserInfo {
   id?: string;
   name?: string;
   username?: string;
-  wechatId?: string;
+  wechat_id?: string;
   email?: string;
 }
 
@@ -153,10 +116,10 @@ export interface CarouselCardData {
   id: string;
   title: string;
   quote: string;
-  imagePath?: string;
+  image_path?: string;
   creator: string;
   font: string;
-  gradientClass: string;
+  gradient_class: string;
 }
 
 // 搜索图片结果接口
@@ -176,10 +139,10 @@ export interface SearchImageResponse {
 
 export interface Comment {
   id: string;
-  cardId: string;
+  card_id: string;
   name: string;
   comment: string;
-  createdAt: string;
+  created_at: string;
   [key: string]: any;
 }
 

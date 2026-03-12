@@ -13,7 +13,6 @@
 - 包管理：Yarn Classic（1.x）
 - Node 版本：建议使用 Node 20（本地与部署）
 
-
 ## Netlify 函数
 
 项目使用 Netlify Functions 处理受保护的 API 请求（位于 `src/netlify/functions`）：
@@ -44,30 +43,30 @@ cp .env.example .env
 
 **客户端变量（`VITE_` 前缀，Vite 构建时注入）**
 
-| 变量名 | 说明 |
-|---|---|
-| `VITE_URL` | 本地开发填 `http://localhost:8888` |
-| `VITE_SUPABASE_URL` | Supabase 项目地址 |
-| `VITE_SUPABASE_ANON_KEY` | Supabase 匿名密钥（anon key） |
-| `VITE_OPENROUTER_API_KEY` | OpenRouter API 密钥（用于搜图关键词生成） |
-| `VITE_UNSPLASH_ACCESS_KEY` | Unsplash Access Key（用于搜图） |
-| `VITE_JWT_SECRET` | JWT 加密密钥（与服务端保持一致） |
+| 变量名                     | 说明                                      |
+| -------------------------- | ----------------------------------------- |
+| `VITE_URL`                 | 本地开发填 `http://localhost:8888`        |
+| `VITE_SUPABASE_URL`        | Supabase 项目地址                         |
+| `VITE_SUPABASE_ANON_KEY`   | Supabase 匿名密钥（anon key）             |
+| `VITE_OPENROUTER_API_KEY`  | OpenRouter API 密钥（用于搜图关键词生成） |
+| `VITE_UNSPLASH_ACCESS_KEY` | Unsplash Access Key（用于搜图）           |
+| `VITE_JWT_SECRET`          | JWT 加密密钥（与服务端保持一致）          |
 
 **服务端变量（无前缀，Netlify Functions 运行时注入）**
 
-| 变量名 | 说明 |
-|---|---|
-| `URL` | 本地开发填 `http://localhost:8888` |
-| `SUPABASE_URL` | Supabase 项目地址 |
-| `SUPABASE_ANON_KEY` | Supabase 匿名密钥 |
+| 变量名                      | 说明                                             |
+| --------------------------- | ------------------------------------------------ |
+| `URL`                       | 本地开发填 `http://localhost:8888`               |
+| `SUPABASE_URL`              | Supabase 项目地址                                |
+| `SUPABASE_ANON_KEY`         | Supabase 匿名密钥                                |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role 密钥（绕过 RLS，后端专用） |
-| `JWT_SECRET` | JWT 加密密钥 |
-| `OPENROUTER_API_KEY` | OpenRouter API 密钥 |
-| `UNSPLASH_ACCESS_KEY` | Unsplash Access Key |
-| `GITHUB_TOKEN` | GitHub Personal Access Token（用于保存生成图片） |
-| `GITHUB_REPO_OWNER` | GitHub 用户名 |
-| `GITHUB_REPO_NAME` | 存放图片的仓库名 |
-| `GITHUB_BRANCH` | 目标分支，通常填 `main` |
+| `JWT_SECRET`                | JWT 加密密钥                                     |
+| `OPENROUTER_API_KEY`        | OpenRouter API 密钥                              |
+| `UNSPLASH_ACCESS_KEY`       | Unsplash Access Key                              |
+| `GITHUB_TOKEN`              | GitHub Personal Access Token（用于保存生成图片） |
+| `GITHUB_REPO_OWNER`         | GitHub 用户名                                    |
+| `GITHUB_REPO_NAME`          | 存放图片的仓库名                                 |
+| `GITHUB_BRANCH`             | 目标分支，通常填 `main`                          |
 
 > Netlify 本地开发（`netlify dev`）会自动读取根目录的 `.env` 文件，无需手动 `source`。
 

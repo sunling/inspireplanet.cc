@@ -1,24 +1,29 @@
-// 获取环境变量，同时支持客户端和服务端环境
+import { NetlifyEvent, NetlifyResponse } from '../types/http';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  handleOptionsRequest,
+  getFuntionNameFromEvent,
+  getDataFromEvent,
+} from '../utils/server';
+
+export interface SearchImageAction {
+  functionName: 'search';
+}
+
 function getOpenRouterApiKey(): string {
   try {
-    // 首先尝试服务端环境变量（Netlify Functions）
     if (typeof process !== 'undefined' && process.env) {
-      return (
-        process.env.OPENROUTER_API_KEY ||
-        process.env.VITE_OPENROUTER_API_KEY ||
-        ''
-      );
+      return process.env.OPENROUTER_API_KEY || '';
     }
 
-    // 然后尝试客户端环境变量（Vite）
     if (typeof import.meta !== 'undefined') {
       const metaEnv = (import.meta as any).env;
       if (metaEnv) {
-        return metaEnv.VITE_OPENROUTER_API_KEY || '';
+        return metaEnv.OPENROUTER_API_KEY || '';
       }
     }
 
-    // 兜底方案
     console.error('获取环境变量出错！');
     return '';
   } catch (error) {
@@ -29,20 +34,17 @@ function getOpenRouterApiKey(): string {
 
 function getUrl(): string {
   try {
-    // 首先尝试服务端环境变量（Netlify Functions）
     if (typeof process !== 'undefined' && process.env) {
       return process.env.URL || '';
     }
 
-    // 然后尝试客户端环境变量（Vite）
     if (typeof import.meta !== 'undefined') {
       const metaEnv = (import.meta as any).env;
       if (metaEnv) {
-        return metaEnv.VITE_URL || '';
+        return metaEnv.URL || '';
       }
     }
 
-    // 兜底方案
     console.error('获取环境变量出错！');
     return '';
   } catch (error) {
@@ -53,20 +55,17 @@ function getUrl(): string {
 
 function getUnspashAccessKey(): string {
   try {
-    // 首先尝试服务端环境变量（Netlify Functions）
     if (typeof process !== 'undefined' && process.env) {
       return process.env.UNSPLASH_ACCESS_KEY || '';
     }
 
-    // 然后尝试客户端环境变量（Vite）
     if (typeof import.meta !== 'undefined') {
       const metaEnv = (import.meta as any).env;
       if (metaEnv) {
-        return metaEnv.VITE_UNSPLASH_ACCESS_KEY || '';
+        return metaEnv.UNSPLASH_ACCESS_KEY || '';
       }
     }
 
-    // 兜底方案
     console.error('获取环境变量出错！');
     return '';
   } catch (error) {
@@ -75,61 +74,59 @@ function getUnspashAccessKey(): string {
   }
 }
 
-interface NetlifyEvent {
-  httpMethod: string;
-  body: string;
-  headers?: Record<string, string>;
-}
-
-interface NetlifyResponse {
-  statusCode: number;
-  body: string;
-  headers?: Record<string, string>;
-}
-
-export const handler = async function (
-  event: NetlifyEvent
+export async function handler(
+  event: NetlifyEvent,
+  context: any
 ): Promise<NetlifyResponse> {
-  // Only allow POST requests
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Only POST requests are allowed' }),
-    };
+  if (event.httpMethod === 'OPTIONS') {
+    return handleOptionsRequest();
   }
 
-  // Parse request body
-  let requestBody;
   try {
-    requestBody = JSON.parse(event.body);
-  } catch (error) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Invalid request body format' }),
-    };
-  }
+    const functionName = getFuntionNameFromEvent(event);
 
-  // Check if text parameter is provided
-  const { text, orientation = 'landscape' } = requestBody;
+    switch (functionName) {
+      case 'search':
+        return await handleSearch(event);
+      default:
+        return createErrorResponse('无效的操作类型');
+    }
+  } catch (error) {
+    console.error('SearchImage handler error:', error);
+    return createErrorResponse('服务器内部错误', 500);
+  }
+}
+
+async function handleSearch(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const requestBody = getDataFromEvent(event);
+  const text: string = requestBody.text || '';
+  const orientation: string = requestBody.orientation || 'landscape';
+
   if (!text) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Missing text parameter' }),
-    };
+    return createErrorResponse('缺少文本参数');
   }
 
   try {
     const OPENROUTER_API_KEY = getOpenRouterApiKey();
     const URL = getUrl();
     const UNSPLASH_ACCESS_KEY = getUnspashAccessKey();
-    // Step 1: Generate search query using OpenRouter API with Mixtral 8x7B model
+
+    // 检查 API 密钥是否存在
+    if (!OPENROUTER_API_KEY) {
+      return createErrorResponse('OpenRouter API 密钥未配置', 400);
+    }
+
+    if (!UNSPLASH_ACCESS_KEY) {
+      return createErrorResponse('Unsplash API 密钥未配置', 400);
+    }
+
     const openRouterResponse = await fetch(
       'https://openrouter.ai/api/v1/chat/completions',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${OPENROUTER_API_KEY || ''}`,
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           'HTTP-Referer': URL || 'http://localhost:8888',
           'X-Title': 'Inspiration Planet',
         },
@@ -139,7 +136,7 @@ export const handler = async function (
             {
               role: 'system',
               content:
-                "You are a helpful assistant that generates concise image search queries based on user input. Your response should be a single search query string, no more than 100 characters, that captures the essence of the user's input for finding relevant images. Do not include any explanations or additional text.",
+                "You are a helpful assistant that generates concise image search queries based on user input. Your response should be a single search query string, no more than 100 characters, that captures essence of user's input for finding relevant images. Do not include any explanations or additional text.",
             },
             {
               role: 'user',
@@ -155,29 +152,19 @@ export const handler = async function (
 
     if (!openRouterResponse.ok) {
       console.error('OpenRouter API error:', openRouterData);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: 'Failed to generate search query',
-          details: openRouterData,
-        }),
-      };
+      return createErrorResponse('生成搜索查询失败', 500);
     }
 
-    // Extract the generated query
     const query = openRouterData.choices?.[0]?.message?.content?.trim() || text;
-
-    // Ensure query is not too long
     const finalQuery = query.length > 100 ? query.substring(0, 100) : query;
 
-    // Step 2: Search for images on Unsplash API
     const unsplashResponse = await fetch(
       `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
         finalQuery
       )}&per_page=6&orientation=${orientation}`,
       {
         headers: {
-          Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY || ''}`,
+          Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
         },
       }
     );
@@ -186,16 +173,9 @@ export const handler = async function (
 
     if (!unsplashResponse.ok) {
       console.error('Unsplash API error:', unsplashData);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: 'Failed to search for images',
-          details: unsplashData,
-        }),
-      };
+      return createErrorResponse('搜索图片失败', 500);
     }
 
-    // Format the response
     const images = (unsplashData.results || []).map((image: any) => ({
       url: image.urls.regular,
       title: image.description || image.alt_description || 'Unsplash Image',
@@ -208,21 +188,9 @@ export const handler = async function (
       },
     }));
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        query: finalQuery,
-        images: images,
-      }),
-    };
+    return createSuccessResponse({ query: finalQuery, images: images });
   } catch (error: any) {
     console.error('Error:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: 'Error processing request',
-        details: error.message || 'Unknown error',
-      }),
-    };
+    return createErrorResponse('处理请求错误', 500);
   }
-};
+}

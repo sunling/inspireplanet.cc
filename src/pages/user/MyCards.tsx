@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '@/netlify/configs';
-import { CardItem } from '@/netlify/types';
-import { formatDate, getCurrentUser } from '@/utils';
+import { CardItem } from '../../netlify/types';
+import { formatDate, getUserInfo } from '@/utils';
 import DOMPurify from 'dompurify';
 import {
   Box,
@@ -18,6 +17,8 @@ import useResponsive from '@/hooks/useResponsive';
 import { useGlobalSnackbar } from '@/context/app';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
+import { cardsApi, commentsApi } from '../../netlify/config';
+import { getUserName, isUserLoggedIn } from '../../utils/user';
 
 interface ValidationResult {
   isValid: boolean;
@@ -47,7 +48,7 @@ const MyCards: React.FC = () => {
       title: DOMPurify.sanitize(card.title),
       quote: DOMPurify.sanitize(card.quote),
       detail: card.detail ? DOMPurify.sanitize(card.detail) : undefined,
-      imagePath: card.imagePath
+      image_path: card.imagePath
         ? DOMPurify.sanitize(card.imagePath)
         : undefined,
       font: DOMPurify.sanitize(card.font),
@@ -61,24 +62,22 @@ const MyCards: React.FC = () => {
 
   const fetchMyCards = async () => {
     try {
-      const currentUser = getCurrentUser();
-      if (!currentUser?.username) {
+      if (!isUserLoggedIn()) {
         showSnackbar.error('请先登录');
         return [];
       }
       setLoading(true);
       setError(null);
-      const response = await api.cards.getAll();
+      const response = await cardsApi.getAll();
       if (!response.success) {
         showSnackbar.error(response.error || '获取卡片失败，请稍后再试');
         return [];
       }
       const records = response?.data?.records || [];
+      const userName = getUserName();
       const list =
         records.filter(
-          (item) =>
-            item.username === currentUser.username ||
-            item.creator === currentUser.username
+          (item) => item.username === userName || item.creator === userName
         ) || [];
       setCards(list);
     } catch (e) {
@@ -120,7 +119,7 @@ const MyCards: React.FC = () => {
   }, []);
 
   const renderEmptyState = () => {
-    const currentUser = getCurrentUser();
+    const currentUser = getUserInfo();
     if (!currentUser) {
       return <Empty description="登录后才能查看您创建的卡片" />;
     }
@@ -247,7 +246,7 @@ const MyCards: React.FC = () => {
                               }
                               onSubmitComment={async (id, name, comment) => {
                                 try {
-                                  const res = await api.comments.create({
+                                  const res = await commentsApi.create({
                                     cardId: id,
                                     name,
                                     comment,

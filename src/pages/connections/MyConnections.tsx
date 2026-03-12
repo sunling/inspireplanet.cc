@@ -16,8 +16,10 @@ import {
   Grid,
   Chip,
 } from '@mui/material';
-import { api } from '@/netlify/configs';
+
 import { useGlobalSnackbar } from '@/context/app';
+import { oneOnOneApi, peopleApi, profileApi } from '../../netlify/config';
+import { getUserTimeZone } from '../../utils/date';
 
 type SelectSlot = {
   datetime_iso: string;
@@ -36,13 +38,7 @@ const AcceptDialog: React.FC<{
     datetime_iso: '',
     mode: 'online',
   });
-  const timeZone = useMemo(() => {
-    try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区';
-    } catch {
-      return '本地时区';
-    }
-  }, []);
+  const timeZone = getUserTimeZone();
   const canSubmit = useMemo(() => {
     if (!slot.datetime_iso || !slot.mode) return false;
     const t = new Date(slot.datetime_iso).getTime();
@@ -52,7 +48,7 @@ const AcceptDialog: React.FC<{
   const submit = async () => {
     try {
       const iso = new Date(slot.datetime_iso).toISOString();
-      const createRes = await api.oneonone.meetings.create({
+      const createRes = await oneOnOneApi.meetings.create({
         invite_id: String(invite?.id),
         final_datetime_iso: iso,
         mode: slot.mode,
@@ -254,8 +250,8 @@ const MyConnections: React.FC = () => {
   >({});
   const loadInvites = async () => {
     const [recv, sent] = await Promise.all([
-      api.oneonone.invites.list('invitee', recvStatusFilter || undefined),
-      api.oneonone.invites.list('inviter', sentStatusFilter || undefined),
+      oneOnOneApi.invites.list('invitee', recvStatusFilter || undefined),
+      oneOnOneApi.invites.list('inviter', sentStatusFilter || undefined),
     ]);
     if (recv.success) setInvitesReceived(recv.data?.invites || []);
     else show.error(recv.error || '加载收到的邀请失败');
@@ -263,7 +259,7 @@ const MyConnections: React.FC = () => {
     else show.error(sent.error || '加载发出的邀请失败');
   };
   const loadMeetings = async () => {
-    const res = await api.oneonone.meetings.list();
+    const res = await oneOnOneApi.meetings.list();
     if (res.success) {
       const all = res.data?.meetings || [];
       setMeetings(all);
@@ -275,17 +271,10 @@ const MyConnections: React.FC = () => {
   }, []);
   useEffect(() => {
     const loadMy = async () => {
-      const r = await api.profile.getMy();
+      const r = await profileApi.getMy();
       if (r.success) setMyProfile(r.data?.profile || null);
     };
     loadMy();
-  }, []);
-  const timeZone = useMemo(() => {
-    try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区';
-    } catch {
-      return '本地时区';
-    }
   }, []);
   useEffect(() => {
     loadInvites();
@@ -301,7 +290,7 @@ const MyConnections: React.FC = () => {
       const missingStr = [...missing].sort().join(',');
       if (missingStr === lastMissingRef.current) return;
       lastMissingRef.current = missingStr;
-      const r = await api.people.getByIds(missing);
+      const r = await peopleApi.getByIds(missing);
       const results = r.success ? r.data?.users || [] : [];
       const next = { ...peopleMap };
       results.forEach((u: any) => {
@@ -317,7 +306,7 @@ const MyConnections: React.FC = () => {
     return u.name || `@${u.username}`;
   };
   const decline = async (id: string) => {
-    const res = await api.oneonone.invites.update(id, { status: 'declined' });
+    const res = await oneOnOneApi.invites.update(id, { status: 'declined' });
     if (res.success) {
       show.success('已拒绝');
       loadInvites();
@@ -338,13 +327,7 @@ const MyConnections: React.FC = () => {
     );
     const [url, setUrl] = useState<string>(meeting?.meeting_url || '');
     const [loc, setLoc] = useState<string>(meeting?.location_text || '');
-    const timeZone = useMemo(() => {
-      try {
-        return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区';
-      } catch {
-        return '本地时区';
-      }
-    }, []);
+    const timeZone = getUserTimeZone();
     const canSave = useMemo(() => {
       if (!time) return false;
       const t = new Date(time).getTime();
@@ -352,7 +335,7 @@ const MyConnections: React.FC = () => {
     }, [time]);
     const save = async () => {
       const iso = time ? new Date(time).toISOString() : undefined;
-      const res = await api.oneonone.meetings.update(meeting.id, {
+      const res = await oneOnOneApi.meetings.update(meeting.id, {
         final_datetime_iso: iso,
         mode,
         meeting_url: url || null,
@@ -474,7 +457,7 @@ const MyConnections: React.FC = () => {
     );
   };
   const cancelSent = async (id: string) => {
-    const res = await api.oneonone.invites.update(id, { status: 'cancelled' });
+    const res = await oneOnOneApi.invites.update(id, { status: 'cancelled' });
     if (res.success) {
       show.success('已取消邀请');
       loadInvites();
@@ -782,7 +765,7 @@ const MyConnections: React.FC = () => {
                       variant="text"
                       disabled={m.status === 'cancelled'}
                       onClick={async () => {
-                        const res = await api.oneonone.meetings.update(m.id, {
+                        const res = await oneOnOneApi.meetings.update(m.id, {
                           status: 'cancelled',
                         });
                         if (res.success) {
