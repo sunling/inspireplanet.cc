@@ -160,7 +160,7 @@ const Header: React.FC<HeaderProps> = ({
 
   // 渲染下拉菜单
   const renderDropdownMenu = (menu: DropdownMenu) => (
-    <>
+    <div key={menu.label}>
       <Button
         color="inherit"
         startIcon={menu.icon}
@@ -200,7 +200,7 @@ const Header: React.FC<HeaderProps> = ({
           </MenuItem>
         ))}
       </Menu>
-    </>
+    </div>
   );
 
   // 渲染导航链接
@@ -258,6 +258,7 @@ const Header: React.FC<HeaderProps> = ({
   ) => (
     <>
       <ListItem
+        key={label}
         sx={{
           color: items.some((item) => isActiveRoute(item.path))
             ? '#ff7f50'
