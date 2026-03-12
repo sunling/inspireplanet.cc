@@ -28,7 +28,13 @@ import ErrorCard from '../../components/ErrorCard';
 import Loading from '../../components/Loading';
 import Empty from '../../components/Empty';
 
-import { formatTime, formatDate, isUserLoggedIn, getUserId } from '../../utils';
+import {
+  formatTime,
+  formatDate,
+  isUserLoggedIn,
+  getUserId,
+  getUserInfo,
+} from '../../utils';
 import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
 import { meetupsApi, rsvpApi } from '../../netlify/config';
 
@@ -198,12 +204,7 @@ const Meetups: React.FC = () => {
   };
 
   const handleJoinMeetup = async (meetupId: string, qrImageUrl?: string) => {
-    const token =
-      localStorage.getItem('userToken') || localStorage.getItem('authToken');
-    const userInfo =
-      localStorage.getItem('userInfo') || localStorage.getItem('userData');
-
-    if (!token || !userInfo) {
+    if (!isUserLoggedIn()) {
       showSnackbar.warning('请先登录后再报名参加活动');
       const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
@@ -211,7 +212,7 @@ const Meetups: React.FC = () => {
     }
 
     try {
-      const user = JSON.parse(userInfo);
+      const user = getUserInfo();
       const isRSVPed = await checkRSVPStatus(meetupId);
       if (isRSVPed) {
         if (qrImageUrl) {

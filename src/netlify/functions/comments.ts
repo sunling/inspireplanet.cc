@@ -7,7 +7,7 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
 
@@ -35,7 +35,7 @@ export interface CommentsResponse {
 }
 
 export interface CommentAction {
-  action: 'create' | 'getAll' | 'getByCardId';
+  functionName: 'create' | 'getAll' | 'getByCardId';
 }
 
 export async function handler(
@@ -47,9 +47,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'create':
         return await handleCreate(event);
       case 'getByCardId':

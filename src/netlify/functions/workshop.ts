@@ -4,7 +4,7 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
 
@@ -31,7 +31,7 @@ export interface WorkshopResponse {
 }
 
 export interface WorkshopAction {
-  action: 'create' | 'getAll';
+  functionName: 'create' | 'getAll';
 }
 
 export async function handler(
@@ -43,9 +43,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'create':
         return await handleCreate(event);
       case 'getAll':

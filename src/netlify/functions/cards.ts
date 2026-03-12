@@ -6,7 +6,7 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
 
@@ -23,7 +23,7 @@ const cache: Cache = {
 
 // 定义CardAction接口
 export interface CardAction {
-  action:
+  functionName:
     | 'create'
     | 'update'
     | 'delete'
@@ -48,9 +48,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'create':
         cache.allCards = null;
         cache.cardsByIds = {};

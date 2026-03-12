@@ -165,7 +165,7 @@ class HttpClient {
   // 通用请求方法
   async request<T = any>(
     moduleName: string,
-    config: RequestConfig = { action: 'get' }
+    config: RequestConfig = { functionName: 'get' }
   ): Promise<ApiResponse<T>> {
     try {
       // 合并默认配置和用户配置
@@ -211,56 +211,56 @@ class HttpClient {
   // GET方法
   async get<T = any>(
     moduleName: string,
-    action: string,
+    functionName: string,
     params?: Record<string, any>,
     config: RequestConfig = {}
   ): Promise<ApiResponse<T>> {
     return this.request<T>(moduleName, {
       ...config,
       method: 'GET',
-      params: { ...params, action },
+      params: { ...params, functionName },
     });
   }
 
   // POST方法
   async post<T = any>(
     moduleName: string,
-    action: string,
+    functionName: string,
     data?: any,
     config: RequestConfig = {}
   ): Promise<ApiResponse<T>> {
     return this.request<T>(moduleName, {
       ...config,
       method: 'POST',
-      body: JSON.stringify({ ...data, action }),
+      body: JSON.stringify({ ...data, functionName }),
     });
   }
 
   // PUT方法
   async put<T = any>(
     moduleName: string,
-    action: string,
+    functionName: string,
     data?: any,
     config: RequestConfig = {}
   ): Promise<ApiResponse<T>> {
     return this.request<T>(moduleName, {
       ...config,
       method: 'PUT',
-      body: JSON.stringify({ ...data, action }),
+      body: JSON.stringify({ ...data, functionName }),
     });
   }
 
   // DELETE方法
   async delete<T = any>(
     moduleName: string,
-    action: string,
+    functionName: string,
     params?: Record<string, any>,
     config: RequestConfig = {}
   ): Promise<ApiResponse<T>> {
     return this.request<T>(moduleName, {
       ...config,
       method: 'DELETE',
-      params: { ...params, action },
+      params: { ...params, functionName },
     });
   }
 }
@@ -276,36 +276,36 @@ export const http = {
   // HTTP方法
   get: <T = any>(
     moduleName: string,
-    action: string,
+    functionName: string,
     params?: Record<string, any>,
     config?: RequestConfig
-  ) => httpClient.get<T>(moduleName, action, params, config),
+  ) => httpClient.get<T>(moduleName, functionName, params, config),
 
   post: <T = any>(
     moduleName: string,
-    action: string,
+    functionName: string,
     data?: any,
     config?: RequestConfig
-  ) => httpClient.post<T>(moduleName, action, data, config),
+  ) => httpClient.post<T>(moduleName, functionName, data, config),
 
   put: <T = any>(
     moduleName: string,
-    action: string,
+    functionName: string,
     data?: any,
     config?: RequestConfig
-  ) => httpClient.put<T>(moduleName, action, data, config),
+  ) => httpClient.put<T>(moduleName, functionName, data, config),
 
   delete: <T = any>(
     moduleName: string,
-    action: string,
+    functionName: string,
     params?: Record<string, any>,
     config?: RequestConfig
-  ) => httpClient.delete<T>(moduleName, action, params, config),
+  ) => httpClient.delete<T>(moduleName, functionName, params, config),
 
   // 直接使用request方法
   request: <T = any>(
     moduleName: string,
-    action: string,
+    functionName: string,
     config?: RequestConfig
-  ) => httpClient.request<T>(moduleName, { action, ...config }),
+  ) => httpClient.request<T>(moduleName, { functionName, ...config }),
 };

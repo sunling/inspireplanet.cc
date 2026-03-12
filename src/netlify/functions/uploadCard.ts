@@ -4,7 +4,7 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
 
@@ -45,7 +45,7 @@ export interface SearchImageResponse {
 }
 
 export interface UploadCardAction {
-  action: 'create';
+  functionName: 'create';
 }
 
 function getBaseUrl(): string {
@@ -77,9 +77,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'create':
         return await handleCreate(event);
       default:
@@ -113,7 +113,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'search', text: record.detail }),
+        body: JSON.stringify({ functionName: 'search', text: record.detail }),
       }
     );
 

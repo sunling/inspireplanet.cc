@@ -11,7 +11,7 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
 
@@ -71,7 +71,7 @@ export const MeetupList = [
 ];
 
 export interface MeetupAction {
-  action: 'create' | 'getById' | 'getAll' | 'update' | 'delete';
+  functionName: 'create' | 'getById' | 'getAll' | 'update' | 'delete';
 }
 
 export async function handler(
@@ -83,9 +83,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'create':
         return await handleCreate(event);
       case 'getById':

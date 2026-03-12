@@ -4,7 +4,7 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
 } from '../utils/server';
 
 export async function handler(
@@ -16,9 +16,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'getLatestWeeklyCards':
         return await handleGetLatestWeeklyCards(event);
       default:

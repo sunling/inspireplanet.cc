@@ -5,12 +5,12 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
 
 export interface NotificationAction {
-  action: 'get' | 'getAll' | 'update' | 'markAllRead';
+  functionName: 'get' | 'getAll' | 'update' | 'markAllRead';
 }
 
 export async function handler(
@@ -22,9 +22,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'get':
         return await handleGet(event);
       case 'getAll':

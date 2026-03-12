@@ -5,12 +5,12 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
 
 export interface RsvpAction {
-  action:
+  functionName:
     | 'create'
     | 'get'
     | 'getAll'
@@ -29,9 +29,9 @@ export async function handler(event: NetlifyEvent, context: any) {
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'create':
         return await handleCreate(event);
       case 'get':

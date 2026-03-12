@@ -43,7 +43,7 @@ export const cardsApi = {
       '/cards',
       'like',
       {
-        action: 'like',
+        functionName: 'like',
         cardId,
       }
     );

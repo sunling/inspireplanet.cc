@@ -3,7 +3,7 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
 
@@ -27,7 +27,7 @@ interface GitHubResponse {
 }
 
 export interface UploadImageAction {
-  action: 'upload';
+  functionName: 'upload';
 }
 
 export async function handler(
@@ -39,9 +39,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'upload':
         return await handleUpload(event);
       default:

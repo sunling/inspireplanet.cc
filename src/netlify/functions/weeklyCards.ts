@@ -6,7 +6,7 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
 
@@ -19,9 +19,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'getAll':
         return await handleGetAll(event);
       case 'getByEpisode':

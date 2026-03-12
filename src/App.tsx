@@ -8,6 +8,7 @@ import Footer from './components/Footer';
 import FloatingActions from './components/FloatingActions';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { getUserName, isUserLoggedIn } from './utils/user';
 
 const theme = createTheme({
   palette: {
@@ -36,14 +37,9 @@ const App: React.FC = () => {
   useEffect(() => {
     const checkAuth = () => {
       try {
-        const token =
-          localStorage.getItem('authToken') || localStorage.getItem('token');
-        const userData = localStorage.getItem('userInfo');
-
-        if (token && userData) {
+        if (isUserLoggedIn()) {
           setIsAuthenticated(true);
-          const user = JSON.parse(userData);
-          setUserName(user.name || '用户');
+          setUserName(getUserName() || '用户');
         } else {
           setIsAuthenticated(false);
           setUserName('');

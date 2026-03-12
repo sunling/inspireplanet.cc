@@ -5,7 +5,7 @@ import { UserInfo } from '../netlify/types';
  * @param token 认证令牌
  * @param userInfo 用户信息
  */
-export const setUserAuth = (token: string, userInfo: any) => {
+export const setUserAuth = (token: string, userInfo: UserInfo) => {
   localStorage.setItem('authToken', token);
   localStorage.setItem('userInfo', JSON.stringify(userInfo));
 };
@@ -54,7 +54,7 @@ export const getUserName = (): string | null => {
   if (userInfo) {
     try {
       const parsedUserInfo = JSON.parse(userInfo);
-      return parsedUserInfo.name;
+      return parsedUserInfo.name || parsedUserInfo.username;
     } catch (e) {
       console.error('解析用户信息失败:', e);
       return null;

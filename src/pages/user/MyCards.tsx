@@ -18,6 +18,7 @@ import { useGlobalSnackbar } from '@/context/app';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
 import { cardsApi, commentsApi } from '../../netlify/config';
+import { getUserName, isUserLoggedIn } from '../../utils/user';
 
 interface ValidationResult {
   isValid: boolean;
@@ -47,7 +48,7 @@ const MyCards: React.FC = () => {
       title: DOMPurify.sanitize(card.title),
       quote: DOMPurify.sanitize(card.quote),
       detail: card.detail ? DOMPurify.sanitize(card.detail) : undefined,
-      imagePath: card.imagePath
+      image_path: card.imagePath
         ? DOMPurify.sanitize(card.imagePath)
         : undefined,
       font: DOMPurify.sanitize(card.font),
@@ -61,8 +62,7 @@ const MyCards: React.FC = () => {
 
   const fetchMyCards = async () => {
     try {
-      const currentUser = getUserInfo();
-      if (!currentUser?.username) {
+      if (!isUserLoggedIn()) {
         showSnackbar.error('请先登录');
         return [];
       }
@@ -74,11 +74,10 @@ const MyCards: React.FC = () => {
         return [];
       }
       const records = response?.data?.records || [];
+      const userName = getUserName();
       const list =
         records.filter(
-          (item) =>
-            item.username === currentUser.username ||
-            item.creator === currentUser.username
+          (item) => item.username === userName || item.creator === userName
         ) || [];
       setCards(list);
     } catch (e) {

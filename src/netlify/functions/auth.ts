@@ -17,7 +17,7 @@ import {
   verifyPassword,
   generateJwtToken,
   verifyJwtToken,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
 } from '../utils/server';
 // 注意：Netlify函数会自动加载.env文件，不需要手动配置dotenv
 
@@ -58,7 +58,7 @@ export interface JwtPayload {
 
 // 定义认证操作接口
 export interface AuthAction {
-  action: 'register' | 'login' | 'verify';
+  functionName: 'register' | 'login' | 'verify';
 }
 
 // JWT密钥
@@ -85,9 +85,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'register':
         return await handleRegister(event);
       case 'login':
@@ -246,9 +246,7 @@ async function handleLogin(event: NetlifyEvent): Promise<NetlifyResponse> {
 
     return createSuccessResponse({
       message: '登录成功',
-      user: {
-        id: user.id,
-      },
+      user,
       token,
     });
   } catch (error: any) {

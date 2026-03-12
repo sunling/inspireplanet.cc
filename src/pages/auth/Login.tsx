@@ -18,7 +18,12 @@ import {
 import useResponsive from '@/hooks/useResponsive';
 import { authApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
-import { user, validation } from '@/utils/helpers';
+import { setUserAuth } from '../../utils/user';
+import {
+  validateEmail,
+  validateLength,
+  validateRequired,
+} from '../../utils/validation';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -77,19 +82,19 @@ const Login: React.FC = () => {
     let isValid = true;
 
     // 验证邮箱
-    if (!validation.required(formData.email)) {
+    if (!validateRequired(formData.email)) {
       errors.email = '请输入邮箱地址';
       isValid = false;
-    } else if (!validation.email(formData.email)) {
+    } else if (!validateEmail(formData.email)) {
       errors.email = '请输入有效的邮箱地址';
       isValid = false;
     }
 
     // 验证密码
-    if (!validation.required(formData.password)) {
+    if (!validateRequired(formData.password)) {
       errors.password = '请输入密码';
       isValid = false;
-    } else if (!validation.length(formData.password, 6, 50)) {
+    } else if (!validateLength(formData.password, 6, 50)) {
       errors.password = '密码长度至少为6位';
       isValid = false;
     }
@@ -157,7 +162,7 @@ const Login: React.FC = () => {
 
       // 保存用户信息和token到localStorage
       const { token, user: userData } = response.data || {};
-      user.setAuth(token || '', userData || {});
+      setUserAuth(token || '', userData || {});
 
       setSuccess(currentMode === 'login' ? '登录成功' : '注册成功');
 

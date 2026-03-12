@@ -19,7 +19,7 @@ import {
 import useResponsive from '@/hooks/useResponsive';
 import { useGlobalSnackbar } from '@/context/app';
 import { DateTime } from 'luxon';
-import { oneOnOneApi } from '../../netlify/config';
+import { oneOnOneApi, peopleApi, profileApi } from '../../netlify/config';
 import { getUserTimeZone } from '../../utils/date';
 import { handleApiResponse } from '../../utils/ajax';
 

@@ -5,12 +5,12 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
 
 export interface UserAction {
-  action: 'get' | 'getAll' | 'search';
+  functionName: 'get' | 'getAll' | 'search';
 }
 
 export async function handler(
@@ -22,9 +22,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'get':
         return await handleGet(event);
       case 'getAll':

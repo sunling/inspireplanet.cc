@@ -3,12 +3,12 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
 
 export interface SearchImageAction {
-  action: 'search';
+  functionName: 'search';
 }
 
 function getOpenRouterApiKey(): string {
@@ -83,9 +83,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'search':
         return await handleSearch(event);
       default:

@@ -9,6 +9,7 @@ export const peopleApi = {
     interest?: string;
     expertise?: string;
     theme?: string;
+    city?: string;
   }): Promise<ApiResponse<{ users: import('../types').PeopleUser[] }>> => {
     return http.get<{ users: import('../types').PeopleUser[] }>(
       '/users',

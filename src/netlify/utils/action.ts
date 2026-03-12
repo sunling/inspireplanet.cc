@@ -6,17 +6,19 @@ import { NetlifyEvent } from '../types/http';
  * @param event Netlify事件对象
  * @returns action参数值
  */
-export function getActionFromEvent(event: NetlifyEvent): string | undefined {
+export function getFuntionNameFromEvent(
+  event: NetlifyEvent
+): string | undefined {
   // GET请求从queryStringParameters获取
   if (event.httpMethod === 'GET' || event.httpMethod === 'DELETE') {
-    return event.queryStringParameters?.action;
+    return event.queryStringParameters?.functionName;
   }
 
   // POST/PUT请求从body获取
   try {
     if (event.body) {
       const body = JSON.parse(event.body);
-      return body.action;
+      return body.functionName;
     }
   } catch (error) {
     console.error('Error parsing body:', error);
@@ -41,8 +43,8 @@ export function getDataFromEvent(event: NetlifyEvent): any {
   try {
     if (event.body) {
       const res = JSON.parse(event.body);
-      if (res['action']) {
-        delete res['action'];
+      if (res['functionName']) {
+        delete res['functionName'];
       }
       return res || {};
     }

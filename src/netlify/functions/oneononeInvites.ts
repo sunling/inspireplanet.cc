@@ -6,12 +6,12 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
-  getActionFromEvent,
+  getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
 
 export interface OneOnOneInviteAction {
-  action: 'create' | 'get' | 'getAll' | 'update';
+  functionName: 'create' | 'get' | 'getAll' | 'update';
 }
 
 export async function handler(
@@ -23,9 +23,9 @@ export async function handler(
   }
 
   try {
-    const action = getActionFromEvent(event);
+    const functionName = getFuntionNameFromEvent(event);
 
-    switch (action) {
+    switch (functionName) {
       case 'create':
         return await handleCreate(event);
       case 'get':
