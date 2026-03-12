@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { react } from '@/utils/helpers';
+import { handleApiResponse } from '../utils/ajax';
 
 export interface UseApiCallOptions {
   onSuccess?: (data: any) => void;
@@ -20,7 +21,9 @@ export interface UseApiCallReturn<T> {
  * @returns 包含loading、error、execute和reset的对象
  */
 export const useApiCall = <T = any>(
-  apiFn: (...args: any[]) => Promise<{ success: boolean; data?: T; error?: string }>,
+  apiFn: (
+    ...args: any[]
+  ) => Promise<{ success: boolean; data?: T; error?: string }>,
   options: UseApiCallOptions = {}
 ): UseApiCallReturn<T> => {
   const [loading, setLoading] = useState(false);
@@ -31,7 +34,7 @@ export const useApiCall = <T = any>(
       const wrappedFn = react.withLoading(
         async () => {
           const response = await apiFn(...args);
-          react.handleApiResponse(
+          handleApiResponse(
             response,
             (data) => {
               if (options.onSuccess) options.onSuccess(data);

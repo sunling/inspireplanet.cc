@@ -14,6 +14,7 @@ import {
 import { notificationsApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
 import { getUserTimeZone } from '../../utils/date';
+import { handleApiResponse } from '../../utils/ajax';
 
 const Notifications: React.FC = () => {
   const show = useGlobalSnackbar();
@@ -25,7 +26,7 @@ const Notifications: React.FC = () => {
     const res = await notificationsApi.list(
       filter === 'unread' ? { status: 'unread' } : undefined
     );
-    react.handleApiResponse(
+    handleApiResponse(
       res,
       (data) => setItems(data?.notifications || []),
       (error) => show.error(error || '加载失败')
@@ -38,16 +39,12 @@ const Notifications: React.FC = () => {
 
   const markRead = async (id: string) => {
     const res = await notificationsApi.markRead(id);
-    react.handleApiResponse(res, load, (error) =>
-      show.error(error || '操作失败')
-    );
+    handleApiResponse(res, load, (error) => show.error(error || '操作失败'));
   };
 
   const markAll = async () => {
     const res = await notificationsApi.markAllRead();
-    react.handleApiResponse(res, load, (error) =>
-      show.error(error || '操作失败')
-    );
+    handleApiResponse(res, load, (error) => show.error(error || '操作失败'));
   };
   return (
     <Box
