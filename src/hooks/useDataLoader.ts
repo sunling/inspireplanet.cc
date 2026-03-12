@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { react } from '@/utils/helpers';
+import { handleApiResponse } from '../utils/ajax';
 
 export interface UseDataLoaderOptions {
   immediate?: boolean;
@@ -33,7 +34,7 @@ export const useDataLoader = <T = any>(
     const wrappedFn = react.withLoading(
       async () => {
         const response = await fetchFn();
-        react.handleApiResponse(
+        handleApiResponse(
           response,
           (responseData) => {
             setData(responseData);
