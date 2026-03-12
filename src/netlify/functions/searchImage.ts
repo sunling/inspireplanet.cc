@@ -1,10 +1,10 @@
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
   getActionFromEvent,
+  getDataFromEvent,
 } from '../utils/server';
 
 export interface SearchImageAction {
@@ -98,14 +98,10 @@ export async function handler(
 }
 
 async function handleSearch(event: NetlifyEvent): Promise<NetlifyResponse> {
-  let requestBody;
-  try {
-    requestBody = JSON.parse(event.body);
-  } catch (error) {
-    return createErrorResponse('无效的请求体格式');
-  }
+  const requestBody = getDataFromEvent(event);
+  const text: string = requestBody.text || '';
+  const orientation: string = requestBody.orientation || 'landscape';
 
-  const { text, orientation = 'landscape' } = requestBody;
   if (!text) {
     return createErrorResponse('缺少文本参数');
   }
@@ -115,13 +111,22 @@ async function handleSearch(event: NetlifyEvent): Promise<NetlifyResponse> {
     const URL = getUrl();
     const UNSPLASH_ACCESS_KEY = getUnspashAccessKey();
 
+    // 检查 API 密钥是否存在
+    if (!OPENROUTER_API_KEY) {
+      return createErrorResponse('OpenRouter API 密钥未配置', 400);
+    }
+
+    if (!UNSPLASH_ACCESS_KEY) {
+      return createErrorResponse('Unsplash API 密钥未配置', 400);
+    }
+
     const openRouterResponse = await fetch(
       'https://openrouter.ai/api/v1/chat/completions',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${OPENROUTER_API_KEY || ''}`,
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           'HTTP-Referer': URL || 'http://localhost:8888',
           'X-Title': 'Inspiration Planet',
         },
@@ -159,7 +164,7 @@ async function handleSearch(event: NetlifyEvent): Promise<NetlifyResponse> {
       )}&per_page=6&orientation=${orientation}`,
       {
         headers: {
-          Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY || ''}`,
+          Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
         },
       }
     );

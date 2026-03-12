@@ -28,11 +28,9 @@ import ErrorCard from '../../components/ErrorCard';
 import Loading from '../../components/Loading';
 import Empty from '../../components/Empty';
 
-import { dateTime, user } from '@/utils/helpers';
-import { formatTime, formatDate } from '../../utils';
+import { formatTime, formatDate, isUserLoggedIn, getUserId } from '../../utils';
 import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
-import { rsvpApi } from '../../netlify/config';
-import meetupsApi from '../../netlify/modules/meetups';
+import { meetupsApi, rsvpApi } from '../../netlify/config';
 
 const PAGE_SIZE = 6;
 
@@ -77,7 +75,7 @@ const Meetups: React.FC = () => {
   const [rsvpForm, setRsvpForm] = useState({ name: '', wechatId: '' });
 
   useEffect(() => {
-    setShowCreateButton(user.isLogin());
+    setShowCreateButton(isUserLoggedIn());
 
     loadMeetups();
   }, []);
@@ -260,7 +258,7 @@ const Meetups: React.FC = () => {
         meetup_id: Number(currentMeetupId),
         wechat_id: rsvpForm.wechatId.trim(),
         name: rsvpForm.name.trim(),
-        user_id: user.getId(),
+        user_id: getUserId(),
       });
       if (!response.success) {
         const msg = (response as any)?.error || '报名失败';
@@ -270,7 +268,7 @@ const Meetups: React.FC = () => {
       setMeetups((prev) =>
         prev.map((m) =>
           m.id === currentMeetupId
-            ? { ...m, participantCount: (m.participantCount ?? 0) + 1 }
+            ? { ...m, participantCount: (m.participant_count ?? 0) + 1 }
             : m
         )
       );
@@ -424,8 +422,8 @@ const Meetups: React.FC = () => {
             查看详情
           </Button>
           <Typography variant="caption" color="text.secondary">
-            {meetup.participantCount}
-            {Number(meetup.maxPpl) > 0 ? '/' + meetup.maxPpl : ''}
+            {meetup.participant_count}
+            {Number(meetup.max_ppl) > 0 ? '/' + meetup.max_ppl : ''}
             人参加
           </Typography>
         </CardActions>

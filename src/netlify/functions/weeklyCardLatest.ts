@@ -1,26 +1,11 @@
 import { supabase } from '../../database/supabase';
-import { WeeklyCard } from '../modules/weeklyCards';
-
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
   getActionFromEvent,
 } from '../utils/server';
-
-export interface LatestWeeklyCardsResponse {
-  records: WeeklyCard[];
-  episode?: string | number;
-  total: number;
-  error?: string;
-  message?: string;
-}
-
-export interface WeeklyCardLatestAction {
-  action: 'get';
-}
 
 export async function handler(
   event: NetlifyEvent,
@@ -34,8 +19,8 @@ export async function handler(
     const action = getActionFromEvent(event);
 
     switch (action) {
-      case 'get':
-        return await handleGet(event);
+      case 'getLatestWeeklyCards':
+        return await handleGetLatestWeeklyCards(event);
       default:
         return createErrorResponse('无效的操作类型');
     }
@@ -45,9 +30,11 @@ export async function handler(
   }
 }
 
-async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
+async function handleGetLatestWeeklyCards(
+  event: NetlifyEvent
+): Promise<NetlifyResponse> {
   try {
-    // 按创建时间取最新一条，以此确定最新一期的episode编号
+    // 获取最新一期的episode编号
     const { data: latestEpisode, error: episodeError } = await supabase
       .from('weekly_cards')
       .select('episode')
@@ -60,11 +47,12 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
     }
 
     if (!latestEpisode || latestEpisode.length === 0) {
-      return createSuccessResponse({ records: [], total: 0 });
+      return createSuccessResponse({ records: [] });
     }
 
     const latestEpisodeNumber = latestEpisode[0].episode;
 
+    // 获取该期所有卡片
     const { data, error } = await supabase
       .from('weekly_cards')
       .select('*')
@@ -76,22 +64,7 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse(error.message, 500);
     }
 
-    const records = (data || []).map((row: any, index: number) => ({
-      id: row.id || `row_${index}`,
-      episode: row.episode,
-      title: row.title,
-      name: row.name,
-      quote: row.quote,
-      detail: row.detail,
-      created: row.created,
-      imagePath: row.image_path,
-    }));
-
-    return createSuccessResponse({
-      records,
-      episode: latestEpisodeNumber,
-      total: records.length,
-    });
+    return createSuccessResponse({ records: data });
   } catch (error) {
     console.error('Function error:', error);
     return createErrorResponse('服务器内部错误', 500);

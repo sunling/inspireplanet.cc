@@ -1,7 +1,6 @@
 import { supabase } from '../../database/supabase';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
@@ -64,7 +63,7 @@ export async function handler(event: NetlifyEvent, context: any) {
 
 async function handleCreate(event: NetlifyEvent) {
   try {
-    const rsvpData = JSON.parse(event.body || '{}');
+    const rsvpData = getDataFromEvent(event);
     const meetupIdNum = Number(rsvpData.meetup_id);
     const wechatId = String(rsvpData.wechat_id || '').trim();
     const name = String(rsvpData.name || '').trim();
@@ -193,8 +192,8 @@ async function handleCreate(event: NetlifyEvent) {
 
 async function handleGet(event: NetlifyEvent) {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const { meetup_id, user_id, wechat_id, status } = body;
+    const requestData = getDataFromEvent(event);
+    const { meetup_id, user_id, wechat_id, status } = requestData;
     const meetupIdNum = meetup_id !== undefined ? Number(meetup_id) : undefined;
 
     if (!meetup_id && !user_id && !wechat_id) {
@@ -247,8 +246,8 @@ async function handleGet(event: NetlifyEvent) {
 
 async function handleGetAll(event: NetlifyEvent) {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const { meetup_id, user_id, wechat_id, status } = body;
+    const requestData = getDataFromEvent(event);
+    const { meetup_id, user_id, wechat_id, status } = requestData;
     const meetupIdNum = meetup_id !== undefined ? Number(meetup_id) : undefined;
 
     let query = supabase.from('meetup_rsvps').select('*');
@@ -297,8 +296,8 @@ async function handleGetAll(event: NetlifyEvent) {
 
 async function handleUpdate(event: NetlifyEvent) {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const { id, ...updateData } = body;
+    const requestData = getDataFromEvent(event);
+    const { id, ...updateData } = requestData;
 
     if (!id) {
       return createErrorResponse('缺少RSVP ID');
@@ -375,8 +374,8 @@ async function handleUpdate(event: NetlifyEvent) {
 
 async function handleDelete(event: NetlifyEvent) {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const { id, meetup_id, wechat_id } = body;
+    const requestData = getDataFromEvent(event);
+    const { id, meetup_id, wechat_id } = requestData;
     const idTrimmed = id !== undefined ? String(id).trim() : undefined;
     const meetupIdTrimmed =
       meetup_id !== undefined ? String(meetup_id).trim() : undefined;

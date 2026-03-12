@@ -2,7 +2,6 @@ import { supabase } from '../../database/supabase';
 import { createNotification } from './notifications';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
@@ -46,9 +45,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   const userId = getUserIdFromAuth(event);
   if (!userId) return createErrorResponse('未授权', 401);
 
-  if (!event.body) return createErrorResponse('请求体为空');
-
-  const payload = JSON.parse(event.body);
+  const payload = getDataFromEvent(event);
   const {
     invite_id,
     final_datetime_iso,

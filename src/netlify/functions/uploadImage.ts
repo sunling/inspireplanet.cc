@@ -1,10 +1,10 @@
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
   getActionFromEvent,
+  getDataFromEvent,
 } from '../utils/server';
 
 export interface ImageUploadRequest {
@@ -55,11 +55,7 @@ export async function handler(
 
 async function handleUpload(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    if (!event.body) {
-      return createErrorResponse('请求体为空');
-    }
-
-    const requestBody: ImageUploadRequest = JSON.parse(event.body);
+    const requestBody = getDataFromEvent(event) as ImageUploadRequest;
     const base64Image: string = requestBody.base64Image;
 
     if (!base64Image) {

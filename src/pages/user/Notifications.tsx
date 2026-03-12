@@ -13,13 +13,13 @@ import {
 } from '@mui/material';
 import { notificationsApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
-import { dateTime, react } from '@/utils/helpers';
+import { getUserTimeZone } from '../../utils/date';
 
 const Notifications: React.FC = () => {
   const show = useGlobalSnackbar();
   const [items, setItems] = useState<any[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const timeZone = dateTime.getTimeZone();
+  const timeZone = getUserTimeZone();
 
   const load = async () => {
     const res = await notificationsApi.list(

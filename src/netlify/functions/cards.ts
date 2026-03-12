@@ -2,12 +2,12 @@ import { supabase } from '../../database/supabase';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
 import { CardItem } from '../types';
 import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
   getActionFromEvent,
+  getDataFromEvent,
 } from '../utils/server';
 
 // 内存缓存
@@ -23,7 +23,14 @@ const cache: Cache = {
 
 // 定义CardAction接口
 export interface CardAction {
-  action: 'create' | 'update' | 'delete' | 'like' | 'get' | 'getAll';
+  action:
+    | 'create'
+    | 'update'
+    | 'delete'
+    | 'like'
+    | 'get'
+    | 'getAll'
+    | 'getById';
 }
 
 /**
@@ -62,6 +69,8 @@ export async function handler(
         return await handleLike(event);
       case 'get':
         return await handleGet(event);
+      case 'getById':
+        return await handleGet(event);
       case 'getAll':
         return await handleGetAll(event);
       default:
@@ -75,7 +84,7 @@ export async function handler(
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const cardData: CardItem = JSON.parse(event.body || '{}');
+    const cardData = getDataFromEvent(event) as CardItem;
 
     if (!cardData.title || !cardData.quote || !cardData.detail) {
       return createErrorResponse('缺少必填字段');
@@ -119,12 +128,13 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
 async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const params = event.queryStringParameters || {};
-    const idParam = params.id;
-    const body = event.body ? JSON.parse(event.body) : {};
-    const id = body.id;
-    const pageParam = params.page ? parseInt(params.page, 10) : null;
-    const limitParam = params.limit ? parseInt(params.limit, 10) : null;
+    const requestData = getDataFromEvent(event);
+    const id = requestData.id;
+
+    const pageParam = requestData.page ? parseInt(requestData.page, 10) : null;
+    const limitParam = requestData.limit
+      ? parseInt(requestData.limit, 10)
+      : null;
     const isPaginated = pageParam !== null && limitParam !== null;
 
     if (!id) {
@@ -133,7 +143,8 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
 
     const cacheKey = String(id);
     if (cache.cardsByIds[cacheKey]) {
-      return createSuccessResponse({ records: cache.cardsByIds[cacheKey] });
+      const records = cache.cardsByIds[cacheKey];
+      return createSuccessResponse({ records, total: records.length });
     }
 
     const { data, error } = await supabase
@@ -146,10 +157,10 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse(error.message, 500);
     }
 
-    const records = (data || []).map((row) => row);
+    const records = (data || []).map((row: any) => row);
     cache.cardsByIds[cacheKey] = records;
 
-    return createSuccessResponse({ records });
+    return createSuccessResponse({ records, total: records.length });
   } catch (error: any) {
     console.error('Get card error:', error);
     return createErrorResponse('服务器内部错误', 500);
@@ -158,52 +169,41 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
 
 async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const userId = body.userId;
-
-    // 检查查询参数中是否有id
-    const params = event.queryStringParameters || {};
-    const idParam = params.id;
-    const pageParam = params.page ? parseInt(params.page, 10) : null;
-    const limitParam = params.limit ? parseInt(params.limit, 10) : null;
+    const requestData = getDataFromEvent(event);
+    const userId = requestData.userId;
+    const idParam = requestData.id;
+    const pageParam = requestData.page ? parseInt(requestData.page, 10) : null;
+    const limitParam = requestData.limit
+      ? parseInt(requestData.limit, 10)
+      : null;
     const isPaginated = pageParam !== null && limitParam !== null;
-
-    if (cache.allCards) {
-      return createSuccessResponse({ records: cache.allCards });
-    }
 
     if (idParam) {
       // 检查是否是逗号分隔的ID列表
       if (idParam.includes(',')) {
         const ids = idParam
           .split(',')
-          .map((id) => id.trim())
-          .filter((id) => id);
+          .map((id: string) => id.trim())
+          .filter((id: string) => id);
         const cacheKey = ids.sort().join(',');
 
         if (cache.cardsByIds[cacheKey]) {
-          return {
-            statusCode: 200,
-            body: JSON.stringify({ records: cache.cardsByIds[cacheKey] }),
-          };
+          const records = cache.cardsByIds[cacheKey];
+          return createSuccessResponse({ records, total: records.length });
         }
       } else {
         // 单个ID
         if (cache.cardsByIds[idParam]) {
           console.log('Cache hit for ID:', idParam);
-          return {
-            statusCode: 200,
-            body: JSON.stringify({ records: cache.cardsByIds[idParam] }),
-          };
+          const records = cache.cardsByIds[idParam];
+          return createSuccessResponse({ records, total: records.length });
         }
       }
     } else if (!isPaginated && cache.allCards) {
       // 返回缓存中的所有卡片（无分页时）
       console.log('Cache hit for all cards');
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ records: cache.allCards }),
-      };
+      const records = cache.allCards;
+      return createSuccessResponse({ records, total: records.length });
     }
 
     let query = supabase.from('cards').select('*', { count: 'exact' });
@@ -219,8 +219,8 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
       if (idParam.includes(',')) {
         const ids = idParam
           .split(',')
-          .map((id) => id.trim())
-          .filter((id) => id);
+          .map((id: string) => id.trim())
+          .filter((id: string) => id);
         query = query.in('id', ids);
       } else {
         // 单个ID
@@ -239,13 +239,13 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
       query = query.order('created', { ascending: false }).limit(25);
     }
 
-    const { data, error, count } = await query;
+    const { data: resultData, error, count } = await query;
 
     if (error) {
       return createErrorResponse(error.message, 500);
     }
 
-    const records = (data || []).map((row) => row);
+    const records = (resultData || []).map((row: any) => row);
     cache.allCards = records;
 
     // 更新缓存（无分页时才缓存）
@@ -253,8 +253,8 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
       if (idParam.includes(',')) {
         const ids = idParam
           .split(',')
-          .map((id) => id.trim())
-          .filter((id) => id);
+          .map((id: string) => id.trim())
+          .filter((id: string) => id);
         const cacheKey = ids.sort().join(',');
         cache.cardsByIds[cacheKey] = records;
       } else {
@@ -273,7 +273,7 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
 
 async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const cardData: CardItem = JSON.parse(event.body || '{}');
+    const cardData = getDataFromEvent(event) as CardItem;
 
     if (
       !cardData.id ||
@@ -333,8 +333,8 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
 async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const { id, user_id } = body;
+    const data = getDataFromEvent(event);
+    const { id, user_id } = data;
 
     if (!id) {
       return createErrorResponse('缺少卡片ID');
@@ -376,8 +376,8 @@ async function handleLike(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('未授权', 401);
     }
 
-    const body = event.body ? JSON.parse(event.body) : {};
-    const card_id = body.card_id;
+    const data = getDataFromEvent(event);
+    const card_id = data.card_id;
 
     if (!card_id) {
       return createErrorResponse('缺少卡片ID');

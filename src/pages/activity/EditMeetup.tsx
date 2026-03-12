@@ -5,7 +5,7 @@ import useResponsive from '../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../context/app';
 import { meetupsApi } from '../../netlify/config';
 import { Meetup, MeetupMode } from '../../netlify/functions/meetup';
-import { getUserId, getUserName } from '@/utils/user';
+import { getUserName } from '@/utils/user';
 import EditForm, { formatDateTimeLocal } from './components/EditForm';
 
 const EditMeetup: React.FC = () => {
@@ -62,7 +62,7 @@ const EditMeetup: React.FC = () => {
     setSubmitLoading(true);
     try {
       // 提交更新数据
-      const response = await meetupsApi.update({ id: meetupId, ...data });
+      const response = await meetupsApi.update(meetupId, data);
       if (!response.success) {
         showSnackbar.error(response.error || '更新失败');
         return;

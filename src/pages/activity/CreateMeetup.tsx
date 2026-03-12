@@ -6,17 +6,7 @@ import { useGlobalSnackbar } from '../../context/app';
 import { meetupsApi } from '../../netlify/config';
 import { Meetup, MeetupMode } from '../../netlify/functions/meetup';
 import EditForm, { formatDateTimeLocal } from './components/EditForm';
-
-// 从localStorage获取用户信息
-const getCurrentUser = () => {
-  try {
-    const userInfo = localStorage.getItem('userInfo');
-    return userInfo ? JSON.parse(userInfo) : null;
-  } catch (error) {
-    console.error('解析用户信息失败:', error);
-    return null;
-  }
-};
+import { getUserName } from '../../utils/user';
 
 const CreateMeetup: React.FC = () => {
   const navigate = useNavigate();
@@ -38,7 +28,7 @@ const CreateMeetup: React.FC = () => {
     location: '',
     duration: '',
     max_ppl: null,
-    creator: getCurrentUser()?.name || '',
+    creator: getUserName() || '',
     wechat_id: '',
     cover: '',
   };

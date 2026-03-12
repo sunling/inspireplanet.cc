@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import { downloadCard as utilsDownloadCard } from '@/utils/share';
 
 import {
   Box,
@@ -20,7 +21,7 @@ import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
 import ErrorCard from '@/components/ErrorCard';
 import { useGlobalSnackbar } from '@/context/app';
-import { user } from '@/utils/helpers';
+import { getUserId, isUserLoggedIn, logoutUser } from '../../utils';
 
 const CardDetail: React.FC = () => {
   const location = useLocation();
@@ -112,6 +113,8 @@ const CardDetail: React.FC = () => {
           created: comment.created || new Date().toISOString(),
           cardId: comment.cardId || cardId, // 确保cardId存在
           createdAt: comment.comment.created || new Date().toISOString(),
+          card_id: '',
+          created_at: '',
         })
       );
       setComments(list);
@@ -127,9 +130,9 @@ const CardDetail: React.FC = () => {
   const checkEditPermission = (cardData: CardItem) => {
     try {
       // 支持多种用户数据存储键名
-      const userId = user.getId();
+      const userId = getUserId() || '';
 
-      setCanEdit(userId && userId == cardData.userId);
+      setCanEdit(!!userId && userId == cardData.user_id);
     } catch (e) {
       console.error('解析用户信息失败:', e);
       setCanEdit(false);
@@ -164,9 +167,6 @@ const CardDetail: React.FC = () => {
 
     try {
       setDownloading(true);
-
-      // 导入downloadCard函数
-      const { downloadCard: utilsDownloadCard } = await import('@/utils/share');
 
       // 使用cardRef获取DOM元素
       const cardElement =
@@ -209,8 +209,7 @@ const CardDetail: React.FC = () => {
   // 提交评论
   const handleCommentSubmit = async () => {
     const cardId = getCardId();
-    const token = localStorage.getItem('authToken');
-    if (!token) {
+    if (!isUserLoggedIn()) {
       const redirect = cardId ? `/card-detail?id=${cardId}` : '/cards';
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
       return;
@@ -237,7 +236,7 @@ const CardDetail: React.FC = () => {
 
       if (!response.success) {
         if (response.statusCode === 401) {
-          user.logout();
+          logoutUser();
           showSnackbar.error('登录已过期，请重新登录');
           const redirect = `/card-detail?id=${cardId}`;
           navigate(`/login?redirect=${encodeURIComponent(redirect)}`);

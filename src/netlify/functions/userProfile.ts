@@ -1,16 +1,16 @@
 import { supabase } from '../../database/supabase';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
   getActionFromEvent,
+  getDataFromEvent,
 } from '../utils/server';
 
 export interface UserProfileAction {
-  action: 'get' | 'update';
+  action: 'get' | 'update' | 'getMy';
 }
 
 export async function handler(
@@ -26,6 +26,7 @@ export async function handler(
 
     switch (action) {
       case 'get':
+      case 'getMy':
         return await handleGet(event);
       case 'update':
         return await handleUpdate(event);
@@ -59,9 +60,7 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   const userId = getUserIdFromAuth(event);
   if (!userId) return createErrorResponse('未授权', 401);
 
-  if (!event.body) return createErrorResponse('请求体为空');
-
-  const payload = JSON.parse(event.body);
+  const payload = getDataFromEvent(event);
   const record: Record<string, any> = {
     bio: payload.bio ?? null,
     interests: Array.isArray(payload.interests) ? payload.interests : null,

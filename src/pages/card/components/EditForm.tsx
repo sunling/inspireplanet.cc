@@ -131,12 +131,12 @@ const EditForm = forwardRef<EditFormRef, EditFormProps>(
       >
     ) => {
       const { name, value } = e.target;
-      setCardData((prev) => ({ ...prev, [name]: value }));
+      setCardData((prev: any) => ({ ...prev, [name]: value }));
     };
 
     // 处理渐变选择
     const handleGradientSelect = (gradient_class: string) => {
-      setCardData((prev) => ({ ...prev, gradient_class }));
+      setCardData((prev: any) => ({ ...prev, gradient_class }));
     };
 
     // 处理文件上传
@@ -485,19 +485,24 @@ const EditForm = forwardRef<EditFormRef, EditFormProps>(
                         选择背景
                       </Typography>
                       <Box className={`${styles['gradient-selector']} card`}>
-                        {gradientOptions.map((option) => (
-                          <div
-                            key={option.class}
-                            data-gradient={option.class}
-                            className={`${styles['gradient-option']} gradient-option ${
-                              cardData.gradient_class === option.class
-                                ? styles.selected
-                                : ''
-                            }`}
-                            title={option.title}
-                            onClick={() => handleGradientSelect(option.class)}
-                          />
-                        ))}
+                        {gradientOptions.map(
+                          (option: {
+                            class: React.Key | null | undefined;
+                            title: string | undefined;
+                          }) => (
+                            <div
+                              key={option.class}
+                              data-gradient={option.class}
+                              className={`${styles['gradient-option']} gradient-option ${
+                                cardData.gradient_class === option.class
+                                  ? styles.selected
+                                  : ''
+                              }`}
+                              title={option.title}
+                              onClick={() => handleGradientSelect(option.class)}
+                            />
+                          )
+                        )}
                       </Box>
                     </FormControl>
 

@@ -18,9 +18,9 @@ const CardEdit: React.FC = () => {
     quote: '',
     detail: '',
     creator: '',
-    gradientClass: 'card-gradient-1',
+    gradient_class: 'card-gradient-1',
     font: 'Noto Sans SC',
-    imagePath: '',
+    image_path: '',
     created: new Date().toISOString(),
   });
 

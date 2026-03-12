@@ -23,9 +23,7 @@ export const meetupsApi = {
     id: string,
     meetupData: Partial<Meetup>
   ): Promise<ApiResponse<Meetup>> => {
-    return http.put<Meetup>('/meetup', 'update', meetupData, {
-      params: { id },
-    });
+    return http.put<Meetup>('/meetup', 'update', { id, ...meetupData });
   },
 
   delete: async (id: string): Promise<ApiResponse<{ success: boolean }>> => {

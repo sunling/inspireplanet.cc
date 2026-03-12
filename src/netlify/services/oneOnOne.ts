@@ -9,7 +9,7 @@ export const oneOnOneApi = {
       }
     ): Promise<ApiResponse<{ invite: import('../types').OneOnOneInvite }>> => {
       return http.post<{ invite: import('../types').OneOnOneInvite }>(
-        '/oneOnOneInvites',
+        '/oneononeInvites',
         'create',
         data
       );
@@ -23,7 +23,7 @@ export const oneOnOneApi = {
       const params: Record<string, any> = { role };
       if (status) params.status = status;
       return http.get<{ invites: import('../types').OneOnOneInvite[] }>(
-        '/oneOnOneInvites',
+        '/oneononeInvites',
         'getAll',
         params
       );
@@ -33,7 +33,7 @@ export const oneOnOneApi = {
       data: Partial<import('../types').OneOnOneInvite>
     ): Promise<ApiResponse<{ invite: import('../types').OneOnOneInvite }>> => {
       return http.put<{ invite: import('../types').OneOnOneInvite }>(
-        '/oneOnOneInvites',
+        '/oneononeInvites',
         'update',
         {
           id,
@@ -49,7 +49,7 @@ export const oneOnOneApi = {
       ApiResponse<{ meeting: import('../types').OneOnOneMeeting }>
     > => {
       return http.post<{ meeting: import('../types').OneOnOneMeeting }>(
-        '/oneOnOneMeetings',
+        '/oneononeMeetings',
         'create',
         data
       );
@@ -58,7 +58,7 @@ export const oneOnOneApi = {
       ApiResponse<{ meetings: import('../types').OneOnOneMeeting[] }>
     > => {
       return http.get<{ meetings: import('../types').OneOnOneMeeting[] }>(
-        '/oneOnOneMeetings',
+        '/oneononeMeetings',
         'getAll'
       );
     },
@@ -69,7 +69,7 @@ export const oneOnOneApi = {
       ApiResponse<{ meeting: import('../types').OneOnOneMeeting }>
     > => {
       return http.put<{ meeting: import('../types').OneOnOneMeeting }>(
-        '/oneOnOneMeetings',
+        '/oneononeMeetings',
         'update',
         {
           id,

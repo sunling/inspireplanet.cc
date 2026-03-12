@@ -24,7 +24,7 @@ import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import html2canvas from 'html2canvas';
 import { weeklyCardsApi } from '../../netlify/config';
-import { WeeklyCard } from '../../netlify/modules/weeklyCards';
+import { WeeklyCard } from '../../netlify/services/weeklyCards';
 
 const Home: React.FC = () => {
   const [cards, setCards] = useState<WeeklyCard[]>([]);
@@ -42,6 +42,7 @@ const Home: React.FC = () => {
 
     try {
       const response = await weeklyCardsApi.getLatest();
+      console.log('查询最新卡片返回:', response);
 
       const records = response?.data?.records || [];
 

@@ -22,11 +22,12 @@ import {
   getFontColorForGradient,
   getRandomGradientClass,
 } from '@/constants/gradient';
-import { WeeklyCard } from '../../netlify/types';
+
 import { weeklyCardsApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
 import Empty from '@/components/Empty';
 import Loading from '@/components/Loading';
+import { WeeklyCard } from '../../netlify/services/weeklyCards';
 
 export interface WeeklyCardItem extends WeeklyCard {
   gradient: string;

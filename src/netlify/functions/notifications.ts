@@ -1,12 +1,12 @@
 import { supabase } from '../../database/supabase';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
   getActionFromEvent,
+  getDataFromEvent,
 } from '../utils/server';
 
 export interface NotificationAction {
@@ -48,8 +48,8 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('未授权', 401);
   }
 
-  const body = event.body ? JSON.parse(event.body) : {};
-  const { id } = body;
+  const requestData = getDataFromEvent(event);
+  const { id } = requestData;
 
   if (!id) {
     return createErrorResponse('缺少通知ID');
@@ -81,8 +81,8 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('未授权', 401);
   }
 
-  const body = event.body ? JSON.parse(event.body) : {};
-  const { status, limit = '50', offset = '0' } = body;
+  const requestData = getDataFromEvent(event);
+  const { status, limit = '50', offset = '0' } = requestData;
 
   let query = supabase
     .from('notifications')
@@ -111,8 +111,8 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('未授权', 401);
   }
 
-  const body = event.body ? JSON.parse(event.body) : {};
-  const { id } = body;
+  const requestData = getDataFromEvent(event);
+  const { id } = requestData;
 
   if (!id) {
     return createErrorResponse('缺少通知ID');

@@ -2,7 +2,6 @@ import { supabase } from '../../database/supabase';
 import { createNotification } from './notifications';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
@@ -50,15 +49,11 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('未授权', 401);
   }
 
-  if (!event.body) {
-    return createErrorResponse('请求体为空');
-  }
-
-  const data = JSON.parse(event.body);
-  const invitee_id = data.invitee_id;
-  const message = data.message || '';
-  const proposed_slots = Array.isArray(data.proposed_slots)
-    ? data.proposed_slots
+  const requestData = getDataFromEvent(event);
+  const invitee_id = requestData.invitee_id;
+  const message = requestData.message || '';
+  const proposed_slots = Array.isArray(requestData.proposed_slots)
+    ? requestData.proposed_slots
     : [];
 
   if (!invitee_id || proposed_slots.length === 0) {

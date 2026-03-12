@@ -1,5 +1,5 @@
 import { HttpHeaders } from '../types/http';
-import { http } from '../../utils/helpers';
+import { getCommonHeaders } from '../../utils/http';
 import { getActionFromEvent, getDataFromEvent } from './action';
 
 export { getActionFromEvent, getDataFromEvent };
@@ -62,7 +62,7 @@ export function generateJwtToken(
  * @returns HttpHeaders HTTP响应头
  */
 export function getCommonHttpHeader(): HttpHeaders {
-  return http.getCommonHeaders();
+  return getCommonHeaders();
 }
 
 /**

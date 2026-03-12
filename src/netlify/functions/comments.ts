@@ -1,17 +1,15 @@
 import { supabase } from '../../database/supabase';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
-import { string } from '../../utils/helpers';
+import { sanitizeInput } from '../../utils/text';
 import { Comment } from '../types';
 import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
   getUserIdFromAuth,
   getActionFromEvent,
+  getDataFromEvent,
 } from '../utils/server';
-
-const { sanitizeInput } = string;
 
 export interface CommentResponse {
   id: string;
@@ -37,7 +35,7 @@ export interface CommentsResponse {
 }
 
 export interface CommentAction {
-  action: 'create' | 'get' | 'getAll';
+  action: 'create' | 'getAll' | 'getByCardId';
 }
 
 export async function handler(
@@ -54,8 +52,8 @@ export async function handler(
     switch (action) {
       case 'create':
         return await handleCreate(event);
-      case 'get':
-        return await handleGet(event);
+      case 'getByCardId':
+        return await handleGetByCardId(event);
       case 'getAll':
         return await handleGetAll(event);
       default:
@@ -69,11 +67,7 @@ export async function handler(
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    if (!event.body) {
-      return createErrorResponse('缺少请求体');
-    }
-
-    const commentData = JSON.parse(event.body);
+    const commentData = getDataFromEvent(event);
 
     if (!commentData.card_id) {
       return createErrorResponse('缺少card_id字段');
@@ -170,19 +164,21 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   }
 }
 
-async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
+async function handleGetByCardId(
+  event: NetlifyEvent
+): Promise<NetlifyResponse> {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const { card_id } = body;
+    const requestData = getDataFromEvent(event);
+    const { cardId } = requestData;
 
-    if (!card_id) {
-      return createErrorResponse('缺少card_id参数');
+    if (!cardId) {
+      return createErrorResponse('缺少card  d参数');
     }
 
     const { data, error } = await supabase
       .from('comments')
       .select('*')
-      .eq('card_id', card_id)
+      .eq('card_id', cardId)
       .order('created', { ascending: false });
 
     if (error) {
@@ -206,8 +202,8 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
 
 async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const { card_id } = body;
+    const requestData = getDataFromEvent(event);
+    const { card_id } = requestData;
 
     if (!card_id) {
       return createErrorResponse('缺少card_id参数');

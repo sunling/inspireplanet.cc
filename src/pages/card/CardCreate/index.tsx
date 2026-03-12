@@ -8,6 +8,7 @@ import { useGlobalSnackbar } from '@/context/app';
 import { getUserId } from '@/utils/user';
 import { gradientOptions } from '@/constants/gradient';
 import EditForm, { EditFormRef } from '../components/EditForm';
+import { getUserName } from '../../../utils';
 
 const CreateCard: React.FC = () => {
   const navigate = useNavigate();
@@ -19,16 +20,7 @@ const CreateCard: React.FC = () => {
     const randomIndex = Math.floor(Math.random() * gradientOptions.length);
     const randomGradient = gradientOptions[randomIndex];
 
-    let creator = '';
-    try {
-      const userInfoStr = localStorage.getItem('userInfo');
-      if (userInfoStr) {
-        const userInfo = JSON.parse(userInfoStr);
-        creator = userInfo.name || '';
-      }
-    } catch (error) {
-      console.error('解析用户信息失败:', error);
-    }
+    let creator = getUserName() || '';
 
     return {
       id: '',
@@ -38,8 +30,8 @@ const CreateCard: React.FC = () => {
       detail: '',
       creator,
       font: 'Noto Sans SC',
-      gradientClass: randomGradient.class,
-      imagePath: '',
+      gradient_class: randomGradient.class,
+      image_path: '',
     };
   };
 
@@ -55,8 +47,8 @@ const CreateCard: React.FC = () => {
       ...cardData,
       created: new Date().toISOString(),
       upload: imageData?.customImage,
-      imagePath: imageData?.selectedSearchImage,
-      userId: getUserId(),
+      image_path: imageData?.selectedSearchImage,
+      user_id: getUserId(),
     };
 
     // 调用API提交卡片
@@ -66,6 +58,7 @@ const CreateCard: React.FC = () => {
       showSnackbar.success('卡片提交成功！');
       // 重置表单
       setInitialCardData(getInitialCardData());
+      setTimeout(() => navigate('/cards'), 1000);
     } else {
       throw new Error(response.error || '提交失败');
     }

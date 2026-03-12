@@ -39,6 +39,8 @@ const Cards: React.FC = () => {
         return;
       }
 
+      console.log('查询卡片返回:', response);
+
       const allCards = response.data?.records || [];
       const validCards = allCards.filter(
         (card) => card && card.title && card.detail
@@ -118,6 +120,7 @@ const Cards: React.FC = () => {
                   }}
                 >
                   <Pagination
+                    className="huili"
                     count={totalPages}
                     page={page}
                     onChange={handlePageChange}

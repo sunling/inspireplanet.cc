@@ -7,7 +7,6 @@ import {
 } from '../types/http';
 
 import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
@@ -108,7 +107,7 @@ export async function handler(
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const meetupData: MeetupRequest = JSON.parse(event.body || '{}');
+    const meetupData = getDataFromEvent(event) as MeetupRequest;
 
     const { title, description, mode, datetime, creator, wechat_id } =
       meetupData;
@@ -197,7 +196,7 @@ async function handleGetById(event: NetlifyEvent): Promise<NetlifyResponse> {
 
     const meetup: Meetup = {
       ...data[0],
-      participantCount: 0,
+      participant_count: 0,
     };
 
     return createSuccessResponse({ meetups: [meetup] });
@@ -262,7 +261,7 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
       const normalized: Meetup[] = data.map((m: Meetup) => {
         const meetup: Meetup = {
           ...m,
-          participantCount: countsByMeetupId[m.id || ''] || 0,
+          participant_count: countsByMeetupId[m.id || ''] || 0,
         };
         return meetup;
       });
@@ -280,8 +279,8 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
 
 async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const { id, ...updateData } = body;
+    const requestData = getDataFromEvent(event);
+    const { id, ...updateData } = requestData;
 
     if (!id) {
       return createErrorResponse('缺少活动ID');
@@ -333,8 +332,8 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
 async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const { id, createdBy } = body;
+    const requestData = getDataFromEvent(event);
+    const { id, createdBy } = requestData;
 
     if (!id) {
       return createErrorResponse('缺少活动ID');

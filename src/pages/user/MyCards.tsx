@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CardItem } from '../../netlify/types';
-import { formatDate, getCurrentUser } from '@/utils';
+import { formatDate, getUserInfo } from '@/utils';
 import DOMPurify from 'dompurify';
 import {
   Box,
@@ -61,7 +61,7 @@ const MyCards: React.FC = () => {
 
   const fetchMyCards = async () => {
     try {
-      const currentUser = getCurrentUser();
+      const currentUser = getUserInfo();
       if (!currentUser?.username) {
         showSnackbar.error('请先登录');
         return [];
@@ -120,7 +120,7 @@ const MyCards: React.FC = () => {
   }, []);
 
   const renderEmptyState = () => {
-    const currentUser = getCurrentUser();
+    const currentUser = getUserInfo();
     if (!currentUser) {
       return <Empty description="登录后才能查看您创建的卡片" />;
     }

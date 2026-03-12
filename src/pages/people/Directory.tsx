@@ -20,7 +20,8 @@ import useResponsive from '@/hooks/useResponsive';
 import { useGlobalSnackbar } from '@/context/app';
 import { DateTime } from 'luxon';
 import { oneOnOneApi } from '../../netlify/config';
-import { dateTime, react } from '@/utils/helpers';
+import { getUserTimeZone } from '../../utils/date';
+import { handleApiResponse } from '../../utils/ajax';
 
 type Slot = { datetime_iso: string; mode: 'online' | 'offline' };
 
@@ -34,7 +35,7 @@ const InviteDialog: React.FC<{
   const [slots, setSlots] = useState<Slot[]>([
     { datetime_iso: '', mode: 'online' },
   ]);
-  const timeZone = dateTime.getTimeZone();
+  const timeZone = getUserTimeZone();
   const presets = useMemo(() => {
     const now = DateTime.local();
     const fmt = (dt: DateTime) => dt.toFormat("yyyy-LL-dd'T'HH:mm");
@@ -89,7 +90,7 @@ const InviteDialog: React.FC<{
       proposed_slots: slots.filter((s) => s.datetime_iso),
     };
     const res = await oneOnOneApi.invites.create(payload);
-    react.handleApiResponse(
+    handleApiResponse(
       res,
       () => {
         show.success('邀请已发送');

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -11,9 +11,10 @@ import {
 } from '@mui/material';
 import useResponsive from '../../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../../context/app';
-import { Meetup, MeetupList, MeetupMode } from '../../netlify/functions/meetup';
-import { getUserId } from '@/utils/user';
-import { imagesApi } from '../../netlify/config';
+import { imagesApi } from '../../../netlify/config';
+import { getUserId } from '../../../utils';
+
+import { Meetup, MeetupList } from '../../../netlify/functions/meetup';
 
 interface FormErrors {
   [key: string]: string | undefined;
@@ -80,6 +81,10 @@ const EditForm: React.FC<EditFormProps> = ({
   const [qrPreview, setQrPreview] = useState(initialValues.cover || '');
   const [errors, setErrors] = useState<FormErrors>({});
   const [formValues, setFormValues] = useState<Meetup>(initialValues);
+
+  useEffect(() => {
+    setFormValues(initialValues);
+  }, [initialValues]);
 
   // 表单验证函数
   const validateForm = (values: Meetup): FormErrors => {
@@ -451,7 +456,7 @@ const EditForm: React.FC<EditFormProps> = ({
                 id="max_ppl"
                 name="max_ppl"
                 type="number"
-                value={formValues.max_ppl}
+                value={formValues.max_ppl || ''}
                 onChange={handleInputChange}
                 placeholder="不限制可留空"
                 size={isMobile ? 'small' : 'medium'}

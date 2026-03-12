@@ -12,7 +12,7 @@ import {
   Chip,
 } from '@mui/material';
 import { useGlobalSnackbar } from '@/context/app';
-import { cardsApi } from '../../netlify/config';
+import { cardsApi, weeklyCardsApi } from '../../netlify/config';
 
 type InputItem = {
   name: string;
@@ -64,7 +64,7 @@ const BulkWeeklyUpload: React.FC = () => {
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       try {
-        const res = await cardsApi.create({
+        const res = await weeklyCardsApi.create({
           name: it.name,
           title: it.title,
           quote: it.quote,

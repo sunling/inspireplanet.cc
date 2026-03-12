@@ -1,11 +1,11 @@
 import { supabase } from '../../database/supabase';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
   getActionFromEvent,
+  getDataFromEvent,
 } from '../utils/server';
 
 export interface WorkshopRegistration {
@@ -61,11 +61,7 @@ export async function handler(
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    if (!event.body) {
-      return createErrorResponse('请求体为空');
-    }
-
-    const registrationData: WorkshopRegistration = JSON.parse(event.body);
+    const registrationData = getDataFromEvent(event) as WorkshopRegistration;
 
     if (!registrationData.name || !registrationData.wechat) {
       return createErrorResponse('缺少必填字段');

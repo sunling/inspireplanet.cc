@@ -18,8 +18,8 @@ import {
 } from '@mui/material';
 
 import { useGlobalSnackbar } from '@/context/app';
-import { oneOnOneApi, peopleApi } from '../../netlify/config';
-import { dateTime } from '@/utils/helpers';
+import { oneOnOneApi, peopleApi, profileApi } from '../../netlify/config';
+import { getUserTimeZone } from '../../utils/date';
 
 type SelectSlot = {
   datetime_iso: string;
@@ -38,7 +38,7 @@ const AcceptDialog: React.FC<{
     datetime_iso: '',
     mode: 'online',
   });
-  const timeZone = dateTime.getTimeZone();
+  const timeZone = getUserTimeZone();
   const canSubmit = useMemo(() => {
     if (!slot.datetime_iso || !slot.mode) return false;
     const t = new Date(slot.datetime_iso).getTime();
@@ -327,7 +327,7 @@ const MyConnections: React.FC = () => {
     );
     const [url, setUrl] = useState<string>(meeting?.meeting_url || '');
     const [loc, setLoc] = useState<string>(meeting?.location_text || '');
-    const timeZone = dateTime.getTimeZone();
+    const timeZone = getUserTimeZone();
     const canSave = useMemo(() => {
       if (!time) return false;
       const t = new Date(time).getTime();

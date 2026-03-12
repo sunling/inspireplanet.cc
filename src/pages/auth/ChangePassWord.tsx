@@ -65,7 +65,7 @@ const ChangePassWord: React.FC = () => {
   // 检查登录状态
   useEffect(() => {
     setIsLoading(true);
-    if (!user.isLogin()) {
+    if (!user.isUserLoggedIn()) {
       const redirect = `${location.pathname}${location.search}${location.hash}`;
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
     }

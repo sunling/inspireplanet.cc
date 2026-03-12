@@ -17,21 +17,16 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Meetup, MeetupStatus, Participant } from '../../netlify/types';
+import { MeetupStatus, Participant } from '../../netlify/types';
 
-import {
-  escapeHtml,
-  formatDate,
-  formatTime,
-  getCurrentUser,
-  isUpcoming,
-} from '@/utils';
+import { escapeHtml, formatDate, getUserInfo } from '@/utils';
 import { useGlobalSnackbar } from '@/context/app';
 import useResponsive from '@/hooks/useResponsive';
 import Empty from '@/components/Empty';
 import ErrorCard from '@/components/ErrorCard';
 import Loading from '@/components/Loading';
 import { meetupsApi, rsvpApi } from '../../netlify/config';
+import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
 
 interface UserInfo {
   username: string;
@@ -96,13 +91,13 @@ const MyMeetups: React.FC = () => {
       }
 
       const meetups = response.data?.meetups || [];
-      const curUser = getCurrentUser() || {};
+      const curUser = getUserInfo() || {};
       const userMeetups = meetups.filter(
         (meetup: Meetup) =>
           meetup.creator === curUser?.username ||
-          meetup.organizer === curUser?.name ||
+          meetup.creator == curUser?.id ||
           meetup.user_id === curUser?.username ||
-          meetup.user_id === curUser?.name
+          meetup.user_id == curUser?.id
       );
       setAllMeetups(userMeetups as Meetup[]);
 
@@ -117,7 +112,7 @@ const MyMeetups: React.FC = () => {
 
   const loadMyRsvps = async (allMeetupsList: Meetup[]) => {
     try {
-      const curUser = getCurrentUser() as any;
+      const curUser = getUserInfo() as any;
       const uid = curUser?.id;
       let res:
         | Awaited<ReturnType<typeof rsvpApi.getByUserId>>
@@ -299,7 +294,7 @@ const MyMeetups: React.FC = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
           <Chip label={statusLabel} color={statusColor as any} size="small" />
           <Chip
-            label={meetup.type === 'online' ? '线上活动' : '线下活动'}
+            label={MeetupLabelMap[meetup.mode]}
             variant="outlined"
             size="small"
           />
@@ -378,7 +373,7 @@ const MyMeetups: React.FC = () => {
                   size={isMobile ? 'small' : 'medium'}
                   color="error"
                   variant="outlined"
-                  onClick={() => deleteMeetup(meetup.id)}
+                  onClick={() => deleteMeetup(meetup.id!)}
                 >
                   🗑️ 取消
                 </Button>
@@ -387,10 +382,7 @@ const MyMeetups: React.FC = () => {
           </Box>
           <Typography variant="caption" color="text.secondary">
             {meetup.participant_count || 0}
-            {Number(meetup.max_participants) > 0
-              ? '/' + meetup.max_participants
-              : ''}{' '}
-            人参加
+            {Number(meetup.max_ppl) > 0 ? '/' + meetup.max_ppl : ''} 人参加
           </Typography>
         </Box>
       </Paper>
@@ -495,7 +487,7 @@ const MyMeetups: React.FC = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
           <Chip label={statusLabel} color={statusColor as any} size="small" />
           <Chip
-            label={meetup.type === 'online' ? '线上活动' : '线下活动'}
+            label={MeetupLabelMap[meetup.mode]}
             variant="outlined"
             size="small"
           />
@@ -568,10 +560,7 @@ const MyMeetups: React.FC = () => {
           </Box>
           <Typography variant="caption" color="text.secondary">
             {meetup.participant_count || 0}
-            {Number(meetup.max_participants) > 0
-              ? '/' + meetup.max_participants
-              : ''}{' '}
-            人参加
+            {Number(meetup.max_ppl) > 0 ? '/' + meetup.max_ppl : ''} 人参加
           </Typography>
         </Box>
       </Paper>
@@ -606,7 +595,7 @@ const MyMeetups: React.FC = () => {
     );
   }
 
-  if (!getCurrentUser()) {
+  if (!getUserInfo()) {
     const redirectUrl = encodeURIComponent(window.location.href);
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>

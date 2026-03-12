@@ -13,28 +13,8 @@ export interface WeeklyCard {
   created: string;
 }
 
-// 周刊卡片记录接口（数据库用）
-export interface WeeklyCardRecord {
-  episode: string;
-  name: string;
-  title: string;
-  quote: string;
-  detail: string;
-}
-
-// 周刊卡片请求接口
-export interface WeeklyCardRequest {
-  record: WeeklyCardRecord;
-}
-
 // 周刊卡片响应接口
 export interface WeeklyCardResponse {
-  success: boolean;
-  error?: string;
-  message?: string;
-  id?: number;
-  missingFields?: string[];
-  details?: string;
   records: WeeklyCard[];
 }
 
@@ -44,7 +24,10 @@ export const weeklyCardsApi = {
   },
 
   getLatest: async (): Promise<ApiResponse<WeeklyCardResponse>> => {
-    return http.get<WeeklyCardResponse>('/weeklyCardLatest', 'get');
+    return http.get<WeeklyCardResponse>(
+      '/weeklyCardLatest',
+      'getLatestWeeklyCards'
+    );
   },
 
   getByEpisode: async (
@@ -64,6 +47,20 @@ export const weeklyCardsApi = {
       {
         limit,
       }
+    );
+  },
+
+  create: async (data: {
+    name: string;
+    title: string;
+    quote: string;
+    detail: string;
+    episode: string;
+  }): Promise<ApiResponse<{ id: string; message: string }>> => {
+    return http.post<{ id: string; message: string }>(
+      '/weeklyCards',
+      'create',
+      data
     );
   },
 };
