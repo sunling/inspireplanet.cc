@@ -317,7 +317,7 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
     if (error) {
       console.error('Database update error:', error);
-      return createErrorResponse('更新活动失败', 500);
+      return createErrorResponse('更新活动数据库失败', 500);
     }
 
     return createSuccessResponse({

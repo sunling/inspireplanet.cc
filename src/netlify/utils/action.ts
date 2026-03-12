@@ -11,7 +11,7 @@ export function getActionFromEvent(event: NetlifyEvent): string | undefined {
   if (event.httpMethod === 'GET' || event.httpMethod === 'DELETE') {
     return event.queryStringParameters?.action;
   }
-  
+
   // POST/PUT请求从body获取
   try {
     if (event.body) {
@@ -21,7 +21,7 @@ export function getActionFromEvent(event: NetlifyEvent): string | undefined {
   } catch (error) {
     console.error('Error parsing body:', error);
   }
-  
+
   return undefined;
 }
 
@@ -36,15 +36,19 @@ export function getDataFromEvent(event: NetlifyEvent): any {
   if (event.httpMethod === 'GET' || event.httpMethod === 'DELETE') {
     return event.queryStringParameters || {};
   }
-  
+
   // POST/PUT请求从body获取
   try {
     if (event.body) {
-      return JSON.parse(event.body) || {};
+      const res = JSON.parse(event.body);
+      if (res['action']) {
+        delete res['action'];
+      }
+      return res || {};
     }
   } catch (error) {
     console.error('Error parsing body:', error);
   }
-  
+
   return {};
 }
