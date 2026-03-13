@@ -8,7 +8,6 @@ export const authApi = {
     password: string
   ): Promise<ApiResponse<AuthResponse>> => {
     return http.post<AuthResponse>('/auth', 'login', {
-      functionName: 'login',
       email,
       password,
     });
@@ -21,16 +20,11 @@ export const authApi = {
     password: string;
     wechat?: string;
   }): Promise<ApiResponse<AuthResponse>> => {
-    return http.post<AuthResponse>('/auth', 'register', {
-      functionName: 'register',
-      ...data,
-    });
+    return http.post<AuthResponse>('/auth', 'register', data);
   },
 
   verifyToken: async (): Promise<ApiResponse<AuthResponse>> => {
-    return http.post<AuthResponse>('/auth', 'verify', {
-      functionName: 'verify',
-    });
+    return http.post<AuthResponse>('/auth', 'verify');
   },
 
   changePassword: async (data: {
@@ -38,10 +32,7 @@ export const authApi = {
     oldPassword: string;
     newPassword: string;
   }): Promise<ApiResponse<{ success: boolean }>> => {
-    return http.post<{ success: boolean }>('/auth', 'change-password', {
-      functionName: 'change-password',
-      ...data,
-    });
+    return http.post<{ success: boolean }>('/auth', 'changePassword', data);
   },
 };
 

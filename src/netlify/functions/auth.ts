@@ -21,6 +21,11 @@ import {
 } from '../utils/server';
 // 注意：Netlify函数会自动加载.env文件，不需要手动配置dotenv
 
+export interface ChangePasswordRequest {
+  email: string;
+  oldPassword: string;
+  newPassword: string;
+}
 // 定义用户接口
 export interface User {
   id: string;
@@ -94,6 +99,8 @@ export async function handler(
         return await handleLogin(event);
       case 'verify':
         return await handleVerifyToken(event);
+      case 'changePassword':
+        return await handleChangePassword(event);
       default:
         return createErrorResponse('无效的操作类型');
     }
@@ -310,5 +317,101 @@ async function handleVerifyToken(
   } catch (error: any) {
     console.error('Token verification error:', error);
     return createErrorResponse('令牌验证过程中发生错误', 500);
+  }
+}
+
+/**
+ * 处理修改密码
+ * @param event 事件对象
+ * @returns 响应对象
+ */
+async function handleChangePassword(
+  event: NetlifyEvent
+): Promise<NetlifyResponse> {
+  try {
+    // 验证JWT token
+    const authHeader =
+      event.headers.authorization || event.headers.Authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return createErrorResponse('未提供有效的认证令牌', 401);
+    }
+
+    const token = authHeader.substring(7);
+    const decoded: JwtPayload = verifyJwtToken(token);
+
+    if (!decoded) {
+      return createErrorResponse('令牌无效或已过期', 401);
+    }
+
+    const changeData: ChangePasswordRequest = JSON.parse(event.body || '{}');
+    const { email, oldPassword, newPassword } = changeData;
+
+    // 验证输入
+    if (!email || !oldPassword || !newPassword) {
+      return createErrorResponse('邮箱、旧密码和新密码都是必填项');
+    }
+
+    // 验证邮箱格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return createErrorResponse('邮箱格式不正确');
+    }
+
+    // 验证新密码长度
+    if (newPassword.length < 6) {
+      return createErrorResponse('新密码至少需要6个字符');
+    }
+
+    // 验证token中的邮箱与请求的邮箱匹配
+    if (decoded.email !== email) {
+      return createErrorResponse('邮箱不匹配', 403);
+    }
+
+    // 查找用户
+    const { data: user } = await supabase
+      .from('users')
+      .select('id, username, email, password, name')
+      .eq('id', decoded.userId)
+      .single();
+
+    if (!user) {
+      return createErrorResponse('用户不存在', 404);
+    }
+
+    // 验证旧密码
+    const isOldPasswordValid = await verifyPassword(
+      oldPassword,
+      user.password!
+    );
+    if (!isOldPasswordValid) {
+      return createErrorResponse('旧密码错误', 401);
+    }
+
+    // 检查新密码是否与旧密码相同
+    const isSamePassword = await verifyPassword(newPassword, user.password!);
+    if (isSamePassword) {
+      return createErrorResponse('新密码不能与旧密码相同');
+    }
+
+    // 加密新密码
+    const hashedNewPassword = await hashPassword(newPassword);
+
+    // 更新密码
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ password: hashedNewPassword })
+      .eq('id', user.id);
+
+    if (updateError) {
+      console.error('Update password error:', updateError);
+      return createErrorResponse('修改密码失败，请稍后重试', 500);
+    }
+
+    return createSuccessResponse({
+      message: '密码修改成功',
+    });
+  } catch (error: any) {
+    console.error('Change password error:', error);
+    return createErrorResponse('修改密码过程中发生错误', 500);
   }
 }

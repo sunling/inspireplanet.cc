@@ -122,7 +122,7 @@ const MeetupDetail: React.FC = () => {
   // 渲染主内容
   const renderContent = () => {
     if (isLoading) {
-      return <Loading message="加载活动详情中..." size={60} />;
+      return <Loading message="加载活动详情中..." size={40} />;
     }
 
     if (error) {
