@@ -222,7 +222,7 @@ const Meetups: React.FC = () => {
         }
         return;
       }
-      setRsvpForm({ name: user.name || '', wechatId: user.wechat_id || '' });
+      setRsvpForm({ name: user?.name || '', wechatId: user?.wechat_id || '' });
       setCurrentMeetupId(meetupId);
       setCurrentQRUrl(qrImageUrl || null);
       setShowRSVPDialog(true);
