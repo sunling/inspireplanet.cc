@@ -18,7 +18,7 @@ import { useGlobalSnackbar } from '@/context/app';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
 import { cardsApi, commentsApi } from '../../netlify/config';
-import { getUserName, isUserLoggedIn } from '../../utils/user';
+import { getUserId, getUserName, isUserLoggedIn } from '../../utils/user';
 
 interface ValidationResult {
   isValid: boolean;
@@ -75,9 +75,13 @@ const MyCards: React.FC = () => {
       }
       const records = response?.data?.records || [];
       const userName = getUserName();
+      const userId = getUserId();
       const list =
         records.filter(
-          (item) => item.username === userName || item.creator === userName
+          (item) =>
+            item.username === userName ||
+            item.creator === userName ||
+            item.user_id == userId
         ) || [];
       setCards(list);
     } catch (e) {
@@ -241,10 +245,14 @@ const MyCards: React.FC = () => {
                             <InspireCard
                               card={card as any}
                               canComment={false}
-                              onCardClick={(id) =>
+                              onCardClick={(id: string) =>
                                 navigate(`/card-detail?id=${id}`)
                               }
-                              onSubmitComment={async (id, name, comment) => {
+                              onSubmitComment={async (
+                                id: string,
+                                name: string,
+                                comment: string
+                              ) => {
                                 try {
                                   const res = await commentsApi.create({
                                     cardId: id,

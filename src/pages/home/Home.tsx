@@ -94,7 +94,7 @@ const Home: React.FC = () => {
   // 渲染轮播内容
   const renderCarouselContent = () => {
     if (isLoading) {
-      return <Loading message="加载卡片中..." size={24} />;
+      return <Loading message="加载卡片中..." size={40} />;
     }
 
     if (error) {

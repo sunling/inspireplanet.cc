@@ -389,6 +389,19 @@ const Login: React.FC = () => {
             >
               返回首页
             </Link>
+            <span style={{ color: 'blue', margin: '0 8px' }}>|</span>
+
+            <Link
+              href="/change-password"
+              variant="body2"
+              sx={{
+                color: 'blue',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              修改密码
+            </Link>
           </Box>
         </Paper>
       </Container>

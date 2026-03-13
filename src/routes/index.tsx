@@ -6,6 +6,7 @@ import App from '../App';
 import Error from '../components/ErrorCard/index';
 import Loading from '../components/Loading/index';
 import MyMeetups from '@/pages/user/MyMeetups';
+import { isUserLoggedIn } from '../utils';
 
 // 错误边界组件
 const ErrorBoundary: React.FC<{ children?: React.ReactNode }> = ({
@@ -42,10 +43,10 @@ const ErrorBoundary: React.FC<{ children?: React.ReactNode }> = ({
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const isAuthenticated = !!localStorage.getItem('authToken');
+  const isAuthenticated = isUserLoggedIn();
   const location = useLocation();
   const redirect = `${location.pathname}${location.search}${location.hash}`;
-  console.log('isAuthenticated', isAuthenticated);
+
   return isAuthenticated ? (
     <>{children}</>
   ) : (

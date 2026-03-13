@@ -14,7 +14,9 @@ import {
 } from '@mui/material';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { user, validation } from '@/utils/helpers';
+import { isUserLoggedIn } from '@/utils/user';
+import { getUserInfo } from '../../utils';
+import Loading from '../../components/Loading';
 
 interface PasswordRequirements {
   length: boolean;
@@ -65,7 +67,7 @@ const ChangePassWord: React.FC = () => {
   // 检查登录状态
   useEffect(() => {
     setIsLoading(true);
-    if (!user.isUserLoggedIn()) {
+    if (!isUserLoggedIn()) {
       const redirect = `${location.pathname}${location.search}${location.hash}`;
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
     }
@@ -165,7 +167,7 @@ const ChangePassWord: React.FC = () => {
     setMessage(null);
 
     try {
-      const currentUser = user.getInfo() || {};
+      const currentUser = getUserInfo();
       // 使用统一的api对象修改密码
       const response = await authApi.changePassword({
         email: currentUser?.email || '',
@@ -201,18 +203,7 @@ const ChangePassWord: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
+    return <Loading message="加载中..." size={40} />;
   }
 
   return (
@@ -407,7 +398,7 @@ const ChangePassWord: React.FC = () => {
                 fullWidth
                 variant="contained"
                 type="submit"
-                disabled={submitLoading || !validateForm()}
+                disabled={submitLoading || Object.keys(errors).length > 0}
                 sx={{
                   py: 1.5,
                   fontSize: '1rem',

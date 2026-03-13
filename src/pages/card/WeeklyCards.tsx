@@ -328,7 +328,7 @@ const WeeklyCards: React.FC = () => {
 
         {/* 卡片容器 */}
         {loading ? (
-          <Loading size={60} />
+          <Loading size={40} />
         ) : sortedYears.length === 0 ? (
           <Empty message="暂无卡片数据" />
         ) : (
