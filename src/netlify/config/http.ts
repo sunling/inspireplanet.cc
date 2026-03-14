@@ -10,6 +10,7 @@ const DEFAULT_HEADER: HttpHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Content-Type': 'application/json',
+  'Cache-Control': 'no-cache, no-store, must-revalidate',
 };
 
 // HTTP客户端类
@@ -215,10 +216,15 @@ class HttpClient {
     params?: Record<string, any>,
     config: RequestConfig = {}
   ): Promise<ApiResponse<T>> {
+    // 添加缓存破坏参数
+    const cacheBustingParams = {
+      ...params,
+      _t: Date.now(),
+    };
     return this.request<T>(moduleName, {
       ...config,
       method: 'GET',
-      params: { ...params, functionName },
+      params: { ...cacheBustingParams, functionName },
     });
   }
 

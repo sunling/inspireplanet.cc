@@ -410,3 +410,181 @@ async function handleLike(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse(e.message || '服务器错误', 500);
   }
 }
+
+/**
+ * 删除卡片
+ * @param event 事件对象
+ * @param context 上下文对象
+ * @returns 响应对象
+ */
+async function deleteCard(
+  event: NetlifyEvent,
+  context: NetlifyContext
+): Promise<NetlifyResponse> {
+  try {
+    // 只允许DELETE请求
+    if (event.httpMethod !== 'DELETE') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({ error: 'Method Not Allowed' }),
+      };
+    }
+
+    // 获取用户身份
+    const userId = getUserId(event);
+    if (!userId) {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Unauthorized' }),
+      };
+    }
+
+    // 从查询参数获取卡片ID
+    const params = event.queryStringParameters || {};
+    const cardId = params.id;
+
+    if (!cardId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Missing card id' }),
+      };
+    }
+
+    // 检查卡片是否存在并获取当前数据
+    const { data: existingCard, error: fetchError } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', cardId)
+      .single();
+
+    if (fetchError || !existingCard) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: 'Card not found' }),
+      };
+    }
+
+    // 验证用户权限（检查用户名是否匹配）
+    // 从JWT token中获取username
+    const auth =
+      (event.headers as any)?.authorization ||
+      (event.headers as any)?.Authorization;
+    const token = String(auth).substring(7);
+    let decodedUsername: string | null = null;
+    let decodedName: string | null = null;
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      decodedUsername = decoded.username || decoded.user_name || null;
+      decodedName = decoded.name || null;
+      console.log('Token decoded - username:', decodedUsername, 'name:', decodedName);
+      console.log('Card data - username:', existingCard.username, 'creator:', existingCard.creator);
+    } catch {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Invalid token' }),
+      };
+    }
+
+    let hasPermission = false;
+
+    // 方式1: 通过 username 验证（推荐方式，用于新卡片）
+    if (existingCard.username && decodedUsername) {
+      if (decodedUsername === existingCard.username) {
+        hasPermission = true;
+        console.log('Permission granted via username match');
+      }
+    }
+
+    // 方式2: 如果卡片没有 username，尝试通过 creator 字段验证（兼容旧卡片）
+    if (!hasPermission && !existingCard.username && existingCard.creator) {
+      if (decodedName === existingCard.creator) {
+        hasPermission = true;
+        console.log('Permission granted via creator match for legacy card');
+      }
+    }
+
+    if (!hasPermission) {
+      console.log('Permission denied: no matching permission found');
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          error: 'Permission denied: You can only delete your own cards',
+        }),
+      };
+    }
+
+    // 删除Supabase中的卡片
+    console.log('Attempting to delete card from Supabase, id:', cardId);
+
+    // 先检查卡片是否真的存在
+    const { data: cardBeforeDelete, error: checkError } = await supabase
+      .from('cards')
+      .select('id, username, creator')
+      .eq('id', cardId)
+      .single();
+
+    console.log('Card before delete:', cardBeforeDelete);
+
+    if (checkError || !cardBeforeDelete) {
+      console.error('Card check failed:', checkError);
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: 'Card not found' }),
+      };
+    }
+
+    // 执行删除操作
+    const { data: deleteData, error: deleteError, count } = await supabase
+      .from('cards')
+      .delete({ count: 'exact' })
+      .eq('id', cardId)
+      .select();
+
+    console.log('Delete operation result:', {
+      error: deleteError,
+      count: count,
+      dataLength: deleteData?.length,
+    });
+
+    if (deleteError) {
+      console.error('Supabase delete error:', deleteError);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Failed to delete card', details: deleteError.message }),
+      };
+    }
+
+    // 验证删除是否成功
+    // 方式1: 检查 data 数组是否有内容（Supabase 会返回被删除的记录）
+    // 方式2: 检查 count 是否大于 0
+    const deleteSuccess = (deleteData && deleteData.length > 0) || (count !== null && count > 0);
+
+    if (!deleteSuccess) {
+      console.error('No records were deleted, count:', count, 'data length:', deleteData?.length);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: 'Delete operation affected 0 rows',
+          details: 'The card may have been already deleted or there might be a permission issue',
+        }),
+      };
+    }
+
+    console.log('Card deleted successfully, affected rows:', count ?? deleteData?.length);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        success: true,
+        message: 'Card deleted successfully',
+      }),
+    };
+  } catch (error: any) {
+    console.error('Delete card error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Internal server error' }),
+    };
+  }
+}
