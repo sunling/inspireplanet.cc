@@ -334,10 +334,15 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
 async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
     const data = getDataFromEvent(event);
-    const { id, user_id } = data;
+    const { id } = data;
+    const user_id = getUserIdFromAuth(event);
 
     if (!id) {
       return createErrorResponse('缺少卡片ID');
+    }
+
+    if (!user_id) {
+      return createErrorResponse('未授权', 401);
     }
 
     const { data: existingCard, error: fetchError } = await supabase

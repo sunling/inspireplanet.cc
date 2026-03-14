@@ -83,7 +83,7 @@ const CardDetail: React.FC = () => {
       const normalizedCard: CardItem = cardData;
 
       setCard(normalizedCard);
-      checkEditPermission(normalizedCard);
+      checkDeletePermission(normalizedCard);
     } catch (error) {
       console.error('获取卡片失败:', error);
       const text = '获取卡片失败';
@@ -138,7 +138,7 @@ const CardDetail: React.FC = () => {
       // 支持多种用户数据存储键名
       const userId = getUserId() || '';
 
-      setCanEdit(!!userId && userId == cardData.user_id);
+      setCanDelete(!!userId && userId == cardData.user_id);
     } catch (e) {
       console.error('解析用户信息失败:', e);
       setCanDelete(false);
@@ -212,8 +212,23 @@ const CardDetail: React.FC = () => {
   // 确认删除
   const handleDeleteConfirm = async () => {
     const cardId = getCardId();
-    if (cardId) {
-      navigate(`/card-edit/${cardId}`);
+    if (!cardId) return;
+
+    setDeleting(true);
+    try {
+      const response = await cardsApi.delete(cardId);
+      if (!response.success) {
+        showSnackbar.error('删除失败：' + (response.error || '未知错误'));
+        return;
+      }
+      showSnackbar.success('卡片已删除');
+      navigate('/cards');
+    } catch (error) {
+      console.error('删除卡片失败:', error);
+      showSnackbar.error('删除失败，请稍后重试');
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
