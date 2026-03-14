@@ -39,14 +39,14 @@ const InspireCard: React.FC<InspireCardProps> = ({
 
   // 获取字体颜色和渐变样式
   const fontColor = getFontColorForGradient(
-    card.gradientClass || 'card-gradient-1'
+    card.gradient_class || 'card-gradient-1'
   );
-  const gradientClass = card.gradientClass || 'card-gradient-1';
+  const gradientClass = card.gradient_class || 'card-gradient-1';
 
   // Quote box背景色：跟随渐变主题颜色的半透明背景
   const quoteBoxBg = `${fontColor}10`;
 
-  const finalImage = card.imagePath || card.upload;
+  const finalImage = card.image_path || card.upload;
 
   // 格式化创建日期
   const formatCardDate = (dateString: string): string => {
@@ -60,7 +60,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
   };
 
   const [likes, setLikes] = useState<number>(
-    Number((card as any).likesCount) || 0
+    Number(card.likes_count) || 0
   );
 
   const handleLike = async () => {
@@ -73,9 +73,8 @@ const InspireCard: React.FC<InspireCardProps> = ({
         window.location.href = `/login?redirect=${redirect}`;
         return;
       }
-      const res = await (
-        await import('../../netlify/config')
-      ).api.cards.like(card.id);
+      const { cardsApi } = await import('../../netlify/config');
+      const res = await cardsApi.like(card.id);
       if (res.success) {
         setLikes(res.data?.likesCount || likes + 1);
         try {
@@ -168,6 +167,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
         >
           <Typography
             variant="body1"
+            component="div"
             sx={{
               fontStyle: 'italic',
               color: fontColor,

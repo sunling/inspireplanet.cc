@@ -120,54 +120,76 @@ async function handleSearch(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('Unsplash API 密钥未配置', 400);
     }
 
-    const openRouterResponse = await fetch(
-      'https://openrouter.ai/api/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': URL || 'http://localhost:8888',
-          'X-Title': 'Inspiration Planet',
-        },
-        body: JSON.stringify({
-          model: 'mistralai/mixtral-8x7b-instruct',
-          messages: [
-            {
-              role: 'system',
-              content:
-                "You are a helpful assistant that generates concise image search queries based on user input. Your response should be a single search query string, no more than 100 characters, that captures essence of user's input for finding relevant images. Do not include any explanations or additional text.",
-            },
-            {
-              role: 'user',
-              content: text,
-            },
-          ],
-          max_tokens: 50,
-        }),
+    // 如果文本包含中文，需要通过 AI 翻译成英文再搜索
+    const hasChinese = /[\u4e00-\u9fff]/.test(text);
+
+    let query = hasChinese ? 'nature inspiration' : text;
+    try {
+      const aiController = new AbortController();
+      const aiTimeout = setTimeout(() => aiController.abort(), 8000);
+
+      const openRouterResponse = await fetch(
+        'https://openrouter.ai/api/v1/chat/completions',
+        {
+          method: 'POST',
+          signal: aiController.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': URL || 'http://localhost:8888',
+            'X-Title': 'Inspiration Planet',
+          },
+          body: JSON.stringify({
+            model: 'mistralai/mistral-7b-instruct:free',
+            messages: [
+              {
+                role: 'system',
+                content:
+                  "You are a helpful assistant that generates concise English image search queries based on user input. Your response should be a single English search query string, no more than 100 characters, that captures essence of user's input for finding relevant images. Do not include any explanations or additional text. Always respond in English only.",
+              },
+              {
+                role: 'user',
+                content: text,
+              },
+            ],
+            max_tokens: 50,
+          }),
+        }
+      );
+
+      clearTimeout(aiTimeout);
+
+      if (openRouterResponse.ok) {
+        const openRouterData = await openRouterResponse.json();
+        const aiQuery = openRouterData.choices?.[0]?.message?.content?.trim();
+        if (aiQuery && !/[\u4e00-\u9fff]/.test(aiQuery)) {
+          query = aiQuery;
+        }
+      } else {
+        const errData = await openRouterResponse.json().catch(() => ({}));
+        console.warn('OpenRouter API error:', errData);
       }
-    );
-
-    const openRouterData = await openRouterResponse.json();
-
-    if (!openRouterResponse.ok) {
-      console.error('OpenRouter API error:', openRouterData);
-      return createErrorResponse('生成搜索查询失败', 500);
+    } catch (aiError: any) {
+      console.warn('OpenRouter request failed, using fallback query:', aiError.message);
     }
-
-    const query = openRouterData.choices?.[0]?.message?.content?.trim() || text;
     const finalQuery = query.length > 100 ? query.substring(0, 100) : query;
+
+    const unsplashController = new AbortController();
+    const unsplashTimeout = setTimeout(() => unsplashController.abort(), 10000);
 
     const unsplashResponse = await fetch(
       `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
         finalQuery
       )}&per_page=6&orientation=${orientation}`,
       {
+        signal: unsplashController.signal,
         headers: {
           Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
         },
       }
     );
+
+    clearTimeout(unsplashTimeout);
 
     const unsplashData = await unsplashResponse.json();
 

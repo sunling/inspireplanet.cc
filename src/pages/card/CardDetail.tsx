@@ -404,11 +404,11 @@ const CardDetail: React.FC = () => {
                 <div
                   id="detail-card"
                   ref={cardRef}
-                  className={`card ${card?.gradientClass || 'card-gradient-1'}`}
+                  className={`card ${card?.gradient_class || 'card-gradient-1'}`}
                   style={{
                     fontFamily: card?.font || 'Noto Sans SC, sans-serif',
                     color: getFontColorForGradient(
-                      card?.gradientClass || 'card-gradient-1'
+                      card?.gradient_class || 'card-gradient-1'
                     ),
                     padding: isMobile ? '24px' : '40px',
                     minHeight: '300px',
@@ -435,7 +435,7 @@ const CardDetail: React.FC = () => {
                         fontWeight: 'bold',
                         mb: 3,
                         color: getFontColorForGradient(
-                          card?.gradientClass || 'card-gradient-1'
+                          card?.gradient_class || 'card-gradient-1'
                         ),
                       }}
                     >
@@ -444,7 +444,7 @@ const CardDetail: React.FC = () => {
                     <Box
                       sx={{
                         backgroundColor: `${getFontColorForGradient(
-                          card?.gradientClass || 'card-gradient-1'
+                          card?.gradient_class || 'card-gradient-1'
                         )}10`,
                         p: 3,
                         borderRadius: '8px',
@@ -460,7 +460,7 @@ const CardDetail: React.FC = () => {
                           fontSize: '2.6rem',
                           lineHeight: 1,
                           color: getFontColorForGradient(
-                            card?.gradientClass || 'card-gradient-1'
+                            card?.gradient_class || 'card-gradient-1'
                           ),
                           opacity: 0.2,
                         },
@@ -470,7 +470,7 @@ const CardDetail: React.FC = () => {
                         variant={isMobile ? 'body1' : 'h6'}
                         sx={{
                           color: getFontColorForGradient(
-                            card?.gradientClass || 'card-gradient-1'
+                            card?.gradient_class || 'card-gradient-1'
                           ),
                           whiteSpace: 'pre-line',
                         }}
@@ -480,7 +480,7 @@ const CardDetail: React.FC = () => {
                     </Box>
                     <Box sx={{ mb: 3 }}>
                       <img
-                        src={card?.imagePath || '/images/mistyblue.png'}
+                        src={card?.image_path || '/images/mistyblue.png'}
                         alt={card?.title || ''}
                         style={{
                           width: '100%',
@@ -507,7 +507,7 @@ const CardDetail: React.FC = () => {
                           variant="body1"
                           sx={{
                             color: getFontColorForGradient(
-                              card?.gradientClass || 'card-gradient-1'
+                              card?.gradient_class || 'card-gradient-1'
                             ),
                             lineHeight: 1.8,
                           }}
@@ -531,7 +531,7 @@ const CardDetail: React.FC = () => {
                       variant="body2"
                       sx={{
                         color: getFontColorForGradient(
-                          card?.gradientClass || 'card-gradient-1'
+                          card?.gradient_class || 'card-gradient-1'
                         ),
                         opacity: 0.8,
                       }}
@@ -544,7 +544,7 @@ const CardDetail: React.FC = () => {
                       variant="body2"
                       sx={{
                         color: getFontColorForGradient(
-                          card?.gradientClass || 'card-gradient-1'
+                          card?.gradient_class || 'card-gradient-1'
                         ),
                         opacity: 0.8,
                       }}
