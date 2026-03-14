@@ -175,7 +175,7 @@ const Home: React.FC = () => {
 
             <Box sx={{ mb: 3 }}>
               <img
-                src={card.imagePath || '/images/mistyblue.png'}
+                src={card.image_path || '/images/mistyblue.png'}
                 alt={card.title}
                 style={{
                   width: '100%',

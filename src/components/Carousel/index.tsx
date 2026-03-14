@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import styles from './index.module.css';
 import { useResponsive } from '../../hooks/useResponsive';
-import { WeeklyCard } from '../../netlify/types';
+import { WeeklyCard } from '../../netlify/services/weeklyCards';
 import { Box, IconButton } from '@mui/material';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -197,7 +197,7 @@ const Carousel: React.FC<CarouselProps> = ({
                 id={`carousel-first-${e.id}`}
               >
                 <img
-                  src={e.imagePath}
+                  src={e.image_path || '/images/mistyblue.png'}
                   className={styles[`${direction}-carousel-img`]}
                   alt={e.title || `Slide ${index + 1}`}
                   loading="lazy"
