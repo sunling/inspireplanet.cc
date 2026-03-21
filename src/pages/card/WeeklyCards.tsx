@@ -450,7 +450,7 @@ const WeeklyCards: React.FC = () => {
                                 <Box sx={{ mb: 3 }}>
                                   <img
                                     src={
-                                      card.imagePath || '/images/mistyblue.png'
+                                      card.image_path || '/images/mistyblue.png'
                                     }
                                     alt={card.title}
                                     style={{

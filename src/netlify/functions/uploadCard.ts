@@ -7,6 +7,7 @@ import {
   getFuntionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
+import { searchImageByText } from '../utils/imageSearch';
 
 export interface WeeklyCardRecord {
   episode: string;
@@ -29,43 +30,8 @@ export interface WeeklyCardResponse {
   id?: string;
 }
 
-export interface SearchImageResponse {
-  query: string;
-  images: Array<{
-    url: string;
-    title: string;
-    description: string;
-    thumb: string;
-    credit: {
-      name: string;
-      username: string;
-      link: string;
-    };
-  }>;
-}
-
 export interface UploadCardAction {
   functionName: 'create';
-}
-
-function getBaseUrl(): string {
-  try {
-    if (typeof process !== 'undefined' && process.env) {
-      return process.env.URL || 'http://localhost:8888';
-    }
-
-    if (typeof import.meta !== 'undefined') {
-      const metaEnv = (import.meta as any).env;
-      if (metaEnv) {
-        return metaEnv.URL || 'http://localhost:8888';
-      }
-    }
-
-    return 'http://localhost:8888';
-  } catch (error) {
-    console.error('获取环境变量出错:', error);
-    return 'http://localhost:8888';
-  }
 }
 
 export async function handler(
@@ -106,45 +72,32 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('缺少必填字段');
     }
 
-    const searchResponse: Response = await fetch(
-      `${getBaseUrl()}/.netlify/functions/searchImage`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ functionName: 'search', text: record.detail }),
-      }
-    );
-
     let imagePath: string | null = null;
 
-    if (searchResponse.ok) {
-      const searchData: SearchImageResponse = await searchResponse.json();
-
-      if (searchData.images && searchData.images.length > 0) {
-        const randomIndex: number = Math.floor(
-          Math.random() * searchData.images.length
-        );
-        imagePath = searchData.images[randomIndex].url;
+    try {
+      const searchResult = await searchImageByText(record.detail);
+      if (searchResult && searchResult.images.length > 0) {
+        const randomIndex = Math.floor(Math.random() * searchResult.images.length);
+        imagePath = searchResult.images[randomIndex].url;
+        console.log('搜索到图片:', searchResult.query, '-> 选中:', imagePath);
+      } else {
+        console.warn('未找到匹配图片');
       }
-    } else {
-      console.warn('Failed to fetch image, continuing without image');
+    } catch (searchError: any) {
+      console.warn('图片搜索失败，继续创建卡片:', searchError.message);
     }
-
-    const weeklyCardRecord = {
-      episode: record.episode,
-      name: record.name,
-      title: record.title,
-      quote: record.quote,
-      detail: record.detail,
-      image_path: imagePath,
-      created: new Date().toISOString(),
-    };
 
     const { data, error } = await supabase
       .from('weekly_cards')
-      .insert([weeklyCardRecord])
+      .insert([{
+        episode: record.episode,
+        name: record.name,
+        title: record.title,
+        quote: record.quote,
+        detail: record.detail,
+        image_path: imagePath,
+        created: new Date().toISOString(),
+      }])
       .select();
 
     if (error) {
@@ -157,17 +110,4 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
     console.error('Function error:', error);
     return createErrorResponse('服务器内部错误', 500);
   }
-}
-
-function getMissingFields(record: WeeklyCardRecord): string[] {
-  const requiredFields: string[] = [
-    'episode',
-    'name',
-    'title',
-    'quote',
-    'detail',
-  ];
-  return requiredFields.filter(
-    (field: string) => !record[field as keyof WeeklyCardRecord]
-  );
 }

@@ -58,9 +58,9 @@ export const weeklyCardsApi = {
     episode: string;
   }): Promise<ApiResponse<{ id: string; message: string }>> => {
     return http.post<{ id: string; message: string }>(
-      '/weeklyCards',
+      '/uploadCard',
       'create',
-      data
+      { record: data }
     );
   },
 };
