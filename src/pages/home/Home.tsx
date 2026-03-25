@@ -271,7 +271,7 @@ const Home: React.FC = () => {
           <p className={styles['hero-desc']}>
             一个线上社群。真实，不评判，相信每个人具体的经历都有力量。
           </p>
-          <p className={styles['hero-sub']}>每周六早上，腾讯会议，免费参加。</p>
+          <p className={styles['hero-sub']}>每周六早上八点，腾讯会议，免费参加。</p>
           <a
             href="https://meeting.tencent.com/dm/dStAndjcsxow"
             target="_blank"
