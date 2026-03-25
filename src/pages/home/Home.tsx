@@ -250,23 +250,58 @@ const Home: React.FC = () => {
     );
   };
 
+  const stories = [
+    {
+      text: '慢慢开始打开自己，愿意分享过去压箱底的经历。说出来之后发现，那些经历也有人共鸣。',
+    },
+    {
+      text: '在这里听多了别人的故事，有一天突然觉得自己也可以组织一个圆桌——就真的去做了。',
+    },
+    {
+      text: '报名成了当地的群主，开始在自己城市组织线下活动。没想到会走到这一步。',
+    },
+  ];
+
   return (
     <div className={styles['home-container']}>
       <Container maxWidth="lg">
-        {/* 轮播部分 */}
-        <section className={styles['carousel-section']}>
-          <div className={styles['section-header']}>
-            {/* <h2 className={styles["section-title"]}>最新启发卡片</h2> */}
-            {/* <p className={styles["section-description"]}>
-              探索来自社区的灵感与智慧，发现新的思考方式和生活感悟
-            </p> */}
-          </div>
+        {/* Hero 区域 */}
+        <section className={styles['hero-section']}>
+          {/* <h1 className={styles['hero-title']}>启发星球</h1> */}
+          <p className={styles['hero-desc']}>
+            一个线上社群。真实，不评判，相信每个人具体的经历都有力量。
+          </p>
+          <p className={styles['hero-sub']}>每周六早上，腾讯会议，免费参加。</p>
+          <a
+            href="https://meeting.tencent.com/dm/dStAndjcsxow"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles['join-button']}
+          >
+            加入这周的会议 →
+          </a>
+          <p className={styles['meeting-id']}>腾讯会议号：688-7232-7242</p>
+        </section>
 
+        {/* 成员故事 */}
+        <section className={styles['stories-section']}>
+          <h2 className={styles['stories-title']}>在这里发生的事</h2>
+          <div className={styles['stories-grid']}>
+            {stories.map((story, i) => (
+              <blockquote key={i} className={styles['story-card']}>
+                <p className={styles['story-text']}>{story.text}</p>
+                {/* <footer className={styles['story-footer']}>— 成员</footer> */}
+              </blockquote>
+            ))}
+          </div>
+        </section>
+
+        {/* 卡片轮播 */}
+        <section className={styles['carousel-section']}>
+          <h2 className={styles['section-title-inline']}>最新周刊卡片</h2>
           <div className={styles['carousel-container']}>
             {renderCarouselContent()}
           </div>
-
-          {/* 查看全部按钮 */}
           <div className={styles['view-all-container']}>
             <Button
               variant="contained"

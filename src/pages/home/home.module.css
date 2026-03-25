@@ -1,3 +1,114 @@
+/* Hero 区域 */
+.hero-section {
+  text-align: center;
+  padding: 3rem 1rem 2rem;
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ff5a36;
+  margin: 0 0 1rem;
+}
+
+.hero-desc {
+  font-size: 1.1rem;
+  color: #333;
+  margin: 0 auto 0.75rem;
+  max-width: 520px;
+  line-height: 1.7;
+}
+
+.hero-sub {
+  font-size: 1rem;
+  color: #666;
+  margin: 0 0 1.5rem;
+}
+
+.join-button {
+  display: inline-block;
+  background: #ff5a36;
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 28px;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.join-button:hover {
+  background: #e04a28;
+}
+
+.meeting-id {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+/* 成员故事 */
+.stories-section {
+  margin-bottom: 3rem;
+}
+
+.stories-title {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #444;
+  margin: 0 0 1.5rem;
+}
+
+.stories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.story-card {
+  margin: 0;
+  padding: 1.5rem;
+  background: #fff9f0;
+  border-radius: 12px;
+  border-left: 3px solid #ff5a36;
+}
+
+.story-text {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #444;
+  margin: 0 0 1rem;
+  font-style: italic;
+}
+
+.story-footer {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.section-title-inline {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #444;
+  margin: 0 0 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .hero-title {
+    font-size: 1.75rem;
+  }
+
+  .hero-desc {
+    font-size: 1rem;
+  }
+
+  .stories-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Home页面主容器 */
 .home-container {
   padding: 0 1rem;
