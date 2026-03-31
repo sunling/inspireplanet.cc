@@ -126,6 +126,7 @@ const Header: React.FC<HeaderProps> = ({
     { path: '/meetups', label: '活动广场' },
     { path: '/people', label: '找人聊聊' },
     { path: '/create-meetup', label: '创建活动' },
+    { path: '/surveys', label: '调查问卷' },
   ];
 
   const toolsMenuItems: NavItem[] = [
