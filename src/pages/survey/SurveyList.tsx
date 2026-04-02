@@ -26,6 +26,7 @@ import {
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
   BarChart as BarChartIcon,
+  Share as ShareIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useResponsive } from '../../hooks/useResponsive';
@@ -96,7 +97,7 @@ const SurveyList: React.FC = () => {
         questions: [],
         isActive,
         allowMultipleSubmissions: false,
-        createdBy: userId,
+        createdBy: String(userId),
       });
 
       if (response.success) {
@@ -238,12 +239,30 @@ const SurveyList: React.FC = () => {
                   <BarChartIcon />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="预览">
+              <Tooltip title="填写">
                 <IconButton
                   size="small"
                   onClick={() => navigate(`/survey/${survey.id}`)}
                 >
                   <VisibilityIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="分享">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    const surveyUrl = `${window.location.origin}/survey/${survey.id}`;
+                    navigator.clipboard
+                      .writeText(surveyUrl)
+                      .then(() => {
+                        showSnackbar.success('问卷链接已复制到剪贴板');
+                      })
+                      .catch(() => {
+                        showSnackbar.error('复制链接失败，请手动复制');
+                      });
+                  }}
+                >
+                  <ShareIcon />
                 </IconButton>
               </Tooltip>
             </Box>

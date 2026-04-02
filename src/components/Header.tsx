@@ -126,12 +126,12 @@ const Header: React.FC<HeaderProps> = ({
     { path: '/meetups', label: '活动广场' },
     { path: '/people', label: '找人聊聊' },
     { path: '/create-meetup', label: '创建活动' },
-    { path: '/surveys', label: '调查问卷' },
   ];
 
   const toolsMenuItems: NavItem[] = [
     { path: '/cover-editor', label: '横版封面制作' },
     { path: '/cover-editor-mobile', label: '竖版封面制作' },
+    { path: '/surveys', label: '调查问卷' },
   ];
 
   // 下拉菜单配置

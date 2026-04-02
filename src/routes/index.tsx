@@ -94,6 +94,7 @@ const Profile = lazy(() => import('../pages/user/Profile'));
 const Notifications = lazy(() => import('../pages/user/Notifications'));
 const SurveyList = lazy(() => import('../pages/survey/SurveyList'));
 const SurveyDetail = lazy(() => import('../pages/survey/SurveyDetail'));
+const SurveyEdit = lazy(() => import('../pages/survey/SurveyEdit'));
 const SurveyResults = lazy(() => import('../pages/survey/SurveyResults'));
 
 // 创建路由器
@@ -113,7 +114,7 @@ const router = createBrowserRouter(
         { path: 'cards', element: createLazyRoute(<Cards />) },
         { path: 'meetups', element: createLazyRoute(<Meetups />) },
         { path: 'people', element: createLazyRoute(<PeopleDirectory />) },
-        { path: 'survey', element: createLazyRoute(<SurveyDetail />) },
+        { path: 'survey/:id', element: createLazyRoute(<SurveyDetail />) },
         { path: 'weekly-cards', element: createLazyRoute(<WeeklyCards />) },
         {
           path: 'weekly-cards/:episode',
@@ -137,6 +138,10 @@ const router = createBrowserRouter(
         { path: 'my-cards', element: createProtectedRoute(<MyCards />) },
         { path: 'card-edit/:id', element: createProtectedRoute(<CardEdit />) },
         { path: 'surveys', element: createProtectedRoute(<SurveyList />) },
+        {
+          path: 'survey-edit/:id',
+          element: createProtectedRoute(<SurveyEdit />),
+        },
         {
           path: 'create-meetup',
           element: createProtectedRoute(<CreateMeetup />),
@@ -164,7 +169,7 @@ const router = createBrowserRouter(
           element: createProtectedRoute(<ChangePassWord />),
         },
         {
-          path: 'survey-results',
+          path: 'survey-results/:id',
           element: createProtectedRoute(<SurveyResults />),
         },
 

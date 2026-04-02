@@ -17,7 +17,7 @@ import {
   FormLabel,
   FormHelperText,
 } from '@mui/material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { surveyApi } from '../../netlify/config';
 import {
   Survey,
@@ -31,8 +31,7 @@ import { getUserId } from '../../utils/user';
 
 const SurveyDetail: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const surveyId = searchParams.get('id');
+  const { id: surveyId } = useParams<{ id: string }>();
   const showSnackbar = useGlobalSnackbar();
 
   const [survey, setSurvey] = useState<Survey | null>(null);
@@ -133,7 +132,7 @@ const SurveyDetail: React.FC = () => {
       const response = await surveyApi.submit({
         surveyId: survey.id,
         answers: submitAnswers,
-        respondentId,
+        respondentId: String(respondentId),
       });
 
       if (response.success) {
