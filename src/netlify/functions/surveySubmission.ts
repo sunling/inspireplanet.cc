@@ -17,7 +17,9 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     const action = getFuntionNameFromEvent(event) as
       | 'submit'
       | 'getBySurveyId'
-      | 'getMySubmissions';
+      | 'getMySubmissions'
+      | 'checkSubmission'
+      | 'update';
 
     switch (action) {
       case 'submit':
@@ -26,6 +28,10 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         return await handleGetBySurveyId(event);
       case 'getMySubmissions':
         return await handleGetMySubmissions(event);
+      case 'checkSubmission':
+        return await handleCheckSubmission(event);
+      case 'update':
+        return await handleUpdate(event);
       default:
         return createErrorResponse('无效的动作', 400);
     }
@@ -108,11 +114,14 @@ async function handleSubmit(event: NetlifyEvent): Promise<NetlifyResponse> {
 
     // 创建答案记录
     const answerPromises = answers.map((answer: QuestionAnswer) => {
-      return supabase.from('survey_answers').insert({
-        submission_id: submission.id,
-        question_id: answer.questionId,
-        value: answer.value,
-      });
+      return supabase
+        .from('survey_answers')
+        .insert({
+          submission_id: submission.id,
+          question_id: answer.questionId,
+          value: answer.value,
+        })
+        .select();
     });
 
     const answerResults = await Promise.all(answerPromises);
@@ -249,6 +258,109 @@ async function handleGetMySubmissions(
     });
   } catch (error) {
     console.error('Error in handleGetMySubmissions:', error);
+    return createErrorResponse('Internal Server Error', 500);
+  }
+}
+
+async function handleCheckSubmission(
+  event: NetlifyEvent
+): Promise<NetlifyResponse> {
+  try {
+    const requestData = getDataFromEvent(event);
+    const { surveyId, respondentId } = requestData;
+
+    if (!surveyId || !respondentId) {
+      return createErrorResponse('缺少必要参数', 400);
+    }
+
+    // 获取用户的提交记录
+    const { data: submission, error: submissionError } = await supabase
+      .from('survey_submissions')
+      .select('*')
+      .eq('survey_id', surveyId)
+      .eq('respondent_id', respondentId)
+      .single();
+
+    if (submissionError) {
+      console.error('Error checking submission:', submissionError);
+      return createErrorResponse('检查提交记录失败', 500);
+    }
+
+    const { data: answers, error: answersError } = await supabase
+      .from('survey_answers')
+      .select('question_id, value')
+      .eq('submission_id', submission.id);
+
+    if (answersError) {
+      console.error('Error getting answers:', answersError);
+      return createErrorResponse('获取答案失败', 500);
+    }
+
+    const submissionWithAnswers = {
+      id: submission.id,
+      surveyId: submission.survey_id,
+      respondentId: submission.respondent_id,
+      respondentEmail: submission.respondent_email,
+      submittedAt: submission.submitted_at,
+      answers: (answers || []).map((a) => ({
+        questionId: a.question_id,
+        value: a.value,
+      })),
+    };
+
+    return createSuccessResponse(submissionWithAnswers);
+  } catch (error) {
+    console.error('Error in handleCheckSubmission:', error);
+    return createErrorResponse('Internal Server Error', 500);
+  }
+}
+
+async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  try {
+    const requestData = getDataFromEvent(event);
+    const { id, answers } = requestData;
+
+    if (!id || !answers || !Array.isArray(answers)) {
+      return createErrorResponse('缺少必要参数', 400);
+    }
+
+    // 检查提交记录是否存在
+    const { data: submission, error: submissionError } = await supabase
+      .from('survey_submissions')
+      .select('id')
+      .eq('id', id)
+      .single();
+
+    if (submissionError || !submission) {
+      return createErrorResponse('提交记录不存在', 404);
+    }
+
+    // 删除旧答案
+    await supabase.from('survey_answers').delete().eq('submission_id', id);
+
+    // 创建新答案
+    const answerPromises = answers.map((answer: QuestionAnswer) => {
+      return supabase.from('survey_answers').insert({
+        submission_id: id,
+        question_id: answer.questionId,
+        value: answer.value,
+      });
+    });
+
+    const answerResults = await Promise.all(answerPromises);
+    const answerErrors = answerResults.filter((r) => r.error);
+
+    if (answerErrors.length > 0) {
+      console.error('Error updating answers:', answerErrors);
+      return createErrorResponse('更新答案失败', 500);
+    }
+
+    return createSuccessResponse({
+      id: submission.id,
+      message: '答案更新成功',
+    });
+  } catch (error) {
+    console.error('Error in handleUpdate:', error);
     return createErrorResponse('Internal Server Error', 500);
   }
 }

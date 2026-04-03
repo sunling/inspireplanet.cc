@@ -8,6 +8,7 @@ import {
   SubmitSurveyRequest,
   SurveySubmission,
   SurveyResults,
+  QuestionAnswer,
 } from '../types/survey';
 
 const surveyApi = {
@@ -126,6 +127,33 @@ const surveyApi = {
       page: number;
       pageSize: number;
     }>('/surveySubmission', 'getMySubmissions', params);
+  },
+
+  // 检查用户是否已提交过问卷
+  checkSubmission: async (params: {
+    surveyId: string;
+    respondentId: string;
+  }): Promise<ApiResponse<SurveySubmission | null>> => {
+    return http.get<SurveySubmission | null>(
+      '/surveySubmission',
+      'checkSubmission',
+      params
+    );
+  },
+
+  // 更新问卷提交
+  updateSubmission: async (
+    id: string,
+    data: { answers: QuestionAnswer[] }
+  ): Promise<ApiResponse<{ id: string; message: string }>> => {
+    return http.put<{ id: string; message: string }>(
+      '/surveySubmission',
+      'update',
+      {
+        id,
+        ...data,
+      }
+    );
   },
 };
 

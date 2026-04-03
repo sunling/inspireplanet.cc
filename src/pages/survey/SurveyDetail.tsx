@@ -16,13 +16,15 @@ import {
   FormControl,
   FormLabel,
   FormHelperText,
+  Chip,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { surveyApi } from '../../netlify/config';
+import surveyApi from '../../netlify/services/survey';
 import {
   Survey,
   SurveyQuestion,
   QuestionAnswer,
+  SurveySubmission,
 } from '../../netlify/types/survey';
 import Loading from '../../components/Loading';
 import ErrorCard from '../../components/ErrorCard';
@@ -43,6 +45,10 @@ const SurveyDetail: React.FC = () => {
     Record<string, QuestionAnswer['value']>
   >({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [existingSubmission, setExistingSubmission] =
+    useState<SurveySubmission | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
     if (!surveyId) {
@@ -51,21 +57,48 @@ const SurveyDetail: React.FC = () => {
       return;
     }
 
-    fetchSurvey();
+    fetchSurveyAndSubmission();
   }, [surveyId]);
 
-  const fetchSurvey = async () => {
+  const fetchSurveyAndSubmission = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await surveyApi.getById(surveyId!);
-      if (response.success && response.data) {
-        setSurvey(response.data);
-        if (!response.data.isActive) {
+      // 获取问卷详情
+      const surveyResponse = await surveyApi.getById(surveyId!);
+      if (surveyResponse.success && surveyResponse.data) {
+        setSurvey(surveyResponse.data);
+
+        // 检查用户是否已提交过
+        const respondentId = getUserId();
+        if (respondentId) {
+          const checkResponse = await surveyApi.checkSubmission({
+            surveyId: surveyId!,
+            respondentId: String(respondentId),
+          });
+
+          if (checkResponse.success && checkResponse.data) {
+            setExistingSubmission(checkResponse.data);
+            setHasSubmitted(true);
+
+            const existingAnswers: Record<string, QuestionAnswer['value']> = {};
+            if (
+              checkResponse.data.answers &&
+              checkResponse.data.answers.length > 0
+            ) {
+              checkResponse.data.answers.forEach((answer) => {
+                existingAnswers[answer.questionId] = answer.value;
+              });
+              setAnswers(existingAnswers);
+            }
+          }
+        }
+
+        if (!surveyResponse.data.isActive) {
           setError('该问卷已结束');
         }
       } else {
-        setError(response.error || '加载问卷失败');
+        setError(surveyResponse.error || '加载问卷失败');
       }
     } catch (err) {
       setError('加载问卷时发生错误');
@@ -129,23 +162,41 @@ const SurveyDetail: React.FC = () => {
         ([questionId, value]) => ({ questionId, value })
       );
 
-      const response = await surveyApi.submit({
-        surveyId: survey.id,
-        answers: submitAnswers,
-        respondentId: String(respondentId),
-      });
+      let response;
+
+      // 如果已有提交记录且正在编辑，则更新
+      if (existingSubmission && isEditing) {
+        response = await surveyApi.updateSubmission(existingSubmission.id, {
+          answers: submitAnswers,
+        });
+      } else {
+        // 否则创建新提交
+        response = await surveyApi.submit({
+          surveyId: survey.id,
+          answers: submitAnswers,
+          respondentId: String(respondentId),
+        });
+      }
 
       if (response.success) {
         setSubmitted(true);
-        showSnackbar.success('提交成功');
+        setIsEditing(false);
+        showSnackbar.success(isEditing ? '修改成功' : '提交成功');
       } else {
-        showSnackbar.error(response.error || '提交失败');
+        showSnackbar.error(
+          response.error || (isEditing ? '修改失败' : '提交失败')
+        );
       }
     } catch (err) {
-      showSnackbar.error('提交时发生错误');
+      showSnackbar.error(isEditing ? '修改时发生错误' : '提交时发生错误');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setSubmitted(false);
   };
 
   const renderQuestion = (question: SurveyQuestion, index: number) => {
@@ -345,20 +396,112 @@ const SurveyDetail: React.FC = () => {
     return <ErrorCard message={error} onRetry={() => navigate('/')} />;
   }
 
-  if (submitted) {
+  // 已提交且不在编辑模式
+  if (submitted && !isEditing) {
     return (
       <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
         <Container maxWidth="md">
           <Paper sx={{ p: 4, textAlign: 'center' }}>
             <Typography variant="h4" gutterBottom color="success.main">
-              提交成功
+              {isEditing ? '修改成功' : '提交成功'}
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               感谢您的参与！
             </Typography>
-            <Button variant="contained" onClick={() => navigate('/surveys')}>
-              返回问卷列表
-            </Button>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+              <Button variant="outlined" onClick={() => navigate('/surveys')}>
+                返回问卷列表
+              </Button>
+              {existingSubmission && (
+                <Button variant="contained" onClick={handleEdit}>
+                  修改答案
+                </Button>
+              )}
+            </Box>
+          </Paper>
+        </Container>
+      </Box>
+    );
+  }
+
+  // 已提交过，显示查看模式（不在编辑模式时）
+  if (hasSubmitted && !isEditing) {
+    return (
+      <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
+        <Container maxWidth="md">
+          <Paper sx={{ p: 4 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                mb: 2,
+              }}
+            >
+              <Typography variant="h4">{survey?.title}</Typography>
+              <Chip label="已填写" color="success" />
+            </Box>
+            {survey?.description && (
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                {survey.description}
+              </Typography>
+            )}
+
+            <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+              您的答案
+            </Typography>
+
+            <Box sx={{ mt: 3 }}>
+              {survey?.questions.map((question, index) => {
+                const answer = answers[question.id];
+                return (
+                  <Box
+                    key={question.id}
+                    sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}
+                  >
+                    <Typography variant="subtitle1" fontWeight={500}>
+                      {index + 1}. {question.title}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 1 }}
+                    >
+                      {question.type === 'multiple' && Array.isArray(answer)
+                        ? answer
+                            .map(
+                              (v) =>
+                                question.options?.find((o) => o.value === v)
+                                  ?.label
+                            )
+                            .join(', ')
+                        : question.type === 'single'
+                          ? question.options?.find((o) => o.value === answer)
+                              ?.label
+                          : question.type === 'rating'
+                            ? `${answer} 分`
+                            : answer}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+
+            <Box
+              sx={{
+                mt: 4,
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 2,
+              }}
+            >
+              <Button variant="outlined" onClick={() => navigate('/surveys')}>
+                返回问卷列表
+              </Button>
+              <Button variant="contained" onClick={handleEdit}>
+                修改答案
+              </Button>
+            </Box>
           </Paper>
         </Container>
       </Box>
@@ -408,13 +551,24 @@ const SurveyDetail: React.FC = () => {
             <Button variant="outlined" onClick={() => navigate('/surveys')}>
               取消
             </Button>
+            {isEditing && (
+              <Button variant="outlined" onClick={() => setIsEditing(false)}>
+                返回查看
+              </Button>
+            )}
             <Button
               variant="contained"
               onClick={handleSubmit}
               disabled={submitting}
               startIcon={submitting ? <CircularProgress size={20} /> : null}
             >
-              {submitting ? '提交中...' : '提交问卷'}
+              {submitting
+                ? isEditing
+                  ? '保存中...'
+                  : '提交中...'
+                : isEditing
+                  ? '保存修改'
+                  : '提交问卷'}
             </Button>
           </Box>
         </Paper>

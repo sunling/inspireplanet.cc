@@ -27,12 +27,13 @@ import {
   Visibility as VisibilityIcon,
   BarChart as BarChartIcon,
   Share as ShareIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useResponsive } from '../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../context/app';
-import { surveyApi } from '../../netlify/config';
-import { Survey } from '../../netlify/types/survey';
+import surveyApi from '../../netlify/services/survey';
+import { Survey, SurveySubmission } from '../../netlify/types/survey';
 import Loading from '../../components/Loading';
 import ErrorCard from '../../components/ErrorCard';
 import { formatDateTime } from '../../utils/date';
@@ -44,6 +45,9 @@ const SurveyList: React.FC = () => {
   const showSnackbar = useGlobalSnackbar();
 
   const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [mySubmissions, setMySubmissions] = useState<
+    Record<string, SurveySubmission>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -55,7 +59,7 @@ const SurveyList: React.FC = () => {
   const [newSurveyDescription, setNewSurveyDescription] = useState('');
   const [isActive, setIsActive] = useState(true);
 
-  // 加载问卷列表
+  // 加载问卷列表和用户的提交记录
   const fetchSurveys = async () => {
     setLoading(true);
     setError(null);
@@ -63,6 +67,23 @@ const SurveyList: React.FC = () => {
       const response = await surveyApi.getAll();
       if (response.success && response.data) {
         setSurveys(response.data.records || []);
+
+        // 加载当前用户的提交记录
+        const respondentId = getUserId();
+        if (respondentId) {
+          const submissionsResponse = await surveyApi.getMySubmissions({
+            respondentId: String(respondentId),
+          });
+
+          if (submissionsResponse.success && submissionsResponse.data) {
+            // 将提交记录转换为以 surveyId 为 key 的对象
+            const submissionsMap: Record<string, SurveySubmission> = {};
+            submissionsResponse.data.records.forEach((record: any) => {
+              submissionsMap[record.surveyId] = record;
+            });
+            setMySubmissions(submissionsMap);
+          }
+        }
       } else {
         setError(response.error || '加载问卷列表失败');
       }
@@ -156,6 +177,8 @@ const SurveyList: React.FC = () => {
   // 渲染问卷卡片
   const renderSurveyCard = (survey: Survey) => {
     const isExpired = survey.endDate && new Date(survey.endDate) < new Date();
+    const hasSubmitted = !!mySubmissions[survey.id];
+    const isCreator = survey.createdBy === String(getUserId());
 
     return (
       <Grid size={{ xs: 12, sm: 6, md: 4 }} key={survey.id}>
@@ -188,11 +211,22 @@ const SurveyList: React.FC = () => {
               >
                 {survey.title}
               </Typography>
-              <Chip
-                size="small"
-                label={survey.isActive && !isExpired ? '进行中' : '已结束'}
-                color={survey.isActive && !isExpired ? 'success' : 'default'}
-              />
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                {hasSubmitted && (
+                  <Chip
+                    size="small"
+                    icon={<CheckCircleIcon />}
+                    label="已填写"
+                    color="success"
+                    variant="outlined"
+                  />
+                )}
+                <Chip
+                  size="small"
+                  label={survey.isActive && !isExpired ? '进行中' : '已结束'}
+                  color={survey.isActive && !isExpired ? 'success' : 'default'}
+                />
+              </Box>
             </Box>
 
             <Typography
@@ -223,28 +257,33 @@ const SurveyList: React.FC = () => {
 
           <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
             <Box>
-              <Tooltip title="编辑">
-                <IconButton
-                  size="small"
-                  onClick={() => navigate(`/survey-edit/${survey.id}`)}
-                >
-                  <EditIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="查看结果">
-                <IconButton
-                  size="small"
-                  onClick={() => navigate(`/survey-results/${survey.id}`)}
-                >
-                  <BarChartIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="填写">
+              {isCreator && (
+                <>
+                  <Tooltip title="编辑">
+                    <IconButton
+                      size="small"
+                      onClick={() => navigate(`/survey-edit/${survey.id}`)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="查看结果">
+                    <IconButton
+                      size="small"
+                      onClick={() => navigate(`/survey-results/${survey.id}`)}
+                    >
+                      <BarChartIcon />
+                    </IconButton>
+                  </Tooltip>
+                </>
+              )}
+              <Tooltip title={hasSubmitted ? '查看/修改' : '填写'}>
                 <IconButton
                   size="small"
                   onClick={() => navigate(`/survey/${survey.id}`)}
+                  color={hasSubmitted ? 'success' : 'default'}
                 >
-                  <VisibilityIcon />
+                  {hasSubmitted ? <CheckCircleIcon /> : <VisibilityIcon />}
                 </IconButton>
               </Tooltip>
               <Tooltip title="分享">
@@ -266,30 +305,32 @@ const SurveyList: React.FC = () => {
                 </IconButton>
               </Tooltip>
             </Box>
-            <Box>
-              <FormControlLabel
-                control={
-                  <Switch
+            {isCreator && (
+              <Box>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      size="small"
+                      checked={survey.isActive}
+                      onChange={() => handleToggleStatus(survey)}
+                    />
+                  }
+                  label={survey.isActive ? '启用' : '禁用'}
+                />
+                <Tooltip title="删除">
+                  <IconButton
                     size="small"
-                    checked={survey.isActive}
-                    onChange={() => handleToggleStatus(survey)}
-                  />
-                }
-                label={survey.isActive ? '启用' : '禁用'}
-              />
-              <Tooltip title="删除">
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => {
-                    setSelectedSurvey(survey);
-                    setDeleteDialogOpen(true);
-                  }}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
+                    color="error"
+                    onClick={() => {
+                      setSelectedSurvey(survey);
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            )}
           </CardActions>
         </Card>
       </Grid>
