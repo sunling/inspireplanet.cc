@@ -19,6 +19,7 @@ import {
   Card,
   IconButton,
   Tooltip,
+  Grid,
 } from '@mui/material';
 import { Share as ShareIcon, Close as CloseIcon } from '@mui/icons-material';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
@@ -54,6 +55,8 @@ const MeetupDetail: React.FC = () => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [qrColor, setQrColor] = useState<string>('#000000');
+  const [qrBgColor, setQrBgColor] = useState<string>('#ffffff');
 
   // RSVP表单状态
   const [rsvpForm, setRsvpForm] = useState({
@@ -843,11 +846,35 @@ const MeetupDetail: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 {meetup.title}
               </Typography>
+
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="二维码颜色"
+                    type="color"
+                    value={qrColor}
+                    onChange={(e) => setQrColor(e.target.value)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="背景颜色"
+                    type="color"
+                    value={qrBgColor}
+                    onChange={(e) => setQrBgColor(e.target.value)}
+                  />
+                </Grid>
+              </Grid>
+
               <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
                 <QRCode
                   value={`${window.location.origin}/meetup-detail?id=${meetup.id}`}
                   size={200}
                   level="H"
+                  fgColor={qrColor}
+                  bgColor={qrBgColor}
                 />
               </Box>
               <TextField

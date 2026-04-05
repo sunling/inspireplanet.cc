@@ -57,6 +57,8 @@ const SurveyList: React.FC = () => {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
   const [shareSurvey, setShareSurvey] = useState<Survey | null>(null);
+  const [qrColor, setQrColor] = useState<string>('#000000');
+  const [qrBgColor, setQrBgColor] = useState<string>('#ffffff');
 
   // 新建问卷表单状态
   const [newSurveyTitle, setNewSurveyTitle] = useState('');
@@ -472,11 +474,35 @@ const SurveyList: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 {shareSurvey.title}
               </Typography>
+
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="二维码颜色"
+                    type="color"
+                    value={qrColor}
+                    onChange={(e) => setQrColor(e.target.value)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="背景颜色"
+                    type="color"
+                    value={qrBgColor}
+                    onChange={(e) => setQrBgColor(e.target.value)}
+                  />
+                </Grid>
+              </Grid>
+
               <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
                 <QRCode
                   value={`${window.location.origin}/survey/${shareSurvey.id}`}
                   size={200}
                   level="H"
+                  fgColor={qrColor}
+                  bgColor={qrBgColor}
                 />
               </Box>
               <TextField
