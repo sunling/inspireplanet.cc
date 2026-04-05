@@ -37,6 +37,8 @@ const CoverEditorMobile: React.FC = () => {
   );
   const [titleFontSize, setTitleFontSize] = useState<number>(32);
   const [keywordsFontSize, setKeywordsFontSize] = useState<number>(16);
+  const [titleColor, setTitleColor] = useState<string>('#ffffff');
+  const [keywordsColor, setKeywordsColor] = useState<string>('#ffffff');
   const [layout, setLayout] = useState<string>('center');
   const [bgSelect, setBgSelect] = useState<string>('images/mistyblue.png');
   const [customBgImage, setCustomBgImage] = useState<string>('');
@@ -334,6 +336,31 @@ const CoverEditorMobile: React.FC = () => {
 
               <Grid container spacing={2} sx={{ mb: 3 }}>
                 <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="标题字体颜色"
+                    type="color"
+                    value={titleColor}
+                    onChange={(e) => setTitleColor(e.target.value)}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="关键词字体颜色"
+                    type="color"
+                    value={keywordsColor}
+                    onChange={(e) => setKeywordsColor(e.target.value)}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+              </Grid>
+
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <FormControl fullWidth variant="outlined" size="small">
                     <InputLabel>背景图片</InputLabel>
                     <Select
@@ -548,7 +575,6 @@ const CoverEditorMobile: React.FC = () => {
                       alignItems: layout === 'center' ? 'center' : 'flex-start',
                       padding: layout === 'center' ? '2rem' : '3rem 2rem 2rem',
                       fontFamily,
-                      color: 'white',
                       textAlign: layout === 'center' ? 'center' : 'left',
                     }}
                   >
@@ -561,6 +587,7 @@ const CoverEditorMobile: React.FC = () => {
                         textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                         mb: layout === 'center' ? 2 : 3,
                         fontFamily,
+                        color: titleColor,
                       }}
                     >
                       {formatTitle(title)}
@@ -576,6 +603,7 @@ const CoverEditorMobile: React.FC = () => {
                         borderRadius: 1,
                         display: 'inline-block',
                         fontFamily,
+                        color: keywordsColor,
                       }}
                     >
                       {formatKeywords(keywords)}

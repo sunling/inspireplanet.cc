@@ -33,6 +33,8 @@ const CoverEditor: React.FC = () => {
   );
   const [titleFontSize, setTitleFontSize] = useState<number>(48);
   const [keywordsFontSize, setKeywordsFontSize] = useState<number>(24);
+  const [titleColor, setTitleColor] = useState<string>('#ffffff');
+  const [keywordsColor, setKeywordsColor] = useState<string>('#ffffff');
   const [layout, setLayout] = useState<string>('center');
   const [bgSelect, setBgSelect] = useState<string>('images/mistyblue.png');
   const [customBgImage, setCustomBgImage] = useState<string>('');
@@ -302,6 +304,29 @@ const CoverEditor: React.FC = () => {
 
               <Grid container spacing={2} sx={{ my: 2 }}>
                 <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="标题字体颜色"
+                    type="color"
+                    value={titleColor}
+                    onChange={(e) => setTitleColor(e.target.value)}
+                    margin="normal"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="关键词字体颜色"
+                    type="color"
+                    value={keywordsColor}
+                    onChange={(e) => setKeywordsColor(e.target.value)}
+                    margin="normal"
+                  />
+                </Grid>
+              </Grid>
+
+              <Grid container spacing={2} sx={{ my: 2 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <FormControl fullWidth>
                     <InputLabel>背景图片</InputLabel>
                     <Select
@@ -474,7 +499,6 @@ const CoverEditor: React.FC = () => {
                       alignItems: layout === 'left' ? 'flex-start' : 'center',
                       padding: '2rem',
                       fontFamily: fontFamily,
-                      color: 'white',
                       textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                     }}
                   >
@@ -488,6 +512,7 @@ const CoverEditor: React.FC = () => {
                         wordBreak: 'break-word',
                         fontFamily: fontFamily,
                         fontSize: `${titleFontSize}px`,
+                        color: titleColor,
                       }}
                     >
                       {formatTitle(title)}
@@ -500,6 +525,7 @@ const CoverEditor: React.FC = () => {
                         textAlign: layout === 'left' ? 'left' : 'center',
                         fontFamily: fontFamily,
                         fontSize: `${keywordsFontSize}px`,
+                        color: keywordsColor,
                       }}
                     >
                       {formatKeywords(keywords)}

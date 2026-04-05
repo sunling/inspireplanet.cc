@@ -28,7 +28,9 @@ import {
   BarChart as BarChartIcon,
   Share as ShareIcon,
   CheckCircle as CheckCircleIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
 import { useResponsive } from '../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../context/app';
@@ -52,7 +54,9 @@ const SurveyList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
+  const [shareSurvey, setShareSurvey] = useState<Survey | null>(null);
 
   // 新建问卷表单状态
   const [newSurveyTitle, setNewSurveyTitle] = useState('');
@@ -290,15 +294,8 @@ const SurveyList: React.FC = () => {
                 <IconButton
                   size="small"
                   onClick={() => {
-                    const surveyUrl = `${window.location.origin}/survey/${survey.id}`;
-                    navigator.clipboard
-                      .writeText(surveyUrl)
-                      .then(() => {
-                        showSnackbar.success('问卷链接已复制到剪贴板');
-                      })
-                      .catch(() => {
-                        showSnackbar.error('复制链接失败，请手动复制');
-                      });
+                    setShareSurvey(survey);
+                    setShareDialogOpen(true);
                   }}
                 >
                   <ShareIcon />
@@ -448,6 +445,68 @@ const SurveyList: React.FC = () => {
             删除
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* 分享对话框 */}
+      <Dialog
+        open={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span>分享问卷</span>
+          <IconButton onClick={() => setShareDialogOpen(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {shareSurvey && (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="h6" gutterBottom>
+                {shareSurvey.title}
+              </Typography>
+              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
+                <QRCode
+                  value={`${window.location.origin}/survey/${shareSurvey.id}`}
+                  size={200}
+                  level="H"
+                />
+              </Box>
+              <TextField
+                fullWidth
+                value={`${window.location.origin}/survey/${shareSurvey.id}`}
+                InputProps={{
+                  readOnly: true,
+                }}
+                sx={{ mb: 3 }}
+              />
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={() => {
+                  const surveyUrl = `${window.location.origin}/survey/${shareSurvey.id}`;
+                  navigator.clipboard
+                    .writeText(surveyUrl)
+                    .then(() => {
+                      showSnackbar.success('问卷链接已复制到剪贴板');
+                    })
+                    .catch(() => {
+                      showSnackbar.error('复制链接失败，请手动复制');
+                    });
+                }}
+              >
+                复制链接
+              </Button>
+            </Box>
+          )}
+        </DialogContent>
       </Dialog>
 
       {/* 移动端浮动按钮 */}
