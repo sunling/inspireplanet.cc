@@ -124,6 +124,7 @@ const Header: React.FC<HeaderProps> = ({
 
   const activitiesMenuItems: NavItem[] = [
     { path: '/meetups', label: '活动广场' },
+    { path: '/activity-calendar', label: '活动日历' },
     { path: '/people', label: '找人聊聊' },
     { path: '/create-meetup', label: '创建活动' },
   ];

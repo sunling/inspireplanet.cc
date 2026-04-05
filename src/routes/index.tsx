@@ -96,6 +96,9 @@ const SurveyList = lazy(() => import('../pages/survey/SurveyList'));
 const SurveyDetail = lazy(() => import('../pages/survey/SurveyDetail'));
 const SurveyEdit = lazy(() => import('../pages/survey/SurveyEdit'));
 const SurveyResults = lazy(() => import('../pages/survey/SurveyResults'));
+const ActivityCalendar = lazy(
+  () => import('../pages/activity/ActivityCalendar')
+);
 
 // 创建路由器
 const router = createBrowserRouter(
@@ -129,6 +132,10 @@ const router = createBrowserRouter(
         {
           path: 'cover-editor-mobile',
           element: createLazyRoute(<CoverEditorMobile />),
+        },
+        {
+          path: 'activity-calendar',
+          element: createLazyRoute(<ActivityCalendar />),
         },
         { path: 'act-signup', element: createLazyRoute(<ActSignup />) },
         { path: '404', element: createLazyRoute(<NotFound />) },
