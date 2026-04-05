@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 
-import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import {
   Box,
@@ -35,6 +34,10 @@ const CoverEditorMobile: React.FC = () => {
   const [fontFamily, setFontFamily] = useState<string>(
     "'Noto Sans SC', sans-serif"
   );
+  const [titleFontSize, setTitleFontSize] = useState<number>(32);
+  const [keywordsFontSize, setKeywordsFontSize] = useState<number>(16);
+  const [titleColor, setTitleColor] = useState<string>('#ffffff');
+  const [keywordsColor, setKeywordsColor] = useState<string>('#ffffff');
   const [layout, setLayout] = useState<string>('center');
   const [bgSelect, setBgSelect] = useState<string>('images/mistyblue.png');
   const [customBgImage, setCustomBgImage] = useState<string>('');
@@ -149,6 +152,8 @@ const CoverEditorMobile: React.FC = () => {
     setTitle('启发星球');
     setKeywords('灵感 创意 分享');
     setFontFamily("'Noto Sans SC', sans-serif");
+    setTitleFontSize(32);
+    setKeywordsFontSize(16);
     setLayout('center');
     setBgSelect('images/mistyblue.png');
     setCustomBgImage('');
@@ -296,6 +301,60 @@ const CoverEditorMobile: React.FC = () => {
                       ))}
                     </Select>
                   </FormControl>
+                </Grid>
+              </Grid>
+
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="标题字体大小"
+                    type="number"
+                    value={titleFontSize}
+                    onChange={(e) => setTitleFontSize(Number(e.target.value))}
+                    inputProps={{ min: 12, max: 80, step: 2 }}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="关键词字体大小"
+                    type="number"
+                    value={keywordsFontSize}
+                    onChange={(e) =>
+                      setKeywordsFontSize(Number(e.target.value))
+                    }
+                    inputProps={{ min: 8, max: 40, step: 1 }}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+              </Grid>
+
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="标题字体颜色"
+                    type="color"
+                    value={titleColor}
+                    onChange={(e) => setTitleColor(e.target.value)}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="关键词字体颜色"
+                    type="color"
+                    value={keywordsColor}
+                    onChange={(e) => setKeywordsColor(e.target.value)}
+                    variant="outlined"
+                    size="small"
+                  />
                 </Grid>
               </Grid>
 
@@ -515,7 +574,6 @@ const CoverEditorMobile: React.FC = () => {
                       alignItems: layout === 'center' ? 'center' : 'flex-start',
                       padding: layout === 'center' ? '2rem' : '3rem 2rem 2rem',
                       fontFamily,
-                      color: 'white',
                       textAlign: layout === 'center' ? 'center' : 'left',
                     }}
                   >
@@ -524,10 +582,11 @@ const CoverEditorMobile: React.FC = () => {
                       component="h3"
                       sx={{
                         fontWeight: 'bold',
-                        fontSize: { xs: '1.8rem', sm: '2rem' },
+                        fontSize: `${titleFontSize}px`,
                         textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                         mb: layout === 'center' ? 2 : 3,
                         fontFamily,
+                        color: titleColor,
                       }}
                     >
                       {formatTitle(title)}
@@ -535,7 +594,7 @@ const CoverEditorMobile: React.FC = () => {
                     <Typography
                       variant="body1"
                       sx={{
-                        fontSize: { xs: '0.9rem', sm: '1rem' },
+                        fontSize: `${keywordsFontSize}px`,
                         textShadow: '0 1px 2px rgba(0,0,0,0.5)',
                         bgcolor: 'rgba(0,0,0,0.3)',
                         px: 2,
@@ -543,6 +602,7 @@ const CoverEditorMobile: React.FC = () => {
                         borderRadius: 1,
                         display: 'inline-block',
                         fontFamily,
+                        color: keywordsColor,
                       }}
                     >
                       {formatKeywords(keywords)}

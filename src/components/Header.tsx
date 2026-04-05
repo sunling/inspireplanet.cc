@@ -124,6 +124,7 @@ const Header: React.FC<HeaderProps> = ({
 
   const activitiesMenuItems: NavItem[] = [
     { path: '/meetups', label: '活动广场' },
+    { path: '/activity-calendar', label: '活动日历' },
     { path: '/people', label: '找人聊聊' },
     { path: '/create-meetup', label: '创建活动' },
   ];
@@ -131,6 +132,7 @@ const Header: React.FC<HeaderProps> = ({
   const toolsMenuItems: NavItem[] = [
     { path: '/cover-editor', label: '横版封面制作' },
     { path: '/cover-editor-mobile', label: '竖版封面制作' },
+    { path: '/surveys', label: '调查问卷' },
   ];
 
   // 下拉菜单配置

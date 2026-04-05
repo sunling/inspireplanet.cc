@@ -5,7 +5,7 @@ import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
 import App from '../App';
 import Error from '../components/ErrorCard/index';
 import Loading from '../components/Loading/index';
-import MyMeetups from '@/pages/user/MyMeetups';
+import MyMeetups from '../pages/user/MyMeetups';
 import { isUserLoggedIn } from '../utils';
 
 // 错误边界组件
@@ -92,6 +92,13 @@ const PeopleDirectory = lazy(() => import('../pages/people/Directory'));
 const MyConnections = lazy(() => import('../pages/connections/MyConnections'));
 const Profile = lazy(() => import('../pages/user/Profile'));
 const Notifications = lazy(() => import('../pages/user/Notifications'));
+const SurveyList = lazy(() => import('../pages/survey/SurveyList'));
+const SurveyDetail = lazy(() => import('../pages/survey/SurveyDetail'));
+const SurveyEdit = lazy(() => import('../pages/survey/SurveyEdit'));
+const SurveyResults = lazy(() => import('../pages/survey/SurveyResults'));
+const ActivityCalendar = lazy(
+  () => import('../pages/activity/ActivityCalendar')
+);
 
 // 创建路由器
 const router = createBrowserRouter(
@@ -110,6 +117,7 @@ const router = createBrowserRouter(
         { path: 'cards', element: createLazyRoute(<Cards />) },
         { path: 'meetups', element: createLazyRoute(<Meetups />) },
         { path: 'people', element: createLazyRoute(<PeopleDirectory />) },
+        { path: 'survey/:id', element: createLazyRoute(<SurveyDetail />) },
         { path: 'weekly-cards', element: createLazyRoute(<WeeklyCards />) },
         {
           path: 'weekly-cards/:episode',
@@ -125,6 +133,10 @@ const router = createBrowserRouter(
           path: 'cover-editor-mobile',
           element: createLazyRoute(<CoverEditorMobile />),
         },
+        {
+          path: 'activity-calendar',
+          element: createLazyRoute(<ActivityCalendar />),
+        },
         { path: 'act-signup', element: createLazyRoute(<ActSignup />) },
         { path: '404', element: createLazyRoute(<NotFound />) },
 
@@ -132,6 +144,11 @@ const router = createBrowserRouter(
         { path: 'create-card', element: createProtectedRoute(<CreateCard />) },
         { path: 'my-cards', element: createProtectedRoute(<MyCards />) },
         { path: 'card-edit/:id', element: createProtectedRoute(<CardEdit />) },
+        { path: 'surveys', element: createProtectedRoute(<SurveyList />) },
+        {
+          path: 'survey-edit/:id',
+          element: createProtectedRoute(<SurveyEdit />),
+        },
         {
           path: 'create-meetup',
           element: createProtectedRoute(<CreateMeetup />),
@@ -157,6 +174,10 @@ const router = createBrowserRouter(
         {
           path: 'change-password',
           element: createProtectedRoute(<ChangePassWord />),
+        },
+        {
+          path: 'survey-results/:id',
+          element: createProtectedRoute(<SurveyResults />),
         },
 
         // 404路由

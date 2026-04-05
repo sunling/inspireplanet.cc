@@ -15,3 +15,4 @@ export { default as profileApi } from '../services/profile';
 export { default as imagesApi } from '../services/images';
 export { default as workshopApi } from '../services/workshop';
 export { default as contactApi } from '../services/contact';
+export { default as surveyApi } from '../services/survey';
