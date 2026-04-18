@@ -14,6 +14,7 @@ import {
   Link,
   FormControl,
   FormHelperText,
+  Divider,
 } from '@mui/material';
 import useResponsive from '@/hooks/useResponsive';
 import { authApi } from '../../netlify/config';
@@ -23,6 +24,7 @@ import {
   validateLength,
   validateRequired,
 } from '../../utils/validation';
+import { supabaseAuth } from '../../database/supabaseAuth';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -318,6 +320,39 @@ const Login: React.FC = () => {
               )}
             </Button>
           </form>
+
+          <Box sx={{ mt: 3 }}>
+            <Divider sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">或</Typography>
+            </Divider>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={() =>
+                supabaseAuth.auth.signInWithOAuth({
+                  provider: 'google',
+                  options: { redirectTo: `${window.location.origin}/auth/callback` },
+                })
+              }
+              sx={{
+                py: 1.5,
+                fontSize: '1rem',
+                borderColor: '#dadce0',
+                color: '#3c4043',
+                '&:hover': { borderColor: '#bbb', bgcolor: '#f8f9fa' },
+                display: 'flex',
+                gap: 1.5,
+              }}
+            >
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google"
+                width={20}
+                height={20}
+              />
+              使用 Google 账号登录
+            </Button>
+          </Box>
 
           <Box sx={{ mt: 4, textAlign: 'center' }}>
             <Link

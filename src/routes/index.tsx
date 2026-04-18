@@ -87,6 +87,7 @@ const CoverEditorMobile = lazy(
 const BulkWeeklyUpload = lazy(() => import('../pages/tools/BulkWeeklyUpload'));
 const NotFound = lazy(() => import('../components/NotFound/index'));
 const ChangePassWord = lazy(() => import('../pages/auth/ChangePassWord'));
+const AuthCallback = lazy(() => import('../pages/auth/AuthCallback'));
 const ActSignup = lazy(() => import('../pages/auth/ActSignup'));
 const PeopleDirectory = lazy(() => import('../pages/people/Directory'));
 const MyConnections = lazy(() => import('../pages/connections/MyConnections'));
@@ -114,6 +115,7 @@ const router = createBrowserRouter(
         { path: 'home', element: createLazyRoute(<Home />) },
         { path: 'contact', element: createLazyRoute(<Contact />) },
         { path: 'login', element: createLazyRoute(<Login />) },
+        { path: 'auth/callback', element: createLazyRoute(<AuthCallback />) },
         { path: 'cards', element: createLazyRoute(<Cards />) },
         { path: 'meetups', element: createLazyRoute(<Meetups />) },
         { path: 'people', element: createLazyRoute(<PeopleDirectory />) },
