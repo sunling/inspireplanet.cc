@@ -9,13 +9,29 @@ export { getFunctionNameFromEvent, getDataFromEvent };
  * @param event Netlify事件对象
  * @returns string | null 用户ID
  */
-export function getUserIdFromAuth(event: any): string | null {
+export async function getUserIdFromAuth(event: any): Promise<string | null> {
   const auth =
     (event.headers as any)?.authorization ||
     (event.headers as any)?.Authorization;
   if (!auth || !String(auth).startsWith('Bearer ')) return null;
 
   const token = String(auth).substring(7);
+
+  // Try Supabase Auth token first
+  try {
+    const { createClient } = require('@supabase/supabase-js');
+    const client = createClient(
+      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    const { data: { user }, error } = await client.auth.getUser(token);
+    if (!error && user) {
+      const userId = user.user_metadata?.user_id;
+      return userId ? String(userId) : null;
+    }
+  } catch {}
+
+  // Fallback: legacy JWT
   try {
     const jwt = require('jsonwebtoken');
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;

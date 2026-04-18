@@ -44,7 +44,7 @@ export async function handler(
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const userId = getUserIdFromAuth(event);
+  const userId = await getUserIdFromAuth(event);
   if (!userId) {
     return createErrorResponse('未授权', 401);
   }
@@ -119,7 +119,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const userId = getUserIdFromAuth(event);
+  const userId = await getUserIdFromAuth(event);
   if (!userId) {
     return createErrorResponse('未授权', 401);
   }
@@ -156,7 +156,7 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const userId = getUserIdFromAuth(event);
+  const userId = await getUserIdFromAuth(event);
   if (!userId) {
     return createErrorResponse('未授权', 401);
   }
@@ -180,7 +180,7 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const userId = getUserIdFromAuth(event);
+  const userId = await getUserIdFromAuth(event);
   if (!userId) {
     return createErrorResponse('未授权', 401);
   }

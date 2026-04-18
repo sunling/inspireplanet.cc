@@ -40,7 +40,7 @@ export async function handler(
 }
 
 async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const userId = getUserIdFromAuth(event);
+  const userId = await getUserIdFromAuth(event);
   if (!userId) return createErrorResponse('未授权', 401);
 
   const { data, error } = await supabase
@@ -57,7 +57,7 @@ async function handleGet(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const userId = getUserIdFromAuth(event);
+  const userId = await getUserIdFromAuth(event);
   if (!userId) return createErrorResponse('未授权', 401);
 
   const payload = getDataFromEvent(event);

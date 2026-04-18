@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { authApi, meetupsApi, rsvpApi, episodesApi, speakerSignupsApi } from '../../netlify/config';
+import { meetupsApi, rsvpApi, episodesApi, speakerSignupsApi } from '../../netlify/config';
 import { MeetupStatus, Participant } from '../../netlify/types';
 import { MeetupEpisode } from '../../netlify/functions/episodes';
 import { SpeakerSignup } from '../../netlify/functions/speakerSignups';
@@ -232,15 +232,6 @@ const MeetupDetail: React.FC = () => {
     setIsActionLoading(true);
 
     try {
-      const verify = await authApi.verifyToken();
-      const valid = (verify.success && (verify.data as any)?.valid) === true;
-      if (!valid) {
-        showSnackbar.error('请先登录后再报名参加活动');
-        const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-        navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
-        return;
-      }
-
       const userInfo = getUserInfo();
 
       // 检查是否已经报名

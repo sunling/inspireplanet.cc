@@ -64,7 +64,7 @@ async function handleGetByMeetupDate(event: NetlifyEvent): Promise<NetlifyRespon
 
 // 创建或更新某期主题（仅 organizer）
 async function handleUpsert(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const userId = getUserIdFromAuth(event);
+  const userId = await getUserIdFromAuth(event);
   if (!userId) return createErrorResponse('请先登录', 401);
 
   // 校验 organizer 权限

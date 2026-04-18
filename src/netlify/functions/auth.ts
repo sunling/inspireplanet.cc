@@ -1,107 +1,35 @@
 import { supabase } from '../../database/supabase';
-import * as bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-
+import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
-  HttpHeaders,
-  NetlifyContext,
-  NetlifyEvent,
-  NetlifyResponse,
-} from '../types/http';
-import {
-  getCommonHttpHeader,
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
-  hashPassword,
-  verifyPassword,
-  generateJwtToken,
-  verifyJwtToken,
   getFunctionNameFromEvent,
+  getDataFromEvent,
 } from '../utils/server';
-// 注意：Netlify函数会自动加载.env文件，不需要手动配置dotenv
 
-export interface ChangePasswordRequest {
-  email: string;
-  oldPassword: string;
-  newPassword: string;
-}
-// 定义用户接口
 export interface User {
-  id: string;
-  username: string;
+  id: number;
   email: string;
-  name: string;
-  password?: string;
-  wechat?: string;
-}
-
-// 定义注册请求接口
-export interface RegisterRequest {
-  username: string;
-  email: string;
-  password: string;
   name: string;
   wechat?: string;
-}
-
-// 定义登录请求接口
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-// 定义JWT有效载荷接口
-export interface JwtPayload {
-  userId: string;
-  username: string;
-  email: string;
-  name: string;
   role?: string | null;
-  iat?: number;
-  exp?: number;
 }
 
-// 定义认证操作接口
-export interface AuthAction {
-  functionName: 'register' | 'login' | 'verify';
-}
 
-// JWT密钥
-const JWT_SECRET = process.env.JWT_SECRET;
-
-// 验证必要的环境变量
-if (!JWT_SECRET) {
-  throw new Error('环境变量 JWT_SECRET 未配置');
-}
-
-/**
- * 认证处理器函数
- * @param event 事件对象
- * @param context 上下文对象
- * @returns 响应对象
- */
 export async function handler(
   event: NetlifyEvent,
-  context: NetlifyContext
+  _context: NetlifyContext
 ): Promise<NetlifyResponse> {
-  // 处理预检请求
-  if (event.httpMethod === 'OPTIONS') {
-    return handleOptionsRequest();
-  }
+  if (event.httpMethod === 'OPTIONS') return handleOptionsRequest();
 
   try {
     const functionName = getFunctionNameFromEvent(event);
-
     switch (functionName) {
       case 'register':
         return await handleRegister(event);
-      case 'login':
-        return await handleLogin(event);
-      case 'verify':
-        return await handleVerifyToken(event);
-      case 'changePassword':
-        return await handleChangePassword(event);
+      case 'getProfile':
+        return await handleGetProfile(event);
       default:
         return createErrorResponse('无效的操作类型');
     }
@@ -111,309 +39,73 @@ export async function handler(
   }
 }
 
-/**
- * 处理用户注册
- * @param event 事件对象
- * @returns 响应对象
- */
+// Creates the users table profile after Supabase Auth signup
 async function handleRegister(event: NetlifyEvent): Promise<NetlifyResponse> {
-  try {
-    const registerData: RegisterRequest = JSON.parse(event.body || '{}');
-    const { username, email, password, name, wechat } = registerData;
+  const { email, name, wechat } = getDataFromEvent(event);
 
-    // 验证输入
-    if (!username || !email || !password || !name) {
-      return createErrorResponse('姓名、用户名、邮箱和密码都是必填项');
-    }
+  if (!email || !name?.trim()) {
+    return createErrorResponse('姓名和邮箱为必填项');
+  }
 
-    // 验证邮箱格式
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return createErrorResponse('邮箱格式不正确');
-    }
+  // Check if profile already exists
+  const { data: existing } = await supabase
+    .from('users')
+    .select('id')
+    .eq('email', email)
+    .single();
 
-    // 验证密码长度
-    if (password.length < 6) {
-      return createErrorResponse('密码至少需要6个字符');
-    }
-
-    // 验证用户名长度
-    if (username.length < 2) {
-      return createErrorResponse('用户名至少需要2个字符');
-    }
-
-    // 检查邮箱是否已存在
-    const { data: existingUser } = await supabase
+  if (existing) {
+    // Profile already exists, return it
+    const { data: user } = await supabase
       .from('users')
-      .select('email')
+      .select('id, email, name, wechat, role')
       .eq('email', email)
       .single();
+    return createSuccessResponse({ user });
+  }
 
-    if (existingUser) {
-      return createErrorResponse('该邮箱已被注册', 409);
-    }
+  const { data: newUser, error } = await supabase
+    .from('users')
+    .insert({ email, name: name.trim(), wechat: wechat?.trim() || null })
+    .select('id, email, name, wechat, role')
+    .single();
 
-    // 检查用户名是否已存在
-    const { data: existingUsername } = await supabase
-      .from('users')
-      .select('username')
-      .eq('username', username)
-      .single();
+  if (error || !newUser) {
+    console.error('Insert user error:', error);
+    return createErrorResponse('注册失败，请稍后重试', 500);
+  }
 
-    if (existingUsername) {
-      return createErrorResponse('该用户名已被使用', 409);
-    }
-
-    // 加密密码
-    const hashedPassword = await hashPassword(password);
-
-    // 创建用户
-    const { data: newUser, error: insertError } = await supabase
-      .from('users')
-      .insert({
-        username,
-        email,
-        password: hashedPassword,
-        name,
-        wechat,
-      })
-      .select('id, username, email')
-      .single();
-
-    if (insertError || !newUser) {
-      console.error('Insert error:', insertError);
-      return createErrorResponse('注册失败，请稍后重试', 500);
-    }
-
-    // 生成JWT token
-    const token = generateJwtToken({
-      userId: newUser.id,
-      username: newUser.username,
-      email: newUser.email,
-      name,
-    } as JwtPayload);
-
-    return createSuccessResponse(
-      {
-        message: '注册成功',
-        user: {
-          id: newUser.id,
-          username: newUser.username,
-          email: newUser.email,
-          name,
+  // Update Supabase Auth user_metadata with integer user_id for backend auth lookup
+  try {
+    const { data: authUser } = await supabase.auth.admin.getUserByEmail(email);
+    if (authUser?.user) {
+      await supabase.auth.admin.updateUserById(authUser.user.id, {
+        user_metadata: {
+          ...authUser.user.user_metadata,
+          user_id: newUser.id,
+          name: newUser.name,
         },
-        token,
-      },
-      201
-    );
-  } catch (error: any) {
-    console.error('Register error:', error);
-    return createErrorResponse('注册过程中发生错误', 500);
+      });
+    }
+  } catch (e) {
+    console.error('Failed to update auth user_metadata:', e);
   }
+
+  return createSuccessResponse({ user: newUser }, 201);
 }
 
-/**
- * 处理用户登录
- * @param event 事件对象
- * @returns 响应对象
- */
-async function handleLogin(event: NetlifyEvent): Promise<NetlifyResponse> {
-  try {
-    const loginData: LoginRequest = JSON.parse(event.body || '{}');
-    const { email, password } = loginData;
+// Fetch user profile by email (called after Supabase Auth login)
+async function handleGetProfile(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const { email } = getDataFromEvent(event);
+  if (!email) return createErrorResponse('缺少邮箱');
 
-    // 验证输入
-    if (!email || !password) {
-      return createErrorResponse('邮箱和密码都是必填项');
-    }
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('id, email, name, wechat, role')
+    .eq('email', email)
+    .single();
 
-    // 查找用户
-    const { data: user } = await supabase
-      .from('users')
-      .select('id, username, email, password, name, role')
-      .eq('email', email)
-      .single();
+  if (error || !user) return createErrorResponse('用户不存在', 404);
 
-    if (!user) {
-      return createErrorResponse('邮箱或密码错误', 401);
-    }
-
-    // 验证密码
-    const isPasswordValid = await verifyPassword(password, user.password!);
-    if (!isPasswordValid) {
-      return createErrorResponse('邮箱或密码错误', 401);
-    }
-
-    // 生成JWT token
-    const token = generateJwtToken({
-      userId: user.id,
-      username: user.username,
-      email: user.email,
-      name: user.name,
-      role: user.role || null,
-    } as JwtPayload);
-
-    return createSuccessResponse({
-      message: '登录成功',
-      user: { id: user.id, username: user.username, email: user.email, name: user.name, role: user.role || null },
-      token,
-    });
-  } catch (error: any) {
-    console.error('Login error:', error);
-    return createErrorResponse('登录过程中发生错误', 500);
-  }
-}
-
-/**
- * 验证JWT token
- * @param event 事件对象
- * @returns 响应对象
- */
-async function handleVerifyToken(
-  event: NetlifyEvent
-): Promise<NetlifyResponse> {
-  try {
-    const authHeader =
-      event.headers.authorization || event.headers.Authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return createErrorResponse('未提供有效的认证令牌', 401);
-    }
-
-    const token = authHeader.substring(7); // 移除 'Bearer ' 前缀
-
-    const decoded: JwtPayload = verifyJwtToken(token);
-
-    if (!decoded) {
-      return createErrorResponse('令牌无效或已过期', 401);
-    }
-
-    // 验证用户是否仍然存在
-    const {
-      data: user,
-    }: {
-      data: {
-        id: string;
-        username: string;
-        email: string;
-        name: string;
-      } | null;
-    } = await supabase
-      .from('users')
-      .select('id, username, email, name')
-      .eq('id', decoded.userId)
-      .single();
-
-    if (!user) {
-      return createErrorResponse('用户不存在', 401);
-    }
-
-    return createSuccessResponse({
-      valid: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        name: user.name,
-      },
-    });
-  } catch (error: any) {
-    console.error('Token verification error:', error);
-    return createErrorResponse('令牌验证过程中发生错误', 500);
-  }
-}
-
-/**
- * 处理修改密码
- * @param event 事件对象
- * @returns 响应对象
- */
-async function handleChangePassword(
-  event: NetlifyEvent
-): Promise<NetlifyResponse> {
-  try {
-    // 验证JWT token
-    const authHeader =
-      event.headers.authorization || event.headers.Authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return createErrorResponse('未提供有效的认证令牌', 401);
-    }
-
-    const token = authHeader.substring(7);
-    const decoded: JwtPayload = verifyJwtToken(token);
-
-    if (!decoded) {
-      return createErrorResponse('令牌无效或已过期', 401);
-    }
-
-    const changeData: ChangePasswordRequest = JSON.parse(event.body || '{}');
-    const { email, oldPassword, newPassword } = changeData;
-
-    // 验证输入
-    if (!email || !oldPassword || !newPassword) {
-      return createErrorResponse('邮箱、旧密码和新密码都是必填项');
-    }
-
-    // 验证邮箱格式
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return createErrorResponse('邮箱格式不正确');
-    }
-
-    // 验证新密码长度
-    if (newPassword.length < 6) {
-      return createErrorResponse('新密码至少需要6个字符');
-    }
-
-    // 验证token中的邮箱与请求的邮箱匹配
-    if (decoded.email !== email) {
-      return createErrorResponse('邮箱不匹配', 403);
-    }
-
-    // 查找用户
-    const { data: user } = await supabase
-      .from('users')
-      .select('id, username, email, password, name')
-      .eq('id', decoded.userId)
-      .single();
-
-    if (!user) {
-      return createErrorResponse('用户不存在', 404);
-    }
-
-    // 验证旧密码
-    const isOldPasswordValid = await verifyPassword(
-      oldPassword,
-      user.password!
-    );
-    if (!isOldPasswordValid) {
-      return createErrorResponse('旧密码错误', 401);
-    }
-
-    // 检查新密码是否与旧密码相同
-    const isSamePassword = await verifyPassword(newPassword, user.password!);
-    if (isSamePassword) {
-      return createErrorResponse('新密码不能与旧密码相同');
-    }
-
-    // 加密新密码
-    const hashedNewPassword = await hashPassword(newPassword);
-
-    // 更新密码
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ password: hashedNewPassword })
-      .eq('id', user.id);
-
-    if (updateError) {
-      console.error('Update password error:', updateError);
-      return createErrorResponse('修改密码失败，请稍后重试', 500);
-    }
-
-    return createSuccessResponse({
-      message: '密码修改成功',
-    });
-  } catch (error: any) {
-    console.error('Change password error:', error);
-    return createErrorResponse('修改密码过程中发生错误', 500);
-  }
+  return createSuccessResponse({ user });
 }

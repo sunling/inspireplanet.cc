@@ -168,12 +168,18 @@ const ChangePassWord: React.FC = () => {
 
     try {
       const currentUser = getUserInfo();
-      // 使用统一的api对象修改密码
-      const response = await authApi.changePassword({
+      // Re-authenticate with current password first, then update
+      const { supabaseAuth } = await import('../../database/supabaseAuth');
+      const { error: signInError } = await supabaseAuth.auth.signInWithPassword({
         email: currentUser?.email || '',
-        oldPassword: formData.currentPassword,
-        newPassword: formData.newPassword,
+        password: formData.currentPassword,
       });
+      if (signInError) {
+        setMessage({ text: '当前密码错误', type: 'error' });
+        setSubmitLoading(false);
+        return;
+      }
+      const response = await authApi.changePassword(formData.newPassword);
 
       if (response.success) {
         setMessage({

@@ -335,7 +335,7 @@ async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
     const data = getDataFromEvent(event);
     const { id } = data;
-    const user_id = getUserIdFromAuth(event);
+    const user_id = await getUserIdFromAuth(event);
 
     if (!id) {
       return createErrorResponse('缺少卡片ID');
@@ -376,7 +376,7 @@ async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
 
 async function handleLike(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const userId = getUserIdFromAuth(event);
+    const userId = await getUserIdFromAuth(event);
     if (!userId) {
       return createErrorResponse('未授权', 401);
     }

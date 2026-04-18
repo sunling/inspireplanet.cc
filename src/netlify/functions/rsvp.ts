@@ -67,7 +67,7 @@ async function handleCreate(event: NetlifyEvent) {
     const meetupIdNum = Number(rsvpData.meetup_id);
     const wechatId = String(rsvpData.wechat_id || '').trim();
     const name = String(rsvpData.name || '').trim();
-    const authUserId = getUserIdFromAuth(event);
+    const authUserId = await getUserIdFromAuth(event);
     const providedUserId =
       rsvpData.user_id !== undefined ? rsvpData.user_id : null;
     const userId = authUserId ?? providedUserId ?? null;

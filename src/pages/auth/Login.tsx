@@ -18,7 +18,6 @@ import {
 import useResponsive from '@/hooks/useResponsive';
 import { authApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
-import { setUserAuth } from '../../utils/user';
 import {
   validateEmail,
   validateLength,
@@ -41,14 +40,12 @@ const Login: React.FC = () => {
   const [currentMode, setCurrentMode] = useState<'login' | 'register'>('login');
   const [formData, setFormData] = useState({
     name: '',
-    username: '',
     email: '',
     password: '',
     wechat: '',
   });
   const [formErrors, setFormErrors] = useState<{
     name?: string;
-    username?: string;
     email?: string;
     password?: string;
   }>({});
@@ -99,18 +96,9 @@ const Login: React.FC = () => {
       isValid = false;
     }
 
-    // 注册模式下的额外验证
     if (currentMode === 'register') {
       if (!formData.name) {
         errors.name = '请输入姓名';
-        isValid = false;
-      }
-
-      if (!formData.username) {
-        errors.username = '请输入用户名';
-        isValid = false;
-      } else if (formData.username.length < 3) {
-        errors.username = '用户名长度至少为3位';
         isValid = false;
       }
     }
@@ -148,21 +136,15 @@ const Login: React.FC = () => {
         // 使用统一API封装进行注册
         response = await authApi.register({
           name: formData.name,
-          username: formData.username,
           email: formData.email,
           password: formData.password,
           ...(formData.wechat ? { wechat: formData.wechat } : {}),
         });
       }
 
-      // 检查响应是否成功
       if (!response.success) {
         throw new Error(response.error || '操作失败');
       }
-
-      // 保存用户信息和token到localStorage
-      const { token, user: userData } = response.data || {};
-      setUserAuth(token || '', userData || {});
 
       setSuccess(currentMode === 'login' ? '登录成功' : '注册成功');
 
@@ -261,29 +243,6 @@ const Login: React.FC = () => {
                 />
                 {formErrors.name && (
                   <FormHelperText>{formErrors.name}</FormHelperText>
-                )}
-              </FormControl>
-            )}
-
-            {currentMode === 'register' && (
-              <FormControl
-                fullWidth
-                margin="normal"
-                error={!!formErrors.username}
-              >
-                <TextField
-                  label="用户名"
-                  id="username"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  placeholder="请输入用户名"
-                  required
-                  variant="outlined"
-                  size={isMobile ? 'small' : 'medium'}
-                />
-                {formErrors.username && (
-                  <FormHelperText>{formErrors.username}</FormHelperText>
                 )}
               </FormControl>
             )}

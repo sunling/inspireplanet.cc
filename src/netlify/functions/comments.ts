@@ -73,7 +73,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('缺少card_id字段');
     }
 
-    const uid = getUserIdFromAuth(event);
+    const uid = await getUserIdFromAuth(event);
     if (!uid) {
       return createErrorResponse('未授权', 401);
     }

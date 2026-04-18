@@ -1,113 +1,66 @@
 import { UserInfo } from '../netlify/types';
+import { supabaseAuth } from '../database/supabaseAuth';
 
-/**
- * 存储用户信息，确保登录状态
- * @param token 认证令牌
- * @param userInfo 用户信息
- */
 export const setUserAuth = (token: string, userInfo: UserInfo) => {
   localStorage.setItem('authToken', token);
   localStorage.setItem('userInfo', JSON.stringify(userInfo));
 };
 
-/**
- * 获取认证令牌
- * @returns string | null 认证令牌
- */
 export const getAuthToken = (): string | null => {
   return localStorage.getItem('authToken');
 };
 
-/**
- * 判断用户是否已经登录
- * @returns boolean 是否已登录
- */
 export const isUserLoggedIn = (): boolean => {
-  const token = localStorage.getItem('authToken');
-  return Boolean(token);
+  return Boolean(localStorage.getItem('authToken'));
 };
 
-/**
- * 获取全局唯一的userId
- * @returns string | null 用户ID
- */
 export const getUserId = (): string | null => {
   const userInfo = localStorage.getItem('userInfo');
-  if (userInfo) {
-    try {
-      const parsedUserInfo = JSON.parse(userInfo);
-      return parsedUserInfo.id;
-    } catch (e) {
-      console.error('解析用户信息失败:', e);
-      return null;
-    }
+  if (!userInfo) return null;
+  try {
+    return JSON.parse(userInfo).id;
+  } catch {
+    return null;
   }
-  return null;
 };
 
-/**
- * 获取用户名
- * @returns string | null 用户名
- */
 export const getUserName = (): string | null => {
   const userInfo = localStorage.getItem('userInfo');
-  if (userInfo) {
-    try {
-      const parsedUserInfo = JSON.parse(userInfo);
-      return parsedUserInfo.name || parsedUserInfo.username;
-    } catch (e) {
-      console.error('解析用户信息失败:', e);
-      return null;
-    }
+  if (!userInfo) return null;
+  try {
+    const parsed = JSON.parse(userInfo);
+    return parsed.name || parsed.username;
+  } catch {
+    return null;
   }
-  return null;
 };
 
-/**
- * 获取用户信息
- * @returns any | null 用户信息
- */
 export const getUserInfo = (): UserInfo | null => {
   const userInfo = localStorage.getItem('userInfo');
-  if (userInfo) {
-    try {
-      return JSON.parse(userInfo);
-    } catch (e) {
-      console.error('解析用户信息失败:', e);
-      return null;
-    }
+  if (!userInfo) return null;
+  try {
+    return JSON.parse(userInfo);
+  } catch {
+    return null;
   }
-  return null;
 };
 
-/**
- * 退出登录
- */
-export const logoutUser = () => {
+export const logoutUser = async () => {
   localStorage.removeItem('authToken');
   localStorage.removeItem('userInfo');
+  await supabaseAuth.auth.signOut();
 };
 
-/**
- * 判断当前用户是否是 organizer
- */
 export const isOrganizer = (): boolean => {
-  const userInfo = getUserInfo();
-  return userInfo?.role === 'organizer';
+  return getUserInfo()?.role === 'organizer';
 };
 
-/**
- * 判断当前用户是否是活动的创建者
- * @param meetup 活动对象
- * @returns boolean 是否是活动创建者
- */
 export const isMeetupOwner = (meetup: {
   creator?: string;
   user_id?: string;
 }): boolean => {
   const curUser = getUserInfo();
   if (!curUser) return false;
-
   return (
     meetup.creator === curUser?.username ||
     meetup.creator == curUser?.id ||
