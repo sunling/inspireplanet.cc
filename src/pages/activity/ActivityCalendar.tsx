@@ -185,8 +185,9 @@ const ActivityCalendar: React.FC = () => {
   };
 
   // 处理活动详情跳转
-  const handleActivityClick = (activityId: string) => {
-    navigate(`/meetup-detail?id=${activityId}`);
+  const handleActivityClick = (activityId: string, date?: string) => {
+    const params = date ? `?id=${activityId}&date=${date}` : `?id=${activityId}`;
+    navigate(`/meetup-detail${params}`);
   };
 
   return (
@@ -331,7 +332,7 @@ const ActivityCalendar: React.FC = () => {
                             transition: 'all 0.2s ease',
                           },
                         }}
-                        onClick={() => handleActivityClick(activity.id)}
+                        onClick={() => handleActivityClick(activity.id, activity.isRecurring ? selectedDate.format('YYYY-MM-DD') : undefined)}
                       >
                         <CardContent sx={{ position: 'relative' }}>
                           {/* 标题 + 期数 */}
@@ -376,7 +377,7 @@ const ActivityCalendar: React.FC = () => {
                                 size="small"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleActivityClick(activity.id);
+                                  handleActivityClick(activity.id, activity.isRecurring ? selectedDate.format('YYYY-MM-DD') : undefined);
                                 }}
                                 sx={{ color: 'primary.main' }}
                               >

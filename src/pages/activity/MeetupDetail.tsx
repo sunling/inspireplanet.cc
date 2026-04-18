@@ -140,19 +140,22 @@ const MeetupDetail: React.FC = () => {
 
       setMeetup(processedMeetup);
 
-      // 如果是循环活动，加载本周期次信息
+      // 如果是循环活动，加载对应期次信息
       if (processedMeetup.is_recurring && processedMeetup.episode_start_date && processedMeetup.recurrence_day !== undefined) {
-        const today = new Date();
-        const nextDate = getNextOccurrence(processedMeetup.datetime, processedMeetup.recurrence_day);
-        const targetDate = nextDate > today
-          ? nextDate
-          : new Date(today.setDate(today.getDate() - ((today.getDay() - processedMeetup.recurrence_day + 7) % 7)));
+        // 优先用 URL 里传来的日期（从日历点击），否则算最近一期
+        const searchParams = new URLSearchParams(location.search);
+        const urlDate = searchParams.get('date');
+        let targetDate: Date;
+        if (urlDate) {
+          targetDate = new Date(urlDate + 'T00:00:00');
+        } else {
+          targetDate = getNextOccurrence(processedMeetup.datetime, processedMeetup.recurrence_day);
+        }
         const dateStr = targetDate.toISOString().split('T')[0];
-        const diffWeeks = Math.round((targetDate.getTime() - new Date(processedMeetup.episode_start_date).getTime()) / (7 * 24 * 60 * 60 * 1000));
-        const epNum = diffWeeks + 1;
+        const epNum = Math.round((targetDate.getTime() - new Date(processedMeetup.episode_start_date).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
         const epRes = await episodesApi.getByMeetupDate(Number(meetupId), dateStr);
         if (epRes.success) {
-          setEpisode(epRes.data?.episode ? { ...epRes.data.episode } : { meetup_id: Number(meetupId), episode_number: epNum, date: dateStr });
+          setEpisode(epRes.data?.episode ?? { meetup_id: Number(meetupId), episode_number: epNum, date: dateStr });
         }
       }
 
