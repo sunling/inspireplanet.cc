@@ -28,13 +28,12 @@ export const authApi = {
     name: string;
     email: string;
     password: string;
-    wechat?: string;
   }): Promise<ApiResponse<{ user: UserInfo; token: string }>> => {
     const { error: signUpError, data: authData } = await supabaseAuth.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
-        data: { name: data.name, wechat: data.wechat || '' },
+        data: { name: data.name },
       },
     });
 
@@ -49,7 +48,6 @@ export const authApi = {
     const profileRes = await http.post<{ user: UserInfo }>('/auth', 'register', {
       email: data.email,
       name: data.name,
-      wechat: data.wechat,
     });
 
     const token = authData.session?.access_token || '';

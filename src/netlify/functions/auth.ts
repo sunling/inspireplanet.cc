@@ -41,7 +41,7 @@ export async function handler(
 
 // Creates the users table profile after Supabase Auth signup
 async function handleRegister(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const { email, name, wechat } = getDataFromEvent(event);
+  const { email, name } = getDataFromEvent(event);
 
   if (!email || !name?.trim()) {
     return createErrorResponse('姓名和邮箱为必填项');
@@ -66,7 +66,7 @@ async function handleRegister(event: NetlifyEvent): Promise<NetlifyResponse> {
 
   const { data: newUser, error } = await supabase
     .from('users')
-    .insert({ email, name: name.trim(), wechat: wechat?.trim() || null })
+    .insert({ email, name: name.trim() })
     .select('id, email, name, wechat, role')
     .single();
 

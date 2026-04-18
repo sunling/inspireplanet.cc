@@ -42,7 +42,6 @@ const Login: React.FC = () => {
     name: '',
     email: '',
     password: '',
-    wechat: '',
   });
   const [formErrors, setFormErrors] = useState<{
     name?: string;
@@ -138,7 +137,6 @@ const Login: React.FC = () => {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          ...(formData.wechat ? { wechat: formData.wechat } : {}),
         });
       }
 
@@ -284,21 +282,6 @@ const Login: React.FC = () => {
                 helperText={formErrors.password || '密码长度至少为6位'}
               />
             </FormControl>
-
-            {currentMode === 'register' && (
-              <TextField
-                fullWidth
-                margin="normal"
-                label="微信号（可选）"
-                id="wechat"
-                name="wechat"
-                value={formData.wechat}
-                onChange={handleInputChange}
-                placeholder="请输入微信号"
-                variant="outlined"
-                size={isMobile ? 'small' : 'medium'}
-              />
-            )}
 
             <Button
               fullWidth
