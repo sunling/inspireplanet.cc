@@ -403,7 +403,7 @@ const Meetups: React.FC = () => {
               </Typography>
               <Typography variant="body2">
                 {meetup.is_recurring && meetup.recurrence_day !== undefined
-                  ? formatDate(getNextOccurrence(meetup.datetime, meetup.recurrence_day).toISOString()) + ' (下次)'
+                  ? formatDate(getNextOccurrence(meetup.datetime, meetup.recurrence_day).toISOString())
                   : formatDate(meetup.datetime)}
               </Typography>
             </Box>
@@ -438,7 +438,9 @@ const Meetups: React.FC = () => {
               overflow: 'hidden',
             }}
           >
-            {meetup.description}
+            {(meetup.is_recurring && episodeMap[String(meetup.id)]?.description)
+              ? episodeMap[String(meetup.id)].description
+              : meetup.description}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Typography variant="body2" sx={{ mr: 1 }}>
