@@ -33,6 +33,10 @@ export interface Meetup {
   user_id?: string;
   creator: string;
   participant_count?: number;
+  is_recurring?: boolean;
+  recurrence_day?: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
+  episode_start_date?: string; // YYYY-MM-DD, date of EP1
+  default_theme?: string; // fallback when no episode theme is set
 }
 
 export interface MeetupRequest extends Omit<Meetup, 'id'> {}
@@ -127,7 +131,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('日期时间格式无效');
     }
 
-    if (meetupDateTime < new Date()) {
+    if (!meetupData.is_recurring && meetupDateTime < new Date()) {
       return createErrorResponse('活动时间不能是过去的时间');
     }
 
@@ -152,6 +156,8 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
           cover: meetupData.cover || null,
           status: 'active',
           user_id: meetupData.user_id || null,
+          is_recurring: meetupData.is_recurring || false,
+          recurrence_day: meetupData.is_recurring ? meetupData.recurrence_day ?? null : null,
         },
       ])
       .select();

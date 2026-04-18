@@ -8,6 +8,8 @@ import {
   CardContent,
   Grid,
   MenuItem,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import useResponsive from '../../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../../context/app';
@@ -109,9 +111,12 @@ const EditForm: React.FC<EditFormProps> = ({
     if (!values.wechat_id?.trim()) newErrors.wechat_id = '此字段为必填项';
     if (!values.cover && !existingQrUrl) newErrors.cover = '请上传活动群二维码';
 
-    // 日期时间验证
-    if (values.datetime && new Date(values.datetime) <= new Date()) {
+    // 日期时间验证（循环活动不校验）
+    if (!values.is_recurring && values.datetime && new Date(values.datetime) <= new Date()) {
       newErrors.datetime = '活动时间必须是未来时间';
+    }
+    if (values.is_recurring && (values.recurrence_day === undefined || values.recurrence_day === null)) {
+      newErrors.recurrence_day = '请选择每周几举办';
     }
     setErrors(newErrors);
 
@@ -370,9 +375,60 @@ const EditForm: React.FC<EditFormProps> = ({
             </Typography>
           </Box>
           <CardContent>
+            {/* 循环活动开关 */}
+            {!viewOnly && (
+              <Box sx={{ mb: 3 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={!!formValues.is_recurring}
+                      onChange={(e) =>
+                        setFormValues((prev) => ({
+                          ...prev,
+                          is_recurring: e.target.checked,
+                          recurrence_day: e.target.checked ? (prev.recurrence_day ?? 6) : undefined,
+                        }))
+                      }
+                    />
+                  }
+                  label="每周定期举办"
+                />
+              </Box>
+            )}
+
+            {/* 每周几 - 仅循环活动显示 */}
+            {formValues.is_recurring && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
+                  每周几举办
+                </Typography>
+                <TextField
+                  fullWidth
+                  id="recurrence_day"
+                  name="recurrence_day"
+                  select
+                  value={formValues.recurrence_day ?? 6}
+                  onChange={(e) =>
+                    setFormValues((prev) => ({
+                      ...prev,
+                      recurrence_day: Number(e.target.value),
+                    }))
+                  }
+                  error={!!errors['recurrence_day']}
+                  helperText={errors['recurrence_day']}
+                  size={isMobile ? 'small' : 'medium'}
+                  InputProps={{ readOnly: viewOnly }}
+                >
+                  {['周日','周一','周二','周三','周四','周五','周六'].map((label, i) => (
+                    <MenuItem key={i} value={i}>{label}</MenuItem>
+                  ))}
+                </TextField>
+              </Box>
+            )}
+
             <Box sx={{ mb: 3 }}>
               <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
-                活动时间
+                {formValues.is_recurring ? '举办时间（每周几点开始）' : '活动时间'}
               </Typography>
               <TextField
                 fullWidth
@@ -390,7 +446,7 @@ const EditForm: React.FC<EditFormProps> = ({
             </Box>
 
             {/* 快捷时间选择 - 仅在创建时显示 */}
-            {!existingQrUrl && !viewOnly && (
+            {!existingQrUrl && !viewOnly && !formValues.is_recurring && (
               <Box sx={{ mb: 3 }}>
                 <Typography
                   variant="subtitle2"

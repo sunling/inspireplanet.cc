@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { authApi, meetupsApi, rsvpApi } from '../../netlify/config';
+import { authApi, meetupsApi, rsvpApi, episodesApi } from '../../netlify/config';
 import { MeetupStatus, Participant } from '../../netlify/types';
+import { MeetupEpisode } from '../../netlify/functions/episodes';
+import { isOrganizer } from '../../utils/user';
 
 import {
   Box,
@@ -20,7 +22,9 @@ import {
   IconButton,
   Tooltip,
   Grid,
+  Divider,
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
 import { Share as ShareIcon, Close as CloseIcon } from '@mui/icons-material';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 
@@ -31,6 +35,17 @@ import { useGlobalSnackbar } from '@/context/app';
 import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
 import { getUserId, getUserInfo, isUserLoggedIn, isMeetupOwner } from '@/utils';
 import { formatDate, formatDateTime, isUpcomingEvent } from '../../utils/date';
+
+function getNextOccurrence(datetime: string, recurrenceDay: number): Date {
+  const base = new Date(datetime);
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(base.getHours(), base.getMinutes(), 0, 0);
+  const daysUntil = (recurrenceDay - next.getDay() + 7) % 7;
+  if (daysUntil === 0 && next <= now) next.setDate(next.getDate() + 7);
+  else next.setDate(next.getDate() + daysUntil);
+  return next;
+}
 
 const MeetupDetail: React.FC = () => {
   const location = useLocation();
@@ -49,6 +64,13 @@ const MeetupDetail: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
+
+  // 期次状态
+  const [episode, setEpisode] = useState<MeetupEpisode | null>(null);
+  const [showEpisodeEditor, setShowEpisodeEditor] = useState(false);
+  const [episodeThemeInput, setEpisodeThemeInput] = useState('');
+  const [episodeDescInput, setEpisodeDescInput] = useState('');
+  const [episodeSaving, setEpisodeSaving] = useState(false);
 
   // 模态框状态
   const [showRSVPDialog, setShowRSVPDialog] = useState(false);
@@ -117,6 +139,22 @@ const MeetupDetail: React.FC = () => {
       };
 
       setMeetup(processedMeetup);
+
+      // 如果是循环活动，加载本周期次信息
+      if (processedMeetup.is_recurring && processedMeetup.episode_start_date && processedMeetup.recurrence_day !== undefined) {
+        const today = new Date();
+        const nextDate = getNextOccurrence(processedMeetup.datetime, processedMeetup.recurrence_day);
+        const targetDate = nextDate > today
+          ? nextDate
+          : new Date(today.setDate(today.getDate() - ((today.getDay() - processedMeetup.recurrence_day + 7) % 7)));
+        const dateStr = targetDate.toISOString().split('T')[0];
+        const diffWeeks = Math.round((targetDate.getTime() - new Date(processedMeetup.episode_start_date).getTime()) / (7 * 24 * 60 * 60 * 1000));
+        const epNum = diffWeeks + 1;
+        const epRes = await episodesApi.getByMeetupDate(Number(meetupId), dateStr);
+        if (epRes.success) {
+          setEpisode(epRes.data?.episode ? { ...epRes.data.episode } : { meetup_id: Number(meetupId), episode_number: epNum, date: dateStr });
+        }
+      }
 
       // 加载参与者信息
       loadParticipants(meetupId);
@@ -367,6 +405,32 @@ const MeetupDetail: React.FC = () => {
     }
   };
 
+  // 保存期次主题
+  const handleSaveEpisodeTheme = async () => {
+    if (!episode) return;
+    setEpisodeSaving(true);
+    try {
+      const res = await episodesApi.upsert({
+        meetup_id: episode.meetup_id,
+        episode_number: episode.episode_number,
+        date: episode.date,
+        theme: episodeThemeInput.trim() || undefined,
+        description: episodeDescInput.trim() || undefined,
+      });
+      if (res.success && res.data?.episode) {
+        setEpisode(res.data.episode);
+        showSnackbar.success('主题已保存');
+      } else {
+        showSnackbar.error('保存失败');
+      }
+    } catch {
+      showSnackbar.error('保存失败');
+    } finally {
+      setEpisodeSaving(false);
+      setShowEpisodeEditor(false);
+    }
+  };
+
   // 显示二维码弹窗
   const showQRCode = (qrImageUrl: string) => {
     setMeetup((prev: any) => {
@@ -448,18 +512,37 @@ const MeetupDetail: React.FC = () => {
               />
             </Box>
 
-            <Typography
-              variant="h1"
-              component="h1"
-              sx={{
-                mb: 3,
-                fontWeight: 'bold',
-                color: '#333',
-                fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
-              }}
-            >
-              {meetup.title}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+              <Typography
+                variant="h1"
+                component="h1"
+                sx={{
+                  fontWeight: 'bold',
+                  color: '#333',
+                  fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
+                  flex: 1,
+                }}
+              >
+                {meetup.is_recurring && episode
+                  ? `${meetup.title}EP${episode.episode_number}${episode.theme ? `：${episode.theme}` : ''}`
+                  : meetup.title}
+              </Typography>
+              {meetup.is_recurring && isOrganizer() && (
+                <Tooltip title="编辑本期内容">
+                  <IconButton
+                    size="small"
+                    sx={{ mt: 0.5, flexShrink: 0 }}
+                    onClick={() => {
+                      setEpisodeThemeInput(episode?.theme || '');
+                      setEpisodeDescInput(episode?.description || '');
+                      setShowEpisodeEditor(true);
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
 
             {/* 基本信息 */}
             <Card
@@ -568,7 +651,9 @@ const MeetupDetail: React.FC = () => {
                   lineHeight: 1.8,
                 }}
               >
-                {meetup.description}
+                {(meetup.is_recurring && episode?.description)
+                  ? episode.description
+                  : meetup.description}
               </Box>
             </Card>
 
@@ -907,6 +992,38 @@ const MeetupDetail: React.FC = () => {
             </Box>
           )}
         </DialogContent>
+      </Dialog>
+
+      {/* 编辑本期内容 */}
+      <Dialog open={showEpisodeEditor} onClose={() => setShowEpisodeEditor(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 600 }}>
+          编辑本期内容 {episode && `· EP${episode.episode_number}`}
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <TextField
+            fullWidth
+            label="本期主题"
+            value={episodeThemeInput}
+            onChange={(e) => setEpisodeThemeInput(e.target.value)}
+            placeholder="例：看见自己的成长（留空则标题不显示副题）"
+            helperText={`标题预览：${meetup?.title ?? ''}EP${episode?.episode_number ?? ''}${episodeThemeInput ? `：${episodeThemeInput}` : ''}`}
+          />
+          <TextField
+            fullWidth
+            multiline
+            minRows={6}
+            label="本期活动介绍"
+            value={episodeDescInput}
+            onChange={(e) => setEpisodeDescInput(e.target.value)}
+            placeholder="描述本期的主题背景、讨论方向等，留空则显示系列默认介绍"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowEpisodeEditor(false)}>取消</Button>
+          <Button variant="contained" onClick={handleSaveEpisodeTheme} disabled={episodeSaving}>
+            {episodeSaving ? '保存中...' : '保存'}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

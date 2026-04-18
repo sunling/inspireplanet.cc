@@ -57,6 +57,7 @@ export interface JwtPayload {
   username: string;
   email: string;
   name: string;
+  role?: string | null;
   iat?: number;
   exp?: number;
 }
@@ -229,7 +230,7 @@ async function handleLogin(event: NetlifyEvent): Promise<NetlifyResponse> {
     // 查找用户
     const { data: user } = await supabase
       .from('users')
-      .select('id, username, email, password, name')
+      .select('id, username, email, password, name, role')
       .eq('email', email)
       .single();
 
@@ -249,11 +250,12 @@ async function handleLogin(event: NetlifyEvent): Promise<NetlifyResponse> {
       username: user.username,
       email: user.email,
       name: user.name,
+      role: user.role || null,
     } as JwtPayload);
 
     return createSuccessResponse({
       message: '登录成功',
-      user,
+      user: { id: user.id, username: user.username, email: user.email, name: user.name, role: user.role || null },
       token,
     });
   } catch (error: any) {

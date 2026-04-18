@@ -39,6 +39,14 @@ interface Activity {
   type: 'meeting' | 'workshop' | 'social' | 'other';
   isRecurring?: boolean;
   recurrenceDay?: number; // 0-6，0表示周日，1表示周一，以此类推
+  episodeStartDate?: string; // YYYY-MM-DD, date of EP1
+}
+
+function getEpisodeNumber(episodeStartDate: string, targetDate: dayjs.Dayjs): number {
+  const start = dayjs(episodeStartDate).startOf('day');
+  const target = targetDate.startOf('day');
+  const diffWeeks = Math.round(target.diff(start, 'day') / 7);
+  return diffWeeks + 1;
 }
 
 const ActivityCalendar: React.FC = () => {
@@ -99,7 +107,10 @@ const ActivityCalendar: React.FC = () => {
             date: meetupDate.format('YYYY-MM-DD'),
             time: meetupDate.format('HH:mm'),
             location: meetup.location || '',
-            type: 'meeting', // 默认为会议类型
+            type: 'meeting',
+            isRecurring: meetup.is_recurring || false,
+            recurrenceDay: meetup.recurrence_day,
+            episodeStartDate: meetup.episode_start_date,
           };
         }
       );
@@ -210,8 +221,11 @@ const ActivityCalendar: React.FC = () => {
                           }
 
                           const dateStr = day.format('YYYY-MM-DD');
+                          const dayOfWeek = day.day();
                           const hasActivity = activities.some(
-                            (activity) => activity.date === dateStr
+                            (activity) =>
+                              activity.date === dateStr ||
+                              (activity.isRecurring && activity.recurrenceDay === dayOfWeek)
                           );
 
                           return (
@@ -320,14 +334,18 @@ const ActivityCalendar: React.FC = () => {
                         onClick={() => handleActivityClick(activity.id)}
                       >
                         <CardContent sx={{ position: 'relative' }}>
-                          {/* 标题单独一行 */}
-                          <Typography
-                            variant="h6"
-                            component="div"
-                            sx={{ mb: 1 }}
-                          >
-                            {activity.title}
-                          </Typography>
+                          {/* 标题 + 期数 */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Typography variant="h6" component="div">
+                              {activity.title}
+                            </Typography>
+                            {activity.isRecurring && activity.episodeStartDate && (() => {
+                              const ep = getEpisodeNumber(activity.episodeStartDate, selectedDate);
+                              return ep > 0 ? (
+                                <Chip label={`EP${ep}`} size="small" color="secondary" variant="outlined" />
+                              ) : null;
+                            })()}
+                          </Box>
 
                           {/* 时间和地点 */}
                           <Typography

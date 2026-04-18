@@ -89,6 +89,14 @@ export const logoutUser = () => {
 };
 
 /**
+ * 判断当前用户是否是 organizer
+ */
+export const isOrganizer = (): boolean => {
+  const userInfo = getUserInfo();
+  return userInfo?.role === 'organizer';
+};
+
+/**
  * 判断当前用户是否是活动的创建者
  * @param meetup 活动对象
  * @returns boolean 是否是活动创建者

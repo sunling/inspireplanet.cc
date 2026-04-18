@@ -63,6 +63,7 @@ export interface UserInfo {
   username?: string;
   wechat_id?: string;
   email?: string;
+  role?: string | null;
 }
 
 export interface PeopleUser {

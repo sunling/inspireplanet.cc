@@ -36,12 +36,39 @@ import {
   getUserInfo,
 } from '../../utils';
 import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
-import { meetupsApi, rsvpApi } from '../../netlify/config';
+import { MeetupEpisode } from '../../netlify/functions/episodes';
+import { meetupsApi, rsvpApi, episodesApi } from '../../netlify/config';
 
 const PAGE_SIZE = 6;
 
+// 计算某个日期对应的期数
+function getEpisodeNumber(episodeStartDate: string, targetDate: Date): number {
+  const start = new Date(episodeStartDate);
+  start.setHours(0, 0, 0, 0);
+  const target = new Date(targetDate);
+  target.setHours(0, 0, 0, 0);
+  const diffWeeks = Math.round((target.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  return diffWeeks + 1;
+}
+
+// 计算循环活动的下次举办时间
+function getNextOccurrence(datetime: string, recurrenceDay: number): Date {
+  const base = new Date(datetime);
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(base.getHours(), base.getMinutes(), 0, 0);
+  const daysUntil = (recurrenceDay - next.getDay() + 7) % 7;
+  if (daysUntil === 0 && next <= now) {
+    next.setDate(next.getDate() + 7);
+  } else {
+    next.setDate(next.getDate() + daysUntil);
+  }
+  return next;
+}
+
 // 判断活动是否已结束（now > start + duration）
 function isMeetupPast(meetup: Meetup): boolean {
+  if (meetup.is_recurring) return false;
   const start = new Date(meetup.datetime);
   const dur = Number(meetup.duration);
   const hasDur = Number.isFinite(dur) && dur > 0;
@@ -54,6 +81,7 @@ const Meetups: React.FC = () => {
   const showSnackbar = useGlobalSnackbar();
 
   const [meetups, setMeetups] = useState<Meetup[]>([]);
+  const [episodeMap, setEpisodeMap] = useState<Record<string, MeetupEpisode>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateButton, setShowCreateButton] = useState(false);
@@ -90,13 +118,33 @@ const Meetups: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // 使用统一的api对象获取活动列表
       const response = await meetupsApi.getAll();
       if (!response.success) {
         showSnackbar.error('查询活动列表失败');
         return;
       }
-      setMeetups(response.data?.meetups || []);
+      const allMeetups: Meetup[] = response.data?.meetups || [];
+      setMeetups(allMeetups);
+
+      // 并行加载所有循环活动的本期 episode
+      const recurring = allMeetups.filter(
+        (m) => m.is_recurring && m.episode_start_date && m.recurrence_day !== undefined
+      );
+      if (recurring.length > 0) {
+        const entries = await Promise.all(
+          recurring.map(async (m) => {
+            const next = getNextOccurrence(m.datetime, m.recurrence_day!);
+            const dateStr = next.toISOString().split('T')[0];
+            const res = await episodesApi.getByMeetupDate(Number(m.id), dateStr);
+            const epNum = getEpisodeNumber(m.episode_start_date!, next);
+            const ep: MeetupEpisode = res.success && res.data?.episode
+              ? res.data.episode
+              : { meetup_id: Number(m.id), episode_number: epNum, date: dateStr };
+            return [String(m.id), ep] as [string, MeetupEpisode];
+          })
+        );
+        setEpisodeMap(Object.fromEntries(entries));
+      }
     } catch (err) {
       setError('加载活动失败，请稍后再试');
       showSnackbar.error('加载活动失败，请稍后再试');
@@ -168,6 +216,7 @@ const Meetups: React.FC = () => {
   }, [searchQuery, typeFilter]);
 
   const getStatusLabel = (meetup: Meetup): string => {
+    if (meetup.is_recurring) return '每周定期';
     const now = new Date();
     const start = new Date(meetup.datetime);
     const dur = Number(meetup.duration);
@@ -180,9 +229,10 @@ const Meetups: React.FC = () => {
 
   const getStatusColor = (
     meetup: Meetup
-  ): 'primary' | 'success' | 'default' => {
+  ): 'primary' | 'success' | 'default' | 'secondary' => {
     const label = getStatusLabel(meetup);
     if (label === '已结束') return 'default';
+    if (label === '每周定期') return 'secondary';
     return label === '即将开始' ? 'success' : 'primary';
   };
 
@@ -333,21 +383,28 @@ const Meetups: React.FC = () => {
               variant="outlined"
             />
           </Box>
-          <Typography
-            variant="h6"
-            component="h3"
-            gutterBottom
-            sx={{ fontWeight: 600 }}
-          >
-            {meetup.title}
-          </Typography>
+          <Box sx={{ mb: 1 }}>
+            {(() => {
+              const ep = meetup.is_recurring ? episodeMap[String(meetup.id)] : undefined;
+              const title = ep
+                ? `${meetup.title}EP${ep.episode_number}${ep.theme ? `：${ep.theme}` : ''}`
+                : meetup.title;
+              return (
+                <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
+                  {title}
+                </Typography>
+              );
+            })()}
+          </Box>
           <Box sx={{ mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
               <Typography variant="body2" sx={{ mr: 1 }}>
                 📅
               </Typography>
               <Typography variant="body2">
-                {formatDate(meetup.datetime)}
+                {meetup.is_recurring && meetup.recurrence_day !== undefined
+                  ? formatDate(getNextOccurrence(meetup.datetime, meetup.recurrence_day).toISOString()) + ' (下次)'
+                  : formatDate(meetup.datetime)}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
