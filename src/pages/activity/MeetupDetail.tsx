@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { authApi, meetupsApi, rsvpApi, episodesApi } from '../../netlify/config';
+import { authApi, meetupsApi, rsvpApi, episodesApi, speakerSignupsApi } from '../../netlify/config';
 import { MeetupStatus, Participant } from '../../netlify/types';
 import { MeetupEpisode } from '../../netlify/functions/episodes';
+import { SpeakerSignup } from '../../netlify/functions/speakerSignups';
 import { isOrganizer } from '../../utils/user';
+import { getNextOccurrence, toLocalDateStr, getEpisodeNumber } from '../../utils/recurring';
+import dayjs from 'dayjs';
 
 import {
   Box,
@@ -36,16 +39,6 @@ import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
 import { getUserId, getUserInfo, isUserLoggedIn, isMeetupOwner } from '@/utils';
 import { formatDate, formatDateTime, isUpcomingEvent } from '../../utils/date';
 
-function getNextOccurrence(datetime: string, recurrenceDay: number): Date {
-  const base = new Date(datetime);
-  const now = new Date();
-  const next = new Date(now);
-  next.setHours(base.getHours(), base.getMinutes(), 0, 0);
-  const daysUntil = (recurrenceDay - next.getDay() + 7) % 7;
-  if (daysUntil === 0 && next <= now) next.setDate(next.getDate() + 7);
-  else next.setDate(next.getDate() + daysUntil);
-  return next;
-}
 
 const MeetupDetail: React.FC = () => {
   const location = useLocation();
@@ -67,6 +60,11 @@ const MeetupDetail: React.FC = () => {
 
   // 期次状态
   const [episode, setEpisode] = useState<MeetupEpisode | null>(null);
+  // 分享报名状态
+  const [speakerSignups, setSpeakerSignups] = useState<SpeakerSignup[]>([]);
+  const [showSpeakerForm, setShowSpeakerForm] = useState(false);
+  const [speakerForm, setSpeakerForm] = useState({ name: '', topic: '', duration: '' });
+  const [speakerSubmitting, setSpeakerSubmitting] = useState(false);
   const [showEpisodeEditor, setShowEpisodeEditor] = useState(false);
   const [episodeThemeInput, setEpisodeThemeInput] = useState('');
   const [episodeDescInput, setEpisodeDescInput] = useState('');
@@ -142,20 +140,21 @@ const MeetupDetail: React.FC = () => {
 
       // 如果是循环活动，加载对应期次信息
       if (processedMeetup.is_recurring && processedMeetup.episode_start_date && processedMeetup.recurrence_day !== undefined) {
-        // 优先用 URL 里传来的日期（从日历点击），否则算最近一期
         const searchParams = new URLSearchParams(location.search);
         const urlDate = searchParams.get('date');
-        let targetDate: Date;
-        if (urlDate) {
-          targetDate = new Date(urlDate + 'T00:00:00');
-        } else {
-          targetDate = getNextOccurrence(processedMeetup.datetime, processedMeetup.recurrence_day);
-        }
-        const dateStr = targetDate.toISOString().split('T')[0];
-        const epNum = Math.round((targetDate.getTime() - new Date(processedMeetup.episode_start_date).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+        // URL 传来的日期（从日历点击）→ 用北京时区解析；否则算最近一期
+        const targetDay = urlDate
+          ? dayjs(urlDate)
+          : getNextOccurrence(processedMeetup.datetime);
+        const dateStr = toLocalDateStr(targetDay);
+        const epNum = getEpisodeNumber(processedMeetup.episode_start_date, targetDay);
         const epRes = await episodesApi.getByMeetupDate(Number(meetupId), dateStr);
         if (epRes.success) {
-          setEpisode(epRes.data?.episode ?? { meetup_id: Number(meetupId), episode_number: epNum, date: dateStr });
+          const ep = epRes.data?.episode ?? { meetup_id: Number(meetupId), episode_number: epNum, date: dateStr };
+          setEpisode(ep);
+          // 加载本期分享报名
+          const spRes = await speakerSignupsApi.getByEpisode(Number(meetupId), epNum);
+          if (spRes.success) setSpeakerSignups(spRes.data?.signups || []);
         }
       }
 
@@ -408,6 +407,45 @@ const MeetupDetail: React.FC = () => {
     }
   };
 
+  // 提交分享报名
+  const handleSpeakerSubmit = async () => {
+    if (!episode || !speakerForm.name.trim() || !speakerForm.topic.trim()) return;
+    setSpeakerSubmitting(true);
+    try {
+      const res = await speakerSignupsApi.create({
+        meetup_id: episode.meetup_id,
+        episode_number: episode.episode_number,
+        name: speakerForm.name,
+        topic: speakerForm.topic,
+        duration: speakerForm.duration || undefined,
+      });
+      if (res.success && res.data?.signup) {
+        setSpeakerSignups((prev) => [...prev, res.data!.signup]);
+        setSpeakerForm({ name: '', topic: '', duration: '' });
+        setShowSpeakerForm(false);
+        showSnackbar.success('报名成功！期待你的分享 🎉');
+      } else {
+        showSnackbar.error('报名失败，请稍后重试');
+      }
+    } catch {
+      showSnackbar.error('报名失败，请稍后重试');
+    } finally {
+      setSpeakerSubmitting(false);
+    }
+  };
+
+  // Organizer 更新报名状态
+  const handleUpdateSignupStatus = async (id: number, status: 'confirmed' | 'cancelled') => {
+    const res = await speakerSignupsApi.updateStatus(id, status);
+    if (res.success) {
+      setSpeakerSignups((prev) =>
+        status === 'cancelled'
+          ? prev.filter((s) => s.id !== id)
+          : prev.map((s) => (s.id === id ? { ...s, status } : s))
+      );
+    }
+  };
+
   // 保存期次主题
   const handleSaveEpisodeTheme = async () => {
     if (!episode) return;
@@ -456,19 +494,19 @@ const MeetupDetail: React.FC = () => {
   const renderMeetupDetail = () => {
     if (!meetup) return null;
 
-    const isUpcomingMeetup = isUpcomingEvent(meetup.datetime);
-    const formattedDate = formatDate(meetup.datetime);
-    const formattedTime = formatDateTime(meetup.datetime);
-    const weekdayNames = [
-      '周日',
-      '周一',
-      '周二',
-      '周三',
-      '周四',
-      '周五',
-      '周六',
-    ];
-    const weekday = weekdayNames[new Date(meetup.datetime).getDay()];
+    // 循环活动用 episode.date（北京时间）+ meetup 的时分；普通活动用 meetup.datetime
+    const displayDatetime = (() => {
+      if (meetup.is_recurring && episode?.date) {
+        const base = dayjs(meetup.datetime);
+        return dayjs(episode.date).hour(base.hour()).minute(base.minute()).second(0);
+      }
+      return dayjs(meetup.datetime);
+    })();
+    const isUpcomingMeetup = displayDatetime.isAfter(dayjs());
+    const formattedDate = displayDatetime.format('YYYY-MM-DD');
+    const formattedTime = displayDatetime.format('HH:mm');
+    const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const weekday = weekdayNames[displayDatetime.day()];
     const limitRaw = Number((meetup.max_ppl ?? -1) as any);
     const isUnlimited =
       !Number.isFinite(limitRaw) || limitRaw <= 0 || limitRaw === -1;
@@ -680,6 +718,73 @@ const MeetupDetail: React.FC = () => {
                 <Typography variant="h6">{meetup.creator}</Typography>
               </Box>
             </Card>
+
+            {/* 分享报名（循环活动专属） */}
+            {meetup.is_recurring && episode && (
+              <Card sx={{ mb: 4, padding: '1rem', borderRadius: '8px' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography variant="h6" sx={{ color: '#555' }}>
+                    本期分享者 {speakerSignups.length > 0 && `(${speakerSignups.length})`}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => setShowSpeakerForm(true)}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    我也想分享 🙋
+                  </Button>
+                </Box>
+
+                {speakerSignups.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                    还没有人报名分享，来做第一个吧！
+                  </Typography>
+                ) : (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {speakerSignups.map((s, i) => (
+                      <Box
+                        key={s.id}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          p: 1.5,
+                          bgcolor: s.status === 'confirmed' ? '#f0fdf4' : '#f9f9f9',
+                          borderRadius: 1,
+                          border: '1px solid',
+                          borderColor: s.status === 'confirmed' ? '#bbf7d0' : '#eee',
+                        }}
+                      >
+                        <Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" fontWeight={600}>{i + 1}. {s.name}</Typography>
+                            {s.status === 'confirmed' && (
+                              <Chip label="已确认" size="small" color="success" sx={{ height: 18, fontSize: '0.65rem' }} />
+                            )}
+                          </Box>
+                          <Typography variant="body2" color="text.secondary">
+                            {s.topic}{s.duration ? ` · ${s.duration}` : ''}
+                          </Typography>
+                        </Box>
+                        {isOrganizer() && (
+                          <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            {s.status !== 'confirmed' && (
+                              <Button size="small" color="success" onClick={() => handleUpdateSignupStatus(s.id!, 'confirmed')}>确认</Button>
+                            )}
+                            <Button size="small" color="error" onClick={() => handleUpdateSignupStatus(s.id!, 'cancelled')}>移除</Button>
+                          </Box>
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>
+                  如需取消或修改，请在微信群里知会下就行
+                </Typography>
+              </Card>
+            )}
 
             {/* 操作按钮 */}
             <Box sx={{ mt: 4, textAlign: 'center' }}>
@@ -995,6 +1100,49 @@ const MeetupDetail: React.FC = () => {
             </Box>
           )}
         </DialogContent>
+      </Dialog>
+
+      {/* 分享报名弹窗 */}
+      <Dialog open={showSpeakerForm} onClose={() => setShowSpeakerForm(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 600 }}>报名分享 🎤</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <TextField
+            fullWidth
+            label="你的名字"
+            value={speakerForm.name}
+            onChange={(e) => setSpeakerForm((p) => ({ ...p, name: e.target.value }))}
+            placeholder="如何称呼你？"
+            required
+          />
+          <TextField
+            fullWidth
+            label="分享主题"
+            value={speakerForm.topic}
+            onChange={(e) => setSpeakerForm((p) => ({ ...p, topic: e.target.value }))}
+            placeholder="你想聊什么？"
+            required
+          />
+          <TextField
+            fullWidth
+            label="预计时长（可选）"
+            value={speakerForm.duration}
+            onChange={(e) => setSpeakerForm((p) => ({ ...p, duration: e.target.value }))}
+            placeholder="例：10分钟、15分钟"
+          />
+          <Typography variant="caption" color="text.secondary">
+            如需取消或修改，请在微信群里知会下就行
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowSpeakerForm(false)}>取消</Button>
+          <Button
+            variant="contained"
+            onClick={handleSpeakerSubmit}
+            disabled={speakerSubmitting || !speakerForm.name.trim() || !speakerForm.topic.trim()}
+          >
+            {speakerSubmitting ? '提交中...' : '确认报名'}
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* 编辑本期内容 */}

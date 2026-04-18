@@ -17,3 +17,4 @@ export { default as workshopApi } from '../services/workshop';
 export { default as contactApi } from '../services/contact';
 export { default as surveyApi } from '../services/survey';
 export { default as episodesApi } from '../services/episodes';
+export { default as speakerSignupsApi } from '../services/speakerSignups';

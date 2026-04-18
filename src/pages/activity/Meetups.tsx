@@ -38,33 +38,9 @@ import {
 import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
 import { MeetupEpisode } from '../../netlify/functions/episodes';
 import { meetupsApi, rsvpApi, episodesApi } from '../../netlify/config';
+import { getNextOccurrence, getEpisodeNumber, toLocalDateStr } from '../../utils/recurring';
 
 const PAGE_SIZE = 6;
-
-// 计算某个日期对应的期数
-function getEpisodeNumber(episodeStartDate: string, targetDate: Date): number {
-  const start = new Date(episodeStartDate);
-  start.setHours(0, 0, 0, 0);
-  const target = new Date(targetDate);
-  target.setHours(0, 0, 0, 0);
-  const diffWeeks = Math.round((target.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000));
-  return diffWeeks + 1;
-}
-
-// 计算循环活动的下次举办时间
-function getNextOccurrence(datetime: string, recurrenceDay: number): Date {
-  const base = new Date(datetime);
-  const now = new Date();
-  const next = new Date(now);
-  next.setHours(base.getHours(), base.getMinutes(), 0, 0);
-  const daysUntil = (recurrenceDay - next.getDay() + 7) % 7;
-  if (daysUntil === 0 && next <= now) {
-    next.setDate(next.getDate() + 7);
-  } else {
-    next.setDate(next.getDate() + daysUntil);
-  }
-  return next;
-}
 
 // 判断活动是否已结束（now > start + duration）
 function isMeetupPast(meetup: Meetup): boolean {
@@ -133,8 +109,8 @@ const Meetups: React.FC = () => {
       if (recurring.length > 0) {
         const entries = await Promise.all(
           recurring.map(async (m) => {
-            const next = getNextOccurrence(m.datetime, m.recurrence_day!);
-            const dateStr = next.toISOString().split('T')[0];
+            const next = getNextOccurrence(m.datetime);
+            const dateStr = toLocalDateStr(next);
             const res = await episodesApi.getByMeetupDate(Number(m.id), dateStr);
             const epNum = getEpisodeNumber(m.episode_start_date!, next);
             const ep: MeetupEpisode = res.success && res.data?.episode
@@ -403,7 +379,7 @@ const Meetups: React.FC = () => {
               </Typography>
               <Typography variant="body2">
                 {meetup.is_recurring && meetup.recurrence_day !== undefined
-                  ? formatDate(getNextOccurrence(meetup.datetime, meetup.recurrence_day).toISOString())
+                  ? formatDate(toLocalDateStr(getNextOccurrence(meetup.datetime)))
                   : formatDate(meetup.datetime)}
               </Typography>
             </Box>

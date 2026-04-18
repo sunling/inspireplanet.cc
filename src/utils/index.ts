@@ -6,3 +6,4 @@ export * from './http';
 export * from './validation';
 export * from './share';
 export * from './ajax';
+export * from './recurring';

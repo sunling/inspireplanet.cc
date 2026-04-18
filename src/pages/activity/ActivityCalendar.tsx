@@ -27,6 +27,7 @@ import { Meetup, MeetupMode } from '../../netlify/functions/meetup';
 import dayjs from 'dayjs';
 import EditForm, { formatDateTimeLocal } from './components/EditForm';
 import { getUserName } from '../../utils/user';
+import { getEpisodeNumber, getLocalRecurrenceDay } from '../../utils/recurring';
 
 // 活动类型定义
 interface Activity {
@@ -42,12 +43,6 @@ interface Activity {
   episodeStartDate?: string; // YYYY-MM-DD, date of EP1
 }
 
-function getEpisodeNumber(episodeStartDate: string, targetDate: dayjs.Dayjs): number {
-  const start = dayjs(episodeStartDate).startOf('day');
-  const target = targetDate.startOf('day');
-  const diffWeeks = Math.round(target.diff(start, 'day') / 7);
-  return diffWeeks + 1;
-}
 
 const ActivityCalendar: React.FC = () => {
   const navigate = useNavigate();
@@ -109,7 +104,8 @@ const ActivityCalendar: React.FC = () => {
             location: meetup.location || '',
             type: 'meeting',
             isRecurring: meetup.is_recurring || false,
-            recurrenceDay: meetup.recurrence_day,
+            // 用本地时区推算实际星期几，而非数据库存的北京值
+            recurrenceDay: meetup.is_recurring ? getLocalRecurrenceDay(meetup.datetime) : meetup.recurrence_day,
             episodeStartDate: meetup.episode_start_date,
           };
         }

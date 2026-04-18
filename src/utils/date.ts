@@ -1,34 +1,17 @@
 import dayjs from 'dayjs';
 
-/**
- * 检查活动是否即将举行
- * @param dateString 日期字符串
- * @returns boolean 是否即将举行
- */
 export const isUpcomingEvent = (dateString: string): boolean => {
-  return new Date(dateString) > new Date();
+  return dayjs(dateString).isAfter(dayjs());
 };
 
-/**
- * 格式化时间
- * @param data 时间字符串 | Date对象
- * @param format 时间格式，如HH:mm:ss
- * @returns string 格式化后的时间
- */
 export const formatDateTime = (
   data: string | Date,
-  format = 'YYYY-MM-DD HH:mm:ss'
+  format = 'YYYY-MM-DD HH:mm'
 ): string => {
   if (!data) return '';
   return dayjs(data).format(format);
 };
 
-/**
- * 格式化日期
- * @param data 日期字符串 | Date对象
- * @param format 日期格式，如'YYYY-MM-DD'
- * @returns string 格式化后的日期
- */
 export const formatDate = (
   data: string | Date,
   format = 'YYYY-MM-DD'
@@ -37,15 +20,9 @@ export const formatDate = (
   return dayjs(data).format(format);
 };
 
-/**
- * 格式化时间
- * @param data 时间字符串 | Date对象
- * @param format 时间格式，如'HH:mm:ss'
- * @returns string 格式化后的时间
- */
 export const formatTime = (
   data: string | Date,
-  format = 'HH:mm:ss'
+  format = 'HH:mm'
 ): string => {
   if (!data) return '';
   return dayjs(data).format(format);
