@@ -74,21 +74,7 @@ async function handleRegister(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('注册失败，请稍后重试', 500);
   }
 
-  // Update Supabase Auth user_metadata with integer user_id for backend auth lookup
-  try {
-    const { data: authUser } = await supabase.auth.admin.getUserByEmail(email);
-    if (authUser?.user) {
-      await supabase.auth.admin.updateUserById(authUser.user.id, {
-        user_metadata: {
-          ...authUser.user.user_metadata,
-          user_id: newUser.id,
-          name: newUser.name,
-        },
-      });
-    }
-  } catch (e) {
-    console.error('Failed to update auth user_metadata:', e);
-  }
+
 
   return createSuccessResponse({ user: newUser }, 201);
 }
