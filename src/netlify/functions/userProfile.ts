@@ -10,7 +10,7 @@ import {
 } from '../utils/server';
 
 export interface UserProfileAction {
-  functionName: 'get' | 'update' | 'getMy';
+  functionName: 'get' | 'update' | 'upsert' | 'getMy';
 }
 
 export async function handler(
@@ -29,6 +29,7 @@ export async function handler(
       case 'getMy':
         return await handleGet(event);
       case 'update':
+      case 'upsert':
         return await handleUpdate(event);
       default:
         return createErrorResponse('无效的操作类型');
