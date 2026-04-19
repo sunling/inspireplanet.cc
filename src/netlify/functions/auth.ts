@@ -12,7 +12,6 @@ export interface User {
   id: number;
   email: string;
   name: string;
-  wechat?: string;
   role?: string | null;
 }
 
@@ -58,7 +57,7 @@ async function handleRegister(event: NetlifyEvent): Promise<NetlifyResponse> {
     // Profile already exists, return it
     const { data: user } = await supabase
       .from('users')
-      .select('id, email, name, wechat, role')
+      .select('id, email, name, role')
       .eq('email', email)
       .single();
     return createSuccessResponse({ user });
@@ -67,7 +66,7 @@ async function handleRegister(event: NetlifyEvent): Promise<NetlifyResponse> {
   const { data: newUser, error } = await supabase
     .from('users')
     .insert({ email, name: name.trim() })
-    .select('id, email, name, wechat, role')
+    .select('id, email, name, role')
     .single();
 
   if (error || !newUser) {
@@ -101,7 +100,7 @@ async function handleGetProfile(event: NetlifyEvent): Promise<NetlifyResponse> {
 
   const { data: user, error } = await supabase
     .from('users')
-    .select('id, email, name, wechat, role')
+    .select('id, email, name, role')
     .eq('email', email)
     .single();
 
