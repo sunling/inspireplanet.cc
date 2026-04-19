@@ -1,6 +1,7 @@
 import { HttpHeaders } from '../types/http';
 import { getCommonHeaders } from '../../utils/http';
 import { getFunctionNameFromEvent, getDataFromEvent } from './action';
+import { supabase } from '../../database/supabase';
 
 export { getFunctionNameFromEvent, getDataFromEvent };
 
@@ -19,10 +20,7 @@ export async function getUserIdFromAuth(event: any): Promise<string | null> {
 
   // Try Supabase Auth token first
   try {
-    const { createClient } = require('@supabase/supabase-js');
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const client = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY);
-    const { data: { user }, error } = await client.auth.getUser(token);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
     if (!error && user) {
       // user_id in metadata (set during migration or registration)
       if (user.user_metadata?.user_id) {
@@ -30,7 +28,7 @@ export async function getUserIdFromAuth(event: any): Promise<string | null> {
       }
       // Fallback: look up by email in users table
       if (user.email) {
-        const { data: row } = await client
+        const { data: row } = await supabase
           .from('users')
           .select('id')
           .eq('email', user.email)
