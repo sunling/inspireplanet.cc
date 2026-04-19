@@ -20,14 +20,23 @@ export async function getUserIdFromAuth(event: any): Promise<string | null> {
   // Try Supabase Auth token first
   try {
     const { createClient } = require('@supabase/supabase-js');
-    const client = createClient(
-      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const client = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY);
     const { data: { user }, error } = await client.auth.getUser(token);
     if (!error && user) {
-      const userId = user.user_metadata?.user_id;
-      return userId ? String(userId) : null;
+      // user_id in metadata (set during migration or registration)
+      if (user.user_metadata?.user_id) {
+        return String(user.user_metadata.user_id);
+      }
+      // Fallback: look up by email in users table
+      if (user.email) {
+        const { data: row } = await client
+          .from('users')
+          .select('id')
+          .eq('email', user.email)
+          .single();
+        if (row?.id) return String(row.id);
+      }
     }
   } catch {}
 
