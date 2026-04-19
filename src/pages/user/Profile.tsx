@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -18,6 +19,7 @@ import { profileApi } from '../../netlify/config';
 
 const Profile: React.FC = () => {
   const show = useGlobalSnackbar();
+  const navigate = useNavigate();
   const [bio, setBio] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
   const [expertise, setExpertise] = useState<string[]>([]);

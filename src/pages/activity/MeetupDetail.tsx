@@ -139,6 +139,7 @@ const MeetupDetail: React.FC = () => {
       setMeetup(processedMeetup);
 
       // 如果是循环活动，加载对应期次信息
+      let episodeId: number | undefined;
       if (processedMeetup.is_recurring && processedMeetup.episode_start_date && processedMeetup.recurrence_day !== undefined) {
         const searchParams = new URLSearchParams(location.search);
         const urlDate = searchParams.get('date');
@@ -152,14 +153,15 @@ const MeetupDetail: React.FC = () => {
         if (epRes.success) {
           const ep = epRes.data?.episode ?? { meetup_id: Number(meetupId), episode_number: epNum, date: dateStr };
           setEpisode(ep);
+          episodeId = ep.id;
           // 加载本期分享报名
           const spRes = await speakerSignupsApi.getByEpisode(Number(meetupId), epNum);
           if (spRes.success) setSpeakerSignups(spRes.data?.signups || []);
         }
       }
 
-      // 加载参与者信息
-      loadParticipants(meetupId);
+      // 加载参与者信息（定期活动传 episode_id，按期次过滤）
+      loadParticipants(meetupId, episodeId, processedMeetup.is_recurring);
     } catch (err) {
       setError('加载活动详情失败，请稍后重试');
     } finally {
@@ -194,10 +196,14 @@ const MeetupDetail: React.FC = () => {
   };
 
   // 加载参与者信息
-  const loadParticipants = async (meetupId: string) => {
+  const loadParticipants = async (meetupId: string, episodeId?: number, isRecurring?: boolean) => {
+    // 定期活动必须有 episodeId 才能过滤，否则会返回所有期次的报名
+    if (isRecurring && episodeId === undefined) {
+      setParticipants([]);
+      return;
+    }
     try {
-      // 使用 getByMeetupId 获取参与者列表
-      const response = await rsvpApi.getByMeetupId(meetupId);
+      const response = await rsvpApi.getByMeetupId(meetupId, episodeId);
       console.log('获取参与者列表原始响应:', response);
       if (!response.success) {
         showSnackbar.error(
@@ -316,12 +322,16 @@ const MeetupDetail: React.FC = () => {
         return;
       }
 
-      const payload = {
+      const payload: Record<string, any> = {
         meetup_id: Number(meetup.id),
         wechat_id: rsvpForm.wechat_id.trim(),
         name: rsvpForm.name.trim(),
         user_id: getUserId(),
       };
+      if (episode) {
+        payload.episode_date = episode.date;
+        payload.episode_number = episode.episode_number;
+      }
 
       const response = await rsvpApi.create(payload);
 
@@ -338,18 +348,6 @@ const MeetupDetail: React.FC = () => {
       // 延迟关闭对话框
       setTimeout(() => {
         setShowRSVPDialog(false);
-
-        // 更新报名人数
-        if (meetup) {
-          setMeetup((prev: Meetup | null) =>
-            prev
-              ? {
-                  ...prev,
-                  participant_count: (prev.participant_count ?? 0) + 1,
-                }
-              : null
-          );
-        }
 
         // 更新参与者列表
         setParticipants((prev) => [
@@ -786,7 +784,7 @@ const MeetupDetail: React.FC = () => {
                   startIcon={<span>👥</span>}
                   sx={{ textTransform: 'none' }}
                 >
-                  {meetup.participant_count || 0}
+                  {participants.length}
                   {isUnlimited ? '' : `/${limitRaw}`} 人已报名
                 </Button>
                 <Tooltip title="分享活动">

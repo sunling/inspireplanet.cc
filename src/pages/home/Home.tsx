@@ -23,13 +23,34 @@ import {
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import html2canvas from 'html2canvas';
-import { weeklyCardsApi } from '../../netlify/config';
+import { weeklyCardsApi, meetupsApi, cardsApi } from '../../netlify/config';
 import { WeeklyCard } from '../../netlify/services/weeklyCards';
+import { CardItem } from '../../netlify/types';
+import { Meetup } from '../../netlify/functions/meetup';
+import { getNextOccurrence, toLocalDateStr, getEpisodeNumber } from '../../utils/recurring';
+import dayjs from 'dayjs';
+
+interface UpcomingMeetup {
+  meetup: Meetup;
+  date: dayjs.Dayjs;
+  episodeNumber?: number;
+  dateStr: string;
+}
+
+const MeetupModeLabel: Record<string, string> = {
+  online: '线上',
+  offline: '线下',
+  hybrid: '线上+线下',
+  culture: '文化',
+  outdoor: '户外',
+};
 
 const Home: React.FC = () => {
   const [cards, setCards] = useState<WeeklyCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [upcomingMeetups, setUpcomingMeetups] = useState<UpcomingMeetup[]>([]);
+  const [recentCards, setRecentCards] = useState<CardItem[]>([]);
   const { isMobile, isTablet } = useResponsive();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [gradients, setGradients] = useState<string[]>([]);
@@ -59,9 +80,46 @@ const Home: React.FC = () => {
     }
   };
 
+  const fetchUpcomingMeetups = async () => {
+    try {
+      const res = await meetupsApi.getAll({ status: 'active' });
+      const meetups: Meetup[] = res.data?.meetups || [];
+      const now = dayjs();
+
+      const upcoming: UpcomingMeetup[] = meetups
+        .map((m) => {
+          if (m.is_recurring && m.episode_start_date) {
+            const date = getNextOccurrence(m.datetime);
+            const epNum = getEpisodeNumber(m.episode_start_date, date);
+            return { meetup: m, date, episodeNumber: epNum, dateStr: toLocalDateStr(date) };
+          }
+          const date = dayjs(m.datetime);
+          return { meetup: m, date, dateStr: toLocalDateStr(date) };
+        })
+        .filter((u) => u.date.isAfter(now))
+        .sort((a, b) => a.date.valueOf() - b.date.valueOf())
+        .slice(0, 4);
+
+      setUpcomingMeetups(upcoming);
+    } catch {
+      // 静默失败，不影响首页其他内容
+    }
+  };
+
+  const fetchRecentCards = async () => {
+    try {
+      const res = await cardsApi.getAll({ page: 1, limit: 6 });
+      setRecentCards(res.data?.records || []);
+    } catch {
+      // 静默失败
+    }
+  };
+
   // 初始化和清理
   useEffect(() => {
     fetchLatestCards();
+    fetchUpcomingMeetups();
+    fetchRecentCards();
   }, []);
 
   useEffect(() => {
@@ -267,20 +325,9 @@ const Home: React.FC = () => {
       <Container maxWidth="lg">
         {/* Hero 区域 */}
         <section className={styles['hero-section']}>
-          {/* <h1 className={styles['hero-title']}>启发星球</h1> */}
           <p className={styles['hero-desc']}>
             一个线上社群。真实，不评判，相信每个人具体的经历都有力量。
           </p>
-          <p className={styles['hero-sub']}>每周六早上八点，腾讯会议，免费参加。</p>
-          <a
-            href="https://meeting.tencent.com/dm/dStAndjcsxow"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles['join-button']}
-          >
-            加入这周的会议 →
-          </a>
-          <p className={styles['meeting-id']}>腾讯会议号：688-7232-7242</p>
         </section>
 
         {/* 成员故事 */}
@@ -295,6 +342,152 @@ const Home: React.FC = () => {
             ))}
           </div>
         </section>
+
+        {/* 近期活动 */}
+        {upcomingMeetups.length > 0 && (
+          <section className={styles['stories-section']}>
+            <h2 className={styles['stories-title']}>近期活动</h2>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
+              {upcomingMeetups.map(({ meetup, date, episodeNumber }) => {
+                const detailUrl = meetup.is_recurring
+                  ? `/meetup-detail?id=${meetup.id}&date=${toLocalDateStr(date)}`
+                  : `/meetup-detail?id=${meetup.id}`;
+                return (
+                  <Box
+                    key={`${meetup.id}-${toLocalDateStr(date)}`}
+                    component={Link}
+                    to={detailUrl}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      p: '12px 16px',
+                      borderRadius: '10px',
+                      border: '1px solid #f0f0f0',
+                      backgroundColor: '#fafafa',
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      transition: 'box-shadow 0.15s',
+                      '&:hover': { boxShadow: '0 2px 10px rgba(0,0,0,0.08)', backgroundColor: '#fff' },
+                    }}
+                  >
+                    {/* 日期块 */}
+                    <Box sx={{ textAlign: 'center', minWidth: 44 }}>
+                      <Typography sx={{ fontSize: '1.3rem', fontWeight: 700, lineHeight: 1, color: '#ff6348' }}>
+                        {date.format('DD')}
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.7rem', color: '#999', textTransform: 'uppercase' }}>
+                        {date.format('MMM')}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={{ fontWeight: 600, fontSize: '0.95rem', mb: 0.25 }} noWrap>
+                        {meetup.title}{episodeNumber ? ` EP${episodeNumber}` : ''}
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.78rem', color: '#999' }}>
+                        {date.format('HH:mm')} · {MeetupModeLabel[meetup.mode] ?? meetup.mode}
+                      </Typography>
+                    </Box>
+                    <ChevronRight sx={{ color: '#ccc', fontSize: '1.1rem', flexShrink: 0 }} />
+                  </Box>
+                );
+              })}
+            </Box>
+            <Box sx={{ textAlign: 'center' }}>
+              <Button
+                variant="outlined"
+                component={Link}
+                to="/activity-calendar"
+                size="small"
+                sx={{ borderColor: '#ff6348', color: '#ff6348', '&:hover': { borderColor: '#ff4500', color: '#ff4500' } }}
+              >
+                查看活动日历 →
+              </Button>
+            </Box>
+          </section>
+        )}
+
+        {/* 近期灵感卡片 */}
+        {recentCards.length > 0 && (
+          <section className={styles['stories-section']}>
+            <h2 className={styles['stories-title']}>近期灵感卡片</h2>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)' },
+                gap: 1.5,
+                mb: 2,
+              }}
+            >
+              {recentCards.map((card) => {
+                const gradientClass = card.gradient_class || 'card-gradient-1';
+                const fontColor = getFontColorForGradient(gradientClass);
+                return (
+                  <Box
+                    key={card.id}
+                    component={Link}
+                    to={`/card-detail?id=${card.id}`}
+                    className={gradientClass}
+                    sx={{
+                      borderRadius: '10px',
+                      p: 2,
+                      textDecoration: 'none',
+                      color: fontColor,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 0.75,
+                      minHeight: 120,
+                      transition: 'transform 0.15s',
+                      '&:hover': { transform: 'translateY(-2px)' },
+                    }}
+                  >
+                    <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: fontColor }} noWrap>
+                      {card.title}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: '0.78rem',
+                        color: fontColor,
+                        opacity: 0.85,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        flex: 1,
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      {card.quote}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.7rem', color: fontColor, opacity: 0.6 }} noWrap>
+                      — {card.username || card.creator || '匿名'}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Button
+                variant="contained"
+                component={Link}
+                to="/create-card"
+                size="small"
+                sx={{ bgcolor: '#ff6348', '&:hover': { bgcolor: '#ff4500' } }}
+              >
+                创建我的卡片
+              </Button>
+              <Button
+                variant="outlined"
+                component={Link}
+                to="/cards"
+                size="small"
+                sx={{ borderColor: '#ff6348', color: '#ff6348', '&:hover': { borderColor: '#ff4500', color: '#ff4500' } }}
+              >
+                查看全部
+              </Button>
+            </Box>
+          </section>
+        )}
 
         {/* 卡片轮播 */}
         <section className={styles['carousel-section']}>

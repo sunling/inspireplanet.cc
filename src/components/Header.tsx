@@ -25,6 +25,7 @@ import {
   Info,
   AccountCircle,
   Logout,
+  Lock,
 } from '@mui/icons-material';
 import { notificationsApi } from '../netlify/config';
 
@@ -516,6 +517,14 @@ const Header: React.FC<HeaderProps> = ({
                 >
                   <AccountCircle fontSize="small" sx={{ mr: 1 }} />
                   完善资料
+                </MenuItem>
+                <MenuItem
+                  component={Link}
+                  to="/change-password"
+                  onClick={() => setUserMenuAnchor(null)}
+                >
+                  <Lock fontSize="small" sx={{ mr: 1 }} />
+                  修改密码
                 </MenuItem>
                 <MenuItem onClick={handleLogout}>
                   <Logout fontSize="small" sx={{ mr: 1 }} />

@@ -72,6 +72,15 @@ async function handleCreate(event: NetlifyEvent) {
       rsvpData.user_id !== undefined ? rsvpData.user_id : null;
     const userId = authUserId ?? providedUserId ?? null;
 
+    // episode 相关（定期活动）
+    const episodeDate: string | undefined = rsvpData.episode_date
+      ? String(rsvpData.episode_date).trim()
+      : undefined;
+    const episodeNumber: number | undefined =
+      rsvpData.episode_number !== undefined
+        ? Number(rsvpData.episode_number)
+        : undefined;
+
     const requiredFields = ['meetup_id', 'name', 'wechat_id'];
     for (const field of requiredFields) {
       if (!rsvpData[field]) {
@@ -101,30 +110,46 @@ async function handleCreate(event: NetlifyEvent) {
       return createErrorResponse('活动已取消');
     }
 
+    // 定期活动：upsert episode 记录，获取 episode_id
+    let episodeId: number | null = null;
+    if (episodeDate && episodeNumber !== undefined && Number.isFinite(episodeNumber)) {
+      const { data: ep, error: epError } = await supabase
+        .from('meetup_episodes')
+        .upsert(
+          { meetup_id: meetupIdNum, episode_number: episodeNumber, date: episodeDate },
+          { onConflict: 'meetup_id,episode_number' }
+        )
+        .select('id')
+        .single();
+      if (epError || !ep) {
+        console.error('Episode upsert error:', epError);
+        return createErrorResponse('获取期次信息失败', 500);
+      }
+      episodeId = ep.id;
+    }
+
     let existingRSVP = null;
 
     if (userId) {
-      const { data: byUser } = await supabase
+      let q = supabase
         .from('meetup_rsvps')
         .select('id, status, wechat_id')
         .eq('meetup_id', meetupIdNum)
-        .eq('user_id', userId)
-        .limit(1);
-      if (byUser && byUser.length > 0) {
-        existingRSVP = byUser[0];
-      }
+        .eq('user_id', userId);
+      if (episodeId !== null) q = q.eq('episode_id', episodeId);
+      const { data: byUser } = await q.limit(1);
+      if (byUser && byUser.length > 0) existingRSVP = byUser[0];
     }
 
     if (!existingRSVP) {
-      const { data: byWechat } = await supabase
+      let q = supabase
         .from('meetup_rsvps')
         .select('id, status, user_id')
         .eq('meetup_id', meetupIdNum)
-        .eq('wechat_id', wechatId)
-        .limit(1);
-      if (byWechat && byWechat.length > 0) {
-        existingRSVP = byWechat[0];
-      }
+        .eq('wechat_id', wechatId);
+      if (episodeId !== null) q = q.eq('episode_id', episodeId);
+      const { data: byWechat } = await q.limit(1);
+      if (byWechat && byWechat.length > 0) existingRSVP = byWechat[0];
     }
 
     if (existingRSVP && existingRSVP.status === 'confirmed') {
@@ -134,11 +159,13 @@ async function handleCreate(event: NetlifyEvent) {
     const maxLimit = Number(meetup.max_ppl);
     const enforceLimit = Number.isFinite(maxLimit) && maxLimit > 0;
     if (enforceLimit) {
-      const { count, error: countError } = await supabase
+      let countQ = supabase
         .from('meetup_rsvps')
         .select('*', { count: 'exact', head: true })
         .eq('meetup_id', meetupIdNum)
         .eq('status', 'confirmed');
+      if (episodeId !== null) countQ = countQ.eq('episode_id', episodeId);
+      const { count, error: countError } = await countQ;
 
       if (countError) {
         console.error('Count error:', countError);
@@ -149,14 +176,11 @@ async function handleCreate(event: NetlifyEvent) {
 
     let result;
     if (existingRSVP) {
-      // 更新现有RSVP（触发器限制只允许更新 status 字段）
       const { data, error } = await supabase
         .from('meetup_rsvps')
         .update({ status: 'confirmed' })
-
         .eq('id', existingRSVP.id)
         .select();
-
       result = { data, error };
     } else {
       const { data, error } = await supabase
@@ -168,10 +192,10 @@ async function handleCreate(event: NetlifyEvent) {
             wechat_id: wechatId,
             user_id: userId as any,
             status: 'confirmed',
+            ...(episodeId !== null ? { episode_id: episodeId } : {}),
           },
         ])
         .select();
-
       result = { data, error };
     }
 
@@ -478,7 +502,7 @@ async function handleDelete(event: NetlifyEvent) {
 async function handleGetByMeetupId(event: NetlifyEvent) {
   try {
     const body = getDataFromEvent(event);
-    const { meetup_id } = body;
+    const { meetup_id, episode_id } = body;
 
     if (!meetup_id) {
       return createErrorResponse('缺少活动ID');
@@ -489,12 +513,17 @@ async function handleGetByMeetupId(event: NetlifyEvent) {
       return createErrorResponse('活动ID不合法');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('meetup_rsvps')
       .select('*')
       .eq('meetup_id', meetupIdNum)
-      .eq('status', 'confirmed')
-      .order('created_at', { ascending: false });
+      .eq('status', 'confirmed');
+
+    if (episode_id !== undefined && episode_id !== null) {
+      query = query.eq('episode_id', Number(episode_id));
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       console.error('Database error:', error);

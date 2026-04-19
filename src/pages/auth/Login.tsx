@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
@@ -25,6 +25,7 @@ import {
   validateRequired,
 } from '../../utils/validation';
 import { supabaseAuth } from '../../database/supabaseAuth';
+import { isUserLoggedIn } from '../../utils/user';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +38,13 @@ const Login: React.FC = () => {
     const searchParams = new URLSearchParams(location.search);
     return searchParams.get('redirect') || '/cards';
   };
+
+  // 已登录则直接跳转
+  useEffect(() => {
+    if (isUserLoggedIn()) {
+      navigate(getRedirectUrl(), { replace: true });
+    }
+  }, []);
 
   // 状态管理
   const [currentMode, setCurrentMode] = useState<'login' | 'register'>('login');
@@ -358,26 +366,17 @@ const Login: React.FC = () => {
             <Link
               href="/"
               variant="body2"
-              sx={{
-                color: 'blue',
-                textDecoration: 'none',
-                '&:hover': { textDecoration: 'underline' },
-              }}
+              sx={{ color: 'blue', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
             >
               返回首页
             </Link>
-            <span style={{ color: 'blue', margin: '0 8px' }}>|</span>
-
+            <span style={{ color: '#ccc', margin: '0 8px' }}>|</span>
             <Link
-              href="/change-password"
+              href="/forgot-password"
               variant="body2"
-              sx={{
-                color: 'blue',
-                textDecoration: 'none',
-                '&:hover': { textDecoration: 'underline' },
-              }}
+              sx={{ color: 'blue', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
             >
-              修改密码
+              忘记密码
             </Link>
           </Box>
         </Paper>

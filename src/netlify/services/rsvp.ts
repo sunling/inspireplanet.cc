@@ -30,10 +30,12 @@ export const rsvpApi = {
   },
 
   getByMeetupId: async (
-    meetupId: string
+    meetupId: string,
+    episodeId?: number
   ): Promise<ApiResponse<{ rsvps: Participant[] }>> => {
     return http.get<{ rsvps: Participant[] }>('/rsvp', 'getByMeetupId', {
       meetup_id: meetupId,
+      ...(episodeId !== undefined ? { episode_id: episodeId } : {}),
     });
   },
 

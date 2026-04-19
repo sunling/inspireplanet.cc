@@ -14,9 +14,7 @@ import {
 } from '@mui/material';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { isUserLoggedIn } from '@/utils/user';
-import { getUserInfo } from '../../utils';
-import Loading from '../../components/Loading';
+import { getUserInfo, setUserAuth } from '../../utils/user';
 
 interface PasswordRequirements {
   length: boolean;
@@ -40,7 +38,6 @@ interface FormErrors {
 const ChangePassWord: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [submitLoading, setSubmitLoading] = useState<boolean>(false);
   const [passwordStrength, setPasswordStrength] = useState<
     'weak' | 'medium' | 'strong' | null
@@ -64,15 +61,6 @@ const ChangePassWord: React.FC = () => {
     number: false,
   });
 
-  // 检查登录状态
-  useEffect(() => {
-    setIsLoading(true);
-    if (!isUserLoggedIn()) {
-      const redirect = `${location.pathname}${location.search}${location.hash}`;
-      navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
-    }
-    setIsLoading(false);
-  }, [navigate]);
 
   // 检查密码强度
   const checkPasswordStrength = (password: string) => {
@@ -170,7 +158,7 @@ const ChangePassWord: React.FC = () => {
       const currentUser = getUserInfo();
       // Re-authenticate with current password first, then update
       const { supabaseAuth } = await import('../../database/supabaseAuth');
-      const { error: signInError } = await supabaseAuth.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await supabaseAuth.auth.signInWithPassword({
         email: currentUser?.email || '',
         password: formData.currentPassword,
       });
@@ -178,6 +166,10 @@ const ChangePassWord: React.FC = () => {
         setMessage({ text: '当前密码错误', type: 'error' });
         setSubmitLoading(false);
         return;
+      }
+      // 用新 session token 更新 localStorage，避免旧 token 失效后被 401 踢出
+      if (signInData.session) {
+        setUserAuth(signInData.session.access_token, currentUser || { email: currentUser?.email || '', name: '' });
       }
       const response = await authApi.changePassword(formData.newPassword);
 
@@ -207,10 +199,6 @@ const ChangePassWord: React.FC = () => {
       setSubmitLoading(false);
     }
   };
-
-  if (isLoading) {
-    return <Loading message="加载中..." size={40} />;
-  }
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
