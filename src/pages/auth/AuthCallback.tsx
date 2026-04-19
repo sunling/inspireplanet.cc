@@ -12,6 +12,18 @@ const AuthCallback: React.FC = () => {
 
   useEffect(() => {
     const handleCallback = async () => {
+      // Exchange the OAuth code for a session (PKCE flow)
+      const code = new URLSearchParams(window.location.search).get('code');
+      if (code) {
+        const { error: exchangeError } = await supabaseAuth.auth.exchangeCodeForSession(code);
+        if (exchangeError) {
+          console.error('Code exchange error:', exchangeError);
+          setError('登录失败：' + exchangeError.message);
+          setTimeout(() => navigate('/login'), 2000);
+          return;
+        }
+      }
+
       const { data: { session }, error: sessionError } = await supabaseAuth.auth.getSession();
 
       if (sessionError || !session) {
@@ -30,9 +42,10 @@ const AuthCallback: React.FC = () => {
         profile = res.data.user;
       } else {
         // First Google login — create profile
-        const name = session.user.user_metadata?.full_name ||
-                     session.user.user_metadata?.name ||
-                     email.split('@')[0];
+        const name =
+          session.user.user_metadata?.full_name ||
+          session.user.user_metadata?.name ||
+          email.split('@')[0];
         const createRes = await http.post<{ user: UserInfo }>('/auth', 'register', { email, name });
         if (createRes.success && createRes.data?.user) {
           profile = createRes.data.user;
@@ -40,10 +53,7 @@ const AuthCallback: React.FC = () => {
       }
 
       setUserAuth(token, profile || { email });
-
-      const params = new URLSearchParams(window.location.search);
-      const redirect = params.get('redirect') || '/cards';
-      navigate(redirect, { replace: true });
+      navigate('/cards', { replace: true });
     };
 
     handleCallback();
