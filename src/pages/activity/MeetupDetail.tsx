@@ -73,6 +73,7 @@ const MeetupDetail: React.FC = () => {
   // 模态框状态
   const [showRSVPDialog, setShowRSVPDialog] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [showFollowModal, setShowFollowModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [qrColor, setQrColor] = useState<string>('#000000');
@@ -246,11 +247,7 @@ const MeetupDetail: React.FC = () => {
         userInfo?.wechat_id || ''
       );
       if (isAlreadyRegistered) {
-        if (meetup.cover) {
-          showQRCode(meetup.cover);
-        } else {
-          showSnackbar.info('您已经报名了这个活动！请联系组织者获取群聊信息。');
-        }
+        setShowFollowModal(true);
         return;
       }
 
@@ -306,17 +303,10 @@ const MeetupDetail: React.FC = () => {
       const enteredWechat = rsvpForm.wechat_id.trim();
       const precheck = await checkRSVPStatus(String(meetup.id), enteredWechat);
       if (precheck) {
-        // 已报名：直接视为成功并展示二维码/提示
         setSubmitStatus('success');
         setTimeout(() => {
           setShowRSVPDialog(false);
-          if (meetup.cover) {
-            showQRCode(meetup.cover!);
-          } else {
-            showSnackbar.info(
-              '您已经报名了这个活动！请联系组织者获取群聊信息。'
-            );
-          }
+          setShowFollowModal(true);
           setSubmitStatus('initial');
         }, 500);
         return;
@@ -355,14 +345,8 @@ const MeetupDetail: React.FC = () => {
           { name: rsvpForm.name, wechat_id: rsvpForm.wechat_id },
         ]);
 
-        // 显示成功消息和二维码
-        if (meetup.cover) {
-          setTimeout(() => {
-            showQRCode(meetup.cover!);
-          }, 300);
-        } else {
-          showSnackbar.success('报名成功！请联系组织者获取群聊信息。');
-        }
+        // 报名成功后引导关注公众号
+        setTimeout(() => setShowFollowModal(true), 300);
 
         // 重置提交状态
         setSubmitStatus('initial');
@@ -377,13 +361,7 @@ const MeetupDetail: React.FC = () => {
         setSubmitStatus('success');
         setTimeout(() => {
           setShowRSVPDialog(false);
-          if (meetup?.cover) {
-            showQRCode(meetup.cover!);
-          } else {
-            showSnackbar.info(
-              '您已经报名了这个活动！请联系组织者获取群聊信息。'
-            );
-          }
+          setShowFollowModal(true);
           setSubmitStatus('initial');
         }, 500);
         return;
@@ -914,6 +892,30 @@ const MeetupDetail: React.FC = () => {
               : submitStatus === 'success'
                 ? '报名成功！'
                 : '确认报名'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 关注公众号弹窗 */}
+      <Dialog open={showFollowModal} onClose={() => setShowFollowModal(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ textAlign: 'center', pb: 0 }}>🎉 报名成功！</DialogTitle>
+        <DialogContent sx={{ textAlign: 'center', py: 3 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            扫码关注公众号，了解社群最新动态<br />并通过公众号联系我们加入微信群
+          </Typography>
+          <img
+            src="/images/qrcode_for_gh_e0969fd9d88b_344.jpg"
+            alt="启发星球笔记公众号"
+            style={{ width: 180, height: 180, borderRadius: 8 }}
+          />
+          <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1.5 }}>
+            启发星球笔记
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+          <Button variant="contained" onClick={() => setShowFollowModal(false)}
+            sx={{ bgcolor: '#ff6348', '&:hover': { bgcolor: '#ff4500' } }}>
+            好的
           </Button>
         </DialogActions>
       </Dialog>

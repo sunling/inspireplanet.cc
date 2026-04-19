@@ -330,6 +330,22 @@ const Home: React.FC = () => {
           </p>
         </section>
 
+        {/* 关注公众号 */}
+        <section className={styles['stories-section']} style={{ textAlign: 'center' }}>
+          <h2 className={styles['stories-title']}>加入社群</h2>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+            扫码关注「启发星球笔记」公众号<br />了解社群动态，通过公众号联系我们加入微信群
+          </Typography>
+          <img
+            src="/images/qrcode_for_gh_e0969fd9d88b_344.jpg"
+            alt="启发星球笔记公众号"
+            style={{ width: 160, height: 160, borderRadius: 10, border: '1px solid #f0f0f0' }}
+          />
+          <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
+            启发星球笔记
+          </Typography>
+        </section>
+
         {/* 成员故事 */}
         <section className={styles['stories-section']}>
           <h2 className={styles['stories-title']}>在这里发生的事</h2>
