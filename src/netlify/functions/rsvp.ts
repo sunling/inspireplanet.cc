@@ -65,7 +65,6 @@ async function handleCreate(event: NetlifyEvent) {
   try {
     const rsvpData = getDataFromEvent(event);
     const meetupIdNum = Number(rsvpData.meetup_id);
-    const wechatId = String(rsvpData.wechat_id || '').trim();
     const name = String(rsvpData.name || '').trim();
     const authUserId = await getUserIdFromAuth(event);
     const providedUserId =
@@ -81,19 +80,17 @@ async function handleCreate(event: NetlifyEvent) {
         ? Number(rsvpData.episode_number)
         : undefined;
 
-    const requiredFields = ['meetup_id', 'name', 'wechat_id'];
-    for (const field of requiredFields) {
-      if (!rsvpData[field]) {
-        return createErrorResponse(`缺少必填字段: ${field}`);
-      }
+    if (!rsvpData['meetup_id']) {
+      return createErrorResponse('缺少必填字段: meetup_id');
+    }
+
+    // 未登录用户必须提供姓名
+    if (!userId && !name) {
+      return createErrorResponse('缺少必填字段: name');
     }
 
     if (!Number.isFinite(meetupIdNum) || meetupIdNum <= 0) {
       return createErrorResponse('活动ID不合法');
-    }
-
-    if (!wechatId || !name) {
-      return createErrorResponse('姓名或微信号不合法');
     }
 
     const { data: meetup, error: meetupError } = await supabase
@@ -141,16 +138,6 @@ async function handleCreate(event: NetlifyEvent) {
       if (byUser && byUser.length > 0) existingRSVP = byUser[0];
     }
 
-    if (!existingRSVP) {
-      let q = supabase
-        .from('meetup_rsvps')
-        .select('id, status, user_id')
-        .eq('meetup_id', meetupIdNum)
-        .eq('wechat_id', wechatId);
-      if (episodeId !== null) q = q.eq('episode_id', episodeId);
-      const { data: byWechat } = await q.limit(1);
-      if (byWechat && byWechat.length > 0) existingRSVP = byWechat[0];
-    }
 
     if (existingRSVP && existingRSVP.status === 'confirmed') {
       return createErrorResponse('您已经报名了这个活动');
@@ -189,7 +176,6 @@ async function handleCreate(event: NetlifyEvent) {
           {
             meetup_id: meetupIdNum,
             name,
-            wechat_id: wechatId,
             user_id: userId as any,
             status: 'confirmed',
             ...(episodeId !== null ? { episode_id: episodeId } : {}),

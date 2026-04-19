@@ -37,6 +37,7 @@ import Empty from '@/components/Empty';
 import { useGlobalSnackbar } from '@/context/app';
 import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
 import { getUserId, getUserInfo, isUserLoggedIn, isMeetupOwner } from '@/utils';
+import { downloadICS } from '@/utils/calendar';
 import { formatDate, formatDateTime, isUpcomingEvent } from '../../utils/date';
 
 
@@ -82,7 +83,7 @@ const MeetupDetail: React.FC = () => {
   // RSVP表单状态
   const [rsvpForm, setRsvpForm] = useState({
     name: '',
-    wechat_id: '',
+    email: '',
   });
 
   // 提交状态
@@ -229,34 +230,20 @@ const MeetupDetail: React.FC = () => {
   const handleJoinMeetup = async () => {
     if (!meetup) return;
 
-    if (!isUserLoggedIn()) {
-      showSnackbar.error('请先登录后再报名参加活动');
-      const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
-      return;
-    }
-
     setIsActionLoading(true);
-
     try {
       const userInfo = getUserInfo();
+      const loggedIn = isUserLoggedIn();
 
-      // 检查是否已经报名
-      const isAlreadyRegistered = await checkRSVPStatus(
-        meetup.id!,
-        userInfo?.wechat_id || ''
-      );
-      if (isAlreadyRegistered) {
-        setShowFollowModal(true);
-        return;
+      if (loggedIn && userInfo) {
+        // 已登录：直接提交，无需填表
+        setRsvpForm({ name: userInfo.name || userInfo.email || '', email: userInfo.email || '' });
+        setShowRSVPDialog(true);
+      } else {
+        // 未登录：显示表单
+        setRsvpForm({ name: '', email: '' });
+        setShowRSVPDialog(true);
       }
-
-      // 显示报名确认对话框
-      setRsvpForm({
-        name: userInfo.name || '',
-        wechat_id: userInfo.wechat_id || '',
-      });
-      setShowRSVPDialog(true);
     } catch (error) {
       console.error('处理报名失败:', error);
       showSnackbar.error('处理报名请求失败，请稍后重试');
@@ -265,23 +252,6 @@ const MeetupDetail: React.FC = () => {
     }
   };
 
-  // 检查RSVP状态
-  const checkRSVPStatus = async (
-    meetupId: string,
-    wechatId: string
-  ): Promise<boolean> => {
-    try {
-      // 使用 getByWechatId 获取该微信用户的所有报名记录
-      const response = await rsvpApi.getByWechatId(meetupId);
-      const rsvps = response.data?.rsvps || [];
-      return (
-        Array.isArray(rsvps) && rsvps.some((r: any) => r.wechat_id === wechatId)
-      );
-    } catch (error) {
-      console.error('检查报名状态失败:', error);
-      return false;
-    }
-  };
 
   // 提交RSVP
   const handleSubmitRSVP = async () => {
@@ -292,29 +262,17 @@ const MeetupDetail: React.FC = () => {
       return;
     }
 
-    if (!rsvpForm.wechat_id.trim()) {
-      showSnackbar.warning('请输入您的微信号');
+    const loggedIn = isUserLoggedIn();
+    if (!loggedIn && !rsvpForm.email.trim()) {
+      showSnackbar.warning('请输入您的邮箱');
       return;
     }
 
     setSubmitStatus('loading');
 
     try {
-      const enteredWechat = rsvpForm.wechat_id.trim();
-      const precheck = await checkRSVPStatus(String(meetup.id), enteredWechat);
-      if (precheck) {
-        setSubmitStatus('success');
-        setTimeout(() => {
-          setShowRSVPDialog(false);
-          setShowFollowModal(true);
-          setSubmitStatus('initial');
-        }, 500);
-        return;
-      }
-
       const payload: Record<string, any> = {
         meetup_id: Number(meetup.id),
-        wechat_id: rsvpForm.wechat_id.trim(),
         name: rsvpForm.name.trim(),
         user_id: getUserId(),
       };
@@ -325,32 +283,35 @@ const MeetupDetail: React.FC = () => {
 
       const response = await rsvpApi.create(payload);
 
-      console.log('报名人员原始响应:', response);
-
       if (!response.success) {
         const msg = (response as any)?.error || '报名失败';
+        if (/已经报名/.test(msg)) {
+          setSubmitStatus('success');
+          setTimeout(() => {
+            setShowRSVPDialog(false);
+            downloadICS(meetup, episode ? dayjs(episode.date) : undefined);
+            setTimeout(() => setShowFollowModal(true), 300);
+            setSubmitStatus('initial');
+          }, 500);
+          return;
+        }
         throw new Error(msg);
       }
 
-      // 模拟成功响应
+      // 从返回的RSVP里拿 episode_id（新建 episode 时 backend 会返回）
+      const returnedRsvp = response.data?.rsvp;
+      const returnedEpisodeId: number | undefined = returnedRsvp?.episode_id ?? episode?.id;
+
       setSubmitStatus('success');
 
-      // 延迟关闭对话框
       setTimeout(() => {
         setShowRSVPDialog(false);
-
-        // 更新参与者列表
-        setParticipants((prev) => [
-          ...prev,
-          { name: rsvpForm.name, wechat_id: rsvpForm.wechat_id },
-        ]);
-
-        // 报名成功后引导关注公众号
+        // 刷新报名名单（用确认的 episode_id，确保新建期次也能正确过滤）
+        loadParticipants(String(meetup.id), returnedEpisodeId, meetup.is_recurring);
+        downloadICS(meetup, episode ? dayjs(episode.date) : undefined);
         setTimeout(() => setShowFollowModal(true), 300);
-
-        // 重置提交状态
         setSubmitStatus('initial');
-      }, 1000);
+      }, 800);
     } catch (error) {
       console.error('报名失败:', error);
       const serverMsg =
@@ -835,39 +796,46 @@ const MeetupDetail: React.FC = () => {
       <Dialog
         open={showRSVPDialog}
         onClose={() => setShowRSVPDialog(false)}
-        maxWidth="sm"
+        maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>确认报名</DialogTitle>
+        <DialogTitle sx={{ pb: 0 }}>
+          {isUserLoggedIn() ? `确认报名` : '填写报名信息'}
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            <TextField
-              fullWidth
-              label="姓名"
-              value={rsvpForm.name}
-              onChange={(e) =>
-                setRsvpForm((prev) => ({ ...prev, name: e.target.value }))
-              }
-              placeholder="请输入您的姓名"
-              margin="normal"
-              disabled={
-                submitStatus === 'loading' || submitStatus === 'success'
-              }
-            />
-            <TextField
-              fullWidth
-              label="微信号"
-              value={rsvpForm.wechat_id}
-              onChange={(e) =>
-                setRsvpForm((prev) => ({ ...prev, wechat_id: e.target.value }))
-              }
-              placeholder="请输入您的微信号"
-              margin="normal"
-              disabled={
-                submitStatus === 'loading' || submitStatus === 'success'
-              }
-            />
-          </Box>
+          {isUserLoggedIn() ? (
+            <Box sx={{ pt: 1.5 }}>
+              <Typography variant="body2" color="text.secondary">
+                以 <strong>{rsvpForm.name || '您'}</strong> 的身份报名参加本次活动。
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                报名成功后将自动下载日历文件，可添加到您的日历应用。
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ mt: 1 }}>
+              <TextField
+                fullWidth
+                label="姓名"
+                value={rsvpForm.name}
+                onChange={(e) => setRsvpForm((prev) => ({ ...prev, name: e.target.value }))}
+                margin="normal"
+                disabled={submitStatus === 'loading' || submitStatus === 'success'}
+              />
+              <TextField
+                fullWidth
+                label="邮箱"
+                type="email"
+                value={rsvpForm.email}
+                onChange={(e) => setRsvpForm((prev) => ({ ...prev, email: e.target.value }))}
+                margin="normal"
+                disabled={submitStatus === 'loading' || submitStatus === 'success'}
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                报名成功后将自动下载日历文件。
+              </Typography>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button
@@ -880,18 +848,11 @@ const MeetupDetail: React.FC = () => {
             variant="contained"
             onClick={handleSubmitRSVP}
             disabled={submitStatus === 'loading' || submitStatus === 'success'}
-            startIcon={
-              submitStatus === 'loading' ? (
-                <CircularProgress size={16} />
-              ) : undefined
-            }
+            startIcon={submitStatus === 'loading' ? <CircularProgress size={16} /> : undefined}
             color={submitStatus === 'success' ? 'success' : 'primary'}
+            sx={{ bgcolor: submitStatus !== 'success' ? '#ff6348' : undefined, '&:hover': { bgcolor: submitStatus !== 'success' ? '#ff4500' : undefined } }}
           >
-            {submitStatus === 'loading'
-              ? '提交中...'
-              : submitStatus === 'success'
-                ? '报名成功！'
-                : '确认报名'}
+            {submitStatus === 'loading' ? '提交中...' : submitStatus === 'success' ? '报名成功！' : '确认报名'}
           </Button>
         </DialogActions>
       </Dialog>

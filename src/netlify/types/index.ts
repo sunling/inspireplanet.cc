@@ -52,7 +52,6 @@ export interface Participant {
   meetup_id?: string;
   username?: string;
   name: string;
-  wechat_id?: string;
   created_at?: string;
 }
 
