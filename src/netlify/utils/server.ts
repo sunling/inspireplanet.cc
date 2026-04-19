@@ -18,30 +18,28 @@ export async function getUserIdFromAuth(event: any): Promise<string | null> {
 
   const token = String(auth).substring(7);
 
-  // Try Supabase Auth token first
+  // Try Supabase Auth token
   try {
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (!error && user) {
-      // user_id in metadata (set during migration or registration)
-      if (user.user_metadata?.user_id) {
-        return String(user.user_metadata.user_id);
-      }
-      // Fallback: look up by email in users table
-      if (user.email) {
-        const { data: row } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', user.email)
-          .single();
-        if (row?.id) return String(row.id);
-      }
+    console.log('[auth] supabase.auth.getUser:', { error: error?.message, email: user?.email });
+    if (!error && user?.email) {
+      const { data: row } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', user.email)
+        .single();
+      console.log('[auth] users table lookup:', { email: user.email, found: !!row, id: row?.id });
+      if (row?.id) return String(row.id);
     }
-  } catch {}
+  } catch (e) {
+    console.error('[auth] supabase getUser error:', e);
+  }
 
   // Fallback: legacy JWT
   try {
     const jwt = require('jsonwebtoken');
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
+    console.log('[auth] legacy JWT decoded userId:', decoded.userId || decoded.user_id);
     return decoded.userId || decoded.user_id || null;
   } catch {
     return null;
