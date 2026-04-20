@@ -432,31 +432,6 @@ const Meetups: React.FC = () => {
             borderTop: '1px solid rgba(0,0,0,0.1)',
           }}
         >
-          {getStatusLabel(meetup) !== '已结束' && (
-            <Button
-              size="small"
-              variant="contained"
-              color="primary"
-              disabled={!isUpcomingMeetup || myRsvpIds.has(String(meetup.id))}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleJoinMeetup(meetup.id!, meetup.cover);
-              }}
-              sx={{ fontWeight: 600 }}
-            >
-              {myRsvpIds.has(String(meetup.id)) ? '已报名' : '报名参加'}
-            </Button>
-          )}
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/meetup-detail?id=${meetup.id}`);
-            }}
-          >
-            查看详情
-          </Button>
           <Typography variant="caption" color="text.secondary">
             {meetup.participant_count}
             {Number(meetup.max_ppl) > 0 ? '/' + meetup.max_ppl : ''}
