@@ -5,7 +5,7 @@ import { MeetupStatus, Participant } from '../../netlify/types';
 import { MeetupEpisode } from '../../netlify/functions/episodes';
 import { SpeakerSignup } from '../../netlify/functions/speakerSignups';
 import { isOrganizer } from '../../utils/user';
-import { getNextOccurrence, toLocalDateStr, getEpisodeNumber } from '../../utils/recurring';
+import { getNextOccurrence, toLocalDateStr, getEpisodeNumber, nextUTCOccurrenceDateStr } from '../../utils/recurring';
 import dayjs from 'dayjs';
 
 import {
@@ -148,10 +148,8 @@ const MeetupDetail: React.FC = () => {
         const targetDay = urlDate
           ? dayjs(urlDate)
           : getNextOccurrence(processedMeetup.datetime);
-        // 始终用 UTC 日期作为 episode.date，避免时区偏差导致日期错位
-        const dateStr = urlDate
-          ? urlDate
-          : new Date(processedMeetup.datetime).toISOString().slice(0, 10);
+        // 用 UTC 计算下一期日期，避免本地时区导致日期偏移
+        const dateStr = urlDate ?? nextUTCOccurrenceDateStr(processedMeetup.datetime);
         const epNum = getEpisodeNumber(processedMeetup.episode_start_date, targetDay);
         const epRes = await episodesApi.getByMeetupDate(Number(meetupId), dateStr);
         if (epRes.success) {
@@ -426,11 +424,13 @@ const MeetupDetail: React.FC = () => {
   const renderMeetupDetail = () => {
     if (!meetup) return null;
 
-    // 循环活动用 episode.date（北京时间）+ meetup 的时分；普通活动用 meetup.datetime
+    // 循环活动：用 episode.date（UTC 日期）+ meetup UTC 时分，dayjs 自动转本地时区显示
+    // 普通活动：直接用 meetup.datetime
     const displayDatetime = (() => {
+      const baseUTC = new Date(meetup.datetime);
       if (meetup.is_recurring && episode?.date) {
-        const base = dayjs(meetup.datetime);
-        return dayjs(episode.date).hour(base.hour()).minute(base.minute()).second(0);
+        const [y, m, d] = episode.date.split('-').map(Number);
+        return dayjs(Date.UTC(y, m - 1, d, baseUTC.getUTCHours(), baseUTC.getUTCMinutes()));
       }
       return dayjs(meetup.datetime);
     })();

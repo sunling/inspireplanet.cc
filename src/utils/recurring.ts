@@ -30,3 +30,18 @@ export function getEpisodeNumber(episodeStartDate: string, targetDate: dayjs.Day
 export function toLocalDateStr(d: dayjs.Dayjs): string {
   return d.format('YYYY-MM-DD');
 }
+
+// 用 UTC 星期几计算下一次发生日期（YYYY-MM-DD），避免本地时区导致日期偏移
+export function nextUTCOccurrenceDateStr(datetimeISO: string): string {
+  const base = new Date(datetimeISO);
+  const baseDay = base.getUTCDay();
+  const now = new Date();
+  let daysUntil = (baseDay - now.getUTCDay() + 7) % 7;
+  if (daysUntil === 0) {
+    const todayOccurrence = new Date(now);
+    todayOccurrence.setUTCHours(base.getUTCHours(), base.getUTCMinutes(), 0, 0);
+    if (todayOccurrence <= now) daysUntil = 7;
+  }
+  const next = new Date(now.getTime() + daysUntil * 24 * 60 * 60 * 1000);
+  return next.toISOString().slice(0, 10);
+}
