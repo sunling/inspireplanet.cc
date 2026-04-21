@@ -8,6 +8,7 @@ import {
   getFunctionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
+import { sendRSVPConfirmEmail } from '../utils/email';
 
 export interface RsvpAction {
   functionName:
@@ -66,6 +67,8 @@ async function handleCreate(event: NetlifyEvent) {
     const rsvpData = getDataFromEvent(event);
     const meetupIdNum = Number(rsvpData.meetup_id);
     const name = String(rsvpData.name || '').trim();
+    const guestEmail = rsvpData.email ? String(rsvpData.email).trim() : undefined;
+    const timezone = rsvpData.timezone ? String(rsvpData.timezone) : 'Asia/Shanghai';
     const authUserId = await getUserIdFromAuth(event);
     const providedUserId =
       rsvpData.user_id !== undefined ? rsvpData.user_id : null;
@@ -95,7 +98,7 @@ async function handleCreate(event: NetlifyEvent) {
 
     const { data: meetup, error: meetupError } = await supabase
       .from('meetups')
-      .select('id, max_ppl, status')
+      .select('id, max_ppl, status, title, datetime, location, mode, is_recurring, duration')
       .eq('id', meetupIdNum)
       .single();
 
@@ -188,6 +191,28 @@ async function handleCreate(event: NetlifyEvent) {
     if (result.error) {
       console.error('Database error:', result.error);
       return createErrorResponse('报名失败', 500);
+    }
+
+    // 发送确认邮件（异步，不阻塞响应）
+    const recipientName = name || '同学';
+    let recipientEmail: string | undefined = guestEmail;
+    if (!recipientEmail && authUserId) {
+      const { data: authUser } = await supabase.auth.admin.getUserById(String(authUserId));
+      recipientEmail = authUser?.user?.email;
+    }
+    if (recipientEmail) {
+      sendRSVPConfirmEmail({
+        to: recipientEmail,
+        name: recipientName,
+        meetupTitle: meetup.title,
+        meetupId: meetupIdNum,
+        eventDatetime: meetup.datetime,
+        durationHours: meetup.duration ? Number(meetup.duration) : 1,
+        location: meetup.location,
+        mode: meetup.mode,
+        episodeNumber: episodeNumber,
+        timezone,
+      });
     }
 
     return createSuccessResponse({

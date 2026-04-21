@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../netlify/config';
 import {
   Box,
@@ -12,7 +12,6 @@ import {
   CardContent,
   CircularProgress,
 } from '@mui/material';
-import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { getUserInfo, setUserAuth } from '../../utils/user';
 
@@ -37,7 +36,6 @@ interface FormErrors {
 
 const ChangePassWord: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [submitLoading, setSubmitLoading] = useState<boolean>(false);
   const [passwordStrength, setPasswordStrength] = useState<
     'weak' | 'medium' | 'strong' | null
@@ -202,15 +200,6 @@ const ChangePassWord: React.FC = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Header
-        isAuthenticated={true}
-        userName="用户"
-        onLogout={() => {
-          const redirect = `${location.pathname}${location.search}${location.hash}`;
-          navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
-        }}
-      />
-
       <Container
         maxWidth="md"
         sx={{

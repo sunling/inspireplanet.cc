@@ -7,6 +7,7 @@ import {
   getFunctionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
+import { sendSpeakerConfirmEmail } from '../utils/email';
 
 export interface SpeakerSignup {
   id?: number;
@@ -60,7 +61,7 @@ async function handleGetByEpisode(event: NetlifyEvent): Promise<NetlifyResponse>
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const { meetup_id, episode_number, name, topic, duration } = getDataFromEvent(event);
+  const { meetup_id, episode_number, name, topic, duration, email, timezone } = getDataFromEvent(event);
   if (!meetup_id || !episode_number || !name?.trim() || !topic?.trim()) {
     return createErrorResponse('缺少必填字段');
   }
@@ -72,6 +73,42 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
     .single();
 
   if (error) return createErrorResponse('报名失败', 500);
+
+  // 发送确认邮件
+  if (email?.trim()) {
+    const { data: meetup } = await supabase
+      .from('meetups')
+      .select('title, datetime, location, mode, duration')
+      .eq('id', meetup_id)
+      .single();
+
+    const { data: episode } = await supabase
+      .from('meetup_episodes')
+      .select('date')
+      .eq('meetup_id', meetup_id)
+      .eq('episode_number', episode_number)
+      .single();
+
+    if (meetup) {
+      const eventDatetime = meetup.datetime;
+
+      sendSpeakerConfirmEmail({
+        to: email.trim(),
+        name: name.trim(),
+        topic: topic.trim(),
+        duration: duration?.trim(),
+        meetupTitle: meetup.title,
+        meetupId: Number(meetup_id),
+        eventDatetime,
+        durationHours: meetup.duration ? Number(meetup.duration) : 1,
+        location: meetup.location,
+        mode: meetup.mode,
+        episodeNumber: Number(episode_number),
+        timezone: timezone || 'Asia/Shanghai',
+      });
+    }
+  }
+
   return createSuccessResponse({ signup: data });
 }
 

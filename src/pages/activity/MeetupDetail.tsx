@@ -37,7 +37,6 @@ import Empty from '@/components/Empty';
 import { useGlobalSnackbar } from '@/context/app';
 import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
 import { getUserId, getUserInfo, isUserLoggedIn, isMeetupOwner } from '@/utils';
-import { downloadICS } from '@/utils/calendar';
 import { formatDate, formatDateTime, isUpcomingEvent } from '../../utils/date';
 
 
@@ -64,7 +63,7 @@ const MeetupDetail: React.FC = () => {
   // 分享报名状态
   const [speakerSignups, setSpeakerSignups] = useState<SpeakerSignup[]>([]);
   const [showSpeakerForm, setShowSpeakerForm] = useState(false);
-  const [speakerForm, setSpeakerForm] = useState({ name: '', topic: '', duration: '' });
+  const [speakerForm, setSpeakerForm] = useState({ name: '', email: '', topic: '', duration: '' });
   const [speakerSubmitting, setSpeakerSubmitting] = useState(false);
   const [showEpisodeEditor, setShowEpisodeEditor] = useState(false);
   const [episodeThemeInput, setEpisodeThemeInput] = useState('');
@@ -149,7 +148,10 @@ const MeetupDetail: React.FC = () => {
         const targetDay = urlDate
           ? dayjs(urlDate)
           : getNextOccurrence(processedMeetup.datetime);
-        const dateStr = toLocalDateStr(targetDay);
+        // 始终用 UTC 日期作为 episode.date，避免时区偏差导致日期错位
+        const dateStr = urlDate
+          ? urlDate
+          : new Date(processedMeetup.datetime).toISOString().slice(0, 10);
         const epNum = getEpisodeNumber(processedMeetup.episode_start_date, targetDay);
         const epRes = await episodesApi.getByMeetupDate(Number(meetupId), dateStr);
         if (epRes.success) {
@@ -274,7 +276,9 @@ const MeetupDetail: React.FC = () => {
       const payload: Record<string, any> = {
         meetup_id: Number(meetup.id),
         name: rsvpForm.name.trim(),
+        email: rsvpForm.email.trim() || undefined,
         user_id: getUserId(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       };
       if (episode) {
         payload.episode_date = episode.date;
@@ -289,7 +293,6 @@ const MeetupDetail: React.FC = () => {
           setSubmitStatus('success');
           setTimeout(() => {
             setShowRSVPDialog(false);
-            downloadICS(meetup, episode ? dayjs(episode.date) : undefined);
             setTimeout(() => setShowFollowModal(true), 300);
             setSubmitStatus('initial');
           }, 500);
@@ -308,7 +311,6 @@ const MeetupDetail: React.FC = () => {
         setShowRSVPDialog(false);
         // 刷新报名名单（用确认的 episode_id，确保新建期次也能正确过滤）
         loadParticipants(String(meetup.id), returnedEpisodeId, meetup.is_recurring);
-        downloadICS(meetup, episode ? dayjs(episode.date) : undefined);
         setTimeout(() => setShowFollowModal(true), 300);
         setSubmitStatus('initial');
       }, 800);
@@ -344,12 +346,14 @@ const MeetupDetail: React.FC = () => {
         meetup_id: episode.meetup_id,
         episode_number: episode.episode_number,
         name: speakerForm.name,
+        email: speakerForm.email.trim() || undefined,
         topic: speakerForm.topic,
         duration: speakerForm.duration || undefined,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
       if (res.success && res.data?.signup) {
         setSpeakerSignups((prev) => [...prev, res.data!.signup]);
-        setSpeakerForm({ name: '', topic: '', duration: '' });
+        setSpeakerForm({ name: '', email: '', topic: '', duration: '' });
         setShowSpeakerForm(false);
         showSnackbar.success('报名成功！期待你的分享 🎉');
       } else {
@@ -657,7 +661,11 @@ const MeetupDetail: React.FC = () => {
                   <Button
                     variant="contained"
                     size="small"
-                    onClick={() => setShowSpeakerForm(true)}
+                    onClick={() => {
+                      const u = getUserInfo();
+                      setSpeakerForm(p => ({ ...p, name: u?.name || u?.email || '', email: u?.email || '' }));
+                      setShowSpeakerForm(true);
+                    }}
                     sx={{ fontWeight: 600 }}
                   >
                     我也想分享 🙋
@@ -1065,6 +1073,14 @@ const MeetupDetail: React.FC = () => {
             onChange={(e) => setSpeakerForm((p) => ({ ...p, name: e.target.value }))}
             placeholder="如何称呼你？"
             required
+          />
+          <TextField
+            fullWidth
+            label="邮箱（用于发送确认邮件）"
+            type="email"
+            value={speakerForm.email}
+            onChange={(e) => setSpeakerForm((p) => ({ ...p, email: e.target.value }))}
+            placeholder="your@email.com"
           />
           <TextField
             fullWidth
