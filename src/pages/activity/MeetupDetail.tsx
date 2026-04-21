@@ -444,7 +444,7 @@ const MeetupDetail: React.FC = () => {
       !Number.isFinite(limitRaw) || limitRaw <= 0 || limitRaw === -1;
 
     return (
-      <Box sx={{ mt: 4 }}>
+      <Box sx={{ mt: 4, overflow: 'hidden' }}>
         <Box
           sx={{ maxWidth: '600px', margin: '0 auto', marginBottom: '1.5rem' }}
         >
@@ -622,6 +622,8 @@ const MeetupDetail: React.FC = () => {
                   bgcolor: '#f4eee6',
                   whiteSpace: 'pre-line',
                   lineHeight: 1.8,
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
                 }}
               >
                 {(meetup.is_recurring && episode?.description)
