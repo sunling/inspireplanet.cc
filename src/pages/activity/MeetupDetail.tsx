@@ -670,7 +670,7 @@ const MeetupDetail: React.FC = () => {
                     }}
                     sx={{ fontWeight: 600 }}
                   >
-                    我也想分享 🙋
+                    申请分享 🎤
                   </Button>
                 </Box>
 
@@ -726,7 +726,7 @@ const MeetupDetail: React.FC = () => {
 
             {/* 操作按钮 */}
             <Box sx={{ mt: 4, textAlign: 'center' }}>
-              <div>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
                 <Button
                   variant="text"
                   onClick={handleViewParticipants}
@@ -736,47 +736,61 @@ const MeetupDetail: React.FC = () => {
                   {participants.length}
                   {isUnlimited ? '' : `/${limitRaw}`} 人已报名
                 </Button>
-                <Tooltip title="分享活动">
-                  <IconButton
-                    onClick={() => setShowShareModal(true)}
-                    sx={{ ml: 2 }}
-                  >
-                    <ShareIcon />
-                  </IconButton>
-                </Tooltip>
                 {/* 编辑按钮 - 只有活动创建者可以看到 */}
                 {isUserLoggedIn() && isMeetupOwner(meetup) && (
                   <Tooltip title="编辑活动">
                     <IconButton
                       component={Link}
                       to={`/edit-meetup?id=${meetup.id}`}
-                      sx={{ ml: 2, color: 'primary.main' }}
+                      sx={{ ml: 1, color: 'primary.main' }}
                     >
                       ✏️
                     </IconButton>
                   </Tooltip>
                 )}
-              </div>
+              </Box>
 
-              {isUpcomingMeetup && (
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mb: 2 }}>
                 <Button
-                  variant={isUpcomingMeetup ? 'contained' : 'outlined'}
-                  onClick={handleJoinMeetup}
-                  disabled={!isUpcomingMeetup || isActionLoading}
-                  startIcon={
-                    isActionLoading ? <CircularProgress size={16} /> : undefined
-                  }
+                  variant="outlined"
+                  onClick={() => setShowShareModal(true)}
+                  startIcon={<ShareIcon />}
                   sx={{
                     py: 1.2,
-                    px: 5,
+                    px: 3,
                     fontSize: '1rem',
                     textTransform: 'none',
-                    mb: 2,
+                    '&&': {
+                      color: '#888',
+                      borderColor: '#ccc',
+                    },
+                    '&&:hover': {
+                      borderColor: '#999',
+                      bgcolor: 'rgba(0,0,0,0.04)',
+                    },
                   }}
                 >
-                  报名参加
+                  分享活动
                 </Button>
-              )}
+                {isUpcomingMeetup && (
+                  <Button
+                    variant="contained"
+                    onClick={handleJoinMeetup}
+                    disabled={isActionLoading}
+                    startIcon={
+                      isActionLoading ? <CircularProgress size={16} /> : undefined
+                    }
+                    sx={{
+                      py: 1.2,
+                      px: 4,
+                      fontSize: '1rem',
+                      textTransform: 'none',
+                    }}
+                  >
+                    我要参加
+                  </Button>
+                )}
+              </Box>
             </Box>
           </Box>
         </Box>

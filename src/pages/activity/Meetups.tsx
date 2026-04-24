@@ -38,7 +38,7 @@ import {
 import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
 import { MeetupEpisode } from '../../netlify/functions/episodes';
 import { meetupsApi, rsvpApi, episodesApi } from '../../netlify/config';
-import { getNextOccurrence, getEpisodeNumber, toLocalDateStr } from '../../utils/recurring';
+import { getNextOccurrence, getEpisodeNumber, toLocalDateStr, nextUTCOccurrenceDateStr } from '../../utils/recurring';
 
 const PAGE_SIZE = 6;
 
@@ -58,6 +58,7 @@ const Meetups: React.FC = () => {
 
   const [meetups, setMeetups] = useState<Meetup[]>([]);
   const [episodeMap, setEpisodeMap] = useState<Record<string, MeetupEpisode>>({});
+  const [episodeParticipantCounts, setEpisodeParticipantCounts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateButton, setShowCreateButton] = useState(false);
@@ -110,7 +111,7 @@ const Meetups: React.FC = () => {
         const entries = await Promise.all(
           recurring.map(async (m) => {
             const next = getNextOccurrence(m.datetime);
-            const dateStr = toLocalDateStr(next);
+            const dateStr = nextUTCOccurrenceDateStr(m.datetime);
             const res = await episodesApi.getByMeetupDate(Number(m.id), dateStr);
             const epNum = getEpisodeNumber(m.episode_start_date!, next);
             const ep: MeetupEpisode = res.success && res.data?.episode
@@ -120,6 +121,17 @@ const Meetups: React.FC = () => {
           })
         );
         setEpisodeMap(Object.fromEntries(entries));
+
+        // 并行加载本期报名数
+        const countEntries = await Promise.all(
+          entries.map(async ([meetupId, ep]) => {
+            if (ep.id === undefined) return [meetupId, 0] as [string, number];
+            const res = await rsvpApi.getByMeetupId(meetupId, ep.id);
+            const count = res.success ? (res.data?.rsvps || []).length : 0;
+            return [meetupId, count] as [string, number];
+          })
+        );
+        setEpisodeParticipantCounts(Object.fromEntries(countEntries));
       }
     } catch (err) {
       setError('加载活动失败，请稍后再试');
@@ -433,7 +445,9 @@ const Meetups: React.FC = () => {
           }}
         >
           <Typography variant="caption" color="text.secondary">
-            {meetup.participant_count}
+            {meetup.is_recurring
+              ? (episodeParticipantCounts[String(meetup.id)] ?? 0)
+              : meetup.participant_count}
             {Number(meetup.max_ppl) > 0 ? '/' + meetup.max_ppl : ''}
             人参加
           </Typography>
