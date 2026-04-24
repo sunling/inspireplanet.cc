@@ -1,38 +1,30 @@
-const CACHE_NAME = 'inspire-planet-v1';
-const urlsToCache = ['/', '/index.html', '/manifest.json', '/images/logo.png'];
-const CACHE_EXPIRY_TIME = 60 * 60 * 1000; // 1小时缓存有效期
-
-// 缓存请求并添加时间戳
-const cacheWithTimestamp = async (cache, request, response) => {
-  const responseToCache = response.clone();
-  const headers = new Headers(responseToCache.headers);
-  headers.set('x-cache-timestamp', Date.now().toString());
-
-  const cachedResponse = new Response(responseToCache.body, {
-    status: responseToCache.status,
-    statusText: responseToCache.statusText,
-    headers: headers,
-  });
-
-  await cache.put(request, cachedResponse);
-};
-
-// 检查缓存是否过期
-const isCacheExpired = (response) => {
-  const timestamp = response.headers.get('x-cache-timestamp');
-  if (!timestamp) return true;
-
-  const cacheTime = parseInt(timestamp, 10);
-  const now = Date.now();
-  return now - cacheTime > CACHE_EXPIRY_TIME;
-};
+const CACHE_NAME = 'inspire-planet-v2';
+const STATIC_ASSETS_CACHE = 'inspire-planet-assets-v2';
 
 self.addEventListener('install', (event) => {
+  // 立即激活，不等旧 SW 关闭
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Opened cache');
-      return cache.addAll(urlsToCache);
+      return cache.addAll(['/manifest.json', '/images/logo.png']);
     })
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    Promise.all([
+      // 清理旧版本缓存
+      caches.keys().then((cacheNames) =>
+        Promise.all(
+          cacheNames
+            .filter((name) => name !== CACHE_NAME && name !== STATIC_ASSETS_CACHE)
+            .map((name) => caches.delete(name))
+        )
+      ),
+      // 立即接管所有客户端
+      self.clients.claim(),
+    ])
   );
 });
 
@@ -40,67 +32,68 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // 开发环境不缓存任何请求
+  // 开发环境跳过
   if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
     return;
   }
 
-  // 不缓存以下请求：
-  // 1. chrome-extension等特殊协议
-  // 2. 非GET请求
-  // 3. 非http/https协议
-  // 4. API请求
-  if (
-    !url.protocol.startsWith('http') ||
-    request.method !== 'GET' ||
-    url.pathname.startsWith('/.netlify/functions') ||
-    url.pathname.startsWith('/api')
-  ) {
+  // 只处理 GET 和 http/https
+  if (request.method !== 'GET' || !url.protocol.startsWith('http')) {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      if (response) {
-        // 检查缓存是否过期
-        if (!isCacheExpired(response)) {
+  // API 请求不缓存
+  if (url.pathname.startsWith('/.netlify/functions') || url.pathname.startsWith('/api')) {
+    return;
+  }
+
+  // index.html 和页面路由：网络优先，网络失败才用缓存兜底
+  const isNavigation =
+    request.mode === 'navigate' ||
+    url.pathname === '/' ||
+    (!url.pathname.includes('.') && !url.pathname.startsWith('/assets'));
+
+  if (isNavigation) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           return response;
-        } else {
-          console.log('Cache expired for:', request.url);
-        }
-      }
-
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-
-        caches.open(CACHE_NAME).then((cache) => {
-          cacheWithTimestamp(cache, event.request, response);
-        });
-
-        return response;
-      });
-    })
-  );
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
         })
-      );
-    })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // 带 hash 的静态资源（assets/index-abc123.js）：缓存优先，永久有效
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      caches.open(STATIC_ASSETS_CACHE).then(async (cache) => {
+        const cached = await cache.match(request);
+        if (cached) return cached;
+
+        const response = await fetch(request);
+        if (response.ok) cache.put(request, response.clone());
+        return response;
+      })
+    );
+    return;
+  }
+
+  // 其他静态文件：网络优先
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
   );
 });
 
-// 监听消息，处理客户端的更新检查
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
