@@ -424,13 +424,13 @@ const MeetupDetail: React.FC = () => {
   const renderMeetupDetail = () => {
     if (!meetup) return null;
 
-    // 循环活动：用 episode.date（UTC 日期）+ meetup UTC 时分，dayjs 自动转本地时区显示
+    // 循环活动：用 episode.date（本地日期）+ meetup 本地时分，避免 UTC 偏移导致日期偏移一天
     // 普通活动：直接用 meetup.datetime
     const displayDatetime = (() => {
-      const baseUTC = new Date(meetup.datetime);
       if (meetup.is_recurring && episode?.date) {
         const [y, m, d] = episode.date.split('-').map(Number);
-        return dayjs(Date.UTC(y, m - 1, d, baseUTC.getUTCHours(), baseUTC.getUTCMinutes()));
+        const baseLocal = dayjs(meetup.datetime);
+        return dayjs(new Date(y, m - 1, d, baseLocal.hour(), baseLocal.minute()));
       }
       return dayjs(meetup.datetime);
     })();
