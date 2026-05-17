@@ -16,11 +16,8 @@ const Footer: React.FC = () => {
     <Box
       component="footer"
       sx={{
-        left: 0,
-        right: 0,
-        bottom: 0,
         width: '100%',
-        zIndex: 1000,
+        zIndex: 1,
         backgroundColor: '#f5f5f5',
         padding: { xs: 1, md: 1 },
         borderTop: '1px solid rgba(0, 0, 0, 0.1)',

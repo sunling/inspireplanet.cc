@@ -2,10 +2,24 @@
 @import 'select-bg.css';
 @import './main.css';
 
-html {
+html,
+body {
+  height: 100%;
   background-color: #fafafa;
 }
 
+#root {
+  height: 100%;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
 .main-content {
-  min-height: clamp(640px, 68vh, 100vh);
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
 }

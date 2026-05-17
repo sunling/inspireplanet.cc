@@ -9,6 +9,8 @@ interface BatchConfirmParams {
 
 interface GetParticipantsParams {
   meetup_id: number;
+  page?: number;
+  limit?: number;
 }
 
 export interface Participant {
@@ -22,15 +24,15 @@ export interface Participant {
 
 const participantsApi = {
   getParticipants: async (params: GetParticipantsParams) => {
-    return await http.post('/participants', 'get', params);
+    return await http.post('/participants', 'getParticipants', params);
   },
 
   batchConfirm: async (params: BatchConfirmParams) => {
-    return await http.post('/participants', 'batch_confirm', params);
+    return await http.post('/participants', 'batchConfirm', params);
   },
 
   batchReject: async (params: { meetup_id: number; rsvp_ids: number[] }) => {
-    return await http.post('/participants', 'batch_reject', params);
+    return await http.post('/participants', 'batchReject', params);
   },
 };
 

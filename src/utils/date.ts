@@ -20,6 +20,14 @@ export const formatDate = (
   return dayjs(data).format(format);
 };
 
+export const formatDateCN = (
+  data: string | Date,
+  format = 'YYYY年MM月DD日'
+): string => {
+  if (!data) return '';
+  return dayjs(data).format(format);
+};
+
 export const formatTime = (
   data: string | Date,
   format = 'HH:mm'

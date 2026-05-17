@@ -6,7 +6,7 @@ import App from '../App';
 import Error from '../components/ErrorCard/index';
 import Loading from '../components/Loading/index';
 import MyMeetups from '../pages/user/MyMeetups';
-import { isUserLoggedIn } from '../utils';
+import { isUserLoggedIn, isOrganizer } from '../utils/user';
 
 // 错误边界组件
 const ErrorBoundary: React.FC<{ children?: React.ReactNode }> = ({
@@ -54,6 +54,31 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
+// Organizer 专用路由保护组件
+const OrganizerProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const isAuthenticated = isUserLoggedIn();
+  const userIsOrganizer = isOrganizer();
+  const location = useLocation();
+  const redirect = `${location.pathname}${location.search}${location.hash}`;
+
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to={`/login?redirect=${encodeURIComponent(redirect)}`}
+        replace
+      />
+    );
+  }
+
+  if (!userIsOrganizer) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 // 路由辅助函数
 const createLazyRoute = (Component: React.ReactNode) => (
   <Suspense fallback={<Loading />}>
@@ -63,6 +88,12 @@ const createLazyRoute = (Component: React.ReactNode) => (
 
 const createProtectedRoute = (Component: React.ReactNode) => (
   <ProtectedRoute>{createLazyRoute(Component)}</ProtectedRoute>
+);
+
+const createOrganizerProtectedRoute = (Component: React.ReactNode) => (
+  <OrganizerProtectedRoute>
+    {createLazyRoute(Component)}
+  </OrganizerProtectedRoute>
 );
 
 // 懒加载页面组件
@@ -103,6 +134,9 @@ const ActivityCalendar = lazy(
 );
 const MeetupParticipants = lazy(
   () => import('../pages/activity/MeetupParticipants')
+);
+const MeetupParticipantsList = lazy(
+  () => import('../pages/activity/MeetupParticipantsList')
 );
 
 // 创建路由器
@@ -195,7 +229,11 @@ const router = createBrowserRouter(
 
         {
           path: 'meetup-participants',
-          element: createProtectedRoute(<MeetupParticipants />),
+          element: createOrganizerProtectedRoute(<MeetupParticipants />),
+        },
+        {
+          path: 'meetup-participants-list',
+          element: createOrganizerProtectedRoute(<MeetupParticipantsList />),
         },
 
         // 404路由

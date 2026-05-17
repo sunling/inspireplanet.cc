@@ -9,6 +9,7 @@ import {
   getDataFromEvent,
 } from '../utils/server';
 import { sendRSVPConfirmEmail } from '../utils/email';
+import { RSVPStatus, ApprovalStatus } from '../types/rsvp';
 
 export interface RsvpAction {
   functionName:
@@ -182,7 +183,8 @@ async function handleCreate(event: NetlifyEvent) {
       const { data, error } = await supabase
         .from('meetup_rsvps')
         .update({
-          status: 'confirmed',
+          status: RSVPStatus.JOINED,
+          application_status: ApprovalStatus.PENDING,
           question_answer: rsvpData.question_answer || null,
         })
         .eq('id', existingRSVP.id)
@@ -196,7 +198,8 @@ async function handleCreate(event: NetlifyEvent) {
             meetup_id: meetupIdNum,
             name,
             user_id: userId as any,
-            status: 'confirmed',
+            status: RSVPStatus.JOINED,
+            application_status: ApprovalStatus.PENDING,
             question_answer: rsvpData.question_answer || null,
             ...(episodeId !== null ? { episode_id: episodeId } : {}),
           },

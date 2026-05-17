@@ -12,7 +12,6 @@ import {
   Select,
   MenuItem,
   FormControl,
-  FormControlLabel,
   InputLabel,
   Table,
   TableBody,
@@ -27,23 +26,32 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  IconButton,
+  Pagination,
 } from '@mui/material';
+import { ArrowBack } from '@mui/icons-material';
 import { meetupsApi, rsvpApi, participantsApi } from '../../netlify/config';
 import { Meetup } from '../../netlify/functions/meetup';
 import { useGlobalSnackbar } from '../../context/app';
-import { isUserLoggedIn, getUserName } from '../../utils/user';
+import { isUserLoggedIn } from '../../utils/user';
+import {
+  RSVPStatus,
+  ApprovalStatus,
+  getRSVPStatusLabel,
+  getRSVPStatusStyle,
+  getApprovalStatusLabel,
+  getApprovalStatusStyle,
+} from '../../netlify/types/rsvp';
 
 interface RSVP {
   id: string;
   name: string;
   email: string | null;
   user_id: string | null;
-  status: string;
+  status: RSVPStatus;
+  application_status: ApprovalStatus;
   created_at: string;
   question_answer: string | null;
-  application_status: 'auto' | 'approved' | 'rejected';
-  approved_by: string | null;
-  approved_at: string | null;
   email_sent: boolean;
   email_sent_at: string | null;
 }
@@ -62,7 +70,16 @@ const MeetupParticipants: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [emailNotification, setEmailNotification] = useState(false);
+
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [stats, setStats] = useState({
+    total: 0,
+    joined: 0,
+    cancelled: 0,
+  });
+  const pageSize = 10;
 
   // 获取活动ID
   const getMeetupId = (): string | null => {
@@ -71,7 +88,7 @@ const MeetupParticipants: React.FC = () => {
   };
 
   // 加载活动详情和报名列表
-  const loadData = async () => {
+  const loadData = async (page = 1) => {
     const meetupId = getMeetupId();
     if (!meetupId) {
       showSnackbar.error('缺少活动ID');
@@ -86,14 +103,22 @@ const MeetupParticipants: React.FC = () => {
         setMeetup(meetupResponse.data.meetups[0]);
       }
 
-      // 获取报名列表（使用 participantsApi 获取完整数据）
+      // 获取报名列表（使用 participantsApi 获取完整数据，支持分页）
       const participantsResponse = await participantsApi.getParticipants({
         meetup_id: Number(meetupId),
+        page,
+        limit: pageSize,
       });
       if (participantsResponse.success) {
         setParticipants(
           (participantsResponse.data?.participants || []) as RSVP[]
         );
+        setTotalCount(participantsResponse.data?.total || 0);
+        setStats({
+          total: participantsResponse.data?.total || 0,
+          joined: participantsResponse.data?.joinedCount || 0,
+          cancelled: participantsResponse.data?.cancelledCount || 0,
+        });
       }
     } catch (error) {
       console.error('加载数据失败:', error);
@@ -108,8 +133,18 @@ const MeetupParticipants: React.FC = () => {
       navigate('/login');
       return;
     }
-    loadData();
+    loadData(1);
   }, []);
+
+  // 分页变化时重新加载
+  const handlePageChange = (
+    _event: React.ChangeEvent<unknown>,
+    page: number
+  ) => {
+    setCurrentPage(page);
+    loadData(page);
+    setSelectedParticipants([]);
+  };
 
   // 筛选参与者
   const filteredParticipants = participants.filter((p) => {
@@ -138,11 +173,31 @@ const MeetupParticipants: React.FC = () => {
   };
 
   // 更新参与者状态
-  const updateParticipantStatus = async (id: string, status: string) => {
-    const applicationStatus = status === 'confirmed' ? 'approved' : 'rejected';
+  const updateParticipantStatus = async (id: string, status: RSVPStatus) => {
     const response = await rsvpApi.update(id, {
       status,
-      application_status: applicationStatus,
+    } as any);
+    if (response.success) {
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                status,
+              }
+            : p
+        )
+      );
+      showSnackbar.success(status === RSVPStatus.CONFIRMED ? '已报名' : '已取消');
+    } else {
+      showSnackbar.error('更新失败');
+    }
+  };
+
+  // 审批通过单个参与者
+  const approveParticipant = async (id: string) => {
+    const response = await rsvpApi.update(id, {
+      application_status: ApprovalStatus.APPROVED,
       approved_by: 'Organizer',
       approved_at: new Date().toISOString(),
     } as any);
@@ -152,56 +207,81 @@ const MeetupParticipants: React.FC = () => {
           p.id === id
             ? {
                 ...p,
-                status,
-                application_status:
-                  applicationStatus as RSVP['application_status'],
+                application_status: ApprovalStatus.APPROVED,
               }
             : p
         )
       );
-      showSnackbar.success('状态更新成功');
+      showSnackbar.success('审批通过');
     } else {
-      showSnackbar.error('更新失败');
+      showSnackbar.error('审批失败');
     }
   };
 
-  // 批量确认选中的参与者
-  const confirmSelected = async () => {
+  // 拒绝单个参与者
+  const rejectParticipant = async (id: string) => {
+    const response = await rsvpApi.update(id, {
+      status: RSVPStatus.CANCELLED,
+      application_status: ApprovalStatus.REJECTED,
+      approved_by: 'Organizer',
+      approved_at: new Date().toISOString(),
+    } as any);
+    if (response.success) {
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                status: RSVPStatus.CANCELLED,
+                application_status: ApprovalStatus.REJECTED,
+              }
+            : p
+        )
+      );
+      showSnackbar.success('已拒绝');
+    } else {
+      showSnackbar.error('操作失败');
+    }
+  };
+
+  // 批量取消选中的参与者
+  const cancelSelected = async () => {
     setShowConfirmDialog(false);
     const meetupId = getMeetupId();
     if (!meetupId) return;
 
+    // 只处理已报名状态的参与者
+    const joinedParticipants = selectedParticipants.filter(
+      (id) =>
+        participants.find((p) => p.id === id)?.status === RSVPStatus.CONFIRMED
+    );
+
+    if (joinedParticipants.length === 0) {
+      showSnackbar.info('没有已报名的参与者');
+      setSelectedParticipants([]);
+      return;
+    }
+
     try {
-      const response = await participantsApi.batchConfirm({
+      const response = await participantsApi.batchReject({
         meetup_id: Number(meetupId),
-        rsvp_ids: selectedParticipants,
-        send_email: emailNotification,
+        rsvp_ids: joinedParticipants.map((id) => Number(id)),
       });
 
       if (response.success) {
         showSnackbar.success(
-          response.message || `已确认 ${selectedParticipants.length} 位参与者`
+          response.message || `已取消 ${joinedParticipants.length} 位参与者`
         );
         // 刷新列表
         loadData();
       } else {
-        showSnackbar.error(response.error || '确认失败');
+        showSnackbar.error(response.error || '取消失败');
       }
     } catch (error) {
-      console.error('批量确认失败:', error);
-      showSnackbar.error('批量确认失败');
+      console.error('批量取消失败:', error);
+      showSnackbar.error('批量取消失败');
     }
     setSelectedParticipants([]);
-    setEmailNotification(false);
-  };
-
-  // 批量拒绝选中的参与者
-  const rejectSelected = async () => {
-    for (const id of selectedParticipants) {
-      await updateParticipantStatus(id, 'cancelled');
-    }
-    setSelectedParticipants([]);
-    showSnackbar.success('已拒绝选中的参与者');
   };
 
   if (isLoading) {
@@ -228,13 +308,18 @@ const MeetupParticipants: React.FC = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* 页面标题 */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
-          {meetup.title} - 报名管理
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          查看和管理活动报名人员，进行筛选和确认
-        </Typography>
+      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <IconButton onClick={() => navigate('/meetup-participants-list')}>
+          <ArrowBack />
+        </IconButton>
+        <Box>
+          <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
+            {meetup.title} - 报名管理
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            查看和管理活动报名人员，进行筛选和确认
+          </Typography>
+        </Box>
       </Box>
 
       {/* 统计信息 */}
@@ -243,7 +328,7 @@ const MeetupParticipants: React.FC = () => {
           <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             <Box>
               <Typography variant="h5" fontWeight="bold">
-                {participants.length}
+                {stats.total}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 总报名人数
@@ -251,18 +336,18 @@ const MeetupParticipants: React.FC = () => {
             </Box>
             <Box>
               <Typography variant="h5" fontWeight="bold">
-                {participants.filter((p) => p.status === 'confirmed').length}
+                {stats.joined}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                已确认
+                已报名
               </Typography>
             </Box>
             <Box>
               <Typography variant="h5" fontWeight="bold">
-                {participants.filter((p) => p.status === 'cancelled').length}
+                {stats.cancelled}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                已拒绝
+                已取消
               </Typography>
             </Box>
           </Box>
@@ -297,31 +382,26 @@ const MeetupParticipants: React.FC = () => {
             onChange={(e) => setFilterStatus(e.target.value)}
           >
             <MenuItem value="all">全部</MenuItem>
-            <MenuItem value="confirmed">已确认</MenuItem>
-            <MenuItem value="cancelled">已拒绝</MenuItem>
+            <MenuItem value={RSVPStatus.CONFIRMED}>已报名</MenuItem>
+            <MenuItem value={RSVPStatus.CANCELLED}>已取消</MenuItem>
           </Select>
         </FormControl>
 
         {/* 操作按钮 */}
         {selectedParticipants.length > 0 && (
-          <>
-            <Button
-              variant="contained"
-              color="success"
-              onClick={() => setShowConfirmDialog(true)}
-            >
-              确认选中 ({selectedParticipants.length})
-            </Button>
-            <Button variant="contained" color="error" onClick={rejectSelected}>
-              拒绝选中 ({selectedParticipants.length})
-            </Button>
-          </>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => setShowConfirmDialog(true)}
+          >
+            取消选中 ({selectedParticipants.length})
+          </Button>
         )}
 
         {/* 返回按钮 */}
         <Button
           variant="outlined"
-          onClick={() => navigate(`/meetup?id=${meetup.id}`)}
+          onClick={() => navigate(`/meetup-detail?id=${meetup.id}`)}
         >
           返回活动详情
         </Button>
@@ -367,7 +447,8 @@ const MeetupParticipants: React.FC = () => {
                 <TableCell>邮箱</TableCell>
                 <TableCell>报名时间</TableCell>
                 <TableCell>报名答案</TableCell>
-                <TableCell>状态</TableCell>
+                <TableCell>报名状态</TableCell>
+                <TableCell>审批状态</TableCell>
                 <TableCell>操作</TableCell>
               </TableRow>
             </TableHead>
@@ -378,6 +459,7 @@ const MeetupParticipants: React.FC = () => {
                     <Checkbox
                       checked={selectedParticipants.includes(participant.id)}
                       onChange={() => toggleSelect(participant.id)}
+                      disabled={participant.status === RSVPStatus.CANCELLED}
                     />
                   </TableCell>
                   <TableCell>
@@ -419,41 +501,68 @@ const MeetupParticipants: React.FC = () => {
                         borderRadius: 1,
                         fontSize: '0.75rem',
                         fontWeight: 500,
-                        backgroundColor:
-                          participant.status === 'confirmed'
-                            ? 'rgba(76, 175, 80, 0.1)'
-                            : 'rgba(244, 67, 54, 0.1)',
-                        color:
-                          participant.status === 'confirmed'
-                            ? '#4caf50'
-                            : '#f44336',
+                        textAlign: 'center',
+                        backgroundColor: getRSVPStatusStyle(participant.status)
+                          .backgroundColor,
+                        color: getRSVPStatusStyle(participant.status).color,
                       }}
                     >
-                      {participant.status === 'confirmed' ? '已确认' : '已拒绝'}
+                      {getRSVPStatusLabel(participant.status)}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Box
+                      sx={{
+                        px: 2,
+                        py: 1,
+                        borderRadius: 1,
+                        fontSize: '0.75rem',
+                        fontWeight: 500,
+                        textAlign: 'center',
+                        backgroundColor: getApprovalStatusStyle(
+                          participant.application_status
+                        ).backgroundColor,
+                        color: getApprovalStatusStyle(
+                          participant.application_status
+                        ).color,
+                      }}
+                    >
+                      {getApprovalStatusLabel(participant.application_status)}
                     </Box>
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        size="small"
-                        color="success"
-                        onClick={() =>
-                          updateParticipantStatus(participant.id, 'confirmed')
-                        }
-                        disabled={participant.status === 'confirmed'}
-                      >
-                        确认
-                      </Button>
-                      <Button
-                        size="small"
-                        color="error"
-                        onClick={() =>
-                          updateParticipantStatus(participant.id, 'cancelled')
-                        }
-                        disabled={participant.status === 'cancelled'}
-                      >
-                        拒绝
-                      </Button>
+                      {participant.application_status ===
+                        ApprovalStatus.PENDING && (
+                        <>
+                          <Button
+                            size="small"
+                            color="success"
+                            onClick={() => approveParticipant(participant.id)}
+                          >
+                            通过
+                          </Button>
+                          <Button
+                            size="small"
+                            color="error"
+                            onClick={() => rejectParticipant(participant.id)}
+                          >
+                            拒绝
+                          </Button>
+                        </>
+                      )}
+                      {participant.application_status ===
+                        ApprovalStatus.APPROVED && (
+                        <Typography variant="body2" color="text.secondary">
+                          已审批通过
+                        </Typography>
+                      )}
+                      {participant.application_status ===
+                        ApprovalStatus.REJECTED && (
+                        <Typography variant="body2" color="text.secondary">
+                          已拒绝
+                        </Typography>
+                      )}
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -461,6 +570,17 @@ const MeetupParticipants: React.FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
+
+        {/* 分页组件 */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, pb: 4 }}>
+          <Pagination
+            count={Math.ceil(totalCount / pageSize)}
+            page={currentPage}
+            onChange={handlePageChange}
+            color="primary"
+            size="large"
+          />
+        </Box>
       </Card>
 
       {/* 空状态 */}
@@ -477,25 +597,16 @@ const MeetupParticipants: React.FC = () => {
         open={showConfirmDialog}
         onClose={() => setShowConfirmDialog(false)}
       >
-        <DialogTitle>确认选中的参与者</DialogTitle>
+        <DialogTitle>取消报名</DialogTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            确定要确认选中的 {selectedParticipants.length} 位参与者吗？
+            确定要取消选中的 {selectedParticipants.length} 位参与者的报名吗？
           </Typography>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={emailNotification}
-                onChange={(e) => setEmailNotification(e.target.checked)}
-              />
-            }
-            label="发送确认邮件通知"
-          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowConfirmDialog(false)}>取消</Button>
-          <Button variant="contained" onClick={confirmSelected}>
-            确认
+          <Button variant="contained" color="error" onClick={cancelSelected}>
+            确认取消
           </Button>
         </DialogActions>
       </Dialog>

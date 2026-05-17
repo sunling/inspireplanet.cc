@@ -282,11 +282,16 @@ const MeetupDetail: React.FC = () => {
         setRsvpForm({
           name: userInfo.name || userInfo.email || '',
           email: userInfo.email || '',
+          question_answer: '',
         });
         setShowRSVPDialog(true);
       } else {
         // 未登录：显示表单
-        setRsvpForm({ name: '', email: '' });
+        setRsvpForm({
+          name: '',
+          email: '',
+          question_answer: '',
+        });
         setShowRSVPDialog(true);
       }
     } catch (error) {
@@ -313,7 +318,7 @@ const MeetupDetail: React.FC = () => {
     }
 
     // 检查自定义问题是否必填
-    if (meetup.question_required && !rsvpForm.question_answer.trim()) {
+    if (meetup.question_required && !rsvpForm.question_answer?.trim()) {
       showSnackbar.warning('请回答报名问题');
       return;
     }
@@ -327,7 +332,7 @@ const MeetupDetail: React.FC = () => {
         email: rsvpForm.email.trim() || undefined,
         user_id: getUserId(),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        question_answer: rsvpForm.question_answer.trim() || undefined, // 添加自定义问题答案
+        question_answer: rsvpForm.question_answer?.trim() || undefined, // 添加自定义问题答案
       };
       if (episode) {
         payload.episode_date = episode.date;
@@ -785,11 +790,19 @@ const MeetupDetail: React.FC = () => {
                           justifyContent: 'space-between',
                           p: 1.5,
                           bgcolor:
-                            s.status === 'confirmed' ? '#f0fdf4' : '#f9f9f9',
+                            s.status === 'confirmed'
+                              ? '#f0fdf4'
+                              : s.status === 'pending'
+                                ? '#fffbeb'
+                                : '#f9f9f9',
                           borderRadius: 1,
                           border: '1px solid',
                           borderColor:
-                            s.status === 'confirmed' ? '#bbf7d0' : '#eee',
+                            s.status === 'confirmed'
+                              ? '#bbf7d0'
+                              : s.status === 'pending'
+                                ? '#fde68a'
+                                : '#eee',
                         }}
                       >
                         <Box>
@@ -811,6 +824,14 @@ const MeetupDetail: React.FC = () => {
                                 sx={{ height: 18, fontSize: '0.65rem' }}
                               />
                             )}
+                            {s.status === 'pending' && (
+                              <Chip
+                                label="待处理"
+                                size="small"
+                                color="warning"
+                                sx={{ height: 18, fontSize: '0.65rem' }}
+                              />
+                            )}
                           </Box>
                           <Typography variant="body2" color="text.secondary">
                             {s.topic}
@@ -819,7 +840,7 @@ const MeetupDetail: React.FC = () => {
                         </Box>
                         {isOrganizer() && (
                           <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            {s.status !== 'confirmed' && (
+                            {s.status === 'pending' && (
                               <Button
                                 size="small"
                                 color="success"
@@ -827,7 +848,7 @@ const MeetupDetail: React.FC = () => {
                                   handleUpdateSignupStatus(s.id!, 'confirmed')
                                 }
                               >
-                                确认
+                                通过
                               </Button>
                             )}
                             <Button
@@ -836,6 +857,7 @@ const MeetupDetail: React.FC = () => {
                               onClick={() =>
                                 handleUpdateSignupStatus(s.id!, 'cancelled')
                               }
+                              disabled={s.status === 'cancelled'}
                             >
                               移除
                             </Button>
@@ -981,6 +1003,8 @@ const MeetupDetail: React.FC = () => {
         onClose={() => setShowRSVPDialog(false)}
         maxWidth="xs"
         fullWidth
+        keepMounted
+        disableEnforceFocus
       >
         <DialogTitle sx={{ pb: 0 }}>
           {isUserLoggedIn() ? `确认报名` : '填写报名信息'}
@@ -1038,11 +1062,11 @@ const MeetupDetail: React.FC = () => {
                         }
                         error={
                           meetup.question_required &&
-                          !rsvpForm.question_answer.trim()
+                          !rsvpForm.question_answer?.trim()
                         }
                         helperText={
                           meetup.question_required &&
-                          !rsvpForm.question_answer.trim()
+                          !rsvpForm.question_answer?.trim()
                             ? '请回答此问题'
                             : undefined
                         }
@@ -1121,11 +1145,11 @@ const MeetupDetail: React.FC = () => {
                         }
                         error={
                           meetup.question_required &&
-                          !rsvpForm.question_answer.trim()
+                          !rsvpForm.question_answer?.trim()
                         }
                         helperText={
                           meetup.question_required &&
-                          !rsvpForm.question_answer.trim()
+                          !rsvpForm.question_answer?.trim()
                             ? '请回答此问题'
                             : undefined
                         }
@@ -1186,6 +1210,8 @@ const MeetupDetail: React.FC = () => {
         onClose={() => setShowFollowModal(false)}
         maxWidth="xs"
         fullWidth
+        keepMounted
+        disableEnforceFocus
       >
         <DialogTitle sx={{ textAlign: 'center', pb: 0 }}>
           🎉 报名成功！
@@ -1227,6 +1253,8 @@ const MeetupDetail: React.FC = () => {
         onClose={() => setShowQRModal(false)}
         maxWidth="sm"
         fullWidth
+        keepMounted
+        disableEnforceFocus
       >
         <DialogTitle>扫码进群</DialogTitle>
         <DialogContent sx={{ textAlign: 'center', py: 4 }}>
@@ -1267,6 +1295,8 @@ const MeetupDetail: React.FC = () => {
         onClose={() => setShowParticipantsModal(false)}
         maxWidth="sm"
         fullWidth
+        keepMounted
+        disableEnforceFocus
       >
         <DialogTitle>报名人员名单</DialogTitle>
         <DialogContent>
@@ -1314,6 +1344,8 @@ const MeetupDetail: React.FC = () => {
         onClose={() => setShowShareModal(false)}
         maxWidth="sm"
         fullWidth
+        keepMounted
+        disableEnforceFocus
       >
         <DialogTitle
           sx={{
@@ -1400,6 +1432,8 @@ const MeetupDetail: React.FC = () => {
         onClose={() => setShowSpeakerForm(false)}
         maxWidth="sm"
         fullWidth
+        keepMounted
+        disableEnforceFocus
       >
         <DialogTitle sx={{ fontWeight: 600 }}>报名分享 🎤</DialogTitle>
         <DialogContent
@@ -1470,6 +1504,8 @@ const MeetupDetail: React.FC = () => {
         onClose={() => setShowEpisodeEditor(false)}
         maxWidth="sm"
         fullWidth
+        keepMounted
+        disableEnforceFocus
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
           编辑本期内容 {episode && `· EP${episode.episode_number}`}
