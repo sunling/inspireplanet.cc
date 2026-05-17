@@ -183,7 +183,7 @@ async function handleCreate(event: NetlifyEvent) {
       const { data, error } = await supabase
         .from('meetup_rsvps')
         .update({
-          status: RSVPStatus.JOINED,
+          status: RSVPStatus.CONFIRMED,
           application_status: ApprovalStatus.PENDING,
           question_answer: rsvpData.question_answer || null,
         })
@@ -198,8 +198,10 @@ async function handleCreate(event: NetlifyEvent) {
             meetup_id: meetupIdNum,
             name,
             user_id: userId as any,
-            status: RSVPStatus.JOINED,
-            application_status: ApprovalStatus.PENDING,
+            status: RSVPStatus.CONFIRMED,
+            application_status: rsvpData.question_required
+              ? ApprovalStatus.AUTO
+              : ApprovalStatus.PENDING,
             question_answer: rsvpData.question_answer || null,
             ...(episodeId !== null ? { episode_id: episodeId } : {}),
           },
