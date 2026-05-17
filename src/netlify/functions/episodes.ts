@@ -1,9 +1,5 @@
 import { supabase } from '../../database/supabase';
-import {
-  NetlifyContext,
-  NetlifyEvent,
-  NetlifyResponse,
-} from '../types/http';
+import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -47,7 +43,9 @@ export async function handler(
 }
 
 // 获取某个循环活动在指定日期的期次信息
-async function handleGetByMeetupDate(event: NetlifyEvent): Promise<NetlifyResponse> {
+async function handleGetByMeetupDate(
+  event: NetlifyEvent
+): Promise<NetlifyResponse> {
   const { meetup_id, date } = getDataFromEvent(event);
   if (!meetup_id || !date) return createErrorResponse('缺少必填字段');
 
@@ -78,13 +76,22 @@ async function handleUpsert(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('没有权限', 403);
   }
 
-  const { meetup_id, episode_number, date, theme, description } = getDataFromEvent(event);
-  if (!meetup_id || !episode_number || !date) return createErrorResponse('缺少必填字段');
+  const { meetup_id, episode_number, date, theme, description } =
+    getDataFromEvent(event);
+  if (!meetup_id || !episode_number || !date)
+    return createErrorResponse('缺少必填字段');
 
   const { data, error } = await supabase
     .from('meetup_episodes')
     .upsert(
-      { meetup_id, episode_number, date, theme, description, updated_at: new Date().toISOString() },
+      {
+        meetup_id,
+        episode_number,
+        date,
+        theme,
+        description,
+        updated_at: new Date().toISOString(),
+      },
       { onConflict: 'meetup_id,episode_number' }
     )
     .select()

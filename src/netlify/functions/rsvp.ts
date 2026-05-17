@@ -67,8 +67,12 @@ async function handleCreate(event: NetlifyEvent) {
     const rsvpData = getDataFromEvent(event);
     const meetupIdNum = Number(rsvpData.meetup_id);
     const name = String(rsvpData.name || '').trim();
-    const guestEmail = rsvpData.email ? String(rsvpData.email).trim() : undefined;
-    const timezone = rsvpData.timezone ? String(rsvpData.timezone) : 'Asia/Shanghai';
+    const guestEmail = rsvpData.email
+      ? String(rsvpData.email).trim()
+      : undefined;
+    const timezone = rsvpData.timezone
+      ? String(rsvpData.timezone)
+      : 'Asia/Shanghai';
     const authUserId = await getUserIdFromAuth(event);
     const providedUserId =
       rsvpData.user_id !== undefined ? rsvpData.user_id : null;
@@ -98,7 +102,9 @@ async function handleCreate(event: NetlifyEvent) {
 
     const { data: meetup, error: meetupError } = await supabase
       .from('meetups')
-      .select('id, max_ppl, status, title, datetime, location, mode, is_recurring, duration')
+      .select(
+        'id, max_ppl, status, title, datetime, location, mode, is_recurring, duration'
+      )
       .eq('id', meetupIdNum)
       .single();
 
@@ -112,11 +118,19 @@ async function handleCreate(event: NetlifyEvent) {
 
     // 定期活动：upsert episode 记录，获取 episode_id
     let episodeId: number | null = null;
-    if (episodeDate && episodeNumber !== undefined && Number.isFinite(episodeNumber)) {
+    if (
+      episodeDate &&
+      episodeNumber !== undefined &&
+      Number.isFinite(episodeNumber)
+    ) {
       const { data: ep, error: epError } = await supabase
         .from('meetup_episodes')
         .upsert(
-          { meetup_id: meetupIdNum, episode_number: episodeNumber, date: episodeDate },
+          {
+            meetup_id: meetupIdNum,
+            episode_number: episodeNumber,
+            date: episodeDate,
+          },
           { onConflict: 'meetup_id,episode_number' }
         )
         .select('id')
@@ -140,7 +154,6 @@ async function handleCreate(event: NetlifyEvent) {
       const { data: byUser } = await q.limit(1);
       if (byUser && byUser.length > 0) existingRSVP = byUser[0];
     }
-
 
     if (existingRSVP && existingRSVP.status === 'confirmed') {
       return createErrorResponse('您已经报名了这个活动');
@@ -168,7 +181,10 @@ async function handleCreate(event: NetlifyEvent) {
     if (existingRSVP) {
       const { data, error } = await supabase
         .from('meetup_rsvps')
-        .update({ status: 'confirmed' })
+        .update({
+          status: 'confirmed',
+          question_answer: rsvpData.question_answer || null,
+        })
         .eq('id', existingRSVP.id)
         .select();
       result = { data, error };
@@ -181,6 +197,7 @@ async function handleCreate(event: NetlifyEvent) {
             name,
             user_id: userId as any,
             status: 'confirmed',
+            question_answer: rsvpData.question_answer || null,
             ...(episodeId !== null ? { episode_id: episodeId } : {}),
           },
         ])
@@ -197,7 +214,9 @@ async function handleCreate(event: NetlifyEvent) {
     const recipientName = name || '同学';
     let recipientEmail: string | undefined = guestEmail;
     if (!recipientEmail && authUserId) {
-      const { data: authUser } = await supabase.auth.admin.getUserById(String(authUserId));
+      const { data: authUser } = await supabase.auth.admin.getUserById(
+        String(authUserId)
+      );
       recipientEmail = authUser?.user?.email;
     }
     if (recipientEmail) {
@@ -342,13 +361,19 @@ async function handleUpdate(event: NetlifyEvent) {
     const idNum = Number(idTrimmed);
     const hasNum = Number.isFinite(idNum);
 
-    const allowedFields = ['status', 'name'];
-    const updateRecord = {};
+    const allowedFields = [
+      'status',
+      'name',
+      'question_answer',
+      'application_status',
+      'approved_by',
+      'email_sent',
+      'email_sent_at',
+    ];
+    const updateRecord: Record<string, any> = {};
     allowedFields.forEach((field) => {
       if (updateData[field] !== undefined) {
-        (updateRecord as Record<string, any>)[field] = (
-          updateData as Record<string, any>
-        )[field];
+        updateRecord[field] = updateData[field];
       }
     });
 
@@ -534,7 +559,9 @@ async function handleGetByMeetupId(event: NetlifyEvent) {
       query = query.eq('episode_id', Number(episode_id));
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const { data, error } = await query.order('created_at', {
+      ascending: false,
+    });
 
     if (error) {
       console.error('Database error:', error);

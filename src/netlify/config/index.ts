@@ -8,6 +8,7 @@ export { default as weeklyCardsApi } from '../services/weeklyCards';
 export { default as commentsApi } from '../services/comments';
 export { default as meetupsApi } from '../services/meetups';
 export { default as rsvpApi } from '../services/rsvp';
+export { default as participantsApi } from '../services/participants';
 export { default as peopleApi } from '../services/people';
 export { default as oneOnOneApi } from '../services/oneOnOne';
 export { default as notificationsApi } from '../services/notifications';

@@ -20,15 +20,25 @@ export async function getUserIdFromAuth(event: any): Promise<string | null> {
 
   // Try Supabase Auth token
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    console.log('[auth] supabase.auth.getUser:', { error: error?.message, email: user?.email });
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+    console.log('[auth] supabase.auth.getUser:', {
+      error: error?.message,
+      email: user?.email,
+    });
     if (!error && user?.email) {
       const { data: row } = await supabase
         .from('users')
         .select('id')
         .eq('email', user.email)
         .single();
-      console.log('[auth] users table lookup:', { email: user.email, found: !!row, id: row?.id });
+      console.log('[auth] users table lookup:', {
+        email: user.email,
+        found: !!row,
+        id: row?.id,
+      });
       if (row?.id) return String(row.id);
     }
   } catch (e) {
@@ -39,7 +49,10 @@ export async function getUserIdFromAuth(event: any): Promise<string | null> {
   try {
     const jwt = require('jsonwebtoken');
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
-    console.log('[auth] legacy JWT decoded userId:', decoded.userId || decoded.user_id);
+    console.log(
+      '[auth] legacy JWT decoded userId:',
+      decoded.userId || decoded.user_id
+    );
     return decoded.userId || decoded.user_id || null;
   } catch {
     return null;

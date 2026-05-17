@@ -57,11 +57,9 @@ export const weeklyCardsApi = {
     detail: string;
     episode: string;
   }): Promise<ApiResponse<{ id: string; message: string }>> => {
-    return http.post<{ id: string; message: string }>(
-      '/uploadCard',
-      'create',
-      { record: data }
-    );
+    return http.post<{ id: string; message: string }>('/uploadCard', 'create', {
+      record: data,
+    });
   },
 };
 

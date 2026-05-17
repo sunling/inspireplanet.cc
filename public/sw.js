@@ -15,13 +15,17 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     Promise.all([
       // 清理旧版本缓存
-      caches.keys().then((cacheNames) =>
-        Promise.all(
-          cacheNames
-            .filter((name) => name !== CACHE_NAME && name !== STATIC_ASSETS_CACHE)
-            .map((name) => caches.delete(name))
-        )
-      ),
+      caches
+        .keys()
+        .then((cacheNames) =>
+          Promise.all(
+            cacheNames
+              .filter(
+                (name) => name !== CACHE_NAME && name !== STATIC_ASSETS_CACHE
+              )
+              .map((name) => caches.delete(name))
+          )
+        ),
       // 立即接管所有客户端
       self.clients.claim(),
     ])
@@ -43,7 +47,10 @@ self.addEventListener('fetch', (event) => {
   }
 
   // API 请求不缓存
-  if (url.pathname.startsWith('/.netlify/functions') || url.pathname.startsWith('/api')) {
+  if (
+    url.pathname.startsWith('/.netlify/functions') ||
+    url.pathname.startsWith('/api')
+  ) {
     return;
   }
 
@@ -85,8 +92,11 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
+        const responseClone = response.clone();
         if (response.ok) {
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put(request, responseClone));
         }
         return response;
       })

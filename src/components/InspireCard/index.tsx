@@ -59,9 +59,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
     });
   };
 
-  const [likes, setLikes] = useState<number>(
-    Number(card.likes_count) || 0
-  );
+  const [likes, setLikes] = useState<number>(Number(card.likes_count) || 0);
 
   const handleLike = async () => {
     try {

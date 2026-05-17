@@ -18,7 +18,7 @@ const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
     children: React.ReactElement<any, any>;
   },
-  ref: React.Ref<unknown>,
+  ref: React.Ref<unknown>
 ) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
@@ -29,7 +29,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const PWAInstallPrompt: React.FC = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -40,14 +41,16 @@ const PWAInstallPrompt: React.FC = () => {
     setIsIOS(isIOSDevice);
 
     // 检查是否已经以standalone模式运行
-    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
+    const isInStandaloneMode = window.matchMedia(
+      '(display-mode: standalone)'
+    ).matches;
     setIsStandalone(isInStandaloneMode);
 
     // 监听beforeinstallprompt事件
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      
+
       // 延迟显示提示，避免在页面加载时立即显示
       setTimeout(() => {
         setShowPrompt(true);
@@ -68,7 +71,10 @@ const PWAInstallPrompt: React.FC = () => {
     }
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener(
+        'beforeinstallprompt',
+        handleBeforeInstallPrompt
+      );
     };
   }, []);
 
@@ -76,11 +82,11 @@ const PWAInstallPrompt: React.FC = () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      
+
       if (outcome === 'accepted') {
         console.log('User accepted the install prompt');
       }
-      
+
       setDeferredPrompt(null);
       setShowPrompt(false);
       localStorage.setItem('pwa-prompt-shown', 'true');
@@ -104,7 +110,13 @@ const PWAInstallPrompt: React.FC = () => {
       keepMounted
       aria-describedby="pwa-install-dialog-description"
     >
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <DialogTitle
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AddToHomeScreenIcon color="primary" />
           <Typography variant="h6">安装启发星球</Typography>
@@ -117,7 +129,7 @@ const PWAInstallPrompt: React.FC = () => {
         <Typography id="pwa-install-dialog-description" sx={{ mb: 2 }}>
           将启发星球添加到主屏幕，获得更好的使用体验！
         </Typography>
-        
+
         {isIOS ? (
           <Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -137,21 +149,30 @@ const PWAInstallPrompt: React.FC = () => {
           </Typography>
         )}
       </DialogContent>
-      
+
       {!isIOS && (
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleClose} color="inherit">
             暂不安装
           </Button>
-          <Button onClick={handleInstallClick} variant="contained" color="primary">
+          <Button
+            onClick={handleInstallClick}
+            variant="contained"
+            color="primary"
+          >
             立即安装
           </Button>
         </DialogActions>
       )}
-      
+
       {isIOS && (
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleClose} variant="contained" color="primary" fullWidth>
+          <Button
+            onClick={handleClose}
+            variant="contained"
+            color="primary"
+            fullWidth
+          >
             我知道了
           </Button>
         </DialogActions>

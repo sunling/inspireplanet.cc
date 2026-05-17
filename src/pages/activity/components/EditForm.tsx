@@ -15,6 +15,7 @@ import useResponsive from '../../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../../context/app';
 import { imagesApi } from '../../../netlify/config';
 import { getUserId } from '../../../utils';
+import MeetupQuestionSection from '../../../components/MeetupQuestionSection';
 
 import { Meetup, MeetupList } from '../../../netlify/functions/meetup';
 
@@ -112,10 +113,17 @@ const EditForm: React.FC<EditFormProps> = ({
     if (!values.cover && !existingQrUrl) newErrors.cover = '请上传活动群二维码';
 
     // 日期时间验证（循环活动不校验）
-    if (!values.is_recurring && values.datetime && new Date(values.datetime) <= new Date()) {
+    if (
+      !values.is_recurring &&
+      values.datetime &&
+      new Date(values.datetime) <= new Date()
+    ) {
       newErrors.datetime = '活动时间必须是未来时间';
     }
-    if (values.is_recurring && (values.recurrence_day === undefined || values.recurrence_day === null)) {
+    if (
+      values.is_recurring &&
+      (values.recurrence_day === undefined || values.recurrence_day === null)
+    ) {
       newErrors.recurrence_day = '请选择每周几举办';
     }
     setErrors(newErrors);
@@ -386,7 +394,9 @@ const EditForm: React.FC<EditFormProps> = ({
                         setFormValues((prev) => ({
                           ...prev,
                           is_recurring: e.target.checked,
-                          recurrence_day: e.target.checked ? (prev.recurrence_day ?? 6) : undefined,
+                          recurrence_day: e.target.checked
+                            ? (prev.recurrence_day ?? 6)
+                            : undefined,
                         }))
                       }
                     />
@@ -419,16 +429,22 @@ const EditForm: React.FC<EditFormProps> = ({
                   size={isMobile ? 'small' : 'medium'}
                   InputProps={{ readOnly: viewOnly }}
                 >
-                  {['周日','周一','周二','周三','周四','周五','周六'].map((label, i) => (
-                    <MenuItem key={i} value={i}>{label}</MenuItem>
-                  ))}
+                  {['周日', '周一', '周二', '周三', '周四', '周五', '周六'].map(
+                    (label, i) => (
+                      <MenuItem key={i} value={i}>
+                        {label}
+                      </MenuItem>
+                    )
+                  )}
                 </TextField>
               </Box>
             )}
 
             <Box sx={{ mb: 3 }}>
               <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
-                {formValues.is_recurring ? '举办时间（每周几点开始）' : '活动时间'}
+                {formValues.is_recurring
+                  ? '举办时间（每周几点开始）'
+                  : '活动时间'}
               </Typography>
               <TextField
                 fullWidth
@@ -676,6 +692,21 @@ const EditForm: React.FC<EditFormProps> = ({
             </Box>
           </Box>
         </Box>
+
+        {/* 自定义报名问题 */}
+        <MeetupQuestionSection
+          questionText={formValues.question_text || ''}
+          questionType={formValues.question_type || 'text'}
+          questionOptions={formValues.question_options || ''}
+          questionRequired={!!formValues.question_required}
+          onChange={(data) =>
+            setFormValues((prev) => ({
+              ...prev,
+              ...data,
+            }))
+          }
+          viewOnly={viewOnly}
+        />
 
         {!viewOnly && onSubmit && (
           <Button

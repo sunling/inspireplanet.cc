@@ -37,6 +37,11 @@ export interface Meetup {
   recurrence_day?: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
   episode_start_date?: string; // YYYY-MM-DD, date of EP1
   default_theme?: string; // fallback when no episode theme is set
+  // 自定义报名问题字段
+  question_text?: string; // 问题文本
+  question_required?: boolean; // 是否必填
+  question_type?: string; // 问题类型: text, select, checkbox
+  question_options?: string; // 选项，用逗号分隔
 }
 
 export interface MeetupRequest extends Omit<Meetup, 'id'> {}
@@ -157,7 +162,14 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
           status: 'active',
           user_id: meetupData.user_id || null,
           is_recurring: meetupData.is_recurring || false,
-          recurrence_day: meetupData.is_recurring ? meetupData.recurrence_day ?? null : null,
+          recurrence_day: meetupData.is_recurring
+            ? (meetupData.recurrence_day ?? null)
+            : null,
+          // 自定义报名问题字段
+          question_text: meetupData.question_text || null,
+          question_required: meetupData.question_required || false,
+          question_type: meetupData.question_type || 'text',
+          question_options: meetupData.question_options || null,
         },
       ])
       .select();

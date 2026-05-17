@@ -7,11 +7,17 @@ export const speakerSignupsApi = {
     meetup_id: number,
     episode_number: number
   ): Promise<ApiResponse<{ signups: SpeakerSignup[] }>> => {
-    return http.get('/speakerSignups', 'getByEpisode', { meetup_id, episode_number });
+    return http.get('/speakerSignups', 'getByEpisode', {
+      meetup_id,
+      episode_number,
+    });
   },
 
   create: async (
-    data: Pick<SpeakerSignup, 'meetup_id' | 'episode_number' | 'name' | 'topic' | 'duration'>
+    data: Pick<
+      SpeakerSignup,
+      'meetup_id' | 'episode_number' | 'name' | 'topic' | 'duration'
+    >
   ): Promise<ApiResponse<{ signup: SpeakerSignup }>> => {
     return http.post('/speakerSignups', 'create', data);
   },

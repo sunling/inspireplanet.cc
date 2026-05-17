@@ -121,7 +121,13 @@ export interface SurveyResults {
 
 // 动作类型
 export interface SurveyAction {
-  action: 'getAll' | 'getById' | 'create' | 'update' | 'delete' | 'toggleActive';
+  action:
+    | 'getAll'
+    | 'getById'
+    | 'create'
+    | 'update'
+    | 'delete'
+    | 'toggleActive';
 }
 
 export interface SurveySubmissionAction {

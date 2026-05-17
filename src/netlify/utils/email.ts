@@ -17,7 +17,10 @@ interface RSVPConfirmParams {
   timezone?: string;
 }
 
-function formatInTimezone(date: Date, timezone: string): { dateStr: string; timeStr: string; tzLabel: string } {
+function formatInTimezone(
+  date: Date,
+  timezone: string
+): { dateStr: string; timeStr: string; tzLabel: string } {
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
   // Get all parts in one call
@@ -32,8 +35,16 @@ function formatInTimezone(date: Date, timezone: string): { dateStr: string; time
     weekday: 'short',
   }).formatToParts(date);
 
-  const get = (type: string) => parts.find(p => p.type === type)?.value ?? '';
-  const wdMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  const wdMap: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
   const wdNum = wdMap[get('weekday').slice(0, 3)] ?? 0;
 
   const h = get('hour').padStart(2, '0');
@@ -59,16 +70,29 @@ function formatInTimezone(date: Date, timezone: string): { dateStr: string; time
 }
 
 function generateICS(params: RSVPConfirmParams): string {
-  const { meetupTitle, meetupId, eventDatetime, durationHours = 1, location, episodeNumber } = params;
+  const {
+    meetupTitle,
+    meetupId,
+    eventDatetime,
+    durationHours = 1,
+    location,
+    episodeNumber,
+  } = params;
   const start = new Date(eventDatetime);
   const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
 
   const fmt = (d: Date) =>
-    d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    d
+      .toISOString()
+      .replace(/[-:]/g, '')
+      .replace(/\.\d{3}/, '');
 
-  const escape = (s: string) => s.replace(/[,;\\]/g, c => '\\' + c).replace(/\n/g, '\\n');
+  const escape = (s: string) =>
+    s.replace(/[,;\\]/g, (c) => '\\' + c).replace(/\n/g, '\\n');
 
-  const title = episodeNumber ? `${meetupTitle} EP${episodeNumber}` : meetupTitle;
+  const title = episodeNumber
+    ? `${meetupTitle} EP${episodeNumber}`
+    : meetupTitle;
   const url = `${SITE_URL}/meetup-detail?id=${meetupId}`;
 
   return [
@@ -86,22 +110,36 @@ function generateICS(params: RSVPConfirmParams): string {
     `UID:inspireplanet-meetup-${meetupId}-${start.getTime()}@inspireplanet.cc`,
     'END:VEVENT',
     'END:VCALENDAR',
-  ].filter(Boolean).join('\r\n');
+  ]
+    .filter(Boolean)
+    .join('\r\n');
 }
 
 export async function sendRSVPConfirmEmail(params: RSVPConfirmParams) {
-  const { to, name, meetupTitle, meetupId, eventDatetime, location, mode, episodeNumber, timezone = 'Asia/Shanghai' } = params;
+  const {
+    to,
+    name,
+    meetupTitle,
+    meetupId,
+    eventDatetime,
+    location,
+    mode,
+    episodeNumber,
+    timezone = 'Asia/Shanghai',
+  } = params;
 
   const date = new Date(eventDatetime);
   const { dateStr, timeStr, tzLabel } = formatInTimezone(date, timezone);
 
-  const titleLine = episodeNumber ? `${meetupTitle} EP${episodeNumber}` : meetupTitle;
+  const titleLine = episodeNumber
+    ? `${meetupTitle} EP${episodeNumber}`
+    : meetupTitle;
   const locationLine =
     mode === 'offline' && location
       ? location
       : mode === 'online'
-      ? '线上（会议链接见活动详情）'
-      : location || '待定';
+        ? '线上（会议链接见活动详情）'
+        : location || '待定';
 
   const detailUrl = `${SITE_URL}/meetup-detail?id=${meetupId}`;
 
@@ -161,7 +199,9 @@ export async function sendRSVPConfirmEmail(params: RSVPConfirmParams) {
       to,
       subject: `报名确认：${titleLine}`,
       html,
-      attachments: [{ filename, content: Buffer.from(icsContent).toString('base64') }],
+      attachments: [
+        { filename, content: Buffer.from(icsContent).toString('base64') },
+      ],
     });
   } catch (err) {
     console.error('发送确认邮件失败:', err);
@@ -174,16 +214,32 @@ interface SpeakerConfirmParams extends RSVPConfirmParams {
 }
 
 export async function sendSpeakerConfirmEmail(params: SpeakerConfirmParams) {
-  const { to, name, topic, duration, meetupTitle, meetupId, eventDatetime, location, mode, episodeNumber, timezone = 'Asia/Shanghai' } = params;
+  const {
+    to,
+    name,
+    topic,
+    duration,
+    meetupTitle,
+    meetupId,
+    eventDatetime,
+    location,
+    mode,
+    episodeNumber,
+    timezone = 'Asia/Shanghai',
+  } = params;
 
   const date = new Date(eventDatetime);
   const { dateStr, timeStr, tzLabel } = formatInTimezone(date, timezone);
 
-  const titleLine = episodeNumber ? `${meetupTitle} EP${episodeNumber}` : meetupTitle;
+  const titleLine = episodeNumber
+    ? `${meetupTitle} EP${episodeNumber}`
+    : meetupTitle;
   const locationLine =
-    mode === 'offline' && location ? location
-    : mode === 'online' ? '线上（会议链接见活动详情）'
-    : location || '待定';
+    mode === 'offline' && location
+      ? location
+      : mode === 'online'
+        ? '线上（会议链接见活动详情）'
+        : location || '待定';
   const detailUrl = `${SITE_URL}/meetup-detail?id=${meetupId}`;
 
   const html = `
@@ -244,7 +300,9 @@ export async function sendSpeakerConfirmEmail(params: SpeakerConfirmParams) {
       to,
       subject: `分享报名确认：${titleLine}`,
       html,
-      attachments: [{ filename, content: Buffer.from(icsContent).toString('base64') }],
+      attachments: [
+        { filename, content: Buffer.from(icsContent).toString('base64') },
+      ],
     });
   } catch (err) {
     console.error('发送分享确认邮件失败:', err);

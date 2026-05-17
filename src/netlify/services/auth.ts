@@ -5,20 +5,31 @@ import { setUserAuth } from '../../utils/user';
 import { UserInfo } from '../types';
 
 async function getProfile(email: string): Promise<UserInfo | null> {
-  const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', { email });
-  return res.success ? res.data?.user ?? null : null;
+  const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', {
+    email,
+  });
+  return res.success ? (res.data?.user ?? null) : null;
 }
 
 export const authApi = {
-  login: async (email: string, password: string): Promise<ApiResponse<{ user: UserInfo; token: string }>> => {
-    const { data, error } = await supabaseAuth.auth.signInWithPassword({ email, password });
+  login: async (
+    email: string,
+    password: string
+  ): Promise<ApiResponse<{ user: UserInfo; token: string }>> => {
+    const { data, error } = await supabaseAuth.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error || !data.session) {
       return { success: false, statusCode: 401, error: '邮箱或密码错误' };
     }
 
     const token = data.session.access_token;
     const profile = await getProfile(email);
-    const user: UserInfo = profile || { email, name: data.user.user_metadata?.name || '' };
+    const user: UserInfo = profile || {
+      email,
+      name: data.user.user_metadata?.name || '',
+    };
 
     setUserAuth(token, user);
     return { success: true, statusCode: 200, data: { user, token } };
@@ -29,13 +40,14 @@ export const authApi = {
     email: string;
     password: string;
   }): Promise<ApiResponse<{ user: UserInfo; token: string }>> => {
-    const { error: signUpError, data: authData } = await supabaseAuth.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: { name: data.name },
-      },
-    });
+    const { error: signUpError, data: authData } =
+      await supabaseAuth.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: { name: data.name },
+        },
+      });
 
     if (signUpError) {
       const msg = signUpError.message.includes('already registered')
@@ -45,20 +57,29 @@ export const authApi = {
     }
 
     // Create profile in users table
-    const profileRes = await http.post<{ user: UserInfo }>('/auth', 'register', {
-      email: data.email,
-      name: data.name,
-    });
+    const profileRes = await http.post<{ user: UserInfo }>(
+      '/auth',
+      'register',
+      {
+        email: data.email,
+        name: data.name,
+      }
+    );
 
     const token = authData.session?.access_token || '';
-    const user: UserInfo = profileRes.data?.user || { email: data.email, name: data.name };
+    const user: UserInfo = profileRes.data?.user || {
+      email: data.email,
+      name: data.name,
+    };
 
     if (token) setUserAuth(token, user);
     return { success: true, statusCode: 201, data: { user, token } };
   },
 
   changePassword: async (newPassword: string): Promise<ApiResponse<{}>> => {
-    const { error } = await supabaseAuth.auth.updateUser({ password: newPassword });
+    const { error } = await supabaseAuth.auth.updateUser({
+      password: newPassword,
+    });
     if (error) return { success: false, statusCode: 400, error: error.message };
     return { success: true, statusCode: 200, data: {} };
   },

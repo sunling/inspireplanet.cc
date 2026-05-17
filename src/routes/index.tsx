@@ -101,6 +101,9 @@ const SurveyResults = lazy(() => import('../pages/survey/SurveyResults'));
 const ActivityCalendar = lazy(
   () => import('../pages/activity/ActivityCalendar')
 );
+const MeetupParticipants = lazy(
+  () => import('../pages/activity/MeetupParticipants')
+);
 
 // 创建路由器
 const router = createBrowserRouter(
@@ -116,7 +119,10 @@ const router = createBrowserRouter(
         { path: 'home', element: createLazyRoute(<Home />) },
         { path: 'contact', element: createLazyRoute(<Contact />) },
         { path: 'login', element: createLazyRoute(<Login />) },
-        { path: 'forgot-password', element: createLazyRoute(<ForgotPassword />) },
+        {
+          path: 'forgot-password',
+          element: createLazyRoute(<ForgotPassword />),
+        },
         { path: 'auth/callback', element: createLazyRoute(<AuthCallback />) },
         { path: 'cards', element: createLazyRoute(<Cards />) },
         { path: 'meetups', element: createLazyRoute(<Meetups />) },
@@ -185,6 +191,11 @@ const router = createBrowserRouter(
         {
           path: 'survey-results/:id',
           element: createProtectedRoute(<SurveyResults />),
+        },
+
+        {
+          path: 'meetup-participants',
+          element: createProtectedRoute(<MeetupParticipants />),
         },
 
         // 404路由

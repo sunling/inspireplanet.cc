@@ -32,7 +32,9 @@ function getEnvVars(): EnvVars {
 
       console.log('🔍 Environment check:', {
         hasServiceKey: !!serviceKey,
-        serviceKeyPrefix: serviceKey ? serviceKey.substring(0, 20) + '...' : 'none',
+        serviceKeyPrefix: serviceKey
+          ? serviceKey.substring(0, 20) + '...'
+          : 'none',
         hasAnonKey: !!anonKey,
       });
 
