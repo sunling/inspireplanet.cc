@@ -20,7 +20,8 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       | 'create'
       | 'update'
       | 'delete'
-      | 'toggleActive';
+      | 'toggleActive'
+      | 'submit';
 
     switch (action) {
       case 'getAll':
@@ -35,6 +36,8 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         return await handleDelete(event);
       case 'toggleActive':
         return await handleToggleActive(event);
+      case 'submit':
+        return await handleSubmit(event);
       default:
         return createErrorResponse('无效的动作', 400);
     }
@@ -47,12 +50,22 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
 async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
     const requestData = getDataFromEvent(event);
-    const { page = 1, pageSize = 10, isActive } = requestData;
+    const {
+      page = 1,
+      pageSize = 10,
+      isActive,
+      includeMeetupSurveys = false,
+    } = requestData;
 
     let query = supabase.from('surveys').select('*', { count: 'exact' });
 
     if (isActive !== undefined) {
       query = query.eq('is_active', isActive);
+    }
+
+    // 默认不显示活动专用问卷
+    if (!includeMeetupSurveys) {
+      query = query.or('is_for_meetup.is.false, is_for_meetup.is.null');
     }
 
     const { data, error, count } = await query
@@ -193,7 +206,13 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       isActive,
       allowMultipleSubmissions,
       createdBy,
-    } = requestData as CreateSurveyRequest & { createdBy: string };
+      meetup_id,
+      is_for_meetup = false,
+    } = requestData as CreateSurveyRequest & {
+      createdBy: string;
+      meetup_id?: string;
+      is_for_meetup?: boolean;
+    };
 
     if (!title || !questions || !Array.isArray(questions)) {
       return createErrorResponse('缺少必要参数', 400);
@@ -214,6 +233,8 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
         end_date: endDate,
         is_active: isActive,
         allow_multiple_submissions: allowMultipleSubmissions,
+        meetup_id: meetup_id ? Number(meetup_id) : null,
+        is_for_meetup,
       })
       .select('id')
       .single();
@@ -267,7 +288,13 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
       endDate,
       isActive,
       allowMultipleSubmissions,
-    } = requestData as UpdateSurveyRequest & { id: string };
+      meetup_id,
+      is_for_meetup,
+    } = requestData as UpdateSurveyRequest & {
+      id: string;
+      meetup_id?: string;
+      is_for_meetup?: boolean;
+    };
 
     if (
       !id ||
@@ -291,17 +318,28 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('问卷不存在', 404);
     }
 
+    // 构建更新数据
+    const updateData: Record<string, any> = {
+      title,
+      description,
+      start_date: startDate,
+      end_date: endDate,
+      is_active: isActive,
+      allow_multiple_submissions: allowMultipleSubmissions,
+    };
+
+    // 只在提供了这些参数时更新
+    if (meetup_id !== undefined) {
+      updateData.meetup_id = meetup_id ? Number(meetup_id) : null;
+    }
+    if (is_for_meetup !== undefined) {
+      updateData.is_for_meetup = is_for_meetup;
+    }
+
     // 更新问卷基本信息
     const { error: updateError } = await supabase
       .from('surveys')
-      .update({
-        title,
-        description,
-        start_date: startDate,
-        end_date: endDate,
-        is_active: isActive,
-        allow_multiple_submissions: allowMultipleSubmissions,
-      })
+      .update(updateData)
       .eq('id', id);
 
     if (updateError) {
@@ -431,6 +469,110 @@ async function handleToggleActive(
     });
   } catch (error) {
     console.error('Error in handleToggleActive:', error);
+    return createErrorResponse('Internal Server Error', 500);
+  }
+}
+
+async function handleSubmit(event: NetlifyEvent): Promise<NetlifyResponse> {
+  try {
+    const requestData = getDataFromEvent(event);
+    const {
+      survey_id,
+      respondent_id,
+      respondent_email,
+      answers,
+      ip_address,
+      user_agent,
+    } = requestData;
+
+    if (!survey_id) {
+      return createErrorResponse('缺少问卷 ID', 400);
+    }
+
+    if (!answers || typeof answers !== 'object') {
+      return createErrorResponse('缺少答案数据', 400);
+    }
+
+    // 检查问卷是否存在
+    const { data: survey, error: surveyError } = await supabase
+      .from('surveys')
+      .select('id')
+      .eq('id', survey_id)
+      .single();
+
+    if (surveyError || !survey) {
+      return createErrorResponse('问卷不存在', 404);
+    }
+
+    // 创建问卷提交记录
+    const { data: submission, error: submissionError } = await supabase
+      .from('survey_submissions')
+      .insert({
+        survey_id,
+        respondent_id: respondent_id || `guest_${Date.now()}`,
+        respondent_email: respondent_email || null,
+        ip_address:
+          ip_address ||
+          event.headers['x-forwarded-for'] ||
+          event.headers['client-ip'] ||
+          'unknown',
+        user_agent: user_agent || event.headers['user-agent'],
+      })
+      .select('id')
+      .single();
+
+    if (submissionError) {
+      console.error('Error creating survey submission:', submissionError);
+      return createErrorResponse('提交问卷失败', 500);
+    }
+
+    // 支持两种格式：对象格式 { questionId: value } 和数组格式 [{ questionId, value }]
+    let answersArray: { questionId: string; value: any }[] = [];
+
+    if (Array.isArray(answers)) {
+      // 数组格式
+      answersArray = answers;
+    } else if (typeof answers === 'object' && answers !== null) {
+      // 对象格式转换为数组格式
+      answersArray = Object.entries(answers)
+        .map(([questionId, value]) => ({
+          questionId,
+          value,
+        }))
+        .filter(
+          (item) =>
+            item.value !== undefined && item.value !== null && item.value !== ''
+        );
+    }
+
+    // 创建答案记录
+    const answerPromises = answersArray.map((answer) => {
+      return supabase.from('survey_answers').insert({
+        submission_id: submission.id,
+        question_id: answer.questionId,
+        value: answer.value,
+      });
+    });
+
+    const answerResults = await Promise.all(answerPromises);
+    const answerErrors = answerResults.filter((r) => r.error);
+
+    if (answerErrors.length > 0) {
+      console.error('Error creating survey answers:', answerErrors);
+      // 回滚：删除已创建的提交记录
+      await supabase
+        .from('survey_submissions')
+        .delete()
+        .eq('id', submission.id);
+      return createErrorResponse('提交问卷答案失败', 500);
+    }
+
+    return createSuccessResponse({
+      id: submission.id,
+      message: '提交成功',
+    });
+  } catch (error) {
+    console.error('Error in handleSubmit:', error);
     return createErrorResponse('Internal Server Error', 500);
   }
 }

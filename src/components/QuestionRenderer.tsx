@@ -12,10 +12,10 @@ import {
   Rating,
   Stack,
 } from '@mui/material';
-import { QuestionConfig } from '../netlify/types/question';
+import { SurveyQuestion } from '../netlify/types/survey';
 
 interface QuestionRendererProps {
-  question: QuestionConfig;
+  question: SurveyQuestion;
   value: any;
   onChange: (value: any) => void;
   index?: number;

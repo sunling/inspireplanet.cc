@@ -28,12 +28,18 @@ import {
   DialogActions,
   IconButton,
   Pagination,
+  Chip,
 } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
-import { meetupsApi, rsvpApi, participantsApi } from '../../netlify/config';
+import {
+  meetupsApi,
+  rsvpApi,
+  participantsApi,
+  surveyApi,
+} from '../../netlify/config';
 import { Meetup } from '../../netlify/functions/meetup';
 import { useGlobalSnackbar } from '../../context/app';
-import { isUserLoggedIn } from '../../utils/user';
+import { getUserName, isUserLoggedIn } from '../../utils/user';
 import {
   RSVPStatus,
   ApprovalStatus,
@@ -42,6 +48,7 @@ import {
   getApprovalStatusLabel,
   getApprovalStatusStyle,
 } from '../../netlify/types/rsvp';
+import { Survey, SurveyQuestion } from '../../netlify/types/survey';
 
 interface RSVP {
   id: string;
@@ -52,6 +59,8 @@ interface RSVP {
   application_status: ApprovalStatus;
   created_at: string;
   question_answer: string | null;
+  survey_id: string | null;
+  survey_answers: string | null;
   email_sent: boolean;
   email_sent_at: string | null;
 }
@@ -70,14 +79,23 @@ const MeetupParticipants: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  // 问卷相关状态
+  const [survey, setSurvey] = useState<Survey | null>(null);
+  const [surveyLoading, setSurveyLoading] = useState(false);
+  // 审批操作loading状态 - 分开管理通过和拒绝
+  const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
+  const [rejectingIds, setRejectingIds] = useState<Set<string>>(new Set());
 
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [stats, setStats] = useState({
     total: 0,
-    joined: 0,
+    confirmed: 0,
     cancelled: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
   });
   const pageSize = 10;
 
@@ -86,10 +104,25 @@ const MeetupParticipants: React.FC = () => {
     const searchParams = new URLSearchParams(location.search);
     return searchParams.get('id');
   };
+  const meetupId = getMeetupId();
+
+  // 加载问卷信息
+  const loadSurvey = async (surveyId: string) => {
+    setSurveyLoading(true);
+    try {
+      const response = await surveyApi.getById(surveyId);
+      if (response.success && response.data) {
+        setSurvey(response.data);
+      }
+    } catch (error) {
+      console.error('加载问卷失败:', error);
+    } finally {
+      setSurveyLoading(false);
+    }
+  };
 
   // 加载活动详情和报名列表
   const loadData = async (page = 1) => {
-    const meetupId = getMeetupId();
     if (!meetupId) {
       showSnackbar.error('缺少活动ID');
       return;
@@ -100,7 +133,15 @@ const MeetupParticipants: React.FC = () => {
       // 获取活动详情
       const meetupResponse = await meetupsApi.getById(meetupId);
       if (meetupResponse.success && meetupResponse.data?.meetups?.length) {
-        setMeetup(meetupResponse.data.meetups[0]);
+        const meetupData = meetupResponse.data.meetups[0];
+        setMeetup(meetupData);
+
+        // 如果活动关联了问卷，加载问卷信息
+        if (meetupData.survey_id) {
+          await loadSurvey(meetupData.survey_id);
+        } else {
+          setSurvey(null);
+        }
       }
 
       // 获取报名列表（使用 participantsApi 获取完整数据，支持分页）
@@ -110,14 +151,26 @@ const MeetupParticipants: React.FC = () => {
         limit: pageSize,
       });
       if (participantsResponse.success) {
-        setParticipants(
-          (participantsResponse.data?.participants || []) as RSVP[]
-        );
+        const participantsList = (participantsResponse.data?.participants ||
+          []) as RSVP[];
+        setParticipants(participantsList);
         setTotalCount(participantsResponse.data?.total || 0);
+        const approvedCount = participantsList.filter(
+          (p) => p.application_status === ApprovalStatus.APPROVED
+        ).length;
+        const rejectedCount = participantsList.filter(
+          (p) => p.application_status === ApprovalStatus.REJECTED
+        ).length;
+        const pendingCount = participantsList.filter(
+          (p) => p.application_status === ApprovalStatus.PENDING
+        ).length;
         setStats({
           total: participantsResponse.data?.total || 0,
-          joined: participantsResponse.data?.joinedCount || 0,
+          confirmed: participantsResponse.data?.confirmedCount || 0,
           cancelled: participantsResponse.data?.cancelledCount || 0,
+          pending: pendingCount,
+          approved: approvedCount,
+          rejected: rejectedCount,
         });
       }
     } catch (error) {
@@ -125,6 +178,42 @@ const MeetupParticipants: React.FC = () => {
       showSnackbar.error('加载数据失败');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 刷新统计数据（不重新加载整个页面）
+  const refreshStats = async () => {
+    try {
+      const participantsResponse = await participantsApi.getParticipants({
+        meetup_id: Number(meetupId),
+        page: currentPage,
+        limit: pageSize,
+      });
+      if (participantsResponse.success) {
+        const participantsList = (participantsResponse.data?.participants ||
+          []) as RSVP[];
+        setParticipants(participantsList);
+        setTotalCount(participantsResponse.data?.total || 0);
+        const approvedCount = participantsList.filter(
+          (p) => p.application_status === ApprovalStatus.APPROVED
+        ).length;
+        const rejectedCount = participantsList.filter(
+          (p) => p.application_status === ApprovalStatus.REJECTED
+        ).length;
+        const pendingCount = participantsList.filter(
+          (p) => p.application_status === ApprovalStatus.PENDING
+        ).length;
+        setStats({
+          total: participantsResponse.data?.total || 0,
+          confirmed: participantsResponse.data?.confirmedCount || 0,
+          cancelled: participantsResponse.data?.cancelledCount || 0,
+          pending: pendingCount,
+          approved: approvedCount,
+          rejected: rejectedCount,
+        });
+      }
+    } catch (error) {
+      console.error('刷新统计数据失败:', error);
     }
   };
 
@@ -188,7 +277,9 @@ const MeetupParticipants: React.FC = () => {
             : p
         )
       );
-      showSnackbar.success(status === RSVPStatus.CONFIRMED ? '已报名' : '已取消');
+      showSnackbar.success(
+        status === RSVPStatus.CONFIRMED ? '已报名' : '已取消'
+      );
     } else {
       showSnackbar.error('更新失败');
     }
@@ -196,51 +287,70 @@ const MeetupParticipants: React.FC = () => {
 
   // 审批通过单个参与者
   const approveParticipant = async (id: string) => {
-    const response = await rsvpApi.update(id, {
-      application_status: ApprovalStatus.APPROVED,
-      approved_by: 'Organizer',
-      approved_at: new Date().toISOString(),
-    } as any);
-    if (response.success) {
-      setParticipants((prev) =>
-        prev.map((p) =>
-          p.id === id
-            ? {
-                ...p,
-                application_status: ApprovalStatus.APPROVED,
-              }
-            : p
-        )
-      );
-      showSnackbar.success('审批通过');
-    } else {
-      showSnackbar.error('审批失败');
+    setApprovingIds((prev) => new Set(prev).add(id));
+    try {
+      const response = await rsvpApi.update(id, {
+        application_status: ApprovalStatus.APPROVED,
+        approved_by: getUserName(),
+        approved_at: new Date().toISOString(),
+      } as any);
+      if (response.success) {
+        setParticipants((prev) =>
+          prev.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  application_status: ApprovalStatus.APPROVED,
+                }
+              : p
+          )
+        );
+        await refreshStats();
+        showSnackbar.success('审批通过');
+      } else {
+        showSnackbar.error('审批失败');
+      }
+    } finally {
+      setApprovingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
   // 拒绝单个参与者
   const rejectParticipant = async (id: string) => {
-    const response = await rsvpApi.update(id, {
-      status: RSVPStatus.CANCELLED,
-      application_status: ApprovalStatus.REJECTED,
-      approved_by: 'Organizer',
-      approved_at: new Date().toISOString(),
-    } as any);
-    if (response.success) {
-      setParticipants((prev) =>
-        prev.map((p) =>
-          p.id === id
-            ? {
-                ...p,
-                status: RSVPStatus.CANCELLED,
-                application_status: ApprovalStatus.REJECTED,
-              }
-            : p
-        )
-      );
-      showSnackbar.success('已拒绝');
-    } else {
-      showSnackbar.error('操作失败');
+    setRejectingIds((prev) => new Set(prev).add(id));
+    try {
+      const response = await rsvpApi.update(id, {
+        application_status: ApprovalStatus.REJECTED,
+        approved_by: getUserName(),
+        approved_at: new Date().toISOString(),
+        send_email: true,
+      } as any);
+      if (response.success) {
+        setParticipants((prev) =>
+          prev.map((p) =>
+            p.id === id
+              ? {
+                  ...p,
+                  application_status: ApprovalStatus.REJECTED,
+                }
+              : p
+          )
+        );
+        await refreshStats();
+        showSnackbar.success('已拒绝');
+      } else {
+        showSnackbar.error('操作失败');
+      }
+    } finally {
+      setRejectingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
@@ -266,6 +376,8 @@ const MeetupParticipants: React.FC = () => {
       const response = await participantsApi.batchReject({
         meetup_id: Number(meetupId),
         rsvp_ids: joinedParticipants.map((id) => Number(id)),
+        send_email: true,
+        approved_by: getUserName() || '',
       });
 
       if (response.success) {
@@ -284,20 +396,7 @@ const MeetupParticipants: React.FC = () => {
     setSelectedParticipants([]);
   };
 
-  if (isLoading) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box sx={{ textAlign: 'center', py: 10 }}>
-          <CircularProgress size={40} />
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            加载中...
-          </Typography>
-        </Box>
-      </Container>
-    );
-  }
-
-  if (!meetup) {
+  if (!meetup && !isLoading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Alert severity="error">活动不存在</Alert>
@@ -314,7 +413,7 @@ const MeetupParticipants: React.FC = () => {
         </IconButton>
         <Box>
           <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
-            {meetup.title} - 报名管理
+            {meetup?.title || '加载中...'} - 报名管理
           </Typography>
           <Typography variant="body2" color="text.secondary">
             查看和管理活动报名人员，进行筛选和确认
@@ -334,22 +433,56 @@ const MeetupParticipants: React.FC = () => {
                 总报名人数
               </Typography>
             </Box>
-            <Box>
-              <Typography variant="h5" fontWeight="bold">
-                {stats.joined}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                已报名
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="h5" fontWeight="bold">
-                {stats.cancelled}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                已取消
-              </Typography>
-            </Box>
+            {/* 需要审批的活动显示完整统计 */}
+            {meetup?.survey_id ? (
+              <>
+                <Box>
+                  <Typography variant="h5" fontWeight="bold">
+                    {stats.confirmed}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    已报名
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="h5" fontWeight="bold">
+                    {stats.pending}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    待处理
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography
+                    variant="h5"
+                    fontWeight="bold"
+                    color="success.main"
+                  >
+                    {stats.approved}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    已通过
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="h5" fontWeight="bold" color="error.main">
+                    {stats.rejected}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    已拒绝
+                  </Typography>
+                </Box>
+              </>
+            ) : (
+              <Box>
+                <Typography variant="h5" fontWeight="bold">
+                  {stats.confirmed}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  已报名
+                </Typography>
+              </Box>
+            )}
           </Box>
         </CardContent>
       </Card>
@@ -401,175 +534,269 @@ const MeetupParticipants: React.FC = () => {
         {/* 返回按钮 */}
         <Button
           variant="outlined"
-          onClick={() => navigate(`/meetup-detail?id=${meetup.id}`)}
+          onClick={() => navigate(`/meetup-detail?id=${meetup?.id}`)}
+          disabled={!meetup}
         >
           返回活动详情
         </Button>
       </Box>
 
-      {/* 自定义问题提示 */}
-      {meetup.question_text && (
+      {/* 问卷/问题提示 */}
+      {survey && survey.questions.length > 0 && meetup && (
         <Card sx={{ mb: 4, bgcolor: 'background.default' }}>
           <CardContent>
-            <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
-              报名问题：
+            <Typography variant="body1" fontWeight="600" sx={{ mb: 2 }}>
+              {'报名问卷'}：
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {meetup.question_text}
-              {meetup.question_required && (
-                <Typography component="span" color="error">
-                  {' '}
-                  *必填
-                </Typography>
-              )}
-            </Typography>
+            {surveyLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              survey &&
+              survey.questions.length > 0 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {survey.questions.map((q) => (
+                    <Typography
+                      key={q.id}
+                      variant="body2"
+                      color="text.secondary"
+                    >
+                      {q.title}{' '}
+                      {q.required && (
+                        <Typography component="span" color="error">
+                          *
+                        </Typography>
+                      )}
+                      {q.options && q.options.length > 0 && (
+                        <Typography component="span" sx={{ ml: 1 }}>
+                          ({q.options.map((o) => o.text).join(' / ')})
+                        </Typography>
+                      )}
+                    </Typography>
+                  ))}
+                </Box>
+              )
+            )}
           </CardContent>
         </Card>
       )}
 
       {/* 报名列表 */}
       <Card>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={
-                      selectedParticipants.length ===
-                        filteredParticipants.length &&
-                      filteredParticipants.length > 0
-                    }
-                    onChange={toggleSelectAll}
-                  />
-                </TableCell>
-                <TableCell>姓名</TableCell>
-                <TableCell>邮箱</TableCell>
-                <TableCell>报名时间</TableCell>
-                <TableCell>报名答案</TableCell>
-                <TableCell>报名状态</TableCell>
-                <TableCell>审批状态</TableCell>
-                <TableCell>操作</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredParticipants.map((participant) => (
-                <TableRow key={participant.id}>
+        {isLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+            <CircularProgress size={40} />
+          </Box>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
                   <TableCell padding="checkbox">
                     <Checkbox
-                      checked={selectedParticipants.includes(participant.id)}
-                      onChange={() => toggleSelect(participant.id)}
-                      disabled={participant.status === RSVPStatus.CANCELLED}
+                      checked={
+                        selectedParticipants.length ===
+                          filteredParticipants.length &&
+                        filteredParticipants.length > 0
+                      }
+                      onChange={toggleSelectAll}
                     />
                   </TableCell>
-                  <TableCell>
-                    <Typography fontWeight="500">
-                      {participant.name || '未知'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    {participant.email || (
-                      <Typography color="text.secondary" variant="body2">
-                        未填写
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(participant.created_at).toLocaleString('zh-CN')}
-                  </TableCell>
-                  <TableCell>
-                    <Box
-                      sx={{
-                        maxWidth: 200,
-                        wordBreak: 'break-all',
-                        maxHeight: 60,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {participant.question_answer || (
-                        <Typography color="text.secondary" variant="body2">
-                          无
-                        </Typography>
-                      )}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box
-                      sx={{
-                        px: 2,
-                        py: 1,
-                        borderRadius: 1,
-                        fontSize: '0.75rem',
-                        fontWeight: 500,
-                        textAlign: 'center',
-                        backgroundColor: getRSVPStatusStyle(participant.status)
-                          .backgroundColor,
-                        color: getRSVPStatusStyle(participant.status).color,
-                      }}
-                    >
-                      {getRSVPStatusLabel(participant.status)}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box
-                      sx={{
-                        px: 2,
-                        py: 1,
-                        borderRadius: 1,
-                        fontSize: '0.75rem',
-                        fontWeight: 500,
-                        textAlign: 'center',
-                        backgroundColor: getApprovalStatusStyle(
-                          participant.application_status
-                        ).backgroundColor,
-                        color: getApprovalStatusStyle(
-                          participant.application_status
-                        ).color,
-                      }}
-                    >
-                      {getApprovalStatusLabel(participant.application_status)}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      {participant.application_status ===
-                        ApprovalStatus.PENDING && (
-                        <>
-                          <Button
-                            size="small"
-                            color="success"
-                            onClick={() => approveParticipant(participant.id)}
-                          >
-                            通过
-                          </Button>
-                          <Button
-                            size="small"
-                            color="error"
-                            onClick={() => rejectParticipant(participant.id)}
-                          >
-                            拒绝
-                          </Button>
-                        </>
-                      )}
-                      {participant.application_status ===
-                        ApprovalStatus.APPROVED && (
-                        <Typography variant="body2" color="text.secondary">
-                          已审批通过
-                        </Typography>
-                      )}
-                      {participant.application_status ===
-                        ApprovalStatus.REJECTED && (
-                        <Typography variant="body2" color="text.secondary">
-                          已拒绝
-                        </Typography>
-                      )}
-                    </Box>
-                  </TableCell>
+                  <TableCell>姓名</TableCell>
+                  <TableCell>邮箱</TableCell>
+                  <TableCell>报名时间</TableCell>
+                  <TableCell>报名答案</TableCell>
+                  <TableCell>报名状态</TableCell>
+                  <TableCell>审批状态</TableCell>
+                  <TableCell>操作</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {filteredParticipants.map((participant) => (
+                  <TableRow key={participant.id}>
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={selectedParticipants.includes(participant.id)}
+                        onChange={() => toggleSelect(participant.id)}
+                        disabled={participant.status === RSVPStatus.CANCELLED}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography fontWeight="500">
+                        {participant.name || '未知'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {participant.email || (
+                        <Typography color="text.secondary" variant="body2">
+                          未填写
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(participant.created_at).toLocaleString('zh-CN')}
+                    </TableCell>
+                    <TableCell>
+                      <Box
+                        sx={{
+                          maxWidth: 250,
+                          wordBreak: 'break-all',
+                        }}
+                      >
+                        {participant.survey_answers ? (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 0.5,
+                            }}
+                          >
+                            {(() => {
+                              try {
+                                const answers = JSON.parse(
+                                  participant.survey_answers
+                                );
+                                if (survey) {
+                                  return survey.questions
+                                    .map((q) => {
+                                      const answer = answers[q.id];
+                                      if (
+                                        answer === undefined ||
+                                        answer === null ||
+                                        answer === ''
+                                      ) {
+                                        return null;
+                                      }
+                                      // 处理多选题答案
+                                      const displayAnswer = Array.isArray(
+                                        answer
+                                      )
+                                        ? answer.join(', ')
+                                        : answer;
+                                      return (
+                                        <Typography
+                                          key={q.id}
+                                          variant="body2"
+                                          color="text.secondary"
+                                        >
+                                          <span style={{ fontWeight: 500 }}>
+                                            【{q.title}】
+                                          </span>{' '}
+                                          {displayAnswer}
+                                        </Typography>
+                                      );
+                                    })
+                                    .filter(Boolean);
+                                }
+
+                                return '-';
+                              } catch {
+                                return (
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    {participant.survey_answers || '无'}
+                                  </Typography>
+                                );
+                              }
+                            })()}
+                          </Box>
+                        ) : participant.question_answer ? (
+                          <Typography variant="body2" color="text.secondary">
+                            {participant.question_answer}
+                          </Typography>
+                        ) : (
+                          <Typography color="text.secondary" variant="body2">
+                            无
+                          </Typography>
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box
+                        sx={{
+                          px: 2,
+                          py: 1,
+                          borderRadius: 1,
+                          fontSize: '0.75rem',
+                          fontWeight: 500,
+                          textAlign: 'center',
+                          backgroundColor: getRSVPStatusStyle(
+                            participant.status
+                          ).backgroundColor,
+                          color: getRSVPStatusStyle(participant.status).color,
+                        }}
+                      >
+                        {getRSVPStatusLabel(participant.status)}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box
+                        sx={{
+                          px: 2,
+                          py: 1,
+                          borderRadius: 1,
+                          fontSize: '0.75rem',
+                          fontWeight: 500,
+                          textAlign: 'center',
+                          backgroundColor: getApprovalStatusStyle(
+                            participant.application_status
+                          ).backgroundColor,
+                          color: getApprovalStatusStyle(
+                            participant.application_status
+                          ).color,
+                        }}
+                      >
+                        {getApprovalStatusLabel(participant.application_status)}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        {participant.application_status ===
+                          ApprovalStatus.PENDING && (
+                          <>
+                            <Button
+                              size="small"
+                              color="success"
+                              onClick={() => approveParticipant(participant.id)}
+                              loading={approvingIds.has(participant.id)}
+                              loadingPosition="start"
+                            >
+                              通过
+                            </Button>
+                            <Button
+                              size="small"
+                              color="error"
+                              onClick={() => rejectParticipant(participant.id)}
+                              loading={rejectingIds.has(participant.id)}
+                              loadingPosition="start"
+                            >
+                              拒绝
+                            </Button>
+                          </>
+                        )}
+                        {participant.application_status ===
+                          ApprovalStatus.APPROVED && (
+                          <Typography variant="body2" color="text.secondary">
+                            已审批通过
+                          </Typography>
+                        )}
+                        {participant.application_status ===
+                          ApprovalStatus.REJECTED && (
+                          <Typography variant="body2" color="text.secondary">
+                            已拒绝
+                          </Typography>
+                        )}
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
         {/* 分页组件 */}
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, pb: 4 }}>
@@ -584,7 +811,7 @@ const MeetupParticipants: React.FC = () => {
       </Card>
 
       {/* 空状态 */}
-      {filteredParticipants.length === 0 && (
+      {!isLoading && filteredParticipants.length === 0 && (
         <Box sx={{ py: 10, textAlign: 'center' }}>
           <Typography variant="body1" color="text.secondary">
             暂无符合条件的报名人员

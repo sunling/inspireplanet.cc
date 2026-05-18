@@ -119,6 +119,9 @@ const InspireCard: React.FC<InspireCardProps> = ({
             src={finalImage}
             alt={card.title || '卡片图片'}
             loading="lazy"
+            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+              e.currentTarget.src = '/images/mistyblue.png';
+            }}
             sx={{
               width: '100%',
               maxWidth: '80vw',

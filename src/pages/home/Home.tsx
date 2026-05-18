@@ -235,6 +235,9 @@ const Home: React.FC = () => {
               <img
                 src={card.image_path || '/images/mistyblue.png'}
                 alt={card.title}
+                onError={(e) => {
+                  e.currentTarget.src = '/images/mistyblue.png';
+                }}
                 style={{
                   width: '100%',
                   height: 'auto',

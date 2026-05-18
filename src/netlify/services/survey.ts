@@ -68,10 +68,10 @@ const surveyApi = {
 
   // 提交问卷
   submit: async (
-    data: SubmitSurveyRequest & { respondentId: string }
+    data: SubmitSurveyRequest & { respondentId?: string }
   ): Promise<ApiResponse<{ id: string; message: string }>> => {
     return http.post<{ id: string; message: string }>(
-      '/surveySubmission',
+      '/survey',
       'submit',
       data
     );

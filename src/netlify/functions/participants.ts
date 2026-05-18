@@ -4,10 +4,11 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
+  getUserIdFromAuth,
   getFunctionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
-import { sendRSVPConfirmEmail } from '../utils/email';
+import { sendRSVPConfirmEmail, sendRSVPRejectEmail } from '../utils/email';
 import { RSVPStatus, ApprovalStatus } from '../types/rsvp';
 
 export interface ParticipantAction {
@@ -41,7 +42,7 @@ export async function handler(event: NetlifyEvent, context: any) {
 async function handleBatchReject(event: NetlifyEvent) {
   try {
     const requestData = getDataFromEvent(event);
-    const { meetup_id, rsvp_ids } = requestData;
+    const { meetup_id, rsvp_ids, send_email, approved_by } = requestData;
 
     if (!meetup_id || !rsvp_ids || !Array.isArray(rsvp_ids)) {
       return createErrorResponse('缺少必要参数');
@@ -52,20 +53,78 @@ async function handleBatchReject(event: NetlifyEvent) {
       return createErrorResponse('活动ID不合法');
     }
 
+    // 获取活动详情
+    const { data: meetup, error: meetupError } = await supabase
+      .from('meetups')
+      .select('id, title')
+      .eq('id', meetupIdNum)
+      .single();
+
+    if (meetupError || !meetup) {
+      return createErrorResponse('活动不存在', 404);
+    }
+
+    const now = new Date().toISOString();
+
     // 更新参与者状态
     const { data: updatedRsvps, error: updateError } = await supabase
       .from('meetup_rsvps')
       .update({
         status: RSVPStatus.CANCELLED,
         application_status: ApprovalStatus.REJECTED,
+        approved_by: approved_by || 'Organizer',
+        approved_at: now,
       })
       .in('id', rsvp_ids)
       .eq('meetup_id', meetupIdNum)
-      .select('id');
+      .select('*');
 
     if (updateError) {
       console.error('Update error:', updateError);
       return createErrorResponse('更新失败', 500);
+    }
+
+    // 如果需要发送邮件通知
+    if (send_email && updatedRsvps && updatedRsvps.length > 0) {
+      for (const rsvp of updatedRsvps) {
+        let email = null;
+        // 尝试从用户表获取邮箱（如果有 user_id）
+        if (rsvp.user_id) {
+          try {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('email')
+              .eq('id', rsvp.user_id)
+              .single();
+            email = userData?.email;
+          } catch (userError) {
+            console.error('获取用户邮箱失败:', userError);
+          }
+        }
+
+        if (email) {
+          try {
+            await sendRSVPRejectEmail({
+              to: email,
+              name: rsvp.name || '参与者',
+              meetupTitle: meetup.title,
+              meetupId: meetup.id,
+            });
+
+            // 更新邮件发送记录
+            try {
+              await supabase
+                .from('meetup_rsvps')
+                .update({ email_sent: true, email_sent_at: now })
+                .eq('id', rsvp.id);
+            } catch (updateError) {
+              // 忽略这个错误，因为这两个字段可能也不存在
+            }
+          } catch (emailError) {
+            console.error('发送拒绝邮件失败:', emailError);
+          }
+        }
+      }
     }
 
     return createSuccessResponse({
@@ -208,11 +267,11 @@ async function handleGetParticipants(event: NetlifyEvent) {
     }
 
     // 获取各状态的数量
-    const { count: joinedCount } = await supabase
+    const { count: confirmedCount } = await supabase
       .from('meetup_rsvps')
       .select('id', { count: 'exact', head: true })
       .eq('meetup_id', meetupIdNum)
-      .or(`status.eq.${RSVPStatus.JOINED},status.eq.confirmed`);
+      .eq('status', RSVPStatus.CONFIRMED);
 
     const { count: cancelledCount } = await supabase
       .from('meetup_rsvps')
@@ -272,12 +331,49 @@ async function handleGetParticipants(event: NetlifyEvent) {
           };
         });
       }
+
+      // 获取问卷答案
+      const surveySubmissionIds = enrichedParticipants
+        .map((p: any) => p.survey_submission_id)
+        .filter((id: any) => id !== null && id !== undefined);
+
+      if (surveySubmissionIds.length > 0) {
+        // 从 survey_answers 表获取答案
+        const { data: surveyAnswers } = await supabase
+          .from('survey_answers')
+          .select('submission_id, question_id, value')
+          .in('submission_id', surveySubmissionIds);
+
+        // 创建 submission_id -> { question_id: value } 的映射
+        const submissionAnswersMap = new Map();
+        if (surveyAnswers) {
+          surveyAnswers.forEach((answer: any) => {
+            const existing =
+              submissionAnswersMap.get(answer.submission_id) || {};
+            existing[answer.question_id] = answer.value;
+            submissionAnswersMap.set(answer.submission_id, existing);
+          });
+        }
+
+        // 添加问卷答案到参与者数据
+        enrichedParticipants = enrichedParticipants.map((p: any) => {
+          const surveyAnswersData = submissionAnswersMap.get(
+            p.survey_submission_id
+          );
+          return {
+            ...p,
+            survey_answers: surveyAnswersData
+              ? JSON.stringify(surveyAnswersData)
+              : null,
+          };
+        });
+      }
     }
 
     return createSuccessResponse({
       participants: enrichedParticipants,
       total,
-      joinedCount: joinedCount || 0,
+      confirmedCount: confirmedCount || 0,
       cancelledCount: cancelledCount || 0,
     });
   } catch (error) {

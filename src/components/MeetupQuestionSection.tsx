@@ -14,13 +14,13 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import QuestionEditor from './QuestionEditor';
+import { SurveyQuestion } from '../netlify/types/survey';
 import {
-  QuestionConfig,
-  QuestionType,
-  questionTypeLabels,
-  createDefaultQuestion,
-  createDefaultOption,
-} from '../netlify/types/question';
+  convertFromMeetupType,
+  convertToMeetupType,
+  createQuestionFromMeetup,
+  convertQuestionToMeetup,
+} from '../utils/questionType';
 
 interface MeetupQuestionSectionProps {
   questionText: string;
@@ -52,43 +52,29 @@ const MeetupQuestionSection: React.FC<MeetupQuestionSectionProps> = ({
   onChange,
   viewOnly = false,
 }) => {
-  const currentType = (questionType || 'text') as QuestionType;
-
-  const questionConfig: QuestionConfig = useMemo(() => {
-    const config = createDefaultQuestion(currentType);
-    config.title = questionText || '';
-    config.required = questionRequired || false;
-
-    if (currentType === 'text') {
-      config.placeholder = '请输入...';
-    } else if (questionOptions) {
-      const options = questionOptions.split(',').map((opt, idx) => {
-        const optTrim = opt.trim();
-        return {
-          id: `opt_${idx}`,
-          text: optTrim,
-          label: optTrim,
-          value: optTrim,
-        };
-      });
-      config.options =
-        options.length > 0
-          ? options
-          : [createDefaultOption(0), createDefaultOption(1)];
-    } else {
-      config.options = [createDefaultOption(0), createDefaultOption(1)];
+  const questionConfig: SurveyQuestion = useMemo(() => {
+    if (!questionText) {
+      // 如果没有问题文本，创建一个默认的文本题
+      return {
+        id: `q_${Date.now()}`,
+        type: 'text',
+        title: '',
+        description: '',
+        required: false,
+        placeholder: '请输入...',
+        sortOrder: 0,
+      };
     }
-
-    return config;
+    return createQuestionFromMeetup(
+      questionText,
+      questionType,
+      questionOptions,
+      questionRequired
+    );
   }, [questionText, questionType, questionOptions, questionRequired]);
 
-  const handleQuestionChange = (updated: QuestionConfig) => {
-    onChange({
-      question_text: updated.title,
-      question_type: updated.type,
-      question_required: updated.required,
-      question_options: updated.options?.map((o) => o.value).join(',') || '',
-    });
+  const handleQuestionChange = (updated: SurveyQuestion) => {
+    onChange(convertQuestionToMeetup(updated));
   };
 
   return (

@@ -215,21 +215,37 @@ const MeetupParticipantsList: React.FC = () => {
                     <Box
                       sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}
                     >
-                      <Chip
-                        label={`总报名 ${meetup.rsvpCount}`}
-                        size="small"
-                        color="primary"
-                      />
-                      <Chip
-                        label={`待处理 ${meetup.pendingCount}`}
-                        size="small"
-                        color="warning"
-                      />
-                      <Chip
-                        label={`已通过 ${meetup.approvedCount}`}
-                        size="small"
-                        color="success"
-                      />
+                      {/* 判断是否需要审批：有问题或问卷的活动需要审批 */}
+                      {meetup.survey_id ? (
+                        <>
+                          <Chip
+                            label={`总报名 ${meetup.rsvpCount}`}
+                            size="small"
+                            color="primary"
+                          />
+                          <Chip
+                            label={`待处理 ${meetup.pendingCount}`}
+                            size="small"
+                            color="warning"
+                          />
+                          <Chip
+                            label={`已通过 ${meetup.approvedCount}`}
+                            size="small"
+                            color="success"
+                          />
+                          <Chip
+                            label={`已拒绝 ${meetup.cancelledCount}`}
+                            size="small"
+                            color="error"
+                          />
+                        </>
+                      ) : (
+                        <Chip
+                          label={`总报名 ${meetup.rsvpCount}`}
+                          size="small"
+                          color="primary"
+                        />
+                      )}
                     </Box>
                   </CardContent>
                   <Box sx={{ p: 2, pt: 0 }}>

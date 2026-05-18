@@ -5,8 +5,9 @@ import {
   rsvpApi,
   episodesApi,
   speakerSignupsApi,
+  surveyApi,
 } from '../../netlify/config';
-import { MeetupStatus, Participant } from '../../netlify/types';
+import { MeetupStatus, Participant, Survey } from '../../netlify/types';
 import { MeetupEpisode } from '../../netlify/functions/episodes';
 import { SpeakerSignup } from '../../netlify/functions/speakerSignups';
 import { isOrganizer } from '../../utils/user';
@@ -18,10 +19,6 @@ import {
 } from '../../utils/recurring';
 import dayjs from 'dayjs';
 import QuestionRenderer from '../../components/QuestionRenderer';
-import {
-  QuestionConfig,
-  createDefaultQuestion,
-} from '../../netlify/types/question';
 
 import {
   Box,
@@ -69,6 +66,7 @@ const MeetupDetail: React.FC = () => {
   const [meetup, setMeetup] = useState<Meetup | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCurrentUserRSVPed, setIsCurrentUserRSVPed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
@@ -102,8 +100,13 @@ const MeetupDetail: React.FC = () => {
   const [rsvpForm, setRsvpForm] = useState({
     name: '',
     email: '',
-    question_answer: '', // 自定义问题答案
+    question_answer: '', // 兼容旧数据的单问题答案
+    answers: {} as Record<string, any>, // 问卷问题答案（新格式）
   });
+
+  // 问卷状态
+  const [survey, setSurvey] = useState<Survey | null>(null);
+  const [surveyLoading, setSurveyLoading] = useState(false);
 
   // 提交状态
   const [submitStatus, setSubmitStatus] = useState<
@@ -202,10 +205,31 @@ const MeetupDetail: React.FC = () => {
 
       // 加载参与者信息（定期活动传 episode_id，按期次过滤）
       loadParticipants(meetupId, episodeId, processedMeetup.is_recurring);
+
+      // 如果活动关联了问卷，加载问卷信息
+      if (processedMeetup.survey_id) {
+        loadSurvey(processedMeetup.survey_id);
+      }
     } catch (err) {
       setError('加载活动详情失败，请稍后重试');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 加载问卷信息
+  const loadSurvey = async (surveyId: string) => {
+    setSurveyLoading(true);
+    try {
+      const response = await surveyApi.getById(surveyId);
+      if (response.success && response.data) {
+        setSurvey(response.data);
+      }
+    } catch (error) {
+      console.error('加载问卷失败:', error);
+      showSnackbar.error('加载报名问题失败');
+    } finally {
+      setSurveyLoading(false);
     }
   };
 
@@ -262,6 +286,19 @@ const MeetupDetail: React.FC = () => {
       );
 
       setParticipants(processedParticipants);
+
+      const userInfo = getUserInfo();
+      const userWechat = userInfo?.wechat_id?.trim();
+      const userId = userInfo?.id;
+      if (userWechat || userId) {
+        const isRSVPed = processedParticipants.some((p: any) => {
+          const matchWechat = userWechat && p.wechat_id === userWechat;
+          const matchUserId =
+            userId && p.user_id && String(p.user_id) === String(userId);
+          return matchWechat || matchUserId;
+        });
+        setIsCurrentUserRSVPed(isRSVPed);
+      }
     } catch (err) {
       console.error('加载参与者信息失败:', err);
       showSnackbar.error('加载参与者信息失败，请稍后重试');
@@ -277,12 +314,21 @@ const MeetupDetail: React.FC = () => {
       const userInfo = getUserInfo();
       const loggedIn = isUserLoggedIn();
 
+      // 初始化问卷答案
+      const initialAnswers: Record<string, any> = {};
+      if (survey) {
+        survey.questions.forEach((q) => {
+          initialAnswers[q.id] = '';
+        });
+      }
+
       if (loggedIn && userInfo) {
         // 已登录：直接提交，无需填表
         setRsvpForm({
           name: userInfo.name || userInfo.email || '',
           email: userInfo.email || '',
           question_answer: '',
+          answers: initialAnswers,
         });
         setShowRSVPDialog(true);
       } else {
@@ -291,6 +337,7 @@ const MeetupDetail: React.FC = () => {
           name: '',
           email: '',
           question_answer: '',
+          answers: initialAnswers,
         });
         setShowRSVPDialog(true);
       }
@@ -317,32 +364,68 @@ const MeetupDetail: React.FC = () => {
       return;
     }
 
-    // 检查自定义问题是否必填
-    if (meetup.question_required && !rsvpForm.question_answer?.trim()) {
-      showSnackbar.warning('请回答报名问题');
-      return;
+    // 检查问卷必填问题
+    if (survey) {
+      const missingRequired = survey.questions.filter(
+        (q) => q.required && !rsvpForm.answers[q.id]?.trim()
+      );
+      if (missingRequired.length > 0) {
+        showSnackbar.warning('请回答所有必填问题');
+        return;
+      }
+    } else {
+      // 检查旧版自定义问题是否必填
+      if (meetup.question_required && !rsvpForm.question_answer?.trim()) {
+        showSnackbar.warning('请回答报名问题');
+        return;
+      }
     }
 
     setSubmitStatus('loading');
 
     try {
-      const payload: Record<string, any> = {
+      // 准备报名数据
+      const rsvpPayload: Record<string, any> = {
         meetup_id: Number(meetup.id),
         name: rsvpForm.name.trim(),
         email: rsvpForm.email.trim() || undefined,
         user_id: getUserId(),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        question_answer: rsvpForm.question_answer?.trim() || undefined, // 添加自定义问题答案
+        question_answer: rsvpForm.question_answer?.trim() || undefined,
       };
       if (episode) {
-        payload.episode_date = episode.date;
-        payload.episode_number = episode.episode_number;
+        rsvpPayload.episode_date = episode.date;
+        rsvpPayload.episode_number = episode.episode_number;
       }
 
-      const response = await rsvpApi.create(payload);
+      let surveySubmissionId: string | null = null;
 
-      if (!response.success) {
-        const msg = (response as any)?.error || '报名失败';
+      // 如果有问卷，先提交问卷答案
+      if (survey && meetup.survey_id) {
+        const surveyResponse = await surveyApi.submit({
+          survey_id: meetup.survey_id,
+          respondent_id: getUserId() || undefined,
+          respondent_email: rsvpForm.email.trim() || undefined,
+          answers: rsvpForm.answers,
+        });
+
+        if (!surveyResponse.success) {
+          throw new Error(surveyResponse.error || '提交问卷失败');
+        }
+
+        surveySubmissionId = surveyResponse.data?.id || null;
+      }
+
+      // 添加问卷提交ID到报名数据
+      if (surveySubmissionId) {
+        rsvpPayload.survey_submission_id = surveySubmissionId;
+      }
+
+      // 提交报名
+      const rsvpResponse = await rsvpApi.create(rsvpPayload);
+
+      if (!rsvpResponse.success) {
+        const msg = (rsvpResponse as any)?.error || '报名失败';
         if (/已经报名/.test(msg)) {
           setSubmitStatus('success');
           setTimeout(() => {
@@ -356,7 +439,7 @@ const MeetupDetail: React.FC = () => {
       }
 
       // 从返回的RSVP里拿 episode_id（新建 episode 时 backend 会返回）
-      const returnedRsvp = response.data?.rsvp;
+      const returnedRsvp = rsvpResponse.data?.rsvp;
       const returnedEpisodeId: number | undefined =
         returnedRsvp?.episode_id ?? episode?.id;
 
@@ -535,6 +618,9 @@ const MeetupDetail: React.FC = () => {
                 component="img"
                 src={cover as string}
                 alt={meetup.title}
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                  e.currentTarget.src = '/images/mistyblue.png';
+                }}
                 sx={{
                   width: '100%',
                   height: { xs: '180px', sm: '220px', md: '280px' },
@@ -951,7 +1037,7 @@ const MeetupDetail: React.FC = () => {
                 >
                   分享活动
                 </Button>
-                {isUpcomingMeetup && (
+                {isUpcomingMeetup && !isCurrentUserRSVPed && (
                   <Button
                     variant="contained"
                     onClick={handleJoinMeetup}
@@ -1023,50 +1109,38 @@ const MeetupDetail: React.FC = () => {
               >
                 报名成功后将自动下载日历文件，可添加到您的日历应用。
               </Typography>
-              {/* 自定义问题 */}
-              {meetup?.question_text &&
-                (() => {
-                  const questionConfig = createDefaultQuestion(
-                    (meetup.question_type === 'text'
-                      ? 'text'
-                      : meetup.question_type === 'checkbox'
-                        ? 'multiple'
-                        : meetup.question_type === 'select'
-                          ? 'single'
-                          : 'text') as any
-                  );
-                  questionConfig.title = meetup.question_text;
-                  questionConfig.required = !!meetup.question_required;
-                  if (meetup.question_options) {
-                    questionConfig.options = meetup.question_options
-                      .split(',')
-                      .map((opt, idx) => ({
-                        id: `opt_${idx}`,
-                        text: opt.trim(),
-                        label: opt.trim(),
-                        value: opt.trim(),
-                      }));
-                  }
-                  return (
-                    <Box sx={{ mt: 2 }}>
+              {/* 问卷问题 */}
+              {survey && (
+                <Box sx={{ mt: 2 }}>
+                  {surveyLoading ? (
+                    <Box
+                      sx={{ display: 'flex', justifyContent: 'center', py: 2 }}
+                    >
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : (
+                    survey.questions.map((question: any, index: number) => (
                       <QuestionRenderer
-                        question={questionConfig}
-                        value={rsvpForm.question_answer}
+                        key={question.id}
+                        question={question}
+                        value={rsvpForm.answers[question.id] || ''}
                         onChange={(value) =>
                           setRsvpForm((prev) => ({
                             ...prev,
-                            question_answer: Array.isArray(value)
-                              ? value.join(',')
-                              : value,
+                            answers: {
+                              ...prev.answers,
+                              [question.id]: value,
+                            },
                           }))
                         }
+                        index={index}
                         error={
-                          meetup.question_required &&
-                          !rsvpForm.question_answer?.trim()
+                          question.required &&
+                          !rsvpForm.answers[question.id]?.trim()
                         }
                         helperText={
-                          meetup.question_required &&
-                          !rsvpForm.question_answer?.trim()
+                          question.required &&
+                          !rsvpForm.answers[question.id]?.trim()
                             ? '请回答此问题'
                             : undefined
                         }
@@ -1075,9 +1149,10 @@ const MeetupDetail: React.FC = () => {
                           submitStatus === 'success'
                         }
                       />
-                    </Box>
-                  );
-                })()}
+                    ))
+                  )}
+                </Box>
+              )}
             </Box>
           ) : (
             <Box sx={{ mt: 1 }}>
@@ -1106,50 +1181,38 @@ const MeetupDetail: React.FC = () => {
                   submitStatus === 'loading' || submitStatus === 'success'
                 }
               />
-              {/* 自定义问题 */}
-              {meetup?.question_text &&
-                (() => {
-                  const questionConfig = createDefaultQuestion(
-                    (meetup.question_type === 'text'
-                      ? 'text'
-                      : meetup.question_type === 'checkbox'
-                        ? 'multiple'
-                        : meetup.question_type === 'select'
-                          ? 'single'
-                          : 'text') as any
-                  );
-                  questionConfig.title = meetup.question_text;
-                  questionConfig.required = !!meetup.question_required;
-                  if (meetup.question_options) {
-                    questionConfig.options = meetup.question_options
-                      .split(',')
-                      .map((opt, idx) => ({
-                        id: `opt_${idx}`,
-                        text: opt.trim(),
-                        label: opt.trim(),
-                        value: opt.trim(),
-                      }));
-                  }
-                  return (
-                    <Box sx={{ mt: 2 }}>
+              {/* 问卷问题 */}
+              {survey && (
+                <Box sx={{ mt: 2 }}>
+                  {surveyLoading ? (
+                    <Box
+                      sx={{ display: 'flex', justifyContent: 'center', py: 2 }}
+                    >
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : (
+                    survey.questions.map((question: any, index: number) => (
                       <QuestionRenderer
-                        question={questionConfig}
-                        value={rsvpForm.question_answer}
+                        key={question.id}
+                        question={question}
+                        value={rsvpForm.answers[question.id] || ''}
                         onChange={(value) =>
                           setRsvpForm((prev) => ({
                             ...prev,
-                            question_answer: Array.isArray(value)
-                              ? value.join(',')
-                              : value,
+                            answers: {
+                              ...prev.answers,
+                              [question.id]: value,
+                            },
                           }))
                         }
+                        index={index}
                         error={
-                          meetup.question_required &&
-                          !rsvpForm.question_answer?.trim()
+                          question.required &&
+                          !rsvpForm.answers[question.id]?.trim()
                         }
                         helperText={
-                          meetup.question_required &&
-                          !rsvpForm.question_answer?.trim()
+                          question.required &&
+                          !rsvpForm.answers[question.id]?.trim()
                             ? '请回答此问题'
                             : undefined
                         }
@@ -1158,9 +1221,10 @@ const MeetupDetail: React.FC = () => {
                           submitStatus === 'success'
                         }
                       />
-                    </Box>
-                  );
-                })()}
+                    ))
+                  )}
+                </Box>
+              )}
               <Typography
                 variant="caption"
                 color="text.secondary"

@@ -23,7 +23,6 @@ export const RSVP_STATUS_STYLES: Record<
 };
 
 export function getRSVPStatusLabel(status: RSVPStatus | string): string {
-  debugger;
   const statusMap: Record<string, string> = {
     [RSVPStatus.CONFIRMED]: RSVPStatusLabel.CONFIRMED,
     [RSVPStatus.CANCELLED]: RSVPStatusLabel.CANCELLED,
@@ -95,6 +94,7 @@ export function getApprovalStatusStyle(status: ApprovalStatus | string): {
   color: string;
 } {
   const styleMap: Record<string, { backgroundColor: string; color: string }> = {
+    [ApprovalStatus.AUTO]: APPROVAL_STATUS_STYLES[ApprovalStatus.AUTO],
     [ApprovalStatus.PENDING]: APPROVAL_STATUS_STYLES[ApprovalStatus.PENDING],
     [ApprovalStatus.APPROVED]: APPROVAL_STATUS_STYLES[ApprovalStatus.APPROVED],
     [ApprovalStatus.REJECTED]: APPROVAL_STATUS_STYLES[ApprovalStatus.REJECTED],

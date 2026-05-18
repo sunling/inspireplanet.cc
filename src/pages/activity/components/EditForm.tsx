@@ -15,7 +15,8 @@ import useResponsive from '../../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../../context/app';
 import { imagesApi } from '../../../netlify/config';
 import { getUserId } from '../../../utils';
-import MeetupQuestionSection from '../../../components/MeetupQuestionSection';
+import QuestionEditor from '../../../components/QuestionEditor';
+import { SurveyQuestion } from '../../../netlify/types/survey';
 
 import { Meetup, MeetupList } from '../../../netlify/functions/meetup';
 
@@ -86,9 +87,13 @@ const EditForm: React.FC<EditFormProps> = ({
   const [qrPreview, setQrPreview] = useState(initialValues.cover || '');
   const [errors, setErrors] = useState<FormErrors>({});
   const [formValues, setFormValues] = useState<Meetup>(initialValues);
+  const [questions, setQuestions] = useState<SurveyQuestion[]>(
+    (initialValues as any).survey_questions || []
+  );
 
   useEffect(() => {
     setFormValues(initialValues);
+    setQuestions((initialValues as any).survey_questions || []);
   }, [initialValues]);
 
   useEffect(() => {
@@ -280,6 +285,7 @@ const EditForm: React.FC<EditFormProps> = ({
         max_ppl: formValues.max_ppl ? formValues.max_ppl : null,
         cover: cover || existingQrUrl,
         user_id: getUserId(),
+        survey_questions: questions,
       };
 
       // 调用外部提交函数
@@ -693,20 +699,21 @@ const EditForm: React.FC<EditFormProps> = ({
           </Box>
         </Box>
 
-        {/* 自定义报名问题 */}
-        <MeetupQuestionSection
-          questionText={formValues.question_text || ''}
-          questionType={formValues.question_type || 'text'}
-          questionOptions={formValues.question_options || ''}
-          questionRequired={!!formValues.question_required}
-          onChange={(data) =>
-            setFormValues((prev) => ({
-              ...prev,
-              ...data,
-            }))
-          }
-          viewOnly={viewOnly}
-        />
+        {/* 报名问题 */}
+        <Box
+          sx={{
+            mb: 4,
+            p: 3,
+            borderRadius: 1,
+            boxShadow: 1,
+          }}
+        >
+          <QuestionEditor
+            questions={questions}
+            onChange={setQuestions}
+            viewOnly={viewOnly}
+          />
+        </Box>
 
         {!viewOnly && onSubmit && (
           <Button

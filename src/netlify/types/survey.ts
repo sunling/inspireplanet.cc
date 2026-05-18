@@ -37,6 +37,8 @@ export interface Survey {
   isActive: boolean;
   allowMultipleSubmissions: boolean;
   createdBy: string;
+  meetup_id?: string; // 关联到活动ID
+  is_for_meetup?: boolean; // 是否为活动专用问卷
 }
 
 // 问卷列表响应
@@ -56,6 +58,8 @@ export interface CreateSurveyRequest {
   endDate?: string;
   isActive: boolean;
   allowMultipleSubmissions: boolean;
+  meetup_id?: string; // 关联到活动ID
+  is_for_meetup?: boolean; // 是否为活动专用问卷
 }
 
 // 更新问卷请求
@@ -67,6 +71,7 @@ export interface UpdateSurveyRequest {
   endDate?: string;
   isActive: boolean;
   allowMultipleSubmissions: boolean;
+  meetup_id?: string; // 关联到活动ID
 }
 
 // 问题答案

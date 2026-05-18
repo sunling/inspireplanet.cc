@@ -31,7 +31,12 @@ const participantsApi = {
     return await http.post('/participants', 'batchConfirm', params);
   },
 
-  batchReject: async (params: { meetup_id: number; rsvp_ids: number[] }) => {
+  batchReject: async (params: {
+    meetup_id: number;
+    rsvp_ids: number[];
+    send_email?: boolean;
+    approved_by?: string;
+  }) => {
     return await http.post('/participants', 'batchReject', params);
   },
 };
