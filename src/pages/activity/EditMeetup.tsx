@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Typography, Container } from '@mui/material';
 import useResponsive from '../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../context/app';
-import { meetupsApi } from '../../netlify/config';
+import { meetupsApi, surveyApi } from '../../netlify/config';
 import { Meetup, MeetupMode } from '../../netlify/functions/meetup';
 import { getUserName } from '@/utils/user';
 import EditForm, { formatDateTimeLocal } from './components/EditForm';
@@ -47,10 +47,20 @@ const EditMeetup: React.FC = () => {
         showSnackbar.error('活动不存在');
         return;
       }
+
+      let surveyQuestions: any[] = [];
+      if (record.survey_id) {
+        const surveyRes = await surveyApi.getById(record.survey_id);
+        if (surveyRes.success && surveyRes.data?.questions) {
+          surveyQuestions = surveyRes.data.questions;
+        }
+      }
+
       const start = new Date(record.datetime);
       setInitialValues({
         ...record,
         datetime: formatDateTimeLocal(start),
+        survey_questions: surveyQuestions,
       });
       setExistingQrUrl(record.cover || '');
     };

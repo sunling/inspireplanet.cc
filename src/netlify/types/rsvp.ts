@@ -101,3 +101,37 @@ export function getApprovalStatusStyle(status: ApprovalStatus | string): {
   };
   return styleMap[status] || APPROVAL_STATUS_STYLES[ApprovalStatus.PENDING];
 }
+
+export interface RSVP {
+  id: string;
+  name: string;
+  user_id: string | null;
+  status: RSVPStatus;
+  application_status: ApprovalStatus;
+  created_at: string;
+  survey_id: string | null;
+  email_sent: boolean;
+  email_sent_at: string | null;
+  survey_answers?: string | null;
+  survey_submission_id?: string | null;
+}
+
+export interface ParticipantStats {
+  total: number;
+  confirmed: number;
+  cancelled: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+}
+
+export function calculateParticipantStats(participants: RSVP[]): ParticipantStats {
+  return {
+    total: participants.length,
+    confirmed: participants.filter((p) => p.status === RSVPStatus.CONFIRMED).length,
+    cancelled: participants.filter((p) => p.status === RSVPStatus.CANCELLED).length,
+    pending: participants.filter((p) => p.application_status === ApprovalStatus.PENDING).length,
+    approved: participants.filter((p) => p.application_status === ApprovalStatus.APPROVED).length,
+    rejected: participants.filter((p) => p.application_status === ApprovalStatus.REJECTED).length,
+  };
+}

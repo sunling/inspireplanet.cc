@@ -16,7 +16,13 @@ export const speakerSignupsApi = {
   create: async (
     data: Pick<
       SpeakerSignup,
-      'meetup_id' | 'episode_number' | 'name' | 'topic' | 'duration'
+      | 'meetup_id'
+      | 'episode_number'
+      | 'name'
+      | 'topic'
+      | 'duration'
+      | 'email'
+      | 'timezone'
     >
   ): Promise<ApiResponse<{ signup: SpeakerSignup }>> => {
     return http.post('/speakerSignups', 'create', data);

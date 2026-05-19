@@ -73,8 +73,11 @@ const MeetupQuestionSection: React.FC<MeetupQuestionSectionProps> = ({
     );
   }, [questionText, questionType, questionOptions, questionRequired]);
 
-  const handleQuestionChange = (updated: SurveyQuestion) => {
-    onChange(convertQuestionToMeetup(updated));
+  const handleQuestionsChange = (updatedQuestions: SurveyQuestion[]) => {
+    const updated = updatedQuestions[0];
+    if (updated) {
+      onChange(convertQuestionToMeetup(updated));
+    }
   };
 
   return (
@@ -94,10 +97,8 @@ const MeetupQuestionSection: React.FC<MeetupQuestionSectionProps> = ({
       </Typography>
 
       <QuestionEditor
-        question={questionConfig}
-        onChange={handleQuestionChange}
-        index={0}
-        showDelete={false}
+        questions={[questionConfig]}
+        onChange={handleQuestionsChange}
       />
     </Box>
   );

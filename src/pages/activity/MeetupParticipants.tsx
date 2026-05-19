@@ -47,23 +47,10 @@ import {
   getRSVPStatusStyle,
   getApprovalStatusLabel,
   getApprovalStatusStyle,
+  RSVP,
 } from '../../netlify/types/rsvp';
 import { Survey, SurveyQuestion } from '../../netlify/types/survey';
-
-interface RSVP {
-  id: string;
-  name: string;
-  email: string | null;
-  user_id: string | null;
-  status: RSVPStatus;
-  application_status: ApprovalStatus;
-  created_at: string;
-  question_answer: string | null;
-  survey_id: string | null;
-  survey_answers: string | null;
-  email_sent: boolean;
-  email_sent_at: string | null;
-}
+import StatsCard from '../../components/StatsCard';
 
 const MeetupParticipants: React.FC = () => {
   const navigate = useNavigate();
@@ -293,6 +280,7 @@ const MeetupParticipants: React.FC = () => {
         application_status: ApprovalStatus.APPROVED,
         approved_by: getUserName(),
         approved_at: new Date().toISOString(),
+        send_email: true,
       } as any);
       if (response.success) {
         setParticipants((prev) =>
@@ -422,70 +410,7 @@ const MeetupParticipants: React.FC = () => {
       </Box>
 
       {/* 统计信息 */}
-      <Card sx={{ mb: 4 }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            <Box>
-              <Typography variant="h5" fontWeight="bold">
-                {stats.total}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                总报名人数
-              </Typography>
-            </Box>
-            {/* 需要审批的活动显示完整统计 */}
-            {meetup?.survey_id ? (
-              <>
-                <Box>
-                  <Typography variant="h5" fontWeight="bold">
-                    {stats.confirmed}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    已报名
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="h5" fontWeight="bold">
-                    {stats.pending}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    待处理
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography
-                    variant="h5"
-                    fontWeight="bold"
-                    color="success.main"
-                  >
-                    {stats.approved}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    已通过
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="h5" fontWeight="bold" color="error.main">
-                    {stats.rejected}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    已拒绝
-                  </Typography>
-                </Box>
-              </>
-            ) : (
-              <Box>
-                <Typography variant="h5" fontWeight="bold">
-                  {stats.confirmed}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  已报名
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        </CardContent>
-      </Card>
+      <StatsCard stats={stats} showApprovalStats={!!meetup?.survey_id} />
 
       {/* 筛选和操作栏 */}
       <Box
@@ -644,12 +569,12 @@ const MeetupParticipants: React.FC = () => {
                           wordBreak: 'break-all',
                         }}
                       >
-                        {participant.survey_answers ? (
+                        {participant.survey_answers && survey ? (
                           <Box
                             sx={{
                               display: 'flex',
                               flexDirection: 'column',
-                              gap: 0.5,
+                              gap: 1,
                             }}
                           >
                             {(() => {
@@ -657,58 +582,69 @@ const MeetupParticipants: React.FC = () => {
                                 const answers = JSON.parse(
                                   participant.survey_answers
                                 );
-                                if (survey) {
-                                  return survey.questions
-                                    .map((q) => {
-                                      const answer = answers[q.id];
-                                      if (
-                                        answer === undefined ||
-                                        answer === null ||
-                                        answer === ''
-                                      ) {
-                                        return null;
+                                return survey.questions
+                                  .map((question) => {
+                                    const answerValue = answers[question.id];
+                                    if (
+                                      answerValue === undefined ||
+                                      answerValue === null
+                                    ) {
+                                      return null;
+                                    }
+                                    let displayValue = String(answerValue);
+                                    // 如果是选择题且有 options，尝试找到对应选项的文本
+                                    if (
+                                      question.options &&
+                                      Array.isArray(question.options)
+                                    ) {
+                                      const matchedOption =
+                                        question.options.find(
+                                          (opt) =>
+                                            opt.value === answerValue ||
+                                            opt.id === answerValue
+                                        );
+                                      if (matchedOption) {
+                                        displayValue = matchedOption.text;
+                                      } else if (Array.isArray(answerValue)) {
+                                        // 多选情况
+                                        const selectedTexts = question.options
+                                          .filter(
+                                            (opt) =>
+                                              answerValue.includes(opt.value) ||
+                                              answerValue.includes(opt.id)
+                                          )
+                                          .map((opt) => opt.text);
+                                        if (selectedTexts.length > 0) {
+                                          displayValue =
+                                            selectedTexts.join(', ');
+                                        }
                                       }
-                                      // 处理多选题答案
-                                      const displayAnswer = Array.isArray(
-                                        answer
-                                      )
-                                        ? answer.join(', ')
-                                        : answer;
-                                      return (
-                                        <Typography
-                                          key={q.id}
-                                          variant="body2"
-                                          color="text.secondary"
-                                        >
-                                          <span style={{ fontWeight: 500 }}>
-                                            【{q.title}】
-                                          </span>{' '}
-                                          {displayAnswer}
-                                        </Typography>
-                                      );
-                                    })
-                                    .filter(Boolean);
-                                }
-
-                                return '-';
-                              } catch {
+                                    }
+                                    return (
+                                      <Typography
+                                        key={question.id}
+                                        variant="body2"
+                                      >
+                                        【{question.title}】{displayValue}
+                                      </Typography>
+                                    );
+                                  })
+                                  .filter(Boolean);
+                              } catch (error) {
+                                console.error('解析问卷答案失败:', error);
                                 return (
                                   <Typography
                                     variant="body2"
                                     color="text.secondary"
                                   >
-                                    {participant.survey_answers || '无'}
+                                    {participant.survey_answers}
                                   </Typography>
                                 );
                               }
                             })()}
                           </Box>
-                        ) : participant.question_answer ? (
-                          <Typography variant="body2" color="text.secondary">
-                            {participant.question_answer}
-                          </Typography>
                         ) : (
-                          <Typography color="text.secondary" variant="body2">
+                          <Typography variant="body2" color="text.secondary">
                             无
                           </Typography>
                         )}

@@ -16,6 +16,8 @@ export interface SpeakerSignup {
   name: string;
   topic: string;
   duration?: string;
+  email?: string;
+  timezone?: string;
   status?: 'pending' | 'confirmed' | 'cancelled';
   created_at?: string;
 }

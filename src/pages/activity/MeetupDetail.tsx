@@ -99,8 +99,6 @@ const MeetupDetail: React.FC = () => {
   // RSVP表单状态
   const [rsvpForm, setRsvpForm] = useState({
     name: '',
-    email: '',
-    question_answer: '', // 兼容旧数据的单问题答案
     answers: {} as Record<string, any>, // 问卷问题答案（新格式）
   });
 
@@ -162,7 +160,7 @@ const MeetupDetail: React.FC = () => {
 
       setMeetup(processedMeetup);
 
-      // 如果是循环活动，加载对应期次信息
+      // 如果是定期活动，加载对应期次信息
       let episodeId: number | undefined;
       if (
         processedMeetup.is_recurring &&
@@ -327,7 +325,6 @@ const MeetupDetail: React.FC = () => {
         setRsvpForm({
           name: userInfo.name || userInfo.email || '',
           email: userInfo.email || '',
-          question_answer: '',
           answers: initialAnswers,
         });
         setShowRSVPDialog(true);
@@ -336,7 +333,6 @@ const MeetupDetail: React.FC = () => {
         setRsvpForm({
           name: '',
           email: '',
-          question_answer: '',
           answers: initialAnswers,
         });
         setShowRSVPDialog(true);
@@ -358,12 +354,6 @@ const MeetupDetail: React.FC = () => {
       return;
     }
 
-    const loggedIn = isUserLoggedIn();
-    if (!loggedIn && !rsvpForm.email.trim()) {
-      showSnackbar.warning('请输入您的邮箱');
-      return;
-    }
-
     // 检查问卷必填问题
     if (survey) {
       const missingRequired = survey.questions.filter(
@@ -373,25 +363,17 @@ const MeetupDetail: React.FC = () => {
         showSnackbar.warning('请回答所有必填问题');
         return;
       }
-    } else {
-      // 检查旧版自定义问题是否必填
-      if (meetup.question_required && !rsvpForm.question_answer?.trim()) {
-        showSnackbar.warning('请回答报名问题');
-        return;
-      }
     }
 
     setSubmitStatus('loading');
 
     try {
-      // 准备报名数据
+      // 准备报名数据（用户必须登录，邮箱从用户表获取）
       const rsvpPayload: Record<string, any> = {
         meetup_id: Number(meetup.id),
         name: rsvpForm.name.trim(),
-        email: rsvpForm.email.trim() || undefined,
         user_id: getUserId(),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        question_answer: rsvpForm.question_answer?.trim() || undefined,
       };
       if (episode) {
         rsvpPayload.episode_date = episode.date;
@@ -404,8 +386,7 @@ const MeetupDetail: React.FC = () => {
       if (survey && meetup.survey_id) {
         const surveyResponse = await surveyApi.submit({
           survey_id: meetup.survey_id,
-          respondent_id: getUserId() || undefined,
-          respondent_email: rsvpForm.email.trim() || undefined,
+          respondent_id: getUserId(),
           answers: rsvpForm.answers,
         });
 
@@ -495,7 +476,8 @@ const MeetupDetail: React.FC = () => {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
       if (res.success && res.data?.signup) {
-        setSpeakerSignups((prev) => [...prev, res.data!.signup]);
+        const newSignup = res.data.signup;
+        setSpeakerSignups((prev) => [...prev, newSignup]);
         setSpeakerForm({ name: '', email: '', topic: '', duration: '' });
         setShowSpeakerForm(false);
         showSnackbar.success('报名成功！期待你的分享 🎉');
@@ -1162,19 +1144,6 @@ const MeetupDetail: React.FC = () => {
                 value={rsvpForm.name}
                 onChange={(e) =>
                   setRsvpForm((prev) => ({ ...prev, name: e.target.value }))
-                }
-                margin="normal"
-                disabled={
-                  submitStatus === 'loading' || submitStatus === 'success'
-                }
-              />
-              <TextField
-                fullWidth
-                label="邮箱"
-                type="email"
-                value={rsvpForm.email}
-                onChange={(e) =>
-                  setRsvpForm((prev) => ({ ...prev, email: e.target.value }))
                 }
                 margin="normal"
                 disabled={

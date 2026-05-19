@@ -404,7 +404,7 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
 async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
     const requestData = getDataFromEvent(event);
-    const { id, ...updateData } = requestData;
+    const { id, survey_questions, ...updateData } = requestData;
 
     if (!id) {
       return createErrorResponse('缺少活动ID');
@@ -442,6 +442,36 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     if (error) {
       console.error('Database update error:', error);
       return createErrorResponse('更新活动数据库失败', 500);
+    }
+
+    if (
+      survey_questions &&
+      Array.isArray(survey_questions) &&
+      existingMeetup.survey_id
+    ) {
+      await supabase
+        .from('survey_questions')
+        .delete()
+        .eq('survey_id', existingMeetup.survey_id);
+
+      if (survey_questions.length > 0) {
+        const questionPromises = survey_questions.map(
+          (question: any, index: number) => {
+            return supabase.from('survey_questions').insert({
+              survey_id: existingMeetup.survey_id,
+              type: question.type,
+              title: question.title,
+              description: question.description,
+              required: question.required,
+              options: question.options,
+              max_rating: question.maxRating,
+              placeholder: question.placeholder,
+              sort_order: question.sortOrder ?? index,
+            });
+          }
+        );
+        await Promise.all(questionPromises);
+      }
     }
 
     return createSuccessResponse({

@@ -49,14 +49,11 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
 
   const handleAddQuestion = () => {
     setEditingQuestion({
-      type: 'single',
+      type: 'text',
       title: '',
       description: '',
       required: false,
-      options: [
-        { id: '1', text: '选项1', label: '选项1', value: '1' },
-        { id: '2', text: '选项2', label: '选项2', value: '2' },
-      ],
+      placeholder: '请输入...',
     });
     setEditingIndex(-1);
     setEditDialogOpen(true);
@@ -216,7 +213,8 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
         <Typography variant="h6">报名问题</Typography>
         {!viewOnly && (
           <Button
-            variant="outlined"
+            variant="contained"
+            color="primary"
             startIcon={<AddIcon />}
             onClick={handleAddQuestion}
           >
@@ -433,7 +431,11 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
           >
             取消
           </Button>
-          <Button onClick={handleSaveQuestion} color="primary">
+          <Button
+            onClick={handleSaveQuestion}
+            color="primary"
+            variant="contained"
+          >
             {editingIndex === -1 ? '添加' : '保存'}
           </Button>
         </DialogActions>

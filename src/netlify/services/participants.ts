@@ -16,7 +16,6 @@ interface GetParticipantsParams {
 export interface Participant {
   id: string;
   name: string;
-  email: string | null;
   status: string;
   created_at: string;
   question_answer: string | null;

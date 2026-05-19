@@ -68,9 +68,6 @@ async function handleCreate(event: NetlifyEvent) {
     const rsvpData = getDataFromEvent(event);
     const meetupIdNum = Number(rsvpData.meetup_id);
     const name = String(rsvpData.name || '').trim();
-    const guestEmail = rsvpData.email
-      ? String(rsvpData.email).trim()
-      : undefined;
     const timezone = rsvpData.timezone
       ? String(rsvpData.timezone)
       : 'Asia/Shanghai';
@@ -231,13 +228,16 @@ async function handleCreate(event: NetlifyEvent) {
 
     // 发送确认邮件（异步，不阻塞响应）
     // 只有不需要审批的活动才立即发送报名成功邮件，需要审批的活动等审批通过后再发送
+    // 用户必须登录，从 users 表获取邮箱（userId 是 users 表的数字ID，不是 Supabase Auth UUID）
     const recipientName = name || '同学';
-    let recipientEmail: string | undefined = guestEmail;
-    if (!recipientEmail && authUserId) {
-      const { data: authUser } = await supabase.auth.admin.getUserById(
-        String(authUserId)
-      );
-      recipientEmail = authUser?.user?.email;
+    let recipientEmail: string | undefined;
+    if (userId) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', userId)
+        .single();
+      recipientEmail = userData?.email;
     }
     if (recipientEmail && needsApproval === ApprovalStatus.APPROVED) {
       sendRSVPConfirmEmail({
@@ -456,7 +456,7 @@ async function handleUpdate(event: NetlifyEvent) {
       const rsvp = data[0];
       const { data: meetupData, error: meetupErr } = await supabase
         .from('meetups')
-        .select('id, title, event_datetime, location, mode, episode_number')
+        .select('id, title, datetime, location, mode, episode_number')
         .eq('id', rsvp.meetup_id)
         .single();
       meetup = meetupData;
@@ -464,6 +464,7 @@ async function handleUpdate(event: NetlifyEvent) {
 
       if (!meetupError && meetup) {
         let email = null;
+        // 从用户表获取邮箱（活动报名用户必须登录，user_id 一定存在）
         if (rsvp.user_id) {
           try {
             const { data: userData } = await supabase
@@ -511,7 +512,7 @@ async function handleUpdate(event: NetlifyEvent) {
               name: rsvp.name || '参与者',
               meetupTitle: meetup.title,
               meetupId: meetup.id,
-              eventDatetime: meetup.event_datetime,
+              eventDatetime: meetup.datetime,
               location: meetup.location,
               mode: meetup.mode,
               episodeNumber: meetup.episode_number,

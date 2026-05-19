@@ -330,7 +330,7 @@ const EditForm: React.FC<EditFormProps> = ({
               required
               placeholder="输入活动标题"
               size={isMobile ? 'small' : 'medium'}
-              InputProps={{ readOnly: viewOnly }}
+              slotProps={{ input: { readOnly: viewOnly } }}
             />
           </Box>
           <Box sx={{ mb: 3 }}>
@@ -351,7 +351,7 @@ const EditForm: React.FC<EditFormProps> = ({
               multiline
               minRows={4}
               size={isMobile ? 'small' : 'medium'}
-              InputProps={{ readOnly: viewOnly }}
+              slotProps={{ input: { readOnly: viewOnly } }}
             />
           </Box>
           <Box sx={{ mb: 3 }}>
@@ -370,7 +370,7 @@ const EditForm: React.FC<EditFormProps> = ({
               required
               select
               size={isMobile ? 'small' : 'medium'}
-              InputProps={{ readOnly: viewOnly }}
+              slotProps={{ input: { readOnly: viewOnly } }}
             >
               {MeetupList.map((item) => (
                 <MenuItem key={item.value} value={item.value}>
@@ -433,7 +433,7 @@ const EditForm: React.FC<EditFormProps> = ({
                   error={!!errors['recurrence_day']}
                   helperText={errors['recurrence_day']}
                   size={isMobile ? 'small' : 'medium'}
-                  InputProps={{ readOnly: viewOnly }}
+                  slotProps={{ input: { readOnly: viewOnly } }}
                 >
                   {['周日', '周一', '周二', '周三', '周四', '周五', '周六'].map(
                     (label, i) => (
@@ -463,7 +463,7 @@ const EditForm: React.FC<EditFormProps> = ({
                 onChange={handleInputChange}
                 required
                 size={isMobile ? 'small' : 'medium'}
-                InputProps={{ readOnly: viewOnly }}
+                slotProps={{ input: { readOnly: viewOnly } }}
               />
             </Box>
 
@@ -519,7 +519,7 @@ const EditForm: React.FC<EditFormProps> = ({
                     onChange={handleInputChange}
                     placeholder="线下活动请填写具体地址，线上活动可填写平台名称"
                     size={isMobile ? 'small' : 'medium'}
-                    InputProps={{ readOnly: viewOnly }}
+                    slotProps={{ input: { readOnly: viewOnly } }}
                   />
                 </Box>
               </Grid>
@@ -537,7 +537,12 @@ const EditForm: React.FC<EditFormProps> = ({
                     onChange={handleInputChange}
                     placeholder="例如：2"
                     size={isMobile ? 'small' : 'medium'}
-                    InputProps={{ readOnly: viewOnly }}
+                    slotProps={{
+                      input: {
+                        readOnly: viewOnly,
+                        inputProps: { min: 0.5, step: 0.5 },
+                      },
+                    }}
                   />
                 </Box>
               </Grid>
@@ -556,7 +561,7 @@ const EditForm: React.FC<EditFormProps> = ({
                 onChange={handleInputChange}
                 placeholder="不限制可留空"
                 size={isMobile ? 'small' : 'medium'}
-                InputProps={{ readOnly: viewOnly }}
+                slotProps={{ input: { readOnly: viewOnly } }}
               />
             </Box>
           </CardContent>
@@ -590,7 +595,7 @@ const EditForm: React.FC<EditFormProps> = ({
               required
               placeholder="您的姓名"
               size={isMobile ? 'small' : 'medium'}
-              InputProps={{ readOnly: viewOnly }}
+              slotProps={{ input: { readOnly: viewOnly } }}
             />
           </Box>
           <Box sx={{ mb: 3 }}>
@@ -609,7 +614,7 @@ const EditForm: React.FC<EditFormProps> = ({
               required
               placeholder="请填写微信号，用于活动沟通"
               size={isMobile ? 'small' : 'medium'}
-              InputProps={{ readOnly: viewOnly }}
+              slotProps={{ input: { readOnly: viewOnly } }}
             />
           </Box>
 

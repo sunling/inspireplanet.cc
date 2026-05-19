@@ -1,4 +1,7 @@
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
 
 export const isUpcomingEvent = (dateString: string): boolean => {
   return dayjs(dateString).isAfter(dayjs());
@@ -9,7 +12,10 @@ export const formatDateTime = (
   format = 'YYYY-MM-DD HH:mm'
 ): string => {
   if (!data) return '';
-  return dayjs(data).format(format);
+  const d = typeof data === 'string' && data.includes('T')
+    ? dayjs.utc(data)
+    : dayjs(data);
+  return d.format(format);
 };
 
 export const formatDate = (
@@ -17,7 +23,10 @@ export const formatDate = (
   format = 'YYYY-MM-DD'
 ): string => {
   if (!data) return '';
-  return dayjs(data).format(format);
+  const d = typeof data === 'string' && data.includes('T')
+    ? dayjs.utc(data)
+    : dayjs(data);
+  return d.format(format);
 };
 
 export const formatDateCN = (
@@ -25,7 +34,10 @@ export const formatDateCN = (
   format = 'YYYY年MM月DD日'
 ): string => {
   if (!data) return '';
-  return dayjs(data).format(format);
+  const d = typeof data === 'string' && data.includes('T')
+    ? dayjs.utc(data)
+    : dayjs(data);
+  return d.format(format);
 };
 
 export const formatTime = (
@@ -33,13 +45,12 @@ export const formatTime = (
   format = 'HH:mm'
 ): string => {
   if (!data) return '';
-  return dayjs(data).format(format);
+  const d = typeof data === 'string' && data.includes('T')
+    ? dayjs.utc(data)
+    : dayjs(data);
+  return d.format(format);
 };
 
-/**
- * 获取用户时区
- * @returns string 用户时区
- */
 export const getUserTimeZone = (): string => {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区';
@@ -48,11 +59,6 @@ export const getUserTimeZone = (): string => {
   }
 };
 
-/**
- * 按日期分组卡片
- * @param cards 卡片数组
- * @returns 按日期分组的对象
- */
 export const groupCardsByDate = (cards: any[]): Record<string, any[]> => {
   const grouped: Record<string, any[]> = {};
 
