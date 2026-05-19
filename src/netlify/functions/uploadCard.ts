@@ -77,7 +77,9 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
     try {
       const searchResult = await searchImageByText(record.detail);
       if (searchResult && searchResult.images.length > 0) {
-        const randomIndex = Math.floor(Math.random() * searchResult.images.length);
+        const randomIndex = Math.floor(
+          Math.random() * searchResult.images.length
+        );
         imagePath = searchResult.images[randomIndex].url;
         console.log('搜索到图片:', searchResult.query, '-> 选中:', imagePath);
       } else {
@@ -89,15 +91,17 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
     const { data, error } = await supabase
       .from('weekly_cards')
-      .insert([{
-        episode: record.episode,
-        name: record.name,
-        title: record.title,
-        quote: record.quote,
-        detail: record.detail,
-        image_path: imagePath,
-        created: new Date().toISOString(),
-      }])
+      .insert([
+        {
+          episode: record.episode,
+          name: record.name,
+          title: record.title,
+          quote: record.quote,
+          detail: record.detail,
+          image_path: imagePath,
+          created: new Date().toISOString(),
+        },
+      ])
       .select();
 
     if (error) {

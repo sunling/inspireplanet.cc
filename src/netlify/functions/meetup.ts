@@ -15,6 +15,30 @@ import {
   getDataFromEvent,
 } from '../utils/server';
 
+// 问卷问题类型
+export type QuestionType = 'single' | 'multiple' | 'text' | 'rating' | 'date';
+
+// 问题选项
+export interface QuestionOption {
+  id: string;
+  text: string;
+  label: string;
+  value: string;
+}
+
+// 问卷问题
+export interface SurveyQuestion {
+  id: string;
+  type: QuestionType;
+  title: string;
+  description?: string;
+  required: boolean;
+  options?: QuestionOption[];
+  maxRating?: number;
+  placeholder?: string;
+  sortOrder?: number;
+}
+
 // 定义接口
 export interface Meetup {
   id?: string;
@@ -37,6 +61,13 @@ export interface Meetup {
   recurrence_day?: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
   episode_start_date?: string; // YYYY-MM-DD, date of EP1
   default_theme?: string; // fallback when no episode theme is set
+  // 关联问卷ID
+  survey_id?: string;
+  // 问卷问题（创建时使用）
+  survey_questions?: SurveyQuestion[];
+  // 报名问题
+  question_text?: string;
+  question_required?: boolean;
 }
 
 export interface MeetupRequest extends Omit<Meetup, 'id'> {}
@@ -140,6 +171,61 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
     const sanitizedMax =
       Number.isFinite(maxParsed) && maxParsed > 0 ? maxParsed : null;
 
+    let surveyId: string | null = meetupData.survey_id || null;
+
+    // 如果有问卷问题数据，自动创建活动专用问卷
+    if (meetupData.survey_questions && meetupData.survey_questions.length > 0) {
+      const surveyTitle = `${title} - 报名问卷`;
+
+      // 创建问卷
+      const { data: survey, error: surveyError } = await supabase
+        .from('surveys')
+        .insert({
+          title: surveyTitle,
+          description: `活动「${title}」的报名问卷`,
+          created_by: meetupData.user_id || creator,
+          is_active: true,
+          allow_multiple_submissions: false,
+          is_for_meetup: true,
+        })
+        .select('id')
+        .single();
+
+      if (surveyError) {
+        console.error('Error creating survey:', surveyError);
+        return createErrorResponse('创建问卷失败', 500);
+      }
+
+      surveyId = survey.id;
+
+      // 创建问卷问题
+      const questionPromises = meetupData.survey_questions!.map(
+        (question, index) => {
+          return supabase.from('survey_questions').insert({
+            survey_id: survey.id,
+            type: question.type,
+            title: question.title,
+            description: question.description,
+            required: question.required,
+            options: question.options,
+            max_rating: question.maxRating,
+            placeholder: question.placeholder,
+            sort_order: question.sortOrder || index,
+          });
+        }
+      );
+
+      const questionResults = await Promise.all(questionPromises);
+      const questionErrors = questionResults.filter((r) => r.error);
+
+      if (questionErrors.length > 0) {
+        console.error('Error creating questions:', questionErrors);
+        // 回滚：删除已创建的问卷
+        await supabase.from('surveys').delete().eq('id', survey.id);
+        return createErrorResponse('创建问卷问题失败', 500);
+      }
+    }
+
     const { data, error } = await supabase
       .from('meetups')
       .insert([
@@ -157,14 +243,33 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
           status: 'active',
           user_id: meetupData.user_id || null,
           is_recurring: meetupData.is_recurring || false,
-          recurrence_day: meetupData.is_recurring ? meetupData.recurrence_day ?? null : null,
+          recurrence_day: meetupData.is_recurring
+            ? (meetupData.recurrence_day ?? null)
+            : null,
+          // 关联问卷ID
+          survey_id: surveyId,
         },
       ])
       .select();
 
     if (error) {
       console.error('Database insert error:', error);
+      // 回滚：如果创建了问卷，删除它
+      if (surveyId && !meetupData.survey_id) {
+        await supabase.from('surveys').delete().eq('id', surveyId);
+      }
       return createErrorResponse('创建活动失败', 500);
+    }
+
+    // 如果创建了问卷，更新问卷的 meetup_id
+    if (surveyId && !meetupData.survey_id) {
+      const meetupId = data?.[0]?.id;
+      if (meetupId) {
+        await supabase
+          .from('surveys')
+          .update({ meetup_id: Number(meetupId) })
+          .eq('id', surveyId);
+      }
     }
 
     return createSuccessResponse({
@@ -299,7 +404,7 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
 async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
     const requestData = getDataFromEvent(event);
-    const { id, ...updateData } = requestData;
+    const { id, survey_questions, ...updateData } = requestData;
 
     if (!id) {
       return createErrorResponse('缺少活动ID');
@@ -337,6 +442,36 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     if (error) {
       console.error('Database update error:', error);
       return createErrorResponse('更新活动数据库失败', 500);
+    }
+
+    if (
+      survey_questions &&
+      Array.isArray(survey_questions) &&
+      existingMeetup.survey_id
+    ) {
+      await supabase
+        .from('survey_questions')
+        .delete()
+        .eq('survey_id', existingMeetup.survey_id);
+
+      if (survey_questions.length > 0) {
+        const questionPromises = survey_questions.map(
+          (question: any, index: number) => {
+            return supabase.from('survey_questions').insert({
+              survey_id: existingMeetup.survey_id,
+              type: question.type,
+              title: question.title,
+              description: question.description,
+              required: question.required,
+              options: question.options,
+              max_rating: question.maxRating,
+              placeholder: question.placeholder,
+              sort_order: question.sortOrder ?? index,
+            });
+          }
+        );
+        await Promise.all(questionPromises);
+      }
     }
 
     return createSuccessResponse({

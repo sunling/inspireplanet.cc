@@ -8,20 +8,20 @@
       content="启发星球 - 点亮彼此的能量场，分享智慧、记录感悟、创造美好的社区平台"
     />
     <meta name="keywords" content="启发星球,智慧卡片,感悟分享,社区,创作" />
-    
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1976d2" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="启发星球" />
     <meta name="mobile-web-app-capable" content="yes" />
-    
+
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
-    
+
     <!-- iOS Icons -->
     <link rel="apple-touch-icon" href="/images/logo.png" />
-    
+
     <title>启发星球 - 点亮彼此的能量场</title>
     <!-- 添加Google Fonts字体链接 -->
     <link
@@ -44,12 +44,13 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    
+
     <!-- Service Worker Registration -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker
+            .register('/sw.js')
             .then((registration) => {
               console.log('SW registered: ', registration);
             })

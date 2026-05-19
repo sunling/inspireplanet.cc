@@ -16,6 +16,8 @@ export interface SpeakerSignup {
   name: string;
   topic: string;
   duration?: string;
+  email?: string;
+  timezone?: string;
   status?: 'pending' | 'confirmed' | 'cancelled';
   created_at?: string;
 }
@@ -44,7 +46,9 @@ export async function handler(
   }
 }
 
-async function handleGetByEpisode(event: NetlifyEvent): Promise<NetlifyResponse> {
+async function handleGetByEpisode(
+  event: NetlifyEvent
+): Promise<NetlifyResponse> {
   const { meetup_id, episode_number } = getDataFromEvent(event);
   if (!meetup_id || !episode_number) return createErrorResponse('缺少必填字段');
 
@@ -61,14 +65,24 @@ async function handleGetByEpisode(event: NetlifyEvent): Promise<NetlifyResponse>
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const { meetup_id, episode_number, name, topic, duration, email, timezone } = getDataFromEvent(event);
+  const { meetup_id, episode_number, name, topic, duration, email, timezone } =
+    getDataFromEvent(event);
   if (!meetup_id || !episode_number || !name?.trim() || !topic?.trim()) {
     return createErrorResponse('缺少必填字段');
   }
 
   const { data, error } = await supabase
     .from('speaker_signups')
-    .insert([{ meetup_id, episode_number, name: name.trim(), topic: topic.trim(), duration: duration?.trim() || null, status: 'pending' }])
+    .insert([
+      {
+        meetup_id,
+        episode_number,
+        name: name.trim(),
+        topic: topic.trim(),
+        duration: duration?.trim() || null,
+        status: 'pending',
+      },
+    ])
     .select()
     .single();
 
@@ -112,7 +126,9 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   return createSuccessResponse({ signup: data });
 }
 
-async function handleUpdateStatus(event: NetlifyEvent): Promise<NetlifyResponse> {
+async function handleUpdateStatus(
+  event: NetlifyEvent
+): Promise<NetlifyResponse> {
   const { id, status } = getDataFromEvent(event);
   if (!id || !status) return createErrorResponse('缺少必填字段');
 

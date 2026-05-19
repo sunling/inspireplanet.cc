@@ -201,6 +201,9 @@ const Carousel: React.FC<CarouselProps> = ({
                   className={styles[`${direction}-carousel-img`]}
                   alt={e.title || `Slide ${index + 1}`}
                   loading="lazy"
+                  onError={(ev) => {
+                    ev.currentTarget.src = '/images/mistyblue.png';
+                  }}
                 />
                 {direction === 'horizontal' && (
                   <div className={styles[`cover-overlay`]}>

@@ -482,8 +482,18 @@ async function deleteCard(
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       decodedUsername = decoded.username || decoded.user_name || null;
       decodedName = decoded.name || null;
-      console.log('Token decoded - username:', decodedUsername, 'name:', decodedName);
-      console.log('Card data - username:', existingCard.username, 'creator:', existingCard.creator);
+      console.log(
+        'Token decoded - username:',
+        decodedUsername,
+        'name:',
+        decodedName
+      );
+      console.log(
+        'Card data - username:',
+        existingCard.username,
+        'creator:',
+        existingCard.creator
+      );
     } catch {
       return {
         statusCode: 401,
@@ -540,7 +550,11 @@ async function deleteCard(
     }
 
     // 执行删除操作
-    const { data: deleteData, error: deleteError, count } = await supabase
+    const {
+      data: deleteData,
+      error: deleteError,
+      count,
+    } = await supabase
       .from('cards')
       .delete({ count: 'exact' })
       .eq('id', cardId)
@@ -556,27 +570,40 @@ async function deleteCard(
       console.error('Supabase delete error:', deleteError);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'Failed to delete card', details: deleteError.message }),
+        body: JSON.stringify({
+          error: 'Failed to delete card',
+          details: deleteError.message,
+        }),
       };
     }
 
     // 验证删除是否成功
     // 方式1: 检查 data 数组是否有内容（Supabase 会返回被删除的记录）
     // 方式2: 检查 count 是否大于 0
-    const deleteSuccess = (deleteData && deleteData.length > 0) || (count !== null && count > 0);
+    const deleteSuccess =
+      (deleteData && deleteData.length > 0) || (count !== null && count > 0);
 
     if (!deleteSuccess) {
-      console.error('No records were deleted, count:', count, 'data length:', deleteData?.length);
+      console.error(
+        'No records were deleted, count:',
+        count,
+        'data length:',
+        deleteData?.length
+      );
       return {
         statusCode: 500,
         body: JSON.stringify({
           error: 'Delete operation affected 0 rows',
-          details: 'The card may have been already deleted or there might be a permission issue',
+          details:
+            'The card may have been already deleted or there might be a permission issue',
         }),
       };
     }
 
-    console.log('Card deleted successfully, affected rows:', count ?? deleteData?.length);
+    console.log(
+      'Card deleted successfully, affected rows:',
+      count ?? deleteData?.length
+    );
 
     return {
       statusCode: 200,

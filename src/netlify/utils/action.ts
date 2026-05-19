@@ -14,10 +14,12 @@ export function getFunctionNameFromEvent(
     query: event.queryStringParameters,
     hasBody: !!event.body,
   });
-  
+
   // GET请求从queryStringParameters获取（优先 functionName，兼容 action）
   if (event.httpMethod === 'GET' || event.httpMethod === 'DELETE') {
-    const result = event.queryStringParameters?.functionName || event.queryStringParameters?.action;
+    const result =
+      event.queryStringParameters?.functionName ||
+      event.queryStringParameters?.action;
     console.log('  → GET/DELETE query result:', result);
     return result;
   }
@@ -49,7 +51,7 @@ export function getDataFromEvent(event: NetlifyEvent): any {
     method: event.httpMethod,
     hasBody: !!event.body,
   });
-  
+
   // GET/DELETE请求从queryStringParameters获取
   if (event.httpMethod === 'GET' || event.httpMethod === 'DELETE') {
     const result = { ...event.queryStringParameters };

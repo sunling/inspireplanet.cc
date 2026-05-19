@@ -152,9 +152,12 @@ export const useForm = <T extends Record<string, any>>(
     setValues((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const setFieldError = useCallback((field: keyof T, error: string | undefined) => {
-    setErrors((prev) => ({ ...prev, [field]: error }));
-  }, []);
+  const setFieldError = useCallback(
+    (field: keyof T, error: string | undefined) => {
+      setErrors((prev) => ({ ...prev, [field]: error }));
+    },
+    []
+  );
 
   const isValid = Object.keys(errors).length === 0;
 

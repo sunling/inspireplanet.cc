@@ -9,16 +9,11 @@ export const rsvpApi = {
 
   update: async (
     id: string | number,
-    data: Partial<import('../types').Participant>
-  ): Promise<ApiResponse<{ rsvp: import('../types').Participant }>> => {
-    return http.put<{ rsvp: import('../types').Participant }>(
-      '/rsvp',
-      'update',
-      data,
-      {
-        params: { id } as any,
-      }
-    );
+    data: Partial<Participant>
+  ): Promise<ApiResponse<{ rsvp: Participant }>> => {
+    return http.put<{ rsvp: Participant }>('/rsvp', 'update', data, {
+      params: { id } as any,
+    });
   },
 
   getByUserId: async (

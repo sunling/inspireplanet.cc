@@ -15,7 +15,6 @@ export interface User {
   role?: string | null;
 }
 
-
 export async function handler(
   event: NetlifyEvent,
   _context: NetlifyContext
@@ -73,8 +72,6 @@ async function handleRegister(event: NetlifyEvent): Promise<NetlifyResponse> {
     console.error('Insert user error:', error);
     return createErrorResponse('注册失败，请稍后重试', 500);
   }
-
-
 
   return createSuccessResponse({ user: newUser }, 201);
 }

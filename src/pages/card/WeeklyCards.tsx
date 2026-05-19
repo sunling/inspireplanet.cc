@@ -453,6 +453,9 @@ const WeeklyCards: React.FC = () => {
                                       card.image_path || '/images/mistyblue.png'
                                     }
                                     alt={card.title}
+                                    onError={(ev) => {
+                                      ev.currentTarget.src = '/images/mistyblue.png';
+                                    }}
                                     style={{
                                       width: '100%',
                                       height: 'auto',

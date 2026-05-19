@@ -8,7 +8,8 @@ import {
   getFunctionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
-import { sendRSVPConfirmEmail } from '../utils/email';
+import { sendRSVPConfirmEmail, sendRSVPRejectEmail } from '../utils/email';
+import { RSVPStatus, ApprovalStatus } from '../types/rsvp';
 
 export interface RsvpAction {
   functionName:
@@ -67,8 +68,9 @@ async function handleCreate(event: NetlifyEvent) {
     const rsvpData = getDataFromEvent(event);
     const meetupIdNum = Number(rsvpData.meetup_id);
     const name = String(rsvpData.name || '').trim();
-    const guestEmail = rsvpData.email ? String(rsvpData.email).trim() : undefined;
-    const timezone = rsvpData.timezone ? String(rsvpData.timezone) : 'Asia/Shanghai';
+    const timezone = rsvpData.timezone
+      ? String(rsvpData.timezone)
+      : 'Asia/Shanghai';
     const authUserId = await getUserIdFromAuth(event);
     const providedUserId =
       rsvpData.user_id !== undefined ? rsvpData.user_id : null;
@@ -98,7 +100,9 @@ async function handleCreate(event: NetlifyEvent) {
 
     const { data: meetup, error: meetupError } = await supabase
       .from('meetups')
-      .select('id, max_ppl, status, title, datetime, location, mode, is_recurring, duration')
+      .select(
+        'id, max_ppl, status, title, datetime, location, mode, is_recurring, duration, survey_id'
+      )
       .eq('id', meetupIdNum)
       .single();
 
@@ -112,11 +116,19 @@ async function handleCreate(event: NetlifyEvent) {
 
     // 定期活动：upsert episode 记录，获取 episode_id
     let episodeId: number | null = null;
-    if (episodeDate && episodeNumber !== undefined && Number.isFinite(episodeNumber)) {
+    if (
+      episodeDate &&
+      episodeNumber !== undefined &&
+      Number.isFinite(episodeNumber)
+    ) {
       const { data: ep, error: epError } = await supabase
         .from('meetup_episodes')
         .upsert(
-          { meetup_id: meetupIdNum, episode_number: episodeNumber, date: episodeDate },
+          {
+            meetup_id: meetupIdNum,
+            episode_number: episodeNumber,
+            date: episodeDate,
+          },
           { onConflict: 'meetup_id,episode_number' }
         )
         .select('id')
@@ -141,7 +153,6 @@ async function handleCreate(event: NetlifyEvent) {
       if (byUser && byUser.length > 0) existingRSVP = byUser[0];
     }
 
-
     if (existingRSVP && existingRSVP.status === 'confirmed') {
       return createErrorResponse('您已经报名了这个活动');
     }
@@ -164,11 +175,24 @@ async function handleCreate(event: NetlifyEvent) {
       }
     }
 
+    // 获取前端已提交的问卷提交ID
+    const surveySubmissionId = rsvpData.survey_submission_id
+      ? String(rsvpData.survey_submission_id).trim()
+      : null;
+
     let result;
+    const needsApproval = meetup.survey_id
+      ? ApprovalStatus.PENDING
+      : ApprovalStatus.APPROVED;
+
     if (existingRSVP) {
       const { data, error } = await supabase
         .from('meetup_rsvps')
-        .update({ status: 'confirmed' })
+        .update({
+          status: RSVPStatus.CONFIRMED,
+          application_status: needsApproval,
+          survey_submission_id: surveySubmissionId,
+        })
         .eq('id', existingRSVP.id)
         .select();
       result = { data, error };
@@ -180,7 +204,9 @@ async function handleCreate(event: NetlifyEvent) {
             meetup_id: meetupIdNum,
             name,
             user_id: userId as any,
-            status: 'confirmed',
+            status: RSVPStatus.CONFIRMED,
+            application_status: needsApproval,
+            survey_submission_id: surveySubmissionId,
             ...(episodeId !== null ? { episode_id: episodeId } : {}),
           },
         ])
@@ -190,17 +216,30 @@ async function handleCreate(event: NetlifyEvent) {
 
     if (result.error) {
       console.error('Database error:', result.error);
+      // 回滚：删除已创建的问卷提交
+      if (surveySubmissionId) {
+        await supabase
+          .from('survey_submissions')
+          .delete()
+          .eq('id', surveySubmissionId);
+      }
       return createErrorResponse('报名失败', 500);
     }
 
     // 发送确认邮件（异步，不阻塞响应）
+    // 只有不需要审批的活动才立即发送报名成功邮件，需要审批的活动等审批通过后再发送
+    // 用户必须登录，从 users 表获取邮箱（userId 是 users 表的数字ID，不是 Supabase Auth UUID）
     const recipientName = name || '同学';
-    let recipientEmail: string | undefined = guestEmail;
-    if (!recipientEmail && authUserId) {
-      const { data: authUser } = await supabase.auth.admin.getUserById(String(authUserId));
-      recipientEmail = authUser?.user?.email;
+    let recipientEmail: string | undefined;
+    if (userId) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', userId)
+        .single();
+      recipientEmail = userData?.email;
     }
-    if (recipientEmail) {
+    if (recipientEmail && needsApproval === ApprovalStatus.APPROVED) {
       sendRSVPConfirmEmail({
         to: recipientEmail,
         name: recipientName,
@@ -332,7 +371,9 @@ async function handleGetAll(event: NetlifyEvent) {
 async function handleUpdate(event: NetlifyEvent) {
   try {
     const requestData = getDataFromEvent(event);
-    const { id, ...updateData } = requestData;
+    // id 可能在查询参数中，也可能在请求体中
+    const id = requestData.id || event.queryStringParameters?.id;
+    const { ...updateData } = requestData;
 
     if (!id) {
       return createErrorResponse('缺少RSVP ID');
@@ -342,13 +383,19 @@ async function handleUpdate(event: NetlifyEvent) {
     const idNum = Number(idTrimmed);
     const hasNum = Number.isFinite(idNum);
 
-    const allowedFields = ['status', 'name'];
-    const updateRecord = {};
+    const allowedFields = [
+      'status',
+      'name',
+      'question_answer',
+      'application_status',
+      'approved_by',
+      'email_sent',
+      'email_sent_at',
+    ];
+    const updateRecord: Record<string, any> = {};
     allowedFields.forEach((field) => {
       if (updateData[field] !== undefined) {
-        (updateRecord as Record<string, any>)[field] = (
-          updateData as Record<string, any>
-        )[field];
+        updateRecord[field] = updateData[field];
       }
     });
 
@@ -379,14 +426,14 @@ async function handleUpdate(event: NetlifyEvent) {
       .from('meetup_rsvps')
       .update(updateRecord)
       .eq('id', idTrimmed as any)
-      .select();
+      .select('*, meetup_id');
 
     if ((!data || data.length === 0) && hasNum && !error) {
       const second = await supabase
         .from('meetup_rsvps')
         .update(updateRecord)
         .eq('id', idNum as any)
-        .select();
+        .select('*, meetup_id');
       data = second.data;
       error = second.error;
     }
@@ -394,6 +441,112 @@ async function handleUpdate(event: NetlifyEvent) {
     if (error) {
       console.error('Database update error:', error);
       return createErrorResponse('更新RSVP失败', 500);
+    }
+
+    // 获取活动详情（用于发送邮件）
+    let meetup = null;
+    let meetupError = null;
+
+    // 调试日志
+    console.log('📧 邮件发送检查:', {
+      send_email: updateData.send_email,
+      hasData: data && data.length > 0,
+      application_status: updateData.application_status,
+      isRejected: updateData.application_status === ApprovalStatus.REJECTED,
+      isApproved: updateData.application_status === ApprovalStatus.APPROVED,
+    });
+
+    if (
+      updateData.send_email &&
+      data &&
+      data.length > 0 &&
+      (updateData.application_status === ApprovalStatus.REJECTED ||
+        updateData.application_status === ApprovalStatus.APPROVED)
+    ) {
+      const rsvp = data[0];
+      const { data: meetupData, error: meetupErr } = await supabase
+        .from('meetups')
+        .select('id, title, datetime, location, mode')
+        .eq('id', rsvp.meetup_id)
+        .single();
+      meetup = meetupData;
+      meetupError = meetupErr;
+
+      if (!meetupError && meetup) {
+        let email = null;
+        // 从用户表获取邮箱（活动报名用户必须登录，user_id 一定存在）
+        console.log('📧 获取用户邮箱:', {
+          rsvp_user_id: rsvp.user_id,
+          rsvp_name: rsvp.name,
+        });
+        if (rsvp.user_id) {
+          try {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('email')
+              .eq('id', rsvp.user_id)
+              .single();
+            email = userData?.email;
+            console.log('📧 用户邮箱获取结果:', {
+              userData: userData,
+              email: email,
+            });
+          } catch (userError) {
+            console.error('获取用户邮箱失败:', userError);
+          }
+        } else {
+          console.log('📧 警告: rsvp.user_id 为空');
+        }
+
+        // 审批拒绝发送拒绝邮件
+        if (
+          email &&
+          updateData.application_status === ApprovalStatus.REJECTED
+        ) {
+          try {
+            await sendRSVPRejectEmail({
+              to: email,
+              name: rsvp.name || '参与者',
+              meetupTitle: meetup.title,
+              meetupId: meetup.id,
+            });
+
+            const now = new Date().toISOString();
+            await supabase
+              .from('meetup_rsvps')
+              .update({ email_sent: true, email_sent_at: now })
+              .eq('id', rsvp.id);
+          } catch (emailError) {
+            console.error('发送拒绝邮件失败:', emailError);
+          }
+        }
+
+        // 审批通过发送报名成功邮件
+        if (
+          email &&
+          updateData.application_status === ApprovalStatus.APPROVED
+        ) {
+          try {
+            await sendRSVPConfirmEmail({
+              to: email,
+              name: rsvp.name || '参与者',
+              meetupTitle: meetup.title,
+              meetupId: meetup.id,
+              eventDatetime: meetup.datetime,
+              location: meetup.location,
+              mode: meetup.mode,
+            });
+
+            const now = new Date().toISOString();
+            await supabase
+              .from('meetup_rsvps')
+              .update({ email_sent: true, email_sent_at: now })
+              .eq('id', rsvp.id);
+          } catch (emailError) {
+            console.error('发送报名成功邮件失败:', emailError);
+          }
+        }
+      }
     }
 
     return createSuccessResponse({
@@ -410,7 +563,13 @@ async function handleUpdate(event: NetlifyEvent) {
 async function handleDelete(event: NetlifyEvent) {
   try {
     const requestData = getDataFromEvent(event);
-    const { id, meetup_id, wechat_id } = requestData;
+    // id 和其他参数可能在查询参数中，也可能在请求体中
+    const id = requestData.id || event.queryStringParameters?.id;
+    const meetup_id =
+      requestData.meetup_id || event.queryStringParameters?.meetup_id;
+    const wechat_id =
+      requestData.wechat_id || event.queryStringParameters?.wechat_id;
+
     const idTrimmed = id !== undefined ? String(id).trim() : undefined;
     const meetupIdTrimmed =
       meetup_id !== undefined ? String(meetup_id).trim() : undefined;
@@ -534,7 +693,9 @@ async function handleGetByMeetupId(event: NetlifyEvent) {
       query = query.eq('episode_id', Number(episode_id));
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const { data, error } = await query.order('created_at', {
+      ascending: false,
+    });
 
     if (error) {
       console.error('Database error:', error);

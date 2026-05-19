@@ -57,7 +57,10 @@ async function fetchUnsplash(
     const timeout = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS);
     const response = await fetch(
       `https://api.unsplash.com/search/photos?query=${encodedQuery}&per_page=3&orientation=${orientation}`,
-      { signal: controller.signal, headers: { Authorization: `Client-ID ${accessKey}` } }
+      {
+        signal: controller.signal,
+        headers: { Authorization: `Client-ID ${accessKey}` },
+      }
     );
     clearTimeout(timeout);
     if (!response.ok) return [];
@@ -67,7 +70,11 @@ async function fetchUnsplash(
       title: image.description || image.alt_description || 'Unsplash Image',
       description: `Photo by ${image.user.name} on Unsplash`,
       thumb: image.urls.thumb,
-      credit: { name: image.user.name, username: image.user.username, link: image.user.links.html },
+      credit: {
+        name: image.user.name,
+        username: image.user.username,
+        link: image.user.links.html,
+      },
     }));
   } catch {
     return [];
@@ -95,7 +102,11 @@ async function fetchPexels(
       title: photo.alt || 'Pexels Image',
       description: `Photo by ${photo.photographer} on Pexels`,
       thumb: photo.src.small,
-      credit: { name: photo.photographer, username: photo.photographer, link: photo.photographer_url },
+      credit: {
+        name: photo.photographer,
+        username: photo.photographer,
+        link: photo.photographer_url,
+      },
     }));
   } catch {
     return [];

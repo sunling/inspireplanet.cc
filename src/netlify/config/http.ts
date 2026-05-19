@@ -51,12 +51,13 @@ class HttpClient {
   private buildUrl(moduleName: string, params?: Record<string, any>): string {
     // 处理绝对URL
     if (moduleName.startsWith('http://') || moduleName.startsWith('https://')) {
-      if (!params || Object.keys(params).length === 0) {
+      const hasParams = params && Object.keys(params).length > 0;
+      if (!hasParams) {
         return moduleName;
       }
 
       const separator = moduleName.includes('?') ? '&' : '?';
-      const queryString = this.buildQueryString(params);
+      const queryString = this.buildQueryString(params!);
       return `${moduleName}${separator}${queryString}`;
     }
 
@@ -69,7 +70,8 @@ class HttpClient {
       cleanmoduleName.startsWith('/') ? '' : '/'
     }${cleanmoduleName}`;
 
-    if (!params || Object.keys(params).length === 0) {
+    const hasParams = params && Object.keys(params).length > 0;
+    if (!hasParams) {
       return url;
     }
 
@@ -129,16 +131,16 @@ class HttpClient {
         } catch (e) {
           console.error('Error clearing auth data:', e);
         }
-        
+
         // 跳转到登录页面
         const currentPath = window.location.pathname;
         const loginPath = '/login';
-        
+
         // 避免在登录页面重复跳转
         if (currentPath !== loginPath) {
           window.location.href = `${loginPath}?redirect=${encodeURIComponent(currentPath)}`;
         }
-        
+
         return Promise.resolve({
           success: false,
           statusCode: 401,
@@ -243,9 +245,9 @@ class HttpClient {
     params?: Record<string, any>,
     config: RequestConfig = {}
   ): Promise<ApiResponse<T>> {
-    // 添加缓存破坏参数
+    // 添加缓存破坏参数，处理params为undefined的情况
     const cacheBustingParams = {
-      ...params,
+      ...(params || {}),
       _t: Date.now(),
     };
     return this.request<T>(moduleName, {
@@ -293,7 +295,7 @@ class HttpClient {
     return this.request<T>(moduleName, {
       ...config,
       method: 'DELETE',
-      params: { ...params, functionName },
+      params: { ...(params || {}), functionName },
     });
   }
 }

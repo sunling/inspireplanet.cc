@@ -15,6 +15,8 @@ import useResponsive from '../../../hooks/useResponsive';
 import { useGlobalSnackbar } from '../../../context/app';
 import { imagesApi } from '../../../netlify/config';
 import { getUserId } from '../../../utils';
+import QuestionEditor from '../../../components/QuestionEditor';
+import { SurveyQuestion } from '../../../netlify/types/survey';
 
 import { Meetup, MeetupList } from '../../../netlify/functions/meetup';
 
@@ -85,9 +87,13 @@ const EditForm: React.FC<EditFormProps> = ({
   const [qrPreview, setQrPreview] = useState(initialValues.cover || '');
   const [errors, setErrors] = useState<FormErrors>({});
   const [formValues, setFormValues] = useState<Meetup>(initialValues);
+  const [questions, setQuestions] = useState<SurveyQuestion[]>(
+    (initialValues as any).survey_questions || []
+  );
 
   useEffect(() => {
     setFormValues(initialValues);
+    setQuestions((initialValues as any).survey_questions || []);
   }, [initialValues]);
 
   useEffect(() => {
@@ -112,10 +118,17 @@ const EditForm: React.FC<EditFormProps> = ({
     if (!values.cover && !existingQrUrl) newErrors.cover = '请上传活动群二维码';
 
     // 日期时间验证（循环活动不校验）
-    if (!values.is_recurring && values.datetime && new Date(values.datetime) <= new Date()) {
+    if (
+      !values.is_recurring &&
+      values.datetime &&
+      new Date(values.datetime) <= new Date()
+    ) {
       newErrors.datetime = '活动时间必须是未来时间';
     }
-    if (values.is_recurring && (values.recurrence_day === undefined || values.recurrence_day === null)) {
+    if (
+      values.is_recurring &&
+      (values.recurrence_day === undefined || values.recurrence_day === null)
+    ) {
       newErrors.recurrence_day = '请选择每周几举办';
     }
     setErrors(newErrors);
@@ -272,6 +285,7 @@ const EditForm: React.FC<EditFormProps> = ({
         max_ppl: formValues.max_ppl ? formValues.max_ppl : null,
         cover: cover || existingQrUrl,
         user_id: getUserId(),
+        survey_questions: questions,
       };
 
       // 调用外部提交函数
@@ -316,7 +330,7 @@ const EditForm: React.FC<EditFormProps> = ({
               required
               placeholder="输入活动标题"
               size={isMobile ? 'small' : 'medium'}
-              InputProps={{ readOnly: viewOnly }}
+              slotProps={{ input: { readOnly: viewOnly } }}
             />
           </Box>
           <Box sx={{ mb: 3 }}>
@@ -337,7 +351,7 @@ const EditForm: React.FC<EditFormProps> = ({
               multiline
               minRows={4}
               size={isMobile ? 'small' : 'medium'}
-              InputProps={{ readOnly: viewOnly }}
+              slotProps={{ input: { readOnly: viewOnly } }}
             />
           </Box>
           <Box sx={{ mb: 3 }}>
@@ -356,7 +370,7 @@ const EditForm: React.FC<EditFormProps> = ({
               required
               select
               size={isMobile ? 'small' : 'medium'}
-              InputProps={{ readOnly: viewOnly }}
+              slotProps={{ input: { readOnly: viewOnly } }}
             >
               {MeetupList.map((item) => (
                 <MenuItem key={item.value} value={item.value}>
@@ -386,7 +400,9 @@ const EditForm: React.FC<EditFormProps> = ({
                         setFormValues((prev) => ({
                           ...prev,
                           is_recurring: e.target.checked,
-                          recurrence_day: e.target.checked ? (prev.recurrence_day ?? 6) : undefined,
+                          recurrence_day: e.target.checked
+                            ? (prev.recurrence_day ?? 6)
+                            : undefined,
                         }))
                       }
                     />
@@ -417,18 +433,24 @@ const EditForm: React.FC<EditFormProps> = ({
                   error={!!errors['recurrence_day']}
                   helperText={errors['recurrence_day']}
                   size={isMobile ? 'small' : 'medium'}
-                  InputProps={{ readOnly: viewOnly }}
+                  slotProps={{ input: { readOnly: viewOnly } }}
                 >
-                  {['周日','周一','周二','周三','周四','周五','周六'].map((label, i) => (
-                    <MenuItem key={i} value={i}>{label}</MenuItem>
-                  ))}
+                  {['周日', '周一', '周二', '周三', '周四', '周五', '周六'].map(
+                    (label, i) => (
+                      <MenuItem key={i} value={i}>
+                        {label}
+                      </MenuItem>
+                    )
+                  )}
                 </TextField>
               </Box>
             )}
 
             <Box sx={{ mb: 3 }}>
               <Typography variant="body1" fontWeight="600" sx={{ mb: 1 }}>
-                {formValues.is_recurring ? '举办时间（每周几点开始）' : '活动时间'}
+                {formValues.is_recurring
+                  ? '举办时间（每周几点开始）'
+                  : '活动时间'}
               </Typography>
               <TextField
                 fullWidth
@@ -441,7 +463,7 @@ const EditForm: React.FC<EditFormProps> = ({
                 onChange={handleInputChange}
                 required
                 size={isMobile ? 'small' : 'medium'}
-                InputProps={{ readOnly: viewOnly }}
+                slotProps={{ input: { readOnly: viewOnly } }}
               />
             </Box>
 
@@ -497,7 +519,7 @@ const EditForm: React.FC<EditFormProps> = ({
                     onChange={handleInputChange}
                     placeholder="线下活动请填写具体地址，线上活动可填写平台名称"
                     size={isMobile ? 'small' : 'medium'}
-                    InputProps={{ readOnly: viewOnly }}
+                    slotProps={{ input: { readOnly: viewOnly } }}
                   />
                 </Box>
               </Grid>
@@ -515,7 +537,12 @@ const EditForm: React.FC<EditFormProps> = ({
                     onChange={handleInputChange}
                     placeholder="例如：2"
                     size={isMobile ? 'small' : 'medium'}
-                    InputProps={{ readOnly: viewOnly }}
+                    slotProps={{
+                      input: {
+                        readOnly: viewOnly,
+                        inputProps: { min: 0.5, step: 0.5 },
+                      },
+                    }}
                   />
                 </Box>
               </Grid>
@@ -534,7 +561,7 @@ const EditForm: React.FC<EditFormProps> = ({
                 onChange={handleInputChange}
                 placeholder="不限制可留空"
                 size={isMobile ? 'small' : 'medium'}
-                InputProps={{ readOnly: viewOnly }}
+                slotProps={{ input: { readOnly: viewOnly } }}
               />
             </Box>
           </CardContent>
@@ -568,7 +595,7 @@ const EditForm: React.FC<EditFormProps> = ({
               required
               placeholder="您的姓名"
               size={isMobile ? 'small' : 'medium'}
-              InputProps={{ readOnly: viewOnly }}
+              slotProps={{ input: { readOnly: viewOnly } }}
             />
           </Box>
           <Box sx={{ mb: 3 }}>
@@ -587,7 +614,7 @@ const EditForm: React.FC<EditFormProps> = ({
               required
               placeholder="请填写微信号，用于活动沟通"
               size={isMobile ? 'small' : 'medium'}
-              InputProps={{ readOnly: viewOnly }}
+              slotProps={{ input: { readOnly: viewOnly } }}
             />
           </Box>
 
@@ -675,6 +702,22 @@ const EditForm: React.FC<EditFormProps> = ({
               )}
             </Box>
           </Box>
+        </Box>
+
+        {/* 报名问题 */}
+        <Box
+          sx={{
+            mb: 4,
+            p: 3,
+            borderRadius: 1,
+            boxShadow: 1,
+          }}
+        >
+          <QuestionEditor
+            questions={questions}
+            onChange={setQuestions}
+            viewOnly={viewOnly}
+          />
         </Box>
 
         {!viewOnly && onSubmit && (

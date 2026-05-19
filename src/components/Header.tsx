@@ -28,6 +28,7 @@ import {
   Lock,
 } from '@mui/icons-material';
 import { notificationsApi } from '../netlify/config';
+import { isOrganizer } from '../utils/user';
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -123,12 +124,21 @@ const Header: React.FC<HeaderProps> = ({
     { path: '/weekly-cards', label: '启发星球周刊' },
   ];
 
-  const activitiesMenuItems: NavItem[] = [
-    { path: '/meetups', label: '活动广场' },
-    { path: '/activity-calendar', label: '活动日历' },
-    { path: '/people', label: '找人聊聊' },
-    { path: '/create-meetup', label: '创建活动' },
-  ];
+  // 构建活动菜单，只对 organizer 显示报名管理
+  const getActivitiesMenuItems = (): NavItem[] => {
+    const baseItems: NavItem[] = [
+      { path: '/meetups', label: '活动广场' },
+      { path: '/activity-calendar', label: '活动日历' },
+      { path: '/people', label: '找人聊聊' },
+      { path: '/create-meetup', label: '创建活动' },
+    ];
+
+    if (isOrganizer()) {
+      baseItems.push({ path: '/meetup-participants-list', label: '报名管理' });
+    }
+
+    return baseItems;
+  };
 
   const toolsMenuItems: NavItem[] = [
     { path: '/cover-editor', label: '横版封面制作' },
@@ -148,7 +158,7 @@ const Header: React.FC<HeaderProps> = ({
     {
       label: '活动',
       icon: <CalendarToday fontSize="small" />,
-      items: activitiesMenuItems,
+      items: getActivitiesMenuItems(),
       anchor: activitiesMenuAnchor,
       setAnchor: setActivitiesMenuAnchor,
     },
@@ -345,7 +355,7 @@ const Header: React.FC<HeaderProps> = ({
           {renderMobileMenuItemGroup(
             '活动',
             <CalendarToday fontSize="small" />,
-            activitiesMenuItems
+            getActivitiesMenuItems()
           )}
           {renderMobileMenuItemGroup(
             '工具',

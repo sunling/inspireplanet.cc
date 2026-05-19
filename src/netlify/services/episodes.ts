@@ -11,7 +11,10 @@ export const episodesApi = {
   },
 
   upsert: async (
-    data: Pick<MeetupEpisode, 'meetup_id' | 'episode_number' | 'date' | 'theme' | 'description'>
+    data: Pick<
+      MeetupEpisode,
+      'meetup_id' | 'episode_number' | 'date' | 'theme' | 'description'
+    >
   ): Promise<ApiResponse<{ episode: MeetupEpisode }>> => {
     return http.post('/episodes', 'upsert', data);
   },

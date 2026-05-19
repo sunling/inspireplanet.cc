@@ -34,10 +34,11 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>('');
   const location = useLocation();
-  
+
   // PWA更新状态
   const [showUpdateAlert, setShowUpdateAlert] = useState<boolean>(false);
-  const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
+  const [registration, setRegistration] =
+    useState<ServiceWorkerRegistration | null>(null);
 
   // 检查用户认证状态
   useEffect(() => {
@@ -65,14 +66,17 @@ const App: React.FC = () => {
     const registerServiceWorker = async () => {
       if ('serviceWorker' in navigator) {
         try {
-          const swRegistration = await navigator.serviceWorker.register('/sw.js');
+          const swRegistration =
+            await navigator.serviceWorker.register('/sw.js');
           setRegistration(swRegistration);
-          
+
           // 检查是否已经提醒过用户
-          const lastNotified = localStorage.getItem('lastPwaUpdateNotification');
+          const lastNotified = localStorage.getItem(
+            'lastPwaUpdateNotification'
+          );
           const now = Date.now();
-          const oneDayAgo = now - (24 * 60 * 60 * 1000);
-          
+          const oneDayAgo = now - 24 * 60 * 60 * 1000;
+
           // 只有当上次提醒超过1天或从未提醒过时才检查更新
           if (!lastNotified || parseInt(lastNotified) < oneDayAgo) {
             // 检查是否有等待中的更新
@@ -80,15 +84,21 @@ const App: React.FC = () => {
               setShowUpdateAlert(true);
               localStorage.setItem('lastPwaUpdateNotification', now.toString());
             }
-            
+
             // 监听更新事件
             swRegistration.addEventListener('updatefound', () => {
               const newWorker = swRegistration.installing;
               if (newWorker) {
                 newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  if (
+                    newWorker.state === 'installed' &&
+                    navigator.serviceWorker.controller
+                  ) {
                     setShowUpdateAlert(true);
-                    localStorage.setItem('lastPwaUpdateNotification', now.toString());
+                    localStorage.setItem(
+                      'lastPwaUpdateNotification',
+                      now.toString()
+                    );
                   }
                 });
               }

@@ -1,12 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { meetupsApi, rsvpApi, episodesApi, speakerSignupsApi } from '../../netlify/config';
-import { MeetupStatus, Participant } from '../../netlify/types';
+import {
+  meetupsApi,
+  rsvpApi,
+  episodesApi,
+  speakerSignupsApi,
+  surveyApi,
+} from '../../netlify/config';
+import { MeetupStatus, Participant, Survey } from '../../netlify/types';
 import { MeetupEpisode } from '../../netlify/functions/episodes';
 import { SpeakerSignup } from '../../netlify/functions/speakerSignups';
 import { isOrganizer } from '../../utils/user';
-import { getNextOccurrence, toLocalDateStr, getEpisodeNumber, nextUTCOccurrenceDateStr } from '../../utils/recurring';
+import {
+  getNextOccurrence,
+  toLocalDateStr,
+  getEpisodeNumber,
+  nextUTCOccurrenceDateStr,
+} from '../../utils/recurring';
 import dayjs from 'dayjs';
+import QuestionRenderer from '../../components/QuestionRenderer';
 
 import {
   Box,
@@ -39,7 +51,6 @@ import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
 import { getUserId, getUserInfo, isUserLoggedIn, isMeetupOwner } from '@/utils';
 import { formatDate, formatDateTime, isUpcomingEvent } from '../../utils/date';
 
-
 const MeetupDetail: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -55,6 +66,7 @@ const MeetupDetail: React.FC = () => {
   const [meetup, setMeetup] = useState<Meetup | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCurrentUserRSVPed, setIsCurrentUserRSVPed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
@@ -63,7 +75,12 @@ const MeetupDetail: React.FC = () => {
   // 分享报名状态
   const [speakerSignups, setSpeakerSignups] = useState<SpeakerSignup[]>([]);
   const [showSpeakerForm, setShowSpeakerForm] = useState(false);
-  const [speakerForm, setSpeakerForm] = useState({ name: '', email: '', topic: '', duration: '' });
+  const [speakerForm, setSpeakerForm] = useState({
+    name: '',
+    email: '',
+    topic: '',
+    duration: '',
+  });
   const [speakerSubmitting, setSpeakerSubmitting] = useState(false);
   const [showEpisodeEditor, setShowEpisodeEditor] = useState(false);
   const [episodeThemeInput, setEpisodeThemeInput] = useState('');
@@ -82,8 +99,12 @@ const MeetupDetail: React.FC = () => {
   // RSVP表单状态
   const [rsvpForm, setRsvpForm] = useState({
     name: '',
-    email: '',
+    answers: {} as Record<string, any>, // 问卷问题答案（新格式）
   });
+
+  // 问卷状态
+  const [survey, setSurvey] = useState<Survey | null>(null);
+  const [surveyLoading, setSurveyLoading] = useState(false);
 
   // 提交状态
   const [submitStatus, setSubmitStatus] = useState<
@@ -139,9 +160,13 @@ const MeetupDetail: React.FC = () => {
 
       setMeetup(processedMeetup);
 
-      // 如果是循环活动，加载对应期次信息
+      // 如果是定期活动，加载对应期次信息
       let episodeId: number | undefined;
-      if (processedMeetup.is_recurring && processedMeetup.episode_start_date && processedMeetup.recurrence_day !== undefined) {
+      if (
+        processedMeetup.is_recurring &&
+        processedMeetup.episode_start_date &&
+        processedMeetup.recurrence_day !== undefined
+      ) {
         const searchParams = new URLSearchParams(location.search);
         const urlDate = searchParams.get('date');
         // URL 传来的日期（从日历点击）→ 用北京时区解析；否则算最近一期
@@ -149,25 +174,60 @@ const MeetupDetail: React.FC = () => {
           ? dayjs(urlDate)
           : getNextOccurrence(processedMeetup.datetime);
         // 用 UTC 计算下一期日期，避免本地时区导致日期偏移
-        const dateStr = urlDate ?? nextUTCOccurrenceDateStr(processedMeetup.datetime);
-        const epNum = getEpisodeNumber(processedMeetup.episode_start_date, targetDay);
-        const epRes = await episodesApi.getByMeetupDate(Number(meetupId), dateStr);
+        const dateStr =
+          urlDate ?? nextUTCOccurrenceDateStr(processedMeetup.datetime);
+        const epNum = getEpisodeNumber(
+          processedMeetup.episode_start_date,
+          targetDay
+        );
+        const epRes = await episodesApi.getByMeetupDate(
+          Number(meetupId),
+          dateStr
+        );
         if (epRes.success) {
-          const ep = epRes.data?.episode ?? { meetup_id: Number(meetupId), episode_number: epNum, date: dateStr };
+          const ep = epRes.data?.episode ?? {
+            meetup_id: Number(meetupId),
+            episode_number: epNum,
+            date: dateStr,
+          };
           setEpisode(ep);
           episodeId = ep.id;
           // 加载本期分享报名
-          const spRes = await speakerSignupsApi.getByEpisode(Number(meetupId), epNum);
+          const spRes = await speakerSignupsApi.getByEpisode(
+            Number(meetupId),
+            epNum
+          );
           if (spRes.success) setSpeakerSignups(spRes.data?.signups || []);
         }
       }
 
       // 加载参与者信息（定期活动传 episode_id，按期次过滤）
       loadParticipants(meetupId, episodeId, processedMeetup.is_recurring);
+
+      // 如果活动关联了问卷，加载问卷信息
+      if (processedMeetup.survey_id) {
+        loadSurvey(processedMeetup.survey_id);
+      }
     } catch (err) {
       setError('加载活动详情失败，请稍后重试');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 加载问卷信息
+  const loadSurvey = async (surveyId: string) => {
+    setSurveyLoading(true);
+    try {
+      const response = await surveyApi.getById(surveyId);
+      if (response.success && response.data) {
+        setSurvey(response.data);
+      }
+    } catch (error) {
+      console.error('加载问卷失败:', error);
+      showSnackbar.error('加载报名问题失败');
+    } finally {
+      setSurveyLoading(false);
     }
   };
 
@@ -198,7 +258,11 @@ const MeetupDetail: React.FC = () => {
   };
 
   // 加载参与者信息
-  const loadParticipants = async (meetupId: string, episodeId?: number, isRecurring?: boolean) => {
+  const loadParticipants = async (
+    meetupId: string,
+    episodeId?: number,
+    isRecurring?: boolean
+  ) => {
     // 定期活动必须有 episodeId 才能过滤，否则会返回所有期次的报名
     if (isRecurring && episodeId === undefined) {
       setParticipants([]);
@@ -220,6 +284,19 @@ const MeetupDetail: React.FC = () => {
       );
 
       setParticipants(processedParticipants);
+
+      const userInfo = getUserInfo();
+      const userWechat = userInfo?.wechat_id?.trim();
+      const userId = userInfo?.id;
+      if (userWechat || userId) {
+        const isRSVPed = processedParticipants.some((p: any) => {
+          const matchWechat = userWechat && p.wechat_id === userWechat;
+          const matchUserId =
+            userId && p.user_id && String(p.user_id) === String(userId);
+          return matchWechat || matchUserId;
+        });
+        setIsCurrentUserRSVPed(isRSVPed);
+      }
     } catch (err) {
       console.error('加载参与者信息失败:', err);
       showSnackbar.error('加载参与者信息失败，请稍后重试');
@@ -235,13 +312,29 @@ const MeetupDetail: React.FC = () => {
       const userInfo = getUserInfo();
       const loggedIn = isUserLoggedIn();
 
+      // 初始化问卷答案
+      const initialAnswers: Record<string, any> = {};
+      if (survey) {
+        survey.questions.forEach((q) => {
+          initialAnswers[q.id] = '';
+        });
+      }
+
       if (loggedIn && userInfo) {
         // 已登录：直接提交，无需填表
-        setRsvpForm({ name: userInfo.name || userInfo.email || '', email: userInfo.email || '' });
+        setRsvpForm({
+          name: userInfo.name || userInfo.email || '',
+          email: userInfo.email || '',
+          answers: initialAnswers,
+        });
         setShowRSVPDialog(true);
       } else {
         // 未登录：显示表单
-        setRsvpForm({ name: '', email: '' });
+        setRsvpForm({
+          name: '',
+          email: '',
+          answers: initialAnswers,
+        });
         setShowRSVPDialog(true);
       }
     } catch (error) {
@@ -252,7 +345,6 @@ const MeetupDetail: React.FC = () => {
     }
   };
 
-
   // 提交RSVP
   const handleSubmitRSVP = async () => {
     if (!meetup) return;
@@ -262,31 +354,59 @@ const MeetupDetail: React.FC = () => {
       return;
     }
 
-    const loggedIn = isUserLoggedIn();
-    if (!loggedIn && !rsvpForm.email.trim()) {
-      showSnackbar.warning('请输入您的邮箱');
-      return;
+    // 检查问卷必填问题
+    if (survey) {
+      const missingRequired = survey.questions.filter(
+        (q) => q.required && !rsvpForm.answers[q.id]?.trim()
+      );
+      if (missingRequired.length > 0) {
+        showSnackbar.warning('请回答所有必填问题');
+        return;
+      }
     }
 
     setSubmitStatus('loading');
 
     try {
-      const payload: Record<string, any> = {
+      // 准备报名数据（用户必须登录，邮箱从用户表获取）
+      const rsvpPayload: Record<string, any> = {
         meetup_id: Number(meetup.id),
         name: rsvpForm.name.trim(),
-        email: rsvpForm.email.trim() || undefined,
         user_id: getUserId(),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       };
       if (episode) {
-        payload.episode_date = episode.date;
-        payload.episode_number = episode.episode_number;
+        rsvpPayload.episode_date = episode.date;
+        rsvpPayload.episode_number = episode.episode_number;
       }
 
-      const response = await rsvpApi.create(payload);
+      let surveySubmissionId: string | null = null;
 
-      if (!response.success) {
-        const msg = (response as any)?.error || '报名失败';
+      // 如果有问卷，先提交问卷答案
+      if (survey && meetup.survey_id) {
+        const surveyResponse = await surveyApi.submit({
+          survey_id: meetup.survey_id,
+          respondent_id: getUserId(),
+          answers: rsvpForm.answers,
+        });
+
+        if (!surveyResponse.success) {
+          throw new Error(surveyResponse.error || '提交问卷失败');
+        }
+
+        surveySubmissionId = surveyResponse.data?.id || null;
+      }
+
+      // 添加问卷提交ID到报名数据
+      if (surveySubmissionId) {
+        rsvpPayload.survey_submission_id = surveySubmissionId;
+      }
+
+      // 提交报名
+      const rsvpResponse = await rsvpApi.create(rsvpPayload);
+
+      if (!rsvpResponse.success) {
+        const msg = (rsvpResponse as any)?.error || '报名失败';
         if (/已经报名/.test(msg)) {
           setSubmitStatus('success');
           setTimeout(() => {
@@ -300,15 +420,20 @@ const MeetupDetail: React.FC = () => {
       }
 
       // 从返回的RSVP里拿 episode_id（新建 episode 时 backend 会返回）
-      const returnedRsvp = response.data?.rsvp;
-      const returnedEpisodeId: number | undefined = returnedRsvp?.episode_id ?? episode?.id;
+      const returnedRsvp = rsvpResponse.data?.rsvp;
+      const returnedEpisodeId: number | undefined =
+        returnedRsvp?.episode_id ?? episode?.id;
 
       setSubmitStatus('success');
 
       setTimeout(() => {
         setShowRSVPDialog(false);
         // 刷新报名名单（用确认的 episode_id，确保新建期次也能正确过滤）
-        loadParticipants(String(meetup.id), returnedEpisodeId, meetup.is_recurring);
+        loadParticipants(
+          String(meetup.id),
+          returnedEpisodeId,
+          meetup.is_recurring
+        );
         setTimeout(() => setShowFollowModal(true), 300);
         setSubmitStatus('initial');
       }, 800);
@@ -337,7 +462,8 @@ const MeetupDetail: React.FC = () => {
 
   // 提交分享报名
   const handleSpeakerSubmit = async () => {
-    if (!episode || !speakerForm.name.trim() || !speakerForm.topic.trim()) return;
+    if (!episode || !speakerForm.name.trim() || !speakerForm.topic.trim())
+      return;
     setSpeakerSubmitting(true);
     try {
       const res = await speakerSignupsApi.create({
@@ -350,7 +476,8 @@ const MeetupDetail: React.FC = () => {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
       if (res.success && res.data?.signup) {
-        setSpeakerSignups((prev) => [...prev, res.data!.signup]);
+        const newSignup = res.data.signup;
+        setSpeakerSignups((prev) => [...prev, newSignup]);
         setSpeakerForm({ name: '', email: '', topic: '', duration: '' });
         setShowSpeakerForm(false);
         showSnackbar.success('报名成功！期待你的分享 🎉');
@@ -365,7 +492,10 @@ const MeetupDetail: React.FC = () => {
   };
 
   // Organizer 更新报名状态
-  const handleUpdateSignupStatus = async (id: number, status: 'confirmed' | 'cancelled') => {
+  const handleUpdateSignupStatus = async (
+    id: number,
+    status: 'confirmed' | 'cancelled'
+  ) => {
     const res = await speakerSignupsApi.updateStatus(id, status);
     if (res.success) {
       setSpeakerSignups((prev) =>
@@ -430,14 +560,24 @@ const MeetupDetail: React.FC = () => {
       if (meetup.is_recurring && episode?.date) {
         const [y, m, d] = episode.date.split('-').map(Number);
         const baseLocal = dayjs(meetup.datetime);
-        return dayjs(new Date(y, m - 1, d, baseLocal.hour(), baseLocal.minute()));
+        return dayjs(
+          new Date(y, m - 1, d, baseLocal.hour(), baseLocal.minute())
+        );
       }
       return dayjs(meetup.datetime);
     })();
     const isUpcomingMeetup = displayDatetime.isAfter(dayjs());
     const formattedDate = displayDatetime.format('YYYY-MM-DD');
     const formattedTime = displayDatetime.format('HH:mm');
-    const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const weekdayNames = [
+      '周日',
+      '周一',
+      '周二',
+      '周三',
+      '周四',
+      '周五',
+      '周六',
+    ];
     const weekday = weekdayNames[displayDatetime.day()];
     const limitRaw = Number((meetup.max_ppl ?? -1) as any);
     const isUnlimited =
@@ -460,6 +600,9 @@ const MeetupDetail: React.FC = () => {
                 component="img"
                 src={cover as string}
                 alt={meetup.title}
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                  e.currentTarget.src = '/images/mistyblue.png';
+                }}
                 sx={{
                   width: '100%',
                   height: { xs: '180px', sm: '220px', md: '280px' },
@@ -485,7 +628,15 @@ const MeetupDetail: React.FC = () => {
               />
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1,
+                mb: 3,
+                flexWrap: 'wrap',
+              }}
+            >
               <Typography
                 variant="h1"
                 component="h1"
@@ -626,7 +777,7 @@ const MeetupDetail: React.FC = () => {
                   overflowWrap: 'break-word',
                 }}
               >
-                {(meetup.is_recurring && episode?.description)
+                {meetup.is_recurring && episode?.description
                   ? episode.description
                   : meetup.description}
               </Box>
@@ -656,16 +807,28 @@ const MeetupDetail: React.FC = () => {
             {/* 分享报名（循环活动专属） */}
             {meetup.is_recurring && episode && (
               <Card sx={{ mb: 4, padding: '1rem', borderRadius: '8px' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    mb: 2,
+                  }}
+                >
                   <Typography variant="h6" sx={{ color: '#555' }}>
-                    本期分享者 {speakerSignups.length > 0 && `(${speakerSignups.length})`}
+                    本期分享者{' '}
+                    {speakerSignups.length > 0 && `(${speakerSignups.length})`}
                   </Typography>
                   <Button
                     variant="contained"
                     size="small"
                     onClick={() => {
                       const u = getUserInfo();
-                      setSpeakerForm(p => ({ ...p, name: u?.name || u?.email || '', email: u?.email || '' }));
+                      setSpeakerForm((p) => ({
+                        ...p,
+                        name: u?.name || u?.email || '',
+                        email: u?.email || '',
+                      }));
                       setShowSpeakerForm(true);
                     }}
                     sx={{ fontWeight: 600 }}
@@ -675,11 +838,17 @@ const MeetupDetail: React.FC = () => {
                 </Box>
 
                 {speakerSignups.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ textAlign: 'center', py: 2 }}
+                  >
                     还没有人报名分享，来做第一个吧！
                   </Typography>
                 ) : (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Box
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
+                  >
                     {speakerSignups.map((s, i) => (
                       <Box
                         key={s.id}
@@ -688,29 +857,78 @@ const MeetupDetail: React.FC = () => {
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           p: 1.5,
-                          bgcolor: s.status === 'confirmed' ? '#f0fdf4' : '#f9f9f9',
+                          bgcolor:
+                            s.status === 'confirmed'
+                              ? '#f0fdf4'
+                              : s.status === 'pending'
+                                ? '#fffbeb'
+                                : '#f9f9f9',
                           borderRadius: 1,
                           border: '1px solid',
-                          borderColor: s.status === 'confirmed' ? '#bbf7d0' : '#eee',
+                          borderColor:
+                            s.status === 'confirmed'
+                              ? '#bbf7d0'
+                              : s.status === 'pending'
+                                ? '#fde68a'
+                                : '#eee',
                         }}
                       >
                         <Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body2" fontWeight={600}>{i + 1}. {s.name}</Typography>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                            }}
+                          >
+                            <Typography variant="body2" fontWeight={600}>
+                              {i + 1}. {s.name}
+                            </Typography>
                             {s.status === 'confirmed' && (
-                              <Chip label="已确认" size="small" color="success" sx={{ height: 18, fontSize: '0.65rem' }} />
+                              <Chip
+                                label="已确认"
+                                size="small"
+                                color="success"
+                                sx={{ height: 18, fontSize: '0.65rem' }}
+                              />
+                            )}
+                            {s.status === 'pending' && (
+                              <Chip
+                                label="待处理"
+                                size="small"
+                                color="warning"
+                                sx={{ height: 18, fontSize: '0.65rem' }}
+                              />
                             )}
                           </Box>
                           <Typography variant="body2" color="text.secondary">
-                            {s.topic}{s.duration ? ` · ${s.duration}` : ''}
+                            {s.topic}
+                            {s.duration ? ` · ${s.duration}` : ''}
                           </Typography>
                         </Box>
                         {isOrganizer() && (
                           <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            {s.status !== 'confirmed' && (
-                              <Button size="small" color="success" onClick={() => handleUpdateSignupStatus(s.id!, 'confirmed')}>确认</Button>
+                            {s.status === 'pending' && (
+                              <Button
+                                size="small"
+                                color="success"
+                                onClick={() =>
+                                  handleUpdateSignupStatus(s.id!, 'confirmed')
+                                }
+                              >
+                                通过
+                              </Button>
                             )}
-                            <Button size="small" color="error" onClick={() => handleUpdateSignupStatus(s.id!, 'cancelled')}>移除</Button>
+                            <Button
+                              size="small"
+                              color="error"
+                              onClick={() =>
+                                handleUpdateSignupStatus(s.id!, 'cancelled')
+                              }
+                              disabled={s.status === 'cancelled'}
+                            >
+                              移除
+                            </Button>
                           </Box>
                         )}
                       </Box>
@@ -718,7 +936,11 @@ const MeetupDetail: React.FC = () => {
                   </Box>
                 )}
 
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mt: 1.5 }}
+                >
                   如需取消或修改，请在微信群里知会下就行
                 </Typography>
               </Card>
@@ -726,7 +948,14 @@ const MeetupDetail: React.FC = () => {
 
             {/* 操作按钮 */}
             <Box sx={{ mt: 4, textAlign: 'center' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2,
+                }}
+              >
                 <Button
                   variant="text"
                   onClick={handleViewParticipants}
@@ -738,19 +967,37 @@ const MeetupDetail: React.FC = () => {
                 </Button>
                 {/* 编辑按钮 - 只有活动创建者可以看到 */}
                 {isUserLoggedIn() && isMeetupOwner(meetup) && (
-                  <Tooltip title="编辑活动">
-                    <IconButton
-                      component={Link}
-                      to={`/edit-meetup?id=${meetup.id}`}
-                      sx={{ ml: 1, color: 'primary.main' }}
-                    >
-                      ✏️
-                    </IconButton>
-                  </Tooltip>
+                  <>
+                    <Tooltip title="编辑活动">
+                      <IconButton
+                        component={Link}
+                        to={`/edit-meetup?id=${meetup.id}`}
+                        sx={{ ml: 1, color: 'primary.main' }}
+                      >
+                        ✏️
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="管理参与者">
+                      <IconButton
+                        component={Link}
+                        to={`/meetup-participants?id=${meetup.id}`}
+                        sx={{ ml: 1, color: 'primary.main' }}
+                      >
+                        👥
+                      </IconButton>
+                    </Tooltip>
+                  </>
                 )}
               </Box>
 
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mb: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 2,
+                  justifyContent: 'center',
+                  mb: 2,
+                }}
+              >
                 <Button
                   variant="outlined"
                   onClick={() => setShowShareModal(true)}
@@ -772,13 +1019,15 @@ const MeetupDetail: React.FC = () => {
                 >
                   分享活动
                 </Button>
-                {isUpcomingMeetup && (
+                {isUpcomingMeetup && !isCurrentUserRSVPed && (
                   <Button
                     variant="contained"
                     onClick={handleJoinMeetup}
                     disabled={isActionLoading}
                     startIcon={
-                      isActionLoading ? <CircularProgress size={16} /> : undefined
+                      isActionLoading ? (
+                        <CircularProgress size={16} />
+                      ) : undefined
                     }
                     sx={{
                       py: 1.2,
@@ -822,6 +1071,8 @@ const MeetupDetail: React.FC = () => {
         onClose={() => setShowRSVPDialog(false)}
         maxWidth="xs"
         fullWidth
+        keepMounted
+        disableEnforceFocus
       >
         <DialogTitle sx={{ pb: 0 }}>
           {isUserLoggedIn() ? `确认报名` : '填写报名信息'}
@@ -830,11 +1081,60 @@ const MeetupDetail: React.FC = () => {
           {isUserLoggedIn() ? (
             <Box sx={{ pt: 1.5 }}>
               <Typography variant="body2" color="text.secondary">
-                以 <strong>{rsvpForm.name || '您'}</strong> 的身份报名参加本次活动。
+                以 <strong>{rsvpForm.name || '您'}</strong>{' '}
+                的身份报名参加本次活动。
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ mt: 1, display: 'block' }}
+              >
                 报名成功后将自动下载日历文件，可添加到您的日历应用。
               </Typography>
+              {/* 问卷问题 */}
+              {survey && (
+                <Box sx={{ mt: 2 }}>
+                  {surveyLoading ? (
+                    <Box
+                      sx={{ display: 'flex', justifyContent: 'center', py: 2 }}
+                    >
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : (
+                    survey.questions.map((question: any, index: number) => (
+                      <QuestionRenderer
+                        key={question.id}
+                        question={question}
+                        value={rsvpForm.answers[question.id] || ''}
+                        onChange={(value) =>
+                          setRsvpForm((prev) => ({
+                            ...prev,
+                            answers: {
+                              ...prev.answers,
+                              [question.id]: value,
+                            },
+                          }))
+                        }
+                        index={index}
+                        error={
+                          question.required &&
+                          !rsvpForm.answers[question.id]?.trim()
+                        }
+                        helperText={
+                          question.required &&
+                          !rsvpForm.answers[question.id]?.trim()
+                            ? '请回答此问题'
+                            : undefined
+                        }
+                        readOnly={
+                          submitStatus === 'loading' ||
+                          submitStatus === 'success'
+                        }
+                      />
+                    ))
+                  )}
+                </Box>
+              )}
             </Box>
           ) : (
             <Box sx={{ mt: 1 }}>
@@ -842,20 +1142,63 @@ const MeetupDetail: React.FC = () => {
                 fullWidth
                 label="姓名"
                 value={rsvpForm.name}
-                onChange={(e) => setRsvpForm((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setRsvpForm((prev) => ({ ...prev, name: e.target.value }))
+                }
                 margin="normal"
-                disabled={submitStatus === 'loading' || submitStatus === 'success'}
+                disabled={
+                  submitStatus === 'loading' || submitStatus === 'success'
+                }
               />
-              <TextField
-                fullWidth
-                label="邮箱"
-                type="email"
-                value={rsvpForm.email}
-                onChange={(e) => setRsvpForm((prev) => ({ ...prev, email: e.target.value }))}
-                margin="normal"
-                disabled={submitStatus === 'loading' || submitStatus === 'success'}
-              />
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+              {/* 问卷问题 */}
+              {survey && (
+                <Box sx={{ mt: 2 }}>
+                  {surveyLoading ? (
+                    <Box
+                      sx={{ display: 'flex', justifyContent: 'center', py: 2 }}
+                    >
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : (
+                    survey.questions.map((question: any, index: number) => (
+                      <QuestionRenderer
+                        key={question.id}
+                        question={question}
+                        value={rsvpForm.answers[question.id] || ''}
+                        onChange={(value) =>
+                          setRsvpForm((prev) => ({
+                            ...prev,
+                            answers: {
+                              ...prev.answers,
+                              [question.id]: value,
+                            },
+                          }))
+                        }
+                        index={index}
+                        error={
+                          question.required &&
+                          !rsvpForm.answers[question.id]?.trim()
+                        }
+                        helperText={
+                          question.required &&
+                          !rsvpForm.answers[question.id]?.trim()
+                            ? '请回答此问题'
+                            : undefined
+                        }
+                        readOnly={
+                          submitStatus === 'loading' ||
+                          submitStatus === 'success'
+                        }
+                      />
+                    ))
+                  )}
+                </Box>
+              )}
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ mt: 0.5, display: 'block' }}
+              >
                 报名成功后将自动下载日历文件。
               </Typography>
             </Box>
@@ -872,34 +1215,66 @@ const MeetupDetail: React.FC = () => {
             variant="contained"
             onClick={handleSubmitRSVP}
             disabled={submitStatus === 'loading' || submitStatus === 'success'}
-            startIcon={submitStatus === 'loading' ? <CircularProgress size={16} /> : undefined}
+            startIcon={
+              submitStatus === 'loading' ? (
+                <CircularProgress size={16} />
+              ) : undefined
+            }
             color={submitStatus === 'success' ? 'success' : 'primary'}
-            sx={{ bgcolor: submitStatus !== 'success' ? '#ff6348' : undefined, '&:hover': { bgcolor: submitStatus !== 'success' ? '#ff4500' : undefined } }}
+            sx={{
+              bgcolor: submitStatus !== 'success' ? '#ff6348' : undefined,
+              '&:hover': {
+                bgcolor: submitStatus !== 'success' ? '#ff4500' : undefined,
+              },
+            }}
           >
-            {submitStatus === 'loading' ? '提交中...' : submitStatus === 'success' ? '报名成功！' : '确认报名'}
+            {submitStatus === 'loading'
+              ? '提交中...'
+              : submitStatus === 'success'
+                ? '报名成功！'
+                : '确认报名'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* 关注公众号弹窗 */}
-      <Dialog open={showFollowModal} onClose={() => setShowFollowModal(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ textAlign: 'center', pb: 0 }}>🎉 报名成功！</DialogTitle>
+      <Dialog
+        open={showFollowModal}
+        onClose={() => setShowFollowModal(false)}
+        maxWidth="xs"
+        fullWidth
+        keepMounted
+        disableEnforceFocus
+      >
+        <DialogTitle sx={{ textAlign: 'center', pb: 0 }}>
+          🎉 报名成功！
+        </DialogTitle>
         <DialogContent sx={{ textAlign: 'center', py: 3 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            扫码关注公众号，了解社群最新动态<br />并通过公众号联系我们加入微信群
+            扫码关注公众号，了解社群最新动态
+            <br />
+            并通过公众号联系我们加入微信群
           </Typography>
           <img
             src="/images/qrcode_for_gh_e0969fd9d88b_344.jpg"
             alt="启发星球笔记公众号"
             style={{ width: 180, height: 180, borderRadius: 8 }}
           />
-          <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1.5 }}>
+          <Typography
+            variant="caption"
+            display="block"
+            color="text.secondary"
+            sx={{ mt: 1.5 }}
+          >
             启发星球笔记
           </Typography>
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
-          <Button variant="contained" onClick={() => setShowFollowModal(false)}
-            sx={{ bgcolor: '#ff6348', '&:hover': { bgcolor: '#ff4500' } }}>
+          <Button
+            variant="contained"
+            onClick={() => setShowFollowModal(false)}
+            sx={{ bgcolor: '#ff6348', '&:hover': { bgcolor: '#ff4500' } }}
+          >
             好的
           </Button>
         </DialogActions>
@@ -911,6 +1286,8 @@ const MeetupDetail: React.FC = () => {
         onClose={() => setShowQRModal(false)}
         maxWidth="sm"
         fullWidth
+        keepMounted
+        disableEnforceFocus
       >
         <DialogTitle>扫码进群</DialogTitle>
         <DialogContent sx={{ textAlign: 'center', py: 4 }}>
@@ -951,6 +1328,8 @@ const MeetupDetail: React.FC = () => {
         onClose={() => setShowParticipantsModal(false)}
         maxWidth="sm"
         fullWidth
+        keepMounted
+        disableEnforceFocus
       >
         <DialogTitle>报名人员名单</DialogTitle>
         <DialogContent>
@@ -998,6 +1377,8 @@ const MeetupDetail: React.FC = () => {
         onClose={() => setShowShareModal(false)}
         maxWidth="sm"
         fullWidth
+        keepMounted
+        disableEnforceFocus
       >
         <DialogTitle
           sx={{
@@ -1079,14 +1460,25 @@ const MeetupDetail: React.FC = () => {
       </Dialog>
 
       {/* 分享报名弹窗 */}
-      <Dialog open={showSpeakerForm} onClose={() => setShowSpeakerForm(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={showSpeakerForm}
+        onClose={() => setShowSpeakerForm(false)}
+        maxWidth="sm"
+        fullWidth
+        keepMounted
+        disableEnforceFocus
+      >
         <DialogTitle sx={{ fontWeight: 600 }}>报名分享 🎤</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+        <DialogContent
+          sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}
+        >
           <TextField
             fullWidth
             label="你的名字"
             value={speakerForm.name}
-            onChange={(e) => setSpeakerForm((p) => ({ ...p, name: e.target.value }))}
+            onChange={(e) =>
+              setSpeakerForm((p) => ({ ...p, name: e.target.value }))
+            }
             placeholder="如何称呼你？"
             required
           />
@@ -1095,14 +1487,18 @@ const MeetupDetail: React.FC = () => {
             label="邮箱（用于发送确认邮件）"
             type="email"
             value={speakerForm.email}
-            onChange={(e) => setSpeakerForm((p) => ({ ...p, email: e.target.value }))}
+            onChange={(e) =>
+              setSpeakerForm((p) => ({ ...p, email: e.target.value }))
+            }
             placeholder="your@email.com"
           />
           <TextField
             fullWidth
             label="分享主题"
             value={speakerForm.topic}
-            onChange={(e) => setSpeakerForm((p) => ({ ...p, topic: e.target.value }))}
+            onChange={(e) =>
+              setSpeakerForm((p) => ({ ...p, topic: e.target.value }))
+            }
             placeholder="你想聊什么？"
             required
           />
@@ -1110,7 +1506,9 @@ const MeetupDetail: React.FC = () => {
             fullWidth
             label="预计时长（可选）"
             value={speakerForm.duration}
-            onChange={(e) => setSpeakerForm((p) => ({ ...p, duration: e.target.value }))}
+            onChange={(e) =>
+              setSpeakerForm((p) => ({ ...p, duration: e.target.value }))
+            }
             placeholder="例：10分钟、15分钟"
           />
           <Typography variant="caption" color="text.secondary">
@@ -1122,7 +1520,11 @@ const MeetupDetail: React.FC = () => {
           <Button
             variant="contained"
             onClick={handleSpeakerSubmit}
-            disabled={speakerSubmitting || !speakerForm.name.trim() || !speakerForm.topic.trim()}
+            disabled={
+              speakerSubmitting ||
+              !speakerForm.name.trim() ||
+              !speakerForm.topic.trim()
+            }
           >
             {speakerSubmitting ? '提交中...' : '确认报名'}
           </Button>
@@ -1130,11 +1532,20 @@ const MeetupDetail: React.FC = () => {
       </Dialog>
 
       {/* 编辑本期内容 */}
-      <Dialog open={showEpisodeEditor} onClose={() => setShowEpisodeEditor(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={showEpisodeEditor}
+        onClose={() => setShowEpisodeEditor(false)}
+        maxWidth="sm"
+        fullWidth
+        keepMounted
+        disableEnforceFocus
+      >
         <DialogTitle sx={{ fontWeight: 600 }}>
           编辑本期内容 {episode && `· EP${episode.episode_number}`}
         </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+        <DialogContent
+          sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}
+        >
           <TextField
             fullWidth
             label="本期主题"
@@ -1155,7 +1566,11 @@ const MeetupDetail: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowEpisodeEditor(false)}>取消</Button>
-          <Button variant="contained" onClick={handleSaveEpisodeTheme} disabled={episodeSaving}>
+          <Button
+            variant="contained"
+            onClick={handleSaveEpisodeTheme}
+            disabled={episodeSaving}
+          >
             {episodeSaving ? '保存中...' : '保存'}
           </Button>
         </DialogActions>
