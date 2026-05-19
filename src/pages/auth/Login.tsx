@@ -336,12 +336,14 @@ const Login: React.FC = () => {
             <Button
               fullWidth
               variant="outlined"
-              onClick={() =>
+              onClick={() => {
+                // 保存重定向URL到localStorage，供OAuth回调使用
+                localStorage.setItem('redirectAfterLogin', getRedirectUrl());
                 supabaseAuth.auth.signInWithOAuth({
                   provider: 'google',
                   options: { redirectTo: `${window.location.origin}/auth/callback` },
-                })
-              }
+                });
+              }}
               sx={{
                 py: 1.5,
                 fontSize: '1rem',

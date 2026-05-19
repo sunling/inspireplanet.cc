@@ -13,7 +13,6 @@ import { SpeakerSignup } from '../../netlify/functions/speakerSignups';
 import { isOrganizer } from '../../utils/user';
 import {
   getNextOccurrence,
-  toLocalDateStr,
   getEpisodeNumber,
   nextUTCOccurrenceDateStr,
 } from '../../utils/recurring';
@@ -37,19 +36,23 @@ import {
   IconButton,
   Tooltip,
   Grid,
-  Divider,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import { Share as ShareIcon, Close as CloseIcon } from '@mui/icons-material';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 
-import ErrorCard from '@/components/ErrorCard';
-import Loading from '@/components/Loading';
-import Empty from '@/components/Empty';
-import { useGlobalSnackbar } from '@/context/app';
+import ErrorCard from '../../components/ErrorCard';
+import Loading from '../../components/Loading';
+import Empty from '../../components/Empty';
+import { useGlobalSnackbar } from '../../context/app';
 import { Meetup, MeetupLabelMap } from '../../netlify/functions/meetup';
-import { getUserId, getUserInfo, isUserLoggedIn, isMeetupOwner } from '@/utils';
-import { formatDate, formatDateTime, isUpcomingEvent } from '../../utils/date';
+import {
+  getUserId,
+  getUserInfo,
+  isUserLoggedIn,
+  isMeetupOwner,
+} from '../../utils/user';
+import { hasQuestionValue } from '../../utils/meetup';
 
 const MeetupDetail: React.FC = () => {
   const location = useLocation();
@@ -312,6 +315,14 @@ const MeetupDetail: React.FC = () => {
       const userInfo = getUserInfo();
       const loggedIn = isUserLoggedIn();
 
+      // 未登录用户需要先登录
+      if (!loggedIn) {
+        showSnackbar.warning('请先登录后再报名参加活动');
+        const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
+        return;
+      }
+
       // 初始化问卷答案
       const initialAnswers: Record<string, any> = {};
       if (survey) {
@@ -320,23 +331,12 @@ const MeetupDetail: React.FC = () => {
         });
       }
 
-      if (loggedIn && userInfo) {
-        // 已登录：直接提交，无需填表
-        setRsvpForm({
-          name: userInfo.name || userInfo.email || '',
-          email: userInfo.email || '',
-          answers: initialAnswers,
-        });
-        setShowRSVPDialog(true);
-      } else {
-        // 未登录：显示表单
-        setRsvpForm({
-          name: '',
-          email: '',
-          answers: initialAnswers,
-        });
-        setShowRSVPDialog(true);
-      }
+      // 已登录：自动填充用户信息
+      setRsvpForm({
+        name: userInfo?.name || userInfo?.email || '',
+        answers: initialAnswers,
+      });
+      setShowRSVPDialog(true);
     } catch (error) {
       console.error('处理报名失败:', error);
       showSnackbar.error('处理报名请求失败，请稍后重试');
@@ -356,9 +356,10 @@ const MeetupDetail: React.FC = () => {
 
     // 检查问卷必填问题
     if (survey) {
-      const missingRequired = survey.questions.filter(
-        (q) => q.required && !rsvpForm.answers[q.id]?.trim()
-      );
+      const missingRequired = survey.questions.filter((q) => {
+        const answer = rsvpForm.answers[q.id];
+        return q.required && !hasQuestionValue(q.type, answer);
+      });
       if (missingRequired.length > 0) {
         showSnackbar.warning('请回答所有必填问题');
         return;
@@ -384,10 +385,17 @@ const MeetupDetail: React.FC = () => {
 
       // 如果有问卷，先提交问卷答案
       if (survey && meetup.survey_id) {
+        // 将 Record<string, any> 转换为 QuestionAnswer[] 格式
+        const answers = Object.entries(rsvpForm.answers).map(
+          ([questionId, value]) => ({
+            questionId,
+            value,
+          })
+        );
         const surveyResponse = await surveyApi.submit({
-          survey_id: meetup.survey_id,
-          respondent_id: getUserId(),
-          answers: rsvpForm.answers,
+          surveyId: meetup.survey_id,
+          respondentId: getUserId() || '',
+          answers,
         });
 
         if (!surveyResponse.success) {
@@ -530,19 +538,6 @@ const MeetupDetail: React.FC = () => {
       setEpisodeSaving(false);
       setShowEpisodeEditor(false);
     }
-  };
-
-  // 显示二维码弹窗
-  const showQRCode = (qrImageUrl: string) => {
-    setMeetup((prev: any) => {
-      return prev
-        ? {
-            ...prev,
-            cover: qrImageUrl,
-          }
-        : null;
-    });
-    setShowQRModal(true);
   };
 
   // 查看参与者列表
@@ -1105,7 +1100,14 @@ const MeetupDetail: React.FC = () => {
                       <QuestionRenderer
                         key={question.id}
                         question={question}
-                        value={rsvpForm.answers[question.id] || ''}
+                        value={
+                          rsvpForm.answers[question.id] ||
+                          (question.type === 'rating'
+                            ? 0
+                            : question.type === 'multiple'
+                              ? []
+                              : '')
+                        }
                         onChange={(value) =>
                           setRsvpForm((prev) => ({
                             ...prev,
@@ -1118,11 +1120,17 @@ const MeetupDetail: React.FC = () => {
                         index={index}
                         error={
                           question.required &&
-                          !rsvpForm.answers[question.id]?.trim()
+                          !hasQuestionValue(
+                            question.type,
+                            rsvpForm.answers[question.id]
+                          )
                         }
                         helperText={
                           question.required &&
-                          !rsvpForm.answers[question.id]?.trim()
+                          !hasQuestionValue(
+                            question.type,
+                            rsvpForm.answers[question.id]
+                          )
                             ? '请回答此问题'
                             : undefined
                         }
@@ -1150,50 +1158,6 @@ const MeetupDetail: React.FC = () => {
                   submitStatus === 'loading' || submitStatus === 'success'
                 }
               />
-              {/* 问卷问题 */}
-              {survey && (
-                <Box sx={{ mt: 2 }}>
-                  {surveyLoading ? (
-                    <Box
-                      sx={{ display: 'flex', justifyContent: 'center', py: 2 }}
-                    >
-                      <CircularProgress size={24} />
-                    </Box>
-                  ) : (
-                    survey.questions.map((question: any, index: number) => (
-                      <QuestionRenderer
-                        key={question.id}
-                        question={question}
-                        value={rsvpForm.answers[question.id] || ''}
-                        onChange={(value) =>
-                          setRsvpForm((prev) => ({
-                            ...prev,
-                            answers: {
-                              ...prev.answers,
-                              [question.id]: value,
-                            },
-                          }))
-                        }
-                        index={index}
-                        error={
-                          question.required &&
-                          !rsvpForm.answers[question.id]?.trim()
-                        }
-                        helperText={
-                          question.required &&
-                          !rsvpForm.answers[question.id]?.trim()
-                            ? '请回答此问题'
-                            : undefined
-                        }
-                        readOnly={
-                          submitStatus === 'loading' ||
-                          submitStatus === 'success'
-                        }
-                      />
-                    ))
-                  )}
-                </Box>
-              )}
               <Typography
                 variant="caption"
                 color="text.secondary"
@@ -1432,8 +1396,10 @@ const MeetupDetail: React.FC = () => {
               <TextField
                 fullWidth
                 value={`${window.location.origin}/meetup-detail?id=${meetup.id}`}
-                InputProps={{
-                  readOnly: true,
+                slotProps={{
+                  htmlInput: {
+                    readOnly: true,
+                  },
                 }}
                 sx={{ mb: 3 }}
               />

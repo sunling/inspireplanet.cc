@@ -53,7 +53,11 @@ const AuthCallback: React.FC = () => {
       }
 
       setUserAuth(token, profile || { email });
-      navigate('/cards', { replace: true });
+      
+      // 获取之前保存的重定向URL，默认跳转到/cards
+      const redirectUrl = localStorage.getItem('redirectAfterLogin') || '/cards';
+      localStorage.removeItem('redirectAfterLogin');
+      navigate(redirectUrl, { replace: true });
     };
 
     handleCallback();
