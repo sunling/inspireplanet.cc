@@ -446,6 +446,16 @@ async function handleUpdate(event: NetlifyEvent) {
     // 获取活动详情（用于发送邮件）
     let meetup = null;
     let meetupError = null;
+
+    // 调试日志
+    console.log('📧 邮件发送检查:', {
+      send_email: updateData.send_email,
+      hasData: data && data.length > 0,
+      application_status: updateData.application_status,
+      isRejected: updateData.application_status === ApprovalStatus.REJECTED,
+      isApproved: updateData.application_status === ApprovalStatus.APPROVED,
+    });
+
     if (
       updateData.send_email &&
       data &&
@@ -456,7 +466,7 @@ async function handleUpdate(event: NetlifyEvent) {
       const rsvp = data[0];
       const { data: meetupData, error: meetupErr } = await supabase
         .from('meetups')
-        .select('id, title, datetime, location, mode, episode_number')
+        .select('id, title, datetime, location, mode')
         .eq('id', rsvp.meetup_id)
         .single();
       meetup = meetupData;
@@ -465,6 +475,10 @@ async function handleUpdate(event: NetlifyEvent) {
       if (!meetupError && meetup) {
         let email = null;
         // 从用户表获取邮箱（活动报名用户必须登录，user_id 一定存在）
+        console.log('📧 获取用户邮箱:', {
+          rsvp_user_id: rsvp.user_id,
+          rsvp_name: rsvp.name,
+        });
         if (rsvp.user_id) {
           try {
             const { data: userData } = await supabase
@@ -473,9 +487,15 @@ async function handleUpdate(event: NetlifyEvent) {
               .eq('id', rsvp.user_id)
               .single();
             email = userData?.email;
+            console.log('📧 用户邮箱获取结果:', {
+              userData: userData,
+              email: email,
+            });
           } catch (userError) {
             console.error('获取用户邮箱失败:', userError);
           }
+        } else {
+          console.log('📧 警告: rsvp.user_id 为空');
         }
 
         // 审批拒绝发送拒绝邮件
@@ -515,7 +535,6 @@ async function handleUpdate(event: NetlifyEvent) {
               eventDatetime: meetup.datetime,
               location: meetup.location,
               mode: meetup.mode,
-              episodeNumber: meetup.episode_number,
             });
 
             const now = new Date().toISOString();
