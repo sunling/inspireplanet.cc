@@ -315,8 +315,8 @@ const MeetupDetail: React.FC = () => {
       const userInfo = getUserInfo();
       const loggedIn = isUserLoggedIn();
 
-      // 未登录用户需要先登录
-      if (!loggedIn) {
+      // 如果活动设置了需要登录且用户未登录，则跳转到登录页
+      if (!loggedIn && !meetup?.skip_login) {
         showSnackbar.warning('请先登录后再报名参加活动');
         const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
         navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
@@ -331,9 +331,9 @@ const MeetupDetail: React.FC = () => {
         });
       }
 
-      // 已登录：自动填充用户信息
+      // 填充用户信息（登录用户自动填充，未登录用户留空让用户填写）
       setRsvpForm({
-        name: userInfo?.name || userInfo?.email || '',
+        name: loggedIn ? userInfo?.name || userInfo?.email || '' : '',
         answers: initialAnswers,
       });
       setShowRSVPDialog(true);
@@ -369,13 +369,20 @@ const MeetupDetail: React.FC = () => {
     setSubmitStatus('loading');
 
     try {
-      // 准备报名数据（用户必须登录，邮箱从用户表获取）
+      const loggedIn = isUserLoggedIn();
+
+      // 准备报名数据（支持未登录用户报名）
       const rsvpPayload: Record<string, any> = {
         meetup_id: Number(meetup.id),
         name: rsvpForm.name.trim(),
-        user_id: getUserId(),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       };
+
+      // 登录用户才传 user_id
+      if (loggedIn) {
+        rsvpPayload.user_id = getUserId();
+      }
+
       if (episode) {
         rsvpPayload.episode_date = episode.date;
         rsvpPayload.episode_number = episode.episode_number;
@@ -393,8 +400,8 @@ const MeetupDetail: React.FC = () => {
           })
         );
         const surveyResponse = await surveyApi.submit({
-          surveyId: meetup.survey_id,
-          respondentId: getUserId() || '',
+          survey_id: meetup.survey_id,
+          respondent_id: loggedIn ? getUserId() || '' : '',
           answers,
         });
 

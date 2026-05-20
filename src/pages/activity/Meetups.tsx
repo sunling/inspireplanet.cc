@@ -243,9 +243,8 @@ const Meetups: React.FC = () => {
 
   const handleJoinMeetup = async (meetupId: string, qrImageUrl?: string) => {
     if (!isUserLoggedIn()) {
-      showSnackbar.warning('请先登录后再报名参加活动');
-      const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
+      // 跳转到活动详情页，由详情页判断是否需要登录
+      navigate(`/meetup-detail?id=${meetupId}`);
       return;
     }
 

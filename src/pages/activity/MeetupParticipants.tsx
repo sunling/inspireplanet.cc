@@ -309,8 +309,8 @@ const MeetupParticipants: React.FC = () => {
     }
   };
 
-  // 批量取消选中的参与者
-  const cancelSelected = async () => {
+  // 批量拒绝选中的参与者
+  const rejectSelected = async () => {
     setShowConfirmDialog(false);
     const meetupId = getMeetupId();
     if (!meetupId) return;
@@ -337,16 +337,16 @@ const MeetupParticipants: React.FC = () => {
 
       if (response.success) {
         showSnackbar.success(
-          response.message || `已取消 ${joinedParticipants.length} 位参与者`
+          response.message || `已拒绝 ${joinedParticipants.length} 位参与者`
         );
         // 刷新列表
         loadData();
       } else {
-        showSnackbar.error(response.error || '取消失败');
+        showSnackbar.error(response.error || '拒绝失败');
       }
     } catch (error) {
-      console.error('批量取消失败:', error);
-      showSnackbar.error('批量取消失败');
+      console.error('批量拒绝失败:', error);
+      showSnackbar.error('批量拒绝失败');
     }
     setSelectedParticipants([]);
   };
@@ -419,7 +419,7 @@ const MeetupParticipants: React.FC = () => {
             color="error"
             onClick={() => setShowConfirmDialog(true)}
           >
-            取消选中 ({selectedParticipants.length})
+            批量拒绝 ({selectedParticipants.length})
           </Button>
         )}
 
@@ -695,16 +695,16 @@ const MeetupParticipants: React.FC = () => {
         open={showConfirmDialog}
         onClose={() => setShowConfirmDialog(false)}
       >
-        <DialogTitle>取消报名</DialogTitle>
+        <DialogTitle>批量拒绝</DialogTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            确定要取消选中的 {selectedParticipants.length} 位参与者的报名吗？
+            确定要拒绝选中的 {selectedParticipants.length} 位参与者吗？
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowConfirmDialog(false)}>取消</Button>
-          <Button variant="contained" color="error" onClick={cancelSelected}>
-            确认取消
+          <Button variant="contained" color="error" onClick={rejectSelected}>
+            确认拒绝
           </Button>
         </DialogActions>
       </Dialog>

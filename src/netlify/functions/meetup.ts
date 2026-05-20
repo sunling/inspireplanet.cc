@@ -63,11 +63,9 @@ export interface Meetup {
   default_theme?: string; // fallback when no episode theme is set
   // 关联问卷ID
   survey_id?: string;
-  // 问卷问题（创建时使用）
-  survey_questions?: SurveyQuestion[];
-  // 报名问题
-  question_text?: string;
-  question_required?: boolean;
+
+  // 是否跳过登录报名
+  skip_login?: boolean;
 }
 
 export interface MeetupRequest extends Omit<Meetup, 'id'> {}

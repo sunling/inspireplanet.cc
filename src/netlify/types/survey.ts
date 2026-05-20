@@ -82,8 +82,9 @@ export interface QuestionAnswer {
 
 // 提交问卷请求
 export interface SubmitSurveyRequest {
-  surveyId: string;
+  survey_id: string;
   answers: QuestionAnswer[];
+  respondent_id?: string;
   email?: string;
 }
 
