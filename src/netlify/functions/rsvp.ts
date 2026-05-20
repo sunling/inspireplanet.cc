@@ -183,7 +183,7 @@ async function handleCreate(event: NetlifyEvent) {
     let result;
     const needsApproval = meetup.survey_id
       ? ApprovalStatus.PENDING
-      : ApprovalStatus.APPROVED;
+      : ApprovalStatus.AUTO;
 
     if (existingRSVP) {
       const { data, error } = await supabase

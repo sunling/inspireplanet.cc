@@ -28,7 +28,6 @@ import {
   DialogActions,
   IconButton,
   Pagination,
-  Chip,
 } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import {
@@ -49,8 +48,13 @@ import {
   getApprovalStatusStyle,
   RSVP,
 } from '../../netlify/types/rsvp';
-import { Survey, SurveyQuestion } from '../../netlify/types/survey';
+import { Survey } from '../../netlify/types/survey';
 import StatsCard from '../../components/StatsCard';
+import TextCollapse from '../../components/TextCollapse';
+import {
+  parseSurveyAnswers,
+  calculateParticipantStats,
+} from '../../utils/meetup';
 
 const MeetupParticipants: React.FC = () => {
   const navigate = useNavigate();
@@ -142,23 +146,13 @@ const MeetupParticipants: React.FC = () => {
           []) as RSVP[];
         setParticipants(participantsList);
         setTotalCount(participantsResponse.data?.total || 0);
-        const approvedCount = participantsList.filter(
-          (p) => p.application_status === ApprovalStatus.APPROVED
-        ).length;
-        const rejectedCount = participantsList.filter(
-          (p) => p.application_status === ApprovalStatus.REJECTED
-        ).length;
-        const pendingCount = participantsList.filter(
-          (p) => p.application_status === ApprovalStatus.PENDING
-        ).length;
-        setStats({
-          total: participantsResponse.data?.total || 0,
-          confirmed: participantsResponse.data?.confirmedCount || 0,
-          cancelled: participantsResponse.data?.cancelledCount || 0,
-          pending: pendingCount,
-          approved: approvedCount,
-          rejected: rejectedCount,
-        });
+        setStats(
+          calculateParticipantStats(
+            participantsList,
+            participantsResponse.data?.confirmedCount || 0,
+            participantsResponse.data?.cancelledCount || 0
+          )
+        );
       }
     } catch (error) {
       console.error('加载数据失败:', error);
@@ -181,23 +175,13 @@ const MeetupParticipants: React.FC = () => {
           []) as RSVP[];
         setParticipants(participantsList);
         setTotalCount(participantsResponse.data?.total || 0);
-        const approvedCount = participantsList.filter(
-          (p) => p.application_status === ApprovalStatus.APPROVED
-        ).length;
-        const rejectedCount = participantsList.filter(
-          (p) => p.application_status === ApprovalStatus.REJECTED
-        ).length;
-        const pendingCount = participantsList.filter(
-          (p) => p.application_status === ApprovalStatus.PENDING
-        ).length;
-        setStats({
-          total: participantsResponse.data?.total || 0,
-          confirmed: participantsResponse.data?.confirmedCount || 0,
-          cancelled: participantsResponse.data?.cancelledCount || 0,
-          pending: pendingCount,
-          approved: approvedCount,
-          rejected: rejectedCount,
-        });
+        setStats(
+          calculateParticipantStats(
+            participantsList,
+            participantsResponse.data?.confirmedCount || 0,
+            participantsResponse.data?.cancelledCount || 0
+          )
+        );
       }
     } catch (error) {
       console.error('刷新统计数据失败:', error);
@@ -205,8 +189,15 @@ const MeetupParticipants: React.FC = () => {
   };
 
   useEffect(() => {
+    if (!meetupId) {
+      // 没有活动ID，跳转到活动列表
+      navigate('/meetup-participants-list');
+      return;
+    }
     if (!isUserLoggedIn()) {
-      navigate('/login');
+      // 未登录，保存当前URL并跳转登录
+      const redirect = `${window.location.pathname}${window.location.search}`;
+      navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
       return;
     }
     loadData(1);
@@ -245,30 +236,6 @@ const MeetupParticipants: React.FC = () => {
       setSelectedParticipants([]);
     } else {
       setSelectedParticipants(filteredParticipants.map((p) => p.id));
-    }
-  };
-
-  // 更新参与者状态
-  const updateParticipantStatus = async (id: string, status: RSVPStatus) => {
-    const response = await rsvpApi.update(id, {
-      status,
-    } as any);
-    if (response.success) {
-      setParticipants((prev) =>
-        prev.map((p) =>
-          p.id === id
-            ? {
-                ...p,
-                status,
-              }
-            : p
-        )
-      );
-      showSnackbar.success(
-        status === RSVPStatus.CONFIRMED ? '已报名' : '已取消'
-      );
-    } else {
-      showSnackbar.error('更新失败');
     }
   };
 
@@ -342,8 +309,8 @@ const MeetupParticipants: React.FC = () => {
     }
   };
 
-  // 批量取消选中的参与者
-  const cancelSelected = async () => {
+  // 批量拒绝选中的参与者
+  const rejectSelected = async () => {
     setShowConfirmDialog(false);
     const meetupId = getMeetupId();
     if (!meetupId) return;
@@ -370,16 +337,16 @@ const MeetupParticipants: React.FC = () => {
 
       if (response.success) {
         showSnackbar.success(
-          response.message || `已取消 ${joinedParticipants.length} 位参与者`
+          response.message || `已拒绝 ${joinedParticipants.length} 位参与者`
         );
         // 刷新列表
         loadData();
       } else {
-        showSnackbar.error(response.error || '取消失败');
+        showSnackbar.error(response.error || '拒绝失败');
       }
     } catch (error) {
-      console.error('批量取消失败:', error);
-      showSnackbar.error('批量取消失败');
+      console.error('批量拒绝失败:', error);
+      showSnackbar.error('批量拒绝失败');
     }
     setSelectedParticipants([]);
   };
@@ -452,7 +419,7 @@ const MeetupParticipants: React.FC = () => {
             color="error"
             onClick={() => setShowConfirmDialog(true)}
           >
-            取消选中 ({selectedParticipants.length})
+            批量拒绝 ({selectedParticipants.length})
           </Button>
         )}
 
@@ -563,92 +530,60 @@ const MeetupParticipants: React.FC = () => {
                       {new Date(participant.created_at).toLocaleString('zh-CN')}
                     </TableCell>
                     <TableCell>
-                      <Box
-                        sx={{
-                          maxWidth: 250,
-                          wordBreak: 'break-all',
-                        }}
-                      >
-                        {participant.survey_answers && survey ? (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 1,
-                            }}
-                          >
-                            {(() => {
-                              try {
-                                const answers = JSON.parse(
-                                  participant.survey_answers
-                                );
-                                return survey.questions
-                                  .map((question) => {
-                                    const answerValue = answers[question.id];
-                                    if (
-                                      answerValue === undefined ||
-                                      answerValue === null
-                                    ) {
-                                      return null;
-                                    }
-                                    let displayValue = String(answerValue);
-                                    // 如果是选择题且有 options，尝试找到对应选项的文本
-                                    if (
-                                      question.options &&
-                                      Array.isArray(question.options)
-                                    ) {
-                                      const matchedOption =
-                                        question.options.find(
-                                          (opt) =>
-                                            opt.value === answerValue ||
-                                            opt.id === answerValue
-                                        );
-                                      if (matchedOption) {
-                                        displayValue = matchedOption.text;
-                                      } else if (Array.isArray(answerValue)) {
-                                        // 多选情况
-                                        const selectedTexts = question.options
-                                          .filter(
-                                            (opt) =>
-                                              answerValue.includes(opt.value) ||
-                                              answerValue.includes(opt.id)
-                                          )
-                                          .map((opt) => opt.text);
-                                        if (selectedTexts.length > 0) {
-                                          displayValue =
-                                            selectedTexts.join(', ');
-                                        }
-                                      }
-                                    }
-                                    return (
-                                      <Typography
-                                        key={question.id}
-                                        variant="body2"
-                                      >
-                                        【{question.title}】{displayValue}
-                                      </Typography>
-                                    );
-                                  })
-                                  .filter(Boolean);
-                              } catch (error) {
-                                console.error('解析问卷答案失败:', error);
-                                return (
+                      {participant.survey_answers && survey ? (
+                        (() => {
+                          const answerItems = parseSurveyAnswers(
+                            participant.survey_answers,
+                            survey
+                          );
+
+                          if (answerItems.length === 0) {
+                            return (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {participant.survey_answers}
+                              </Typography>
+                            );
+                          }
+
+                          return (
+                            <TextCollapse
+                              text=""
+                              maxItems={3}
+                              sx={{ maxWidth: 300, fontSize: '0.875rem' }}
+                            >
+                              {answerItems.map((item, idx) => (
+                                <Box
+                                  component="li"
+                                  key={idx}
+                                  sx={{ mb: 0.5, lineHeight: 1.5 }}
+                                >
                                   <Typography
+                                    component="span"
+                                    variant="body2"
+                                    sx={{ fontWeight: 500 }}
+                                  >
+                                    {item.title}
+                                  </Typography>
+                                  <Typography
+                                    component="span"
                                     variant="body2"
                                     color="text.secondary"
                                   >
-                                    {participant.survey_answers}
+                                    ：{item.answer}
                                   </Typography>
-                                );
-                              }
-                            })()}
-                          </Box>
-                        ) : (
-                          <Typography variant="body2" color="text.secondary">
-                            无
-                          </Typography>
-                        )}
-                      </Box>
+                                </Box>
+                              ))}
+                            </TextCollapse>
+                          );
+                        })()
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          无
+                        </Typography>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Box
@@ -760,16 +695,16 @@ const MeetupParticipants: React.FC = () => {
         open={showConfirmDialog}
         onClose={() => setShowConfirmDialog(false)}
       >
-        <DialogTitle>取消报名</DialogTitle>
+        <DialogTitle>批量拒绝</DialogTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            确定要取消选中的 {selectedParticipants.length} 位参与者的报名吗？
+            确定要拒绝选中的 {selectedParticipants.length} 位参与者吗？
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowConfirmDialog(false)}>取消</Button>
-          <Button variant="contained" color="error" onClick={cancelSelected}>
-            确认取消
+          <Button variant="contained" color="error" onClick={rejectSelected}>
+            确认拒绝
           </Button>
         </DialogActions>
       </Dialog>

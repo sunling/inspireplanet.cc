@@ -70,7 +70,6 @@ async function handleBatchReject(event: NetlifyEvent) {
     const { data: updatedRsvps, error: updateError } = await supabase
       .from('meetup_rsvps')
       .update({
-        status: RSVPStatus.CANCELLED,
         application_status: ApprovalStatus.REJECTED,
         approved_by: approved_by || 'Organizer',
         approved_at: now,
@@ -164,7 +163,7 @@ async function handleBatchConfirm(event: NetlifyEvent) {
 
     const now = new Date().toISOString();
     const updateFields: Record<string, any> = {
-      status: RSVPStatus.JOINED,
+      status: RSVPStatus.CONFIRMED,
       application_status: ApprovalStatus.APPROVED,
       approved_by: approved_by || 'Organizer',
       approved_at: now,
