@@ -478,31 +478,33 @@ const CardDetail: React.FC = () => {
                         {sanitizeContent(card?.quote || '')}
                       </Typography>
                     </Box>
-                    <Box sx={{ mb: 3 }}>
-                      <img
-                        src={card?.image_path || '/images/mistyblue.png'}
-                        alt={card?.title || ''}
-                        onError={(e) => {
-                          e.currentTarget.src = '/images/mistyblue.png';
-                        }}
-                        style={{
-                          width: '100%',
-                          height: 'auto',
-                          borderRadius: '8px',
-                          maxHeight: '400px',
-                          objectFit: 'cover',
-                          transition: isMobile ? 'none' : 'transform 0.5s ease',
-                        }}
-                        onMouseOver={(e) =>
-                          !isMobile &&
-                          (e.currentTarget.style.transform = 'scale(1.05)')
-                        }
-                        onMouseOut={(e) =>
-                          !isMobile &&
-                          (e.currentTarget.style.transform = 'scale(1)')
-                        }
-                      />
-                    </Box>
+                    {(card?.image_path || card?.upload) && (
+                      <Box sx={{ mb: 3 }}>
+                        <img
+                          src={card.image_path || card.upload}
+                          alt={card?.title || ''}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                          style={{
+                            width: '100%',
+                            height: 'auto',
+                            borderRadius: '8px',
+                            maxHeight: '400px',
+                            objectFit: 'cover',
+                            transition: isMobile ? 'none' : 'transform 0.5s ease',
+                          }}
+                          onMouseOver={(e) =>
+                            !isMobile &&
+                            (e.currentTarget.style.transform = 'scale(1.05)')
+                          }
+                          onMouseOut={(e) =>
+                            !isMobile &&
+                            (e.currentTarget.style.transform = 'scale(1)')
+                          }
+                        />
+                      </Box>
+                    )}
                     {card?.detail && (
                       <Box sx={{ mt: 4 }}>
                         {/* todo */}
