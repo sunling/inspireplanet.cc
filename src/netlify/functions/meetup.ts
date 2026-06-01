@@ -423,10 +423,31 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     }
 
     const updateRecord: Record<string, any> = {};
+    // 明确列出允许更新的字段，避免发送不存在的字段（如 participant_count）
+    const allowedFields = [
+      'title',
+      'description',
+      'location',
+      'datetime',
+      'wechat_id',
+      'qrcode',
+      'status',
+      'duration',
+      'creator',
+      'max_ppl',
+      'mode',
+      'cover',
+      'is_recurring',
+      'recurrence_day',
+      'episode_start_date',
+      'default_theme',
+      'survey_id',
+      'skip_login',
+    ];
 
-    Object.keys(updateData).forEach((key) => {
+    allowedFields.forEach((key) => {
       const value = (updateData as Record<string, any>)[key];
-      if (value) {
+      if (value !== undefined && value !== null) {
         updateRecord[key] = value;
       }
     });
