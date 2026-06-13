@@ -9,7 +9,7 @@ import FloatingActions from './components/FloatingActions';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { getUserName, isUserLoggedIn } from './utils/user';
+import { getUserName, isUserLoggedIn, syncUserAuthFromSession } from './utils/user';
 import { Snackbar, Alert, Button } from '@mui/material';
 
 const theme = createTheme({
@@ -42,11 +42,15 @@ const App: React.FC = () => {
 
   // 检查用户认证状态
   useEffect(() => {
-    const checkAuth = () => {
+    let cancelled = false;
+    const checkAuth = async () => {
       try {
-        if (isUserLoggedIn()) {
+        const syncedUser = await syncUserAuthFromSession();
+        if (cancelled) return;
+
+        if (syncedUser || isUserLoggedIn()) {
           setIsAuthenticated(true);
-          setUserName(getUserName() || '用户');
+          setUserName(syncedUser?.name || syncedUser?.username || getUserName() || '用户');
         } else {
           setIsAuthenticated(false);
           setUserName('');
@@ -59,6 +63,9 @@ const App: React.FC = () => {
     };
 
     checkAuth();
+    return () => {
+      cancelled = true;
+    };
   }, [location.pathname, location.search, location.hash]);
 
   // 注册Service Worker并检查更新

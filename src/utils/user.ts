@@ -1,4 +1,5 @@
 import { UserInfo } from '../netlify/types';
+import { http } from '../netlify/config/http';
 import { supabaseAuth } from '../database/supabaseAuth';
 
 export const setUserAuth = (token: string, userInfo: UserInfo) => {
@@ -42,6 +43,41 @@ export const getUserInfo = (): UserInfo | null => {
     return JSON.parse(userInfo);
   } catch {
     return null;
+  }
+};
+
+export const syncUserAuthFromSession = async (): Promise<UserInfo | null> => {
+  const {
+    data: { session },
+  } = await supabaseAuth.auth.getSession();
+
+  if (!session?.access_token || !session.user.email) return null;
+
+  const currentUser = getUserInfo();
+  if (currentUser?.name || currentUser?.username) {
+    setUserAuth(session.access_token, currentUser);
+    return currentUser;
+  }
+
+  try {
+    const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', {
+      email: session.user.email,
+    });
+    const user =
+      res.data?.user ||
+      ({
+        email: session.user.email,
+        name: session.user.user_metadata?.name || '',
+      } as UserInfo);
+    setUserAuth(session.access_token, user);
+    return user;
+  } catch {
+    const user = {
+      email: session.user.email,
+      name: session.user.user_metadata?.name || '',
+    } as UserInfo;
+    setUserAuth(session.access_token, user);
+    return user;
   }
 };
 

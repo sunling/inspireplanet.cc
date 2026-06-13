@@ -25,7 +25,7 @@ import {
   validateRequired,
 } from '../../utils/validation';
 import { supabaseAuth } from '../../database/supabaseAuth';
-import { isUserLoggedIn } from '../../utils/user';
+import { syncUserAuthFromSession } from '../../utils/user';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -41,9 +41,17 @@ const Login: React.FC = () => {
 
   // 已登录则直接跳转
   useEffect(() => {
-    if (isUserLoggedIn()) {
-      navigate(getRedirectUrl(), { replace: true });
-    }
+    let cancelled = false;
+    const redirectIfLoggedIn = async () => {
+      const user = await syncUserAuthFromSession();
+      if (!cancelled && user) {
+        navigate(getRedirectUrl(), { replace: true });
+      }
+    };
+    redirectIfLoggedIn();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // 状态管理

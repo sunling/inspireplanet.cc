@@ -53,6 +53,7 @@ export const authApi = {
         password: data.password,
         options: {
           data: { name: data.name },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
@@ -61,6 +62,14 @@ export const authApi = {
         ? '该邮箱已被注册'
         : signUpError.message;
       return { success: false, statusCode: 409, error: msg };
+    }
+
+    if (authData.user && authData.user.identities?.length === 0) {
+      return {
+        success: false,
+        statusCode: 409,
+        error: '该邮箱已注册，请直接登录；如果忘记密码，请使用找回密码',
+      };
     }
 
     // Create profile in users table
