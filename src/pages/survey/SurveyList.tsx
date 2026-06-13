@@ -78,14 +78,14 @@ const SurveyList: React.FC = () => {
         const respondentId = getUserId();
         if (respondentId) {
           const submissionsResponse = await surveyApi.getMySubmissions({
-            respondentId: String(respondentId),
+            respondent_id: String(respondentId),
           });
 
           if (submissionsResponse.success && submissionsResponse.data) {
-            // 将提交记录转换为以 surveyId 为 key 的对象
+            // 将提交记录转换为以 survey_id 为 key 的对象
             const submissionsMap: Record<string, SurveySubmission> = {};
             submissionsResponse.data.records.forEach((record: any) => {
-              submissionsMap[record.surveyId] = record;
+              submissionsMap[record.survey_id] = record;
             });
             setMySubmissions(submissionsMap);
           }

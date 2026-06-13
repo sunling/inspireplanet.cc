@@ -79,7 +79,7 @@ const surveyApi = {
 
   // 获取问卷提交记录
   getSubmissions: async (params: {
-    surveyId: string;
+    survey_id: string;
     page?: number;
     pageSize?: number;
   }): Promise<
@@ -100,16 +100,16 @@ const surveyApi = {
 
   // 获取我的提交记录
   getMySubmissions: async (params: {
-    respondentId: string;
+    respondent_id: string;
     page?: number;
     pageSize?: number;
   }): Promise<
     ApiResponse<{
       records: Array<{
         id: string;
-        surveyId: string;
-        surveyTitle: string;
-        submittedAt: string;
+        survey_id: string;
+        survey_title: string;
+        submitted_at: string;
       }>;
       total: number;
       page: number;
@@ -119,9 +119,9 @@ const surveyApi = {
     return http.get<{
       records: Array<{
         id: string;
-        surveyId: string;
-        surveyTitle: string;
-        submittedAt: string;
+        survey_id: string;
+        survey_title: string;
+        submitted_at: string;
       }>;
       total: number;
       page: number;
@@ -131,8 +131,8 @@ const surveyApi = {
 
   // 检查用户是否已提交过问卷
   checkSubmission: async (params: {
-    surveyId: string;
-    respondentId: string;
+    survey_id: string;
+    respondent_id: string;
   }): Promise<ApiResponse<SurveySubmission | null>> => {
     return http.get<SurveySubmission | null>(
       '/surveySubmission',

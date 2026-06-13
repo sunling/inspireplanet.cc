@@ -89,7 +89,7 @@ const SurveyResults: React.FC = () => {
       }
 
       const submissionsRes = await surveyApi.getSubmissions({
-        surveyId: surveyId!,
+        survey_id: surveyId!,
       });
       if (submissionsRes.success && submissionsRes.data) {
         setSubmissions(submissionsRes.data.records || []);
