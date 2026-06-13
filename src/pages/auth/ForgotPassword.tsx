@@ -41,9 +41,13 @@ const ForgotPassword: React.FC = () => {
     });
     setLoading(false);
     if (err) {
-      setError(err.message.includes('not found') || err.message.includes('No user')
+      console.error('[forgot-password] send otp failed:', err);
+      const message = err.message.toLowerCase();
+      setError(message.includes('not found') || message.includes('no user')
         ? '该邮箱未注册'
-        : '发送失败，请稍后重试');
+        : message.includes('email not confirmed')
+          ? '邮箱还未验证，请先打开注册邮件完成确认后再登录'
+          : '发送失败，请稍后重试');
       return;
     }
     setStep('otp');

@@ -4,6 +4,10 @@ import { supabaseAuth } from '../../database/supabaseAuth';
 import { setUserAuth } from '../../utils/user';
 import { UserInfo } from '../types';
 
+function isEmailNotConfirmed(message?: string): boolean {
+  return Boolean(message?.toLowerCase().includes('email not confirmed'));
+}
+
 async function getProfile(email: string): Promise<UserInfo | null> {
   const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', {
     email,
@@ -21,7 +25,10 @@ export const authApi = {
       password,
     });
     if (error || !data.session) {
-      return { success: false, statusCode: 401, error: '邮箱或密码错误' };
+      const message = isEmailNotConfirmed(error?.message)
+        ? '邮箱还未验证，请先打开注册邮件完成确认后再登录'
+        : '邮箱或密码错误';
+      return { success: false, statusCode: 401, error: message };
     }
 
     const token = data.session.access_token;
@@ -73,7 +80,12 @@ export const authApi = {
     };
 
     if (token) setUserAuth(token, user);
-    return { success: true, statusCode: 201, data: { user, token } };
+    return {
+      success: true,
+      statusCode: 201,
+      data: { user, token },
+      message: token ? '注册成功' : '注册成功，请先到邮箱点击确认邮件后再登录',
+    };
   },
 
   changePassword: async (newPassword: string): Promise<ApiResponse<{}>> => {

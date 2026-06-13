@@ -4,6 +4,7 @@ import {
   HttpHeaders,
   RequestConfig,
 } from '../types/http';
+import { supabaseAuth } from '../../database/supabaseAuth';
 
 const DEFAULT_HEADER: HttpHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,8 +37,17 @@ class HttpClient {
   }
 
   // 获取认证token
-  private getAuthToken(): string | null {
+  private async getAuthToken(): Promise<string | null> {
     try {
+      const {
+        data: { session },
+      } = await supabaseAuth.auth.getSession();
+
+      if (session?.access_token) {
+        localStorage.setItem('authToken', session.access_token);
+        return session.access_token;
+      }
+
       return (
         localStorage.getItem('authToken') || localStorage.getItem('userToken')
       );
@@ -90,8 +100,8 @@ class HttpClient {
   }
 
   // 请求拦截器
-  private requestInterceptor(config: RequestConfig): RequestConfig {
-    const token = this.getAuthToken();
+  private async requestInterceptor(config: RequestConfig): Promise<RequestConfig> {
+    const token = await this.getAuthToken();
     if (token) {
       config.headers = {
         ...config.headers,
@@ -208,7 +218,7 @@ class HttpClient {
         ...config,
       };
       // 应用请求拦截器
-      const interceptedConfig = this.requestInterceptor(mergedConfig);
+      const interceptedConfig = await this.requestInterceptor(mergedConfig);
 
       // 构建URL
       const url = this.buildUrl(moduleName, interceptedConfig.params);

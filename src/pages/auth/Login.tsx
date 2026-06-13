@@ -154,7 +154,13 @@ const Login: React.FC = () => {
         throw new Error(response.error || '操作失败');
       }
 
-      setSuccess(currentMode === 'login' ? '登录成功' : '注册成功');
+      setSuccess(
+        response.message || (currentMode === 'login' ? '登录成功' : '注册成功')
+      );
+
+      if (currentMode === 'register' && !response.data?.token) {
+        return;
+      }
 
       // 延迟跳转，让用户看到成功消息
       setTimeout(() => {
