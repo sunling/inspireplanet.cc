@@ -9,7 +9,12 @@ import FloatingActions from './components/FloatingActions';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { getUserName, isUserLoggedIn, syncUserAuthFromSession } from './utils/user';
+import {
+  getUserName,
+  isUserLoggedIn,
+  logoutUser,
+  syncUserAuthFromSession,
+} from './utils/user';
 import { Snackbar, Alert, Button } from '@mui/material';
 
 const theme = createTheme({
@@ -131,9 +136,8 @@ const App: React.FC = () => {
   };
 
   // 退出登录函数
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userInfo');
+  const handleLogout = async () => {
+    await logoutUser();
     setIsAuthenticated(false);
     setUserName('');
   };

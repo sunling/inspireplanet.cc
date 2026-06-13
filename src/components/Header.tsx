@@ -33,7 +33,7 @@ import { isOrganizer } from '../utils/user';
 interface HeaderProps {
   isAuthenticated: boolean;
   userName: string;
-  onLogout: () => void;
+  onLogout: () => void | Promise<void>;
 }
 
 // 菜单项类型定义
@@ -107,8 +107,8 @@ const Header: React.FC<HeaderProps> = ({
   const handleMenuToggle = () => setIsMenuOpen(!isMenuOpen);
   const handleMenuClick = () => setIsMenuOpen(false);
 
-  const handleLogout = () => {
-    onLogout();
+  const handleLogout = async () => {
+    await onLogout();
     setUserMenuAnchor(null);
     navigate('/');
   };
