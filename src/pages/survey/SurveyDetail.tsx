@@ -73,8 +73,8 @@ const SurveyDetail: React.FC = () => {
         const respondentId = getUserId();
         if (respondentId) {
           const checkResponse = await surveyApi.checkSubmission({
-            surveyId: surveyId!,
-            respondentId: String(respondentId),
+            survey_id: surveyId!,
+            respondent_id: String(respondentId),
           });
 
           if (checkResponse.success && checkResponse.data) {
@@ -172,9 +172,9 @@ const SurveyDetail: React.FC = () => {
       } else {
         // 否则创建新提交
         response = await surveyApi.submit({
-          surveyId: survey.id,
+          survey_id: survey.id,
           answers: submitAnswers,
-          respondentId: String(respondentId),
+          respondent_id: String(respondentId),
         });
       }
 

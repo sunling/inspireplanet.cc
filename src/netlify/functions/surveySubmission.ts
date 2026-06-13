@@ -44,11 +44,11 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
 async function handleSubmit(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
     const requestData = getDataFromEvent(event);
-    const { surveyId, answers, email, respondentId } =
-      requestData as SubmitSurveyRequest & { respondentId: string };
+    const { survey_id, answers, email, respondent_id } =
+      requestData as SubmitSurveyRequest;
 
     if (
-      !surveyId ||
+      !survey_id ||
       !answers ||
       !Array.isArray(answers) ||
       answers.length === 0
@@ -56,7 +56,7 @@ async function handleSubmit(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('缺少必要参数', 400);
     }
 
-    if (!respondentId) {
+    if (!respondent_id) {
       return createErrorResponse('缺少提交者信息', 400);
     }
 
@@ -64,7 +64,7 @@ async function handleSubmit(event: NetlifyEvent): Promise<NetlifyResponse> {
     const { data: survey, error: surveyError } = await supabase
       .from('surveys')
       .select('id, is_active, allow_multiple_submissions')
-      .eq('id', surveyId)
+      .eq('id', survey_id)
       .single();
 
     if (surveyError) {
@@ -82,8 +82,8 @@ async function handleSubmit(event: NetlifyEvent): Promise<NetlifyResponse> {
         await supabase
           .from('survey_submissions')
           .select('id')
-          .eq('survey_id', surveyId)
-          .eq('respondent_id', respondentId)
+          .eq('survey_id', survey_id)
+          .eq('respondent_id', respondent_id)
           .single();
 
       if (!submissionError && existingSubmission) {
@@ -95,8 +95,8 @@ async function handleSubmit(event: NetlifyEvent): Promise<NetlifyResponse> {
     const { data: submission, error: submissionError } = await supabase
       .from('survey_submissions')
       .insert({
-        survey_id: surveyId,
-        respondent_id: respondentId,
+        survey_id,
+        respondent_id,
         respondent_email: email,
         ip_address:
           event.headers['x-forwarded-for'] ||
@@ -152,9 +152,9 @@ async function handleGetBySurveyId(
 ): Promise<NetlifyResponse> {
   try {
     const requestData = getDataFromEvent(event);
-    const { surveyId, page = 1, pageSize = 10 } = requestData;
+    const { survey_id, page = 1, pageSize = 10 } = requestData;
 
-    if (!surveyId) {
+    if (!survey_id) {
       return createErrorResponse('缺少问卷 ID', 400);
     }
 
@@ -166,7 +166,7 @@ async function handleGetBySurveyId(
     } = await supabase
       .from('survey_submissions')
       .select('*', { count: 'exact' })
-      .eq('survey_id', surveyId)
+      .eq('survey_id', survey_id)
       .order('submitted_at', { ascending: false })
       .range((page - 1) * pageSize, page * pageSize - 1);
 
@@ -190,10 +190,10 @@ async function handleGetBySurveyId(
 
         return {
           id: submission.id,
-          surveyId: submission.survey_id,
-          respondentId: submission.respondent_id,
-          respondentEmail: submission.respondent_email,
-          submittedAt: submission.submitted_at,
+          survey_id: submission.survey_id,
+          respondent_id: submission.respondent_id,
+          respondent_email: submission.respondent_email,
+          submitted_at: submission.submitted_at,
           answers: (answers || []).map((a) => ({
             questionId: a.question_id,
             value: a.value,
@@ -245,9 +245,9 @@ async function handleGetMySubmissions(
     // 格式化响应
     const formattedSubmissions = (submissions || []).map((submission) => ({
       id: submission.id,
-      surveyId: submission.survey_id,
-      surveyTitle: submission.surveys?.title,
-      submittedAt: submission.submitted_at,
+      survey_id: submission.survey_id,
+      survey_title: submission.surveys?.title,
+      submitted_at: submission.submitted_at,
     }));
 
     return createSuccessResponse({
@@ -267,9 +267,9 @@ async function handleCheckSubmission(
 ): Promise<NetlifyResponse> {
   try {
     const requestData = getDataFromEvent(event);
-    const { surveyId, respondentId } = requestData;
+    const { survey_id, respondent_id } = requestData;
 
-    if (!surveyId || !respondentId) {
+    if (!survey_id || !respondent_id) {
       return createErrorResponse('缺少必要参数', 400);
     }
 
@@ -277,8 +277,8 @@ async function handleCheckSubmission(
     const { data: submission, error: submissionError } = await supabase
       .from('survey_submissions')
       .select('*')
-      .eq('survey_id', surveyId)
-      .eq('respondent_id', respondentId)
+      .eq('survey_id', survey_id)
+      .eq('respondent_id', respondent_id)
       .single();
 
     if (submissionError) {
@@ -298,10 +298,10 @@ async function handleCheckSubmission(
 
     const submissionWithAnswers = {
       id: submission.id,
-      surveyId: submission.survey_id,
-      respondentId: submission.respondent_id,
-      respondentEmail: submission.respondent_email,
-      submittedAt: submission.submitted_at,
+      survey_id: submission.survey_id,
+      respondent_id: submission.respondent_id,
+      respondent_email: submission.respondent_email,
+      submitted_at: submission.submitted_at,
       answers: (answers || []).map((a) => ({
         questionId: a.question_id,
         value: a.value,

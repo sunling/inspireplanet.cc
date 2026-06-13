@@ -91,21 +91,21 @@ export interface SubmitSurveyRequest {
 // 问卷提交
 export interface SurveySubmission {
   id: string;
-  surveyId: string;
-  respondentId: string;
-  respondentEmail?: string;
-  submittedAt: string;
+  survey_id: string;
+  respondent_id: string;
+  respondent_email?: string;
+  submitted_at: string;
   answers: QuestionAnswer[];
 }
 
 // 问卷统计
 export interface SurveyStatistics {
-  surveyId: string;
+  survey_id: string;
   title: string;
-  totalSubmissions: number;
-  totalQuestions: number;
-  createdAt: string;
-  isActive: boolean;
+  total_submissions: number;
+  total_questions: number;
+  created_at: string;
+  is_active: boolean;
 }
 
 // 问题统计
