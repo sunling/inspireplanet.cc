@@ -1,7 +1,7 @@
 {
   "name": "启发星球",
   "short_name": "启发星球",
-  "description": "启发星球 - 分享灵感，激发创意",
+  "description": "启发星球 - 每周分享会、启发周刊与活动报名",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -33,10 +33,10 @@
   ],
   "shortcuts": [
     {
-      "name": "创建卡片",
-      "short_name": "创建卡片",
-      "description": "创建新的知识卡片",
-      "url": "/create-card",
+      "name": "启发周刊",
+      "short_name": "周刊",
+      "description": "查看往期启发内容",
+      "url": "/weekly-cards",
       "icons": [{ "src": "/images/logo.png", "sizes": "96x96" }]
     },
     {

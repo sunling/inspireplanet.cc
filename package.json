@@ -70,7 +70,7 @@
   "resolutions": {
     "puppeteer-core": "npm:puppeteer@^24.7.2"
   },
-  "description": "一个用于创建、上传和展示来自书籍、播客、电影及个人感悟的启发闪卡的网页应用。该项目让用户能够捕捉灵感瞬间，并以视觉吸引人的形式与他人分享。",
+  "description": "启发星球是一个围绕每周分享会展开的学习与创作社群网站，用于沉淀启发周刊、活动报名、树洞互助与社群回顾。",
   "author": "Ling Sun",
   "license": "ISC",
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"

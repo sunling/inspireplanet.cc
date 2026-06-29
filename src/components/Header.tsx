@@ -38,7 +38,8 @@ interface HeaderProps {
 
 // 菜单项类型定义
 interface NavItem {
-  path: string;
+  path?: string;
+  href?: string;
   label: string;
   icon?: React.ReactNode;
 }
@@ -60,9 +61,6 @@ const Header: React.FC<HeaderProps> = ({
   // 状态管理
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(
-    null
-  );
-  const [cardsMenuAnchor, setCardsMenuAnchor] = useState<HTMLElement | null>(
     null
   );
   const [toolsMenuAnchor, setToolsMenuAnchor] = useState<HTMLElement | null>(
@@ -99,7 +97,8 @@ const Header: React.FC<HeaderProps> = ({
   }, [location.pathname]);
 
   // 判断当前路由是否匹配
-  const isActiveRoute = (path: string): boolean => {
+  const isActiveRoute = (path?: string): boolean => {
+    if (!path) return false;
     return location.pathname === path;
   };
 
@@ -113,27 +112,33 @@ const Header: React.FC<HeaderProps> = ({
     navigate('/');
   };
 
+  const mutualAidDocUrl =
+    'https://docs.qq.com/sheet/DWU1EcU5YSmRVWnZZ?tab=BB08J2';
+
   // 菜单项定义
   const topNavItems: NavItem[] = [
-    { path: '', label: '首页', icon: <Home fontSize="small" /> },
-  ];
-
-  const cardsMenuItems: NavItem[] = [
-    { path: '/create-card', label: '创建卡片' },
-    { path: '/cards', label: '卡片广场' },
-    { path: '/weekly-cards', label: '启发星球周刊' },
+    { path: '/', label: '首页', icon: <Home fontSize="small" /> },
+    {
+      path: '/weekly-cards',
+      label: '启发周刊',
+      icon: <CardMembership fontSize="small" />,
+    },
+    {
+      href: mutualAidDocUrl,
+      label: '树洞互助',
+      icon: <Info fontSize="small" />,
+    },
   ];
 
   // 构建活动菜单，只对 organizer 显示报名管理
   const getActivitiesMenuItems = (): NavItem[] => {
     const baseItems: NavItem[] = [
-      { path: '/meetups', label: '活动广场' },
+      { path: '/meetups', label: '活动列表' },
       { path: '/activity-calendar', label: '活动日历' },
-      { path: '/people', label: '找人聊聊' },
-      { path: '/create-meetup', label: '创建活动' },
     ];
 
     if (isOrganizer()) {
+      baseItems.push({ path: '/create-meetup', label: '创建活动' });
       baseItems.push({ path: '/meetup-participants-list', label: '报名管理' });
     }
 
@@ -149,26 +154,23 @@ const Header: React.FC<HeaderProps> = ({
   // 下拉菜单配置
   const dropdownMenus: DropdownMenu[] = [
     {
-      label: '知识卡片',
-      icon: <CardMembership fontSize="small" />,
-      items: cardsMenuItems,
-      anchor: cardsMenuAnchor,
-      setAnchor: setCardsMenuAnchor,
-    },
-    {
       label: '活动',
       icon: <CalendarToday fontSize="small" />,
       items: getActivitiesMenuItems(),
       anchor: activitiesMenuAnchor,
       setAnchor: setActivitiesMenuAnchor,
     },
-    {
-      label: '工具',
-      icon: <CardMembership fontSize="small" />,
-      items: toolsMenuItems,
-      anchor: toolsMenuAnchor,
-      setAnchor: setToolsMenuAnchor,
-    },
+    ...(isOrganizer()
+      ? [
+          {
+            label: '工具',
+            icon: <CardMembership fontSize="small" />,
+            items: toolsMenuItems,
+            anchor: toolsMenuAnchor,
+            setAnchor: setToolsMenuAnchor,
+          },
+        ]
+      : []),
   ];
 
   // 渲染下拉菜单
@@ -202,16 +204,29 @@ const Header: React.FC<HeaderProps> = ({
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
       >
-        {menu.items.map((item) => (
-          <MenuItem
-            key={item.path}
-            component={Link}
-            to={item.path}
-            onClick={() => menu.setAnchor(null)}
-          >
-            <ListItemText primary={item.label} sx={{ pl: 1 }} />
-          </MenuItem>
-        ))}
+        {menu.items.map((item) =>
+          item.href ? (
+            <MenuItem
+              key={item.href}
+              component="a"
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => menu.setAnchor(null)}
+            >
+              <ListItemText primary={item.label} sx={{ pl: 1 }} />
+            </MenuItem>
+          ) : (
+            <MenuItem
+              key={item.path}
+              component={Link}
+              to={item.path || '/'}
+              onClick={() => menu.setAnchor(null)}
+            >
+              <ListItemText primary={item.label} sx={{ pl: 1 }} />
+            </MenuItem>
+          )
+        )}
       </Menu>
     </div>
   );
@@ -220,25 +235,45 @@ const Header: React.FC<HeaderProps> = ({
   const renderNavLinks = () => (
     <>
       {/* 顶级菜单 */}
-      {topNavItems.map((item) => (
-        <Button
-          key={item.path}
-          color="inherit"
-          startIcon={item.icon}
-          component={Link}
-          to={item.path}
-          sx={{
-            marginLeft: 1,
-            display: { xs: 'none', md: 'flex' },
-            textTransform: 'none',
-            fontSize: '0.9rem',
-            fontWeight: isActiveRoute(item.path) ? 'bold' : 'normal',
-            color: isActiveRoute(item.path) ? '#ff7f50' : 'inherit',
-          }}
-        >
-          {item.label}
-        </Button>
-      ))}
+      {topNavItems.map((item) =>
+        item.href ? (
+          <Button
+            key={item.href}
+            color="inherit"
+            startIcon={item.icon}
+            component="a"
+            href={item.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              marginLeft: 1,
+              display: { xs: 'none', md: 'flex' },
+              textTransform: 'none',
+              fontSize: '0.9rem',
+            }}
+          >
+            {item.label}
+          </Button>
+        ) : (
+          <Button
+            key={item.path}
+            color="inherit"
+            startIcon={item.icon}
+            component={Link}
+            to={item.path || '/'}
+            sx={{
+              marginLeft: 1,
+              display: { xs: 'none', md: 'flex' },
+              textTransform: 'none',
+              fontSize: '0.9rem',
+              fontWeight: isActiveRoute(item.path) ? 'bold' : 'normal',
+              color: isActiveRoute(item.path) ? '#ff7f50' : 'inherit',
+            }}
+          >
+            {item.label}
+          </Button>
+        )
+      )}
 
       {/* 下拉菜单 */}
       {dropdownMenus.map((menu) => renderDropdownMenu(menu))}
@@ -287,24 +322,43 @@ const Header: React.FC<HeaderProps> = ({
         {icon}
         <ListItemText primary={label} sx={{ pl: 1 }} />
       </ListItem>
-      {items.map((item) => (
-        <ListItem
-          key={item.path}
-          component={Link}
-          to={item.path}
-          onClick={handleMenuClick}
-          sx={{
-            pl: 5,
-            color: isActiveRoute(item.path) ? '#ff7f50' : 'grey',
-            backgroundColor: isActiveRoute(item.path)
-              ? '#fff9f0'
-              : 'transparent',
-            '&:hover': { backgroundColor: '#fff9f0' },
-          }}
-        >
-          <ListItemText primary={item.label} sx={{ pl: 1 }} />
-        </ListItem>
-      ))}
+      {items.map((item) =>
+        item.href ? (
+          <ListItem
+            key={item.href}
+            component="a"
+            href={item.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleMenuClick}
+            sx={{
+              pl: 5,
+              color: 'grey',
+              textDecoration: 'none',
+              '&:hover': { backgroundColor: '#fff9f0' },
+            }}
+          >
+            <ListItemText primary={item.label} sx={{ pl: 1 }} />
+          </ListItem>
+        ) : (
+          <ListItem
+            key={item.path}
+            component={Link}
+            to={item.path || '/'}
+            onClick={handleMenuClick}
+            sx={{
+              pl: 5,
+              color: isActiveRoute(item.path) ? '#ff7f50' : 'grey',
+              backgroundColor: isActiveRoute(item.path)
+                ? '#fff9f0'
+                : 'transparent',
+              '&:hover': { backgroundColor: '#fff9f0' },
+            }}
+          >
+            <ListItemText primary={item.label} sx={{ pl: 1 }} />
+          </ListItem>
+        )
+      )}
     </>
   );
 
@@ -324,44 +378,59 @@ const Header: React.FC<HeaderProps> = ({
         </Box>
         <List>
           {/* 顶级菜单项 */}
-          {topNavItems.map((item) => (
-            <ListItem
-              key={item.path}
-              component={Link}
-              to={item.path}
-              onClick={handleMenuClick}
-              sx={{
-                color: isActiveRoute(item.path) ? '#ff7f50' : 'grey',
-                backgroundColor: isActiveRoute(item.path)
-                  ? '#fff9f0'
-                  : 'transparent',
-                '&:hover': { backgroundColor: '#fff9f0' },
-                borderLeft: isActiveRoute(item.path)
-                  ? '4px solid #fff9f0'
-                  : 'none',
-              }}
-            >
-              {item.icon}
-              <ListItemText primary={item.label} sx={{ pl: 1 }} />
-            </ListItem>
-          ))}
+          {topNavItems.map((item) =>
+            item.href ? (
+              <ListItem
+                key={item.href}
+                component="a"
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleMenuClick}
+                sx={{
+                  color: 'grey',
+                  textDecoration: 'none',
+                  '&:hover': { backgroundColor: '#fff9f0' },
+                }}
+              >
+                {item.icon}
+                <ListItemText primary={item.label} sx={{ pl: 1 }} />
+              </ListItem>
+            ) : (
+              <ListItem
+                key={item.path}
+                component={Link}
+                to={item.path || '/'}
+                onClick={handleMenuClick}
+                sx={{
+                  color: isActiveRoute(item.path) ? '#ff7f50' : 'grey',
+                  backgroundColor: isActiveRoute(item.path)
+                    ? '#fff9f0'
+                    : 'transparent',
+                  '&:hover': { backgroundColor: '#fff9f0' },
+                  borderLeft: isActiveRoute(item.path)
+                    ? '4px solid #fff9f0'
+                    : 'none',
+                }}
+              >
+                {item.icon}
+                <ListItemText primary={item.label} sx={{ pl: 1 }} />
+              </ListItem>
+            )
+          )}
 
           {/* 移动端菜单组 */}
-          {renderMobileMenuItemGroup(
-            '知识卡片',
-            <CardMembership fontSize="small" />,
-            cardsMenuItems
-          )}
           {renderMobileMenuItemGroup(
             '活动',
             <CalendarToday fontSize="small" />,
             getActivitiesMenuItems()
           )}
-          {renderMobileMenuItemGroup(
-            '工具',
-            <CardMembership fontSize="small" />,
-            toolsMenuItems
-          )}
+          {isOrganizer() &&
+            renderMobileMenuItemGroup(
+              '工具',
+              <CardMembership fontSize="small" />,
+              toolsMenuItems
+            )}
 
           {/* 移动端：关于我们 */}
           <ListItem
@@ -526,7 +595,7 @@ const Header: React.FC<HeaderProps> = ({
                   onClick={() => setUserMenuAnchor(null)}
                 >
                   <AccountCircle fontSize="small" sx={{ mr: 1 }} />
-                  完善资料
+                  个人资料
                 </MenuItem>
                 <MenuItem
                   component={Link}

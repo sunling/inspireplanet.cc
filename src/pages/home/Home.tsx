@@ -23,9 +23,8 @@ import {
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import html2canvas from 'html2canvas';
-import { weeklyCardsApi, meetupsApi, cardsApi } from '../../netlify/config';
+import { weeklyCardsApi, meetupsApi } from '../../netlify/config';
 import { WeeklyCard } from '../../netlify/services/weeklyCards';
-import { CardItem } from '../../netlify/types';
 import { Meetup } from '../../netlify/functions/meetup';
 import { getNextOccurrence, toLocalDateStr, getEpisodeNumber } from '../../utils/recurring';
 import dayjs from 'dayjs';
@@ -45,12 +44,14 @@ const MeetupModeLabel: Record<string, string> = {
   outdoor: '户外',
 };
 
+const mutualAidDocUrl =
+  'https://docs.qq.com/sheet/DWU1EcU5YSmRVWnZZ?tab=BB08J2';
+
 const Home: React.FC = () => {
   const [cards, setCards] = useState<WeeklyCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [upcomingMeetups, setUpcomingMeetups] = useState<UpcomingMeetup[]>([]);
-  const [recentCards, setRecentCards] = useState<CardItem[]>([]);
   const { isMobile, isTablet } = useResponsive();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [gradients, setGradients] = useState<string[]>([]);
@@ -106,20 +107,10 @@ const Home: React.FC = () => {
     }
   };
 
-  const fetchRecentCards = async () => {
-    try {
-      const res = await cardsApi.getAll({ page: 1, limit: 6 });
-      setRecentCards(res.data?.records || []);
-    } catch {
-      // 静默失败
-    }
-  };
-
   // 初始化和清理
   useEffect(() => {
     fetchLatestCards();
     fetchUpcomingMeetups();
-    fetchRecentCards();
   }, []);
 
   useEffect(() => {
@@ -170,7 +161,7 @@ const Home: React.FC = () => {
       return (
         <Empty
           message="暂无最新卡片内容"
-          description="前往卡片页面查看更多精彩内容"
+          description="前往启发周刊查看更多往期内容"
         />
       );
     }
@@ -349,6 +340,24 @@ const Home: React.FC = () => {
           </Typography>
         </section>
 
+        {/* 树洞与互助 */}
+        <section className={styles['stories-section']} style={{ textAlign: 'center' }}>
+          <h2 className={styles['stories-title']}>树洞与互助</h2>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+            树洞和互助文档已更新，欢迎大家在这里互帮互助。
+          </Typography>
+          <Button
+            variant="outlined"
+            href={mutualAidDocUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="small"
+            sx={{ borderColor: '#ff6348', color: '#ff6348', '&:hover': { borderColor: '#ff4500', color: '#ff4500' } }}
+          >
+            打开树洞互助文档
+          </Button>
+        </section>
+
         {/* 成员故事 */}
         <section className={styles['stories-section']}>
           <h2 className={styles['stories-title']}>在这里发生的事</h2>
@@ -426,88 +435,6 @@ const Home: React.FC = () => {
           </section>
         )}
 
-        {/* 近期灵感卡片 */}
-        {recentCards.length > 0 && (
-          <section className={styles['stories-section']}>
-            <h2 className={styles['stories-title']}>近期灵感卡片</h2>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)' },
-                gap: 1.5,
-                mb: 2,
-              }}
-            >
-              {recentCards.map((card) => {
-                const gradientClass = card.gradient_class || 'card-gradient-1';
-                const fontColor = getFontColorForGradient(gradientClass);
-                return (
-                  <Box
-                    key={card.id}
-                    component={Link}
-                    to={`/card-detail?id=${card.id}`}
-                    className={gradientClass}
-                    sx={{
-                      borderRadius: '10px',
-                      p: 2,
-                      textDecoration: 'none',
-                      color: fontColor,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 0.75,
-                      minHeight: 120,
-                      transition: 'transform 0.15s',
-                      '&:hover': { transform: 'translateY(-2px)' },
-                    }}
-                  >
-                    <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: fontColor }} noWrap>
-                      {card.title}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: '0.78rem',
-                        color: fontColor,
-                        opacity: 0.85,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        flex: 1,
-                        fontStyle: 'italic',
-                      }}
-                    >
-                      {card.quote}
-                    </Typography>
-                    <Typography sx={{ fontSize: '0.7rem', color: fontColor, opacity: 0.6 }} noWrap>
-                      — {card.username || card.creator || '匿名'}
-                    </Typography>
-                  </Box>
-                );
-              })}
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Button
-                variant="contained"
-                component={Link}
-                to="/create-card"
-                size="small"
-                sx={{ bgcolor: '#ff6348', '&:hover': { bgcolor: '#ff4500' } }}
-              >
-                创建我的卡片
-              </Button>
-              <Button
-                variant="outlined"
-                component={Link}
-                to="/cards"
-                size="small"
-                sx={{ borderColor: '#ff6348', color: '#ff6348', '&:hover': { borderColor: '#ff4500', color: '#ff4500' } }}
-              >
-                查看全部
-              </Button>
-            </Box>
-          </section>
-        )}
-
         {/* 卡片轮播 */}
         <section className={styles['carousel-section']}>
           <h2 className={styles['section-title-inline']}>最新周刊卡片</h2>
@@ -518,14 +445,14 @@ const Home: React.FC = () => {
             <Button
               variant="contained"
               component={Link}
-              to="/cards"
+              to="/weekly-cards"
               endIcon={<ChevronRight />}
               className={`${styles['view-all-button']} ${
                 isMobile ? styles['mobile-button'] : ''
               }`}
             >
               <Star fontSize="inherit" />
-              查看所有卡片
+              查看往期周刊
             </Button>
           </div>
         </section>

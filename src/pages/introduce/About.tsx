@@ -164,21 +164,21 @@ const About: React.FC = () => {
           <Grid container spacing={3}>
             {[
               {
-                title: '精美卡片创作',
+                title: '每周分享会',
                 description:
-                  '使用多种渐变背景、字体和布局，创作独具个性的启发卡片',
+                  '围绕真实经历、学习收获与创作实践展开交流',
               },
               {
-                title: '卡片广场',
-                description: '浏览来自全球用户的启发卡片，获取新的思考角度',
+                title: '启发周刊',
+                description: '沉淀每期活动中的金句、片段与延伸思考',
               },
               {
-                title: '个人收藏',
-                description: '管理和整理您创作的所有卡片，记录思想成长轨迹',
+                title: '活动报名',
+                description: '查看近期活动，完成报名并管理自己的参与记录',
               },
               {
-                title: '启发星球周刊',
-                description: '定期精选最具启发性的内容，以周刊形式呈现',
+                title: '树洞互助',
+                description: '用协作文档承载求助、回应与资源共享',
               },
             ].map((feature, index) => (
               <Grid size={{ xs: 12, sm: 6 }} key={index}>
