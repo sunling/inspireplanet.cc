@@ -2,20 +2,43 @@ import { UserInfo } from '../netlify/types';
 import { http } from '../netlify/config/http';
 import { supabaseAuth } from '../database/supabaseAuth';
 
+const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+
 export const setUserAuth = (token: string, userInfo: UserInfo) => {
   localStorage.setItem('authToken', token);
   localStorage.setItem('userInfo', JSON.stringify(userInfo));
+  localStorage.setItem('loginTime', String(Date.now()));
+};
+
+const isSessionExpired = (): boolean => {
+  const loginTime = localStorage.getItem('loginTime');
+  if (!loginTime) return false;
+  const elapsed = Date.now() - Number(loginTime);
+  return elapsed > TWO_WEEKS_MS;
+};
+
+export const checkAndClearExpiredSession = (): boolean => {
+  if (isSessionExpired()) {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userInfo');
+    localStorage.removeItem('loginTime');
+    return true;
+  }
+  return false;
 };
 
 export const getAuthToken = (): string | null => {
+  checkAndClearExpiredSession();
   return localStorage.getItem('authToken');
 };
 
 export const isUserLoggedIn = (): boolean => {
+  checkAndClearExpiredSession();
   return Boolean(localStorage.getItem('authToken'));
 };
 
 export const getUserId = (): string | null => {
+  checkAndClearExpiredSession();
   const userInfo = localStorage.getItem('userInfo');
   if (!userInfo) return null;
   try {
@@ -26,6 +49,7 @@ export const getUserId = (): string | null => {
 };
 
 export const getUserName = (): string | null => {
+  checkAndClearExpiredSession();
   const userInfo = localStorage.getItem('userInfo');
   if (!userInfo) return null;
   try {
@@ -37,6 +61,7 @@ export const getUserName = (): string | null => {
 };
 
 export const getUserInfo = (): UserInfo | null => {
+  checkAndClearExpiredSession();
   const userInfo = localStorage.getItem('userInfo');
   if (!userInfo) return null;
   try {
@@ -84,6 +109,7 @@ export const syncUserAuthFromSession = async (): Promise<UserInfo | null> => {
 export const logoutUser = async () => {
   localStorage.removeItem('authToken');
   localStorage.removeItem('userInfo');
+  localStorage.removeItem('loginTime');
   await supabaseAuth.auth.signOut();
 };
 
