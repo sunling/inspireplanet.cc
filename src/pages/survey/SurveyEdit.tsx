@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import {
   Box,
   Container,
@@ -148,7 +149,7 @@ const SurveyEdit: React.FC = () => {
 
     if (editingIndex === -1) {
       // 新增问题
-      question.id = Date.now().toString();
+      question.id = uuidv4();
       newQuestions.push(question);
     } else {
       // 编辑问题

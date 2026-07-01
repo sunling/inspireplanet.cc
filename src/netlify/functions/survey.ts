@@ -381,19 +381,39 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
           })
           .eq('id', question.id);
       } else {
-        // 创建新问题
-        return supabase.from('survey_questions').insert({
-          id: question.id,
-          survey_id: id,
-          type: question.type,
-          title: question.title,
-          description: question.description,
-          required: question.required,
-          options: question.options,
-          max_rating: question.maxRating,
-          placeholder: question.placeholder,
-          sort_order: question.sortOrder || index,
-        });
+        // 创建新问题 - 检查ID是否为有效UUID格式
+        const isUUID =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            question.id
+          );
+
+        if (isUUID) {
+          return supabase.from('survey_questions').insert({
+            id: question.id,
+            survey_id: id,
+            type: question.type,
+            title: question.title,
+            description: question.description,
+            required: question.required,
+            options: question.options,
+            max_rating: question.maxRating,
+            placeholder: question.placeholder,
+            sort_order: question.sortOrder || index,
+          });
+        } else {
+          // ID格式不正确，让数据库自动生成UUID
+          return supabase.from('survey_questions').insert({
+            survey_id: id,
+            type: question.type,
+            title: question.title,
+            description: question.description,
+            required: question.required,
+            options: question.options,
+            max_rating: question.maxRating,
+            placeholder: question.placeholder,
+            sort_order: question.sortOrder || index,
+          });
+        }
       }
     });
 
