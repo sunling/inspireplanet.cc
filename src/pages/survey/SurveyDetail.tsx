@@ -66,6 +66,7 @@ const SurveyDetail: React.FC = () => {
     try {
       // 获取问卷详情
       const surveyResponse = await surveyApi.getById(surveyId!);
+      console.log('surveyResponse', surveyResponse);
       if (surveyResponse.success && surveyResponse.data) {
         setSurvey(surveyResponse.data);
 

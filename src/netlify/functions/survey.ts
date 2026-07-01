@@ -347,38 +347,99 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse(updateError.message, 500);
     }
 
-    // 删除旧问题
-    const { error: deleteError } = await supabase
+    // 获取现有问题
+    const { data: existingQuestions, error: existingError } = await supabase
       .from('survey_questions')
-      .delete()
+      .select('id')
       .eq('survey_id', id);
 
-    if (deleteError) {
-      console.error('Error deleting old questions:', deleteError);
-      return createErrorResponse(deleteError.message, 500);
+    if (existingError) {
+      console.error('Error getting existing questions:', existingError);
+      return createErrorResponse(existingError.message, 500);
     }
 
-    // 创建新问题
+    const existingQuestionIds = (existingQuestions || []).map((q) => q.id);
+    const newQuestionIds = questions.map((q) => q.id);
+
+    // 更新或创建问题
     const questionPromises = questions.map((question, index) => {
-      return supabase.from('survey_questions').insert({
-        survey_id: id,
-        type: question.type,
-        title: question.title,
-        description: question.description,
-        required: question.required,
-        options: question.options,
-        max_rating: question.maxRating,
-        placeholder: question.placeholder,
-        sort_order: question.sortOrder || index,
-      });
+      const existingId = existingQuestionIds.find((id) => id === question.id);
+
+      if (existingId) {
+        // 更新现有问题
+        return supabase
+          .from('survey_questions')
+          .update({
+            type: question.type,
+            title: question.title,
+            description: question.description,
+            required: question.required,
+            options: question.options,
+            max_rating: question.maxRating,
+            placeholder: question.placeholder,
+            sort_order: question.sortOrder || index,
+          })
+          .eq('id', question.id);
+      } else {
+        // 创建新问题 - 检查ID是否为有效UUID格式
+        const isUUID =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            question.id
+          );
+
+        if (isUUID) {
+          return supabase.from('survey_questions').insert({
+            id: question.id,
+            survey_id: id,
+            type: question.type,
+            title: question.title,
+            description: question.description,
+            required: question.required,
+            options: question.options,
+            max_rating: question.maxRating,
+            placeholder: question.placeholder,
+            sort_order: question.sortOrder || index,
+          });
+        } else {
+          // ID格式不正确，让数据库自动生成UUID
+          return supabase.from('survey_questions').insert({
+            survey_id: id,
+            type: question.type,
+            title: question.title,
+            description: question.description,
+            required: question.required,
+            options: question.options,
+            max_rating: question.maxRating,
+            placeholder: question.placeholder,
+            sort_order: question.sortOrder || index,
+          });
+        }
+      }
     });
 
     const questionResults = await Promise.all(questionPromises);
     const questionErrors = questionResults.filter((r) => r.error);
 
     if (questionErrors.length > 0) {
-      console.error('Error creating new questions:', questionErrors);
+      console.error('Error updating/creating questions:', questionErrors);
       return createErrorResponse('更新问题失败', 500);
+    }
+
+    // 删除被移除的问题（不存在于新列表中的旧问题）
+    const removedQuestionIds = existingQuestionIds.filter(
+      (existingId) => !newQuestionIds.includes(existingId)
+    );
+
+    if (removedQuestionIds.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('survey_questions')
+        .delete()
+        .in('id', removedQuestionIds);
+
+      if (deleteError) {
+        console.error('Error deleting removed questions:', deleteError);
+        return createErrorResponse(deleteError.message, 500);
+      }
     }
 
     return createSuccessResponse({ id, message: '问卷更新成功' });
