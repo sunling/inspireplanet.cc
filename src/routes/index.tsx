@@ -101,16 +101,13 @@ const Home = lazy(() => import('../pages/home/Home'));
 const About = lazy(() => import('../pages/introduce/About'));
 const Contact = lazy(() => import('../pages/introduce/Contact'));
 const Contribution = lazy(() => import('../pages/contribute/Contribution'));
-const ClarifyTogether = lazy(
-  () => import('../pages/dialogue/ClarifyTogether')
-);
+const ClarifyTogether = lazy(() => import('../pages/dialogue/ClarifyTogether'));
 const ParticipantSignup = lazy(
   () => import('../pages/dialogue/ParticipantSignup')
 );
-const DialoguePoster = lazy(
-  () => import('../pages/dialogue/DialoguePoster')
-);
+const DialoguePoster = lazy(() => import('../pages/dialogue/DialoguePoster'));
 const CommunityJoin = lazy(() => import('../pages/community/CommunityJoin'));
+const Treehole = lazy(() => import('../pages/treehole/Treehole'));
 const CommunityQrAdmin = lazy(
   () => import('../pages/community/CommunityQrAdmin')
 );
@@ -184,6 +181,8 @@ const router = createBrowserRouter(
           element: createLazyRoute(<DialoguePoster />),
         },
         { path: 'join', element: createLazyRoute(<CommunityJoin />) },
+        { path: 'treehole', element: createLazyRoute(<Treehole />) },
+        { path: 'treehole/:id', element: createLazyRoute(<Treehole />) },
         { path: 'login', element: createLazyRoute(<Login />) },
         {
           path: 'forgot-password',

@@ -21,3 +21,4 @@ export { default as episodesApi } from '../services/episodes';
 export { default as speakerSignupsApi } from '../services/speakerSignups';
 export { default as communityQrApi } from '../services/communityQr';
 export { default as submissionsApi } from '../services/submissions';
+export { default as treeholeApi } from '../services/treehole';

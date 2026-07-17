@@ -23,8 +23,9 @@ import {
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import html2canvas from 'html2canvas';
-import { weeklyCardsApi, meetupsApi } from '../../netlify/config';
+import { weeklyCardsApi, meetupsApi, treeholeApi } from '../../netlify/config';
 import { WeeklyCard } from '../../netlify/services/weeklyCards';
+import { TreeholeQuestion } from '../../netlify/services/treehole';
 import { Meetup } from '../../netlify/functions/meetup';
 import {
   getNextOccurrence,
@@ -48,9 +49,6 @@ const MeetupModeLabel: Record<string, string> = {
   outdoor: '户外',
 };
 
-const mutualAidDocUrl =
-  'https://docs.qq.com/sheet/DWU1EcU5YSmRVWnZZ?tab=BB08J2';
-
 type EntryPoint = {
   eyebrow: string;
   title: string;
@@ -65,6 +63,9 @@ const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [upcomingMeetups, setUpcomingMeetups] = useState<UpcomingMeetup[]>([]);
+  const [treeholeQuestions, setTreeholeQuestions] = useState<
+    TreeholeQuestion[]
+  >([]);
   const { isMobile, isTablet } = useResponsive();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [gradients, setGradients] = useState<string[]>([]);
@@ -126,10 +127,20 @@ const Home: React.FC = () => {
     }
   };
 
+  const fetchTreeholeQuestions = async () => {
+    try {
+      const response = await treeholeApi.list(4);
+      setTreeholeQuestions(response.data?.questions || []);
+    } catch {
+      // 静默失败，不影响首页其他内容
+    }
+  };
+
   // 初始化和清理
   useEffect(() => {
     fetchLatestCards();
     fetchUpcomingMeetups();
+    fetchTreeholeQuestions();
   }, []);
 
   useEffect(() => {
@@ -349,8 +360,8 @@ const Home: React.FC = () => {
       eyebrow: '互助',
       title: '树洞互助',
       description: '说出此刻的困扰，也看看是否能帮到别人。',
-      label: '打开互助文档',
-      href: mutualAidDocUrl,
+      label: '进入树洞',
+      to: '/treehole',
     },
     {
       eyebrow: '分享',
@@ -414,6 +425,38 @@ const Home: React.FC = () => {
             })}
           </div>
         </section>
+
+        {/* 树洞互助 */}
+        {treeholeQuestions.length > 0 && (
+          <section className={styles['treehole-section']}>
+            <div className={styles['section-heading']}>
+              <p>树洞互助</p>
+              <h2>此刻，有人在问</h2>
+            </div>
+            <div className={styles['treehole-grid']}>
+              {treeholeQuestions.map((question) => (
+                <Link
+                  key={question.id}
+                  to={`/treehole/${question.id}`}
+                  className={styles['treehole-card']}
+                >
+                  <p>{question.content}</p>
+                  <strong>
+                    {question.responseCount
+                      ? `${question.responseCount} 条回应`
+                      : '等待回应'}
+                    {' →'}
+                  </strong>
+                </Link>
+              ))}
+            </div>
+            <div className={styles['treehole-actions']}>
+              <Button component={Link} to="/treehole" variant="outlined">
+                写下问题或留下回应
+              </Button>
+            </div>
+          </section>
+        )}
 
         {/* 近期活动 */}
         {upcomingMeetups.length > 0 && (
