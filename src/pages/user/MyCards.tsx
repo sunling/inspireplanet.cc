@@ -259,7 +259,7 @@ const MyCards: React.FC = () => {
                               ) => {
                                 try {
                                   const res = await commentsApi.create({
-                                    cardId: id,
+                                    card_id: id,
                                     name,
                                     comment,
                                   });

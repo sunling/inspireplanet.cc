@@ -81,7 +81,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
       const { cardsApi } = await import('../../netlify/config');
       const res = await cardsApi.like(card.id);
       if (res.success) {
-        setLikes(res.data?.likesCount || likes + 1);
+        setLikes(res.data?.likes_count || likes + 1);
         try {
           const setKey = 'likedCardIds';
           const raw = localStorage.getItem(setKey);

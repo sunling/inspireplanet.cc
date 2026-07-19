@@ -140,8 +140,8 @@ const Home: React.FC = () => {
     return () => clearInterval(t);
   }, [isMobile, cards.length]);
 
-  const handleDownloadMobile = async (cardId: string) => {
-    const el = document.getElementById(`home-mobile-card-${cardId}`);
+  const handleDownloadMobile = async (card_id: string) => {
+    const el = document.getElementById(`home-mobile-card-${card_id}`);
     if (!el) return;
     const canvas = await html2canvas(el, {
       backgroundColor: null,

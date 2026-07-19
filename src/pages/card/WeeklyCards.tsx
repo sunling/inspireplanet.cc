@@ -536,14 +536,14 @@ const WeeklyCards: React.FC = () => {
     );
   };
 
-  const handleDownloadCard = async (cardId: string) => {
+  const handleDownloadCard = async (card_id: string) => {
     let wrapper: HTMLDivElement | null = null;
 
     try {
-      const original = document.getElementById(`card-${cardId}`);
+      const original = document.getElementById(`card-${card_id}`);
       if (!original) return;
 
-      const card = cards.find((c) => c.id === cardId);
+      const card = cards.find((c) => c.id === card_id);
       if (!card) return;
 
       wrapper = document.createElement('div');
@@ -654,7 +654,7 @@ const WeeklyCards: React.FC = () => {
       });
 
       const link = document.createElement('a');
-      link.download = `weekly-card-${cardId}.png`;
+      link.download = `weekly-card-${card_id}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (error) {
@@ -954,9 +954,7 @@ const WeeklyCards: React.FC = () => {
                                     }}
                                   >
                                     {card.name ? (
-                                      <>
-                                        星友「{card.name}」的分享
-                                      </>
+                                      <>星友「{card.name}」的分享</>
                                     ) : (
                                       '星友分享'
                                     )}

@@ -187,8 +187,12 @@ const WritingDetail: React.FC = () => {
   const handleDeleteComment = async (commentId: string) => {
     if (deletingCommentId) return;
     setDeletingCommentId(commentId);
-    const response = await writingInteractionsApi.deleteComment(commentId);
-    if (response.success) {
+    try {
+      const response = await writingInteractionsApi.deleteComment(commentId);
+      if (!response.success) {
+        showSnackbar.error(response.error || '删除失败');
+        return;
+      }
       setComments((current) => {
         const removed = new Set([commentId]);
         let changed = true;
@@ -207,8 +211,12 @@ const WritingDetail: React.FC = () => {
         }
         return current.filter((item) => !removed.has(item.id));
       });
-    } else showSnackbar.error(response.error || '删除失败');
-    setDeletingCommentId(null);
+      showSnackbar.success('评论已删除');
+    } catch {
+      showSnackbar.error('删除失败，请稍后重试');
+    } finally {
+      setDeletingCommentId(null);
+    }
   };
 
   const getDescendants = (parentId: string): WritingComment[] => {
@@ -281,11 +289,14 @@ const WritingDetail: React.FC = () => {
               <Button
                 size="small"
                 color="error"
-                sx={{ minWidth: 0, px: 0.75 }}
+                sx={{ minWidth: 0, px: 0.75, gap: 0.5 }}
                 onClick={() => handleDeleteComment(item.id)}
                 disabled={Boolean(deletingCommentId)}
               >
-                {deletingCommentId === item.id ? '删除中…' : '删除'}
+                {deletingCommentId === item.id && (
+                  <CircularProgress size={14} color="inherit" />
+                )}
+                {deletingCommentId === item.id ? '删除中' : '删除'}
               </Button>
             )}
           </Stack>

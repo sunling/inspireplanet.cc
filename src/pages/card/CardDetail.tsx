@@ -60,12 +60,12 @@ const CardDetail: React.FC = () => {
   const [submittingComment, setSubmittingComment] = useState(false);
 
   // 加载卡片详情
-  const fetchCardById = async (cardId: string) => {
+  const fetchCardById = async (card_id: string) => {
     try {
       setIsLoading(true);
       setError(null);
       // 使用统一API封装获取卡片详情
-      const response = await cardsApi.getById(cardId);
+      const response = await cardsApi.getById(card_id);
 
       console.log('加载卡片详情返回', response);
 
@@ -86,7 +86,7 @@ const CardDetail: React.FC = () => {
 
       setCard(normalizedCard);
       checkDeletePermission(normalizedCard);
-      fetchComments(cardId);
+      fetchComments(card_id);
     } catch (error) {
       console.error('获取卡片失败:', error);
       const text = '获取卡片失败';
@@ -99,10 +99,10 @@ const CardDetail: React.FC = () => {
   };
 
   // 加载评论
-  const fetchComments = async (cardId: string) => {
+  const fetchComments = async (card_id: string) => {
     try {
       // 使用统一的api对象获取评论
-      const response = await commentsApi.getByCardId(cardId);
+      const response = await commentsApi.getByCardId(card_id);
       console.log('fetchComments返回', response);
 
       if (!response.success) {
@@ -120,10 +120,9 @@ const CardDetail: React.FC = () => {
           name: comment.name || comment.creator || '匿名用户',
           comment: comment.comment || comment.content || '',
           created: comment.created || new Date().toISOString(),
-          cardId: comment.cardId || cardId, // 确保cardId存在
-          createdAt: comment.comment.created || new Date().toISOString(),
-          card_id: '',
-          created_at: '',
+          card_id: comment.card_id || card_id,
+          created_at:
+            comment.created_at || comment.created || new Date().toISOString(),
         })
       );
       setComments(list);
@@ -151,8 +150,8 @@ const CardDetail: React.FC = () => {
   // 初始化页面
   useEffect(() => {
     const initPage = async () => {
-      const cardId = getCardId();
-      if (!cardId) {
+      const card_id = getCardId();
+      if (!card_id) {
         const text = '未找到卡片ID，请返回卡片列表页面重试。';
         setError(text);
 
@@ -161,7 +160,7 @@ const CardDetail: React.FC = () => {
         return;
       }
 
-      fetchCardById(cardId);
+      fetchCardById(card_id);
     };
     initPage();
   }, [location.search]);
@@ -213,12 +212,12 @@ const CardDetail: React.FC = () => {
 
   // 确认删除
   const handleDeleteConfirm = async () => {
-    const cardId = getCardId();
-    if (!cardId) return;
+    const card_id = getCardId();
+    if (!card_id) return;
 
     setDeleting(true);
     try {
-      const response = await cardsApi.delete(cardId);
+      const response = await cardsApi.delete(card_id);
       if (!response.success) {
         showSnackbar.error('删除失败：' + (response.error || '未知错误'));
         return;
@@ -241,9 +240,9 @@ const CardDetail: React.FC = () => {
 
   // 提交评论
   const handleCommentSubmit = async () => {
-    const cardId = getCardId();
+    const card_id = getCardId();
     if (!isUserLoggedIn()) {
-      const redirect = cardId ? `/card-detail?id=${cardId}` : '/cards';
+      const redirect = card_id ? `/card-detail?id=${card_id}` : '/cards';
       navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
       return;
     }
@@ -252,7 +251,7 @@ const CardDetail: React.FC = () => {
       return;
     }
 
-    if (!cardId) {
+    if (!card_id) {
       showSnackbar.warning('卡片ID无效');
       return;
     }
@@ -263,7 +262,7 @@ const CardDetail: React.FC = () => {
       // 使用统一API封装提交评论
       console.log('正在提交评论...');
       const response = await commentsApi.create({
-        cardId: cardId,
+        card_id,
         comment: commentForm.content,
       });
 
@@ -271,7 +270,7 @@ const CardDetail: React.FC = () => {
         if (response.statusCode === 401) {
           logoutUser();
           showSnackbar.error('登录已过期，请重新登录');
-          const redirect = `/card-detail?id=${cardId}`;
+          const redirect = `/card-detail?id=${card_id}`;
           navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
           return;
         }
@@ -280,7 +279,7 @@ const CardDetail: React.FC = () => {
         return;
       }
 
-      await fetchComments(cardId);
+      await fetchComments(card_id);
 
       // 重置表单
       setCommentForm({ content: '' });

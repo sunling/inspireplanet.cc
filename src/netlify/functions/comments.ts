@@ -38,14 +38,14 @@ export interface CommentAction {
   functionName: 'create' | 'getAll' | 'getByCardId';
 }
 
-async function canViewCard(cardId: string, userId?: string | null) {
+async function canViewCard(card_id: string, user_id?: string | null) {
   const { data } = await supabase
     .from('cards')
     .select('user_id, is_private')
-    .eq('id', cardId)
+    .eq('id', card_id)
     .maybeSingle();
   return Boolean(
-    data && (!data.is_private || String(data.user_id) === String(userId || ''))
+    data && (!data.is_private || String(data.user_id) === String(user_id || ''))
   );
 }
 
@@ -79,8 +79,9 @@ export async function handler(
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
     const commentData = getDataFromEvent(event);
+    const card_id = commentData.card_id;
 
-    if (!commentData.card_id) {
+    if (!card_id) {
       return createErrorResponse('缺少card_id字段');
     }
 
@@ -88,7 +89,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
     if (!uid) {
       return createErrorResponse('未授权', 401);
     }
-    if (!(await canViewCard(String(commentData.card_id), uid))) {
+    if (!(await canViewCard(String(card_id), uid))) {
       return createErrorResponse('卡片不存在', 404);
     }
 
@@ -111,7 +112,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
     } catch {}
 
     const record: Record<string, any> = {
-      card_id: commentData.card_id,
+      card_id,
       name: displayName || '匿名用户',
       comment: sanitizedComment,
       created: new Date().toISOString(),
@@ -132,7 +133,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       const { data: cardRow } = await supabase
         .from('cards')
         .select('id, title, username, creator')
-        .eq('id', commentData.card_id)
+        .eq('id', card_id)
         .single();
       let ownerId: string | number | null = null;
       const ownerUsername = cardRow?.username || null;
@@ -161,7 +162,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
             ? `${sanitizedComment.slice(0, 80)}...`
             : sanitizedComment;
         const content = `${displayName} 评论了你的卡片《${cardRow?.title || ''}》：${snippet}`;
-        const path = `/card-detail?id=${commentData.card_id}`;
+        const path = `/card-detail?id=${card_id}`;
         await createNotification(ownerId, title, content, path);
       }
     } catch (e) {
@@ -183,20 +184,20 @@ async function handleGetByCardId(
 ): Promise<NetlifyResponse> {
   try {
     const requestData = getDataFromEvent(event);
-    const { cardId } = requestData;
+    const { card_id } = requestData;
 
-    if (!cardId) {
-      return createErrorResponse('缺少card  d参数');
+    if (!card_id) {
+      return createErrorResponse('缺少card_id参数');
     }
     const uid = await getUserIdFromAuth(event);
-    if (!(await canViewCard(String(cardId), uid))) {
+    if (!(await canViewCard(String(card_id), uid))) {
       return createErrorResponse('卡片不存在', 404);
     }
 
     const { data, error } = await supabase
       .from('comments')
       .select('*')
-      .eq('card_id', cardId)
+      .eq('card_id', card_id)
       .order('created', { ascending: false });
 
     if (error) {

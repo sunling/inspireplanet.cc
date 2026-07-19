@@ -232,9 +232,9 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     if (!id) return createErrorResponse('评论 ID 无效');
     let query = supabase.from('writing_comments').delete().eq('id', id);
     if (user.role !== 'organizer') query = query.eq('user_id', user.id);
-    const { error, count } = await query.select('id', { count: 'exact' });
+    const { data, error } = await query.select('id');
     if (error) return createErrorResponse('删除评论失败', 500);
-    if (!count) return createErrorResponse('评论不存在或无权删除', 404);
+    if (!data?.length) return createErrorResponse('评论不存在或无权删除', 404);
     return createSuccessResponse({ id });
   }
   return createErrorResponse('无效的操作类型');

@@ -63,8 +63,8 @@ const Cards: React.FC = () => {
     } catch {}
   }, [page]);
 
-  const handleCardClick = (cardId: string) => {
-    navigate(`/card-detail?id=${cardId}`);
+  const handleCardClick = (card_id: string) => {
+    navigate(`/card-detail?id=${card_id}`);
   };
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
