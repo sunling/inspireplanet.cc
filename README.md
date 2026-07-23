@@ -64,6 +64,10 @@ cp .env.example .env
 | `JWT_SECRET`                | JWT 加密密钥                                         |
 | `OPENROUTER_API_KEY`        | OpenRouter API 密钥                                  |
 | `UNSPLASH_ACCESS_KEY`       | Unsplash Access Key                                  |
+| `RESEND_API_KEY`            | Resend API 密钥（服务端发送邮件）                    |
+| `RESEND_FROM_EMAIL`         | Resend 已验证的发件地址                              |
+| `CONTACT_EMAIL`             | 邮件主收件地址，多个地址用英文逗号分隔               |
+| `SUBMISSION_CC_EMAILS`      | 投稿抄送地址，多个地址用英文逗号分隔                 |
 | `GITHUB_TOKEN`              | GitHub Personal Access Token（用于保存生成图片）     |
 | `GITHUB_REPO_OWNER`         | GitHub 用户名，生产环境填 `sunling`                  |
 | `GITHUB_REPO_NAME`          | 存放图片的仓库名，生产环境填 `inspireplanet-assets`  |

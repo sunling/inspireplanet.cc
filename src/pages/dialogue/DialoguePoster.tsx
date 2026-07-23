@@ -8,21 +8,24 @@ const siteOrigin = 'https://inspireplanet.cc';
 
 const presets = {
   community: {
+    eyebrow: '启发星球 · 加入微信群',
     title: '加入启发星球微信群',
     description: '和我们一起分享最近的启发、问题和行动。',
-    label: '加入微信群',
+    qrLabel: '扫码进入：加入微信群',
     url: `${siteOrigin}/join`,
   },
   dialogue: {
+    eyebrow: '启发星球 · 对话实验报名',
     title: '一起把问题说清楚',
     description: '带着一个最近真实面对、还没有想清楚的问题来。',
-    label: '对话实验报名',
+    qrLabel: '扫码进入：对话实验报名',
     url: `${siteOrigin}/clarify-together/participant`,
   },
   cards: {
+    eyebrow: '启发星球 · 创建卡片',
     title: '创建一张启发卡片',
     description: '把此刻触动你的想法、句子和经历，做成一张可以分享的卡片。',
-    label: '启发星球 · 创建卡片',
+    qrLabel: '扫码进入：创建启发卡片',
     url: `${siteOrigin}/create-card`,
   },
 };
@@ -49,25 +52,33 @@ const wrapTextForExport = (element: HTMLElement) => {
 
 const DialoguePoster: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const legacyLabel = searchParams.get('label');
   const initial = {
+    eyebrow:
+      searchParams.get('eyebrow') ||
+      (legacyLabel ? `启发星球 · ${legacyLabel}` : presets.community.eyebrow),
     title: searchParams.get('title') || presets.community.title,
     description:
       searchParams.get('description') || presets.community.description,
-    label: searchParams.get('label') || presets.community.label,
+    qrLabel:
+      searchParams.get('qrLabel') ||
+      (legacyLabel ? `扫码进入：${legacyLabel}` : presets.community.qrLabel),
     url: searchParams.get('url') || presets.community.url,
   };
   const posterRef = useRef<HTMLDivElement>(null);
+  const [eyebrow, setEyebrow] = useState(initial.eyebrow);
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description);
-  const [label, setLabel] = useState(initial.label);
+  const [qrLabel, setQrLabel] = useState(initial.qrLabel);
   const [url, setUrl] = useState(initial.url);
   const [downloading, setDownloading] = useState(false);
   const qrUrl = useMemo(() => normalizeUrl(url), [url]);
 
   const applyPreset = (preset: (typeof presets)[keyof typeof presets]) => {
+    setEyebrow(preset.eyebrow);
     setTitle(preset.title);
     setDescription(preset.description);
-    setLabel(preset.label);
+    setQrLabel(preset.qrLabel);
     setUrl(preset.url);
   };
 
@@ -178,11 +189,9 @@ const DialoguePoster: React.FC = () => {
         <div className={styles.poster} ref={posterRef}>
           <div className={styles.orbit} aria-hidden="true" />
           <div className={styles.posterTop}>
-            <span data-poster-eyebrow>启发星球 · {label || '页面分享'}</span>
-            <strong data-poster-title>{title || '页面标题'}</strong>
-            <p data-poster-description>
-              {description || '用一句话告诉大家这个页面是做什么的。'}
-            </p>
+            <span data-poster-eyebrow>{eyebrow}</span>
+            <strong data-poster-title>{title}</strong>
+            <p data-poster-description>{description}</p>
           </div>
 
           <div className={styles.posterBottom}>
@@ -196,14 +205,19 @@ const DialoguePoster: React.FC = () => {
                 marginSize={2}
                 className="poster-export-qr"
               />
-              <span data-poster-qr-label>
-                扫码进入：{label || '启发星球页面'}
-              </span>
+              <span data-poster-qr-label>{qrLabel}</span>
             </div>
           </div>
         </div>
 
         <aside className={styles.editor}>
+          <label>
+            顶部文字
+            <input
+              value={eyebrow}
+              onChange={(event) => setEyebrow(event.target.value)}
+            />
+          </label>
           <label>
             海报标题
             <input
@@ -220,11 +234,10 @@ const DialoguePoster: React.FC = () => {
             />
           </label>
           <label>
-            页面类型
+            二维码下方文字
             <input
-              value={label}
-              onChange={(event) => setLabel(event.target.value)}
-              placeholder="例如：活动详情"
+              value={qrLabel}
+              onChange={(event) => setQrLabel(event.target.value)}
             />
           </label>
           <label>
