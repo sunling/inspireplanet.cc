@@ -12,7 +12,7 @@
 .posterTop > span { color: #c85d3c; font-size: 18px; font-weight: 700; letter-spacing: .16em; }
 .posterTop { max-width: 590px; }
 .posterTop > strong { display: block; max-width: 570px; margin: 28px 0 18px; color: #263a36; font-family: var(--font-serif); font-size: 65px; letter-spacing: -.04em; line-height: 1.12; }
-.posterTop > p { max-width: 520px; margin-bottom: 0; color: #5c554f; font-size: 23px; line-height: 1.7; }
+.posterTop > p { max-width: 520px; margin-bottom: 0; color: #5c554f; font-size: 23px; line-height: 1.7; white-space: pre-wrap; }
 .posterBottom { position: relative; display: flex; width: 100%; align-items: center; justify-content: center; }
 .qrBox { flex: 0 0 auto; padding: 14px 14px 10px; background: #fffdf9; box-shadow: 0 8px 24px rgba(39,58,54,.08); text-align: center; }
 .qrBox span { display: block; margin-top: 5px; color: #263a36; font-size: 13px; font-weight: 700; }
