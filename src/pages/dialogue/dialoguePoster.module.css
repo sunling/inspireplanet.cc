@@ -3,26 +3,43 @@
 .header span { color: #d96642; font-size: .78rem; font-weight: 700; letter-spacing: .16em; }
 .header h1 { margin: .6rem 0; font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 3.4rem); }
 .header p { margin: 0; color: #6c645d; }
-.workspace { display: grid; grid-template-columns: minmax(0, 720px) 240px; gap: 2.5rem; align-items: start; }
+.workspace { display: grid; grid-template-columns: minmax(0, 720px) minmax(360px, 1fr); gap: 2.5rem; align-items: start; }
 .presetBar { display: flex; gap: .6rem; align-items: center; margin-bottom: 1.5rem; color: #6c645d; font-size: .9rem; }
 .presetBar button { padding: .45rem .8rem; border: 1px solid #dfd4ca; border-radius: 999px; background: #fff; color: #9f452b; cursor: pointer; }
 .poster { position: relative; display: flex; flex-direction: column; gap: 30px; overflow: hidden; padding: 24px 64px; background: #f7f1e8; box-shadow: 0 18px 60px rgba(60,45,35,.16); }
 .orbit { position: absolute; top: -180px; right: -230px; width: 540px; height: 540px; border: 54px solid rgba(224,116,80,.12); border-radius: 50%; }
 .posterTop, .posterBottom { position: relative; z-index: 1; }
-.posterTop > span { color: #c85d3c; font-size: 18px; font-weight: 700; letter-spacing: .16em; }
+.posterTop > span { display: block; width: 100%; color: #c85d3c; font-size: 18px; font-weight: 700; letter-spacing: .16em; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-wrap; }
 .posterTop { max-width: 590px; }
-.posterTop > strong { display: block; max-width: 570px; margin: 28px 0 18px; color: #263a36; font-family: var(--font-serif); font-size: 65px; letter-spacing: -.04em; line-height: 1.12; }
-.posterTop > p { max-width: 520px; margin-bottom: 0; color: #5c554f; font-size: 23px; line-height: 1.7; }
+.posterTop > strong { display: block; max-width: 570px; margin: 28px 0 18px; color: #263a36; font-family: var(--font-serif); font-size: 65px; letter-spacing: -.04em; line-height: 1.12; overflow-wrap: anywhere; white-space: pre-wrap; }
+.posterTop > p { max-width: 520px; margin-bottom: 0; color: #5c554f; font-size: 23px; line-height: 1.7; overflow-wrap: anywhere; white-space: pre-wrap; }
 .posterBottom { position: relative; display: flex; width: 100%; align-items: center; justify-content: center; }
-.qrBox { flex: 0 0 auto; padding: 14px 14px 10px; background: #fffdf9; box-shadow: 0 8px 24px rgba(39,58,54,.08); text-align: center; }
-.qrBox span { display: block; margin-top: 5px; color: #263a36; font-size: 13px; font-weight: 700; }
-.editor { display: grid; gap: 1rem; padding: 1.3rem; border: 1px solid #e1d8cf; border-radius: 14px; background: #fff; }
+.qrBox { flex: 0 0 auto; padding: 14px 14px 10px; background: #f7f1e8; text-align: center; }
+.qrBox span { display: block; max-width: 200px; margin-top: 5px; color: #263a36; font-size: 13px; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; white-space: pre-wrap; }
+.editor { display: grid; gap: 1.5rem; padding: 1.3rem; border: 1px solid #e1d8cf; border-radius: 14px; background: #fff; }
 .editor label { display: grid; gap: .4rem; color: #5d5650; font-size: .85rem; font-weight: 700; }
 .editor input, .editor textarea { width: 100%; padding: .7rem .75rem; border: 1px solid #d9cfc6; border-radius: 8px; color: #302d2a; font: inherit; font-weight: 400; resize: vertical; }
+.editorField { display: grid; grid-template-columns: 1fr; gap: .7rem; padding-bottom: 1.1rem; border-bottom: 1px solid #eee5dd; }
+.textStyleControls { display: grid; grid-template-columns: 80px 120px minmax(120px, 1fr); gap: .7rem; align-items: end; }
+.textStyleControls label { gap: .3rem; color: #7a716a; font-size: .75rem; }
+.numberInput, .colorInput { display: flex; min-width: 0; align-items: center; overflow: hidden; border: 1px solid #d9cfc6; border-radius: 8px; background: #fff; }
+.editor .numberInput input { min-width: 0; padding: .55rem .2rem .55rem .6rem; border: 0; border-radius: 0; }
+.numberInput > span { padding-right: .55rem; color: #8a8179; font-size: .75rem; font-weight: 400; }
+.editor .colorInput input { flex: 0 0 38px; width: 38px; height: 34px; padding: 4px; border: 0; border-radius: 0; cursor: pointer; }
+.colorInput > span { min-width: 0; overflow: hidden; color: #655d56; font-size: .7rem; font-weight: 400; text-overflow: ellipsis; }
+.qrColorField { padding: .1rem 0 1.1rem; border-bottom: 1px solid #eee5dd; }
+.qrColorField .colorInput { width: 140px; }
+.editor .qrColorField small { font-size: .75rem; font-weight: 400; }
+.alignControl { display: grid; gap: .3rem; }
+.alignControl > span { color: #7a716a; font-size: .75rem; font-weight: 700; }
+.alignControl > div { display: grid; grid-template-columns: repeat(3, 1fr); overflow: hidden; border: 1px solid #d9cfc6; border-radius: 8px; }
+.alignControl button { padding: .4rem .25rem; border: 0; border-right: 1px solid #d9cfc6; background: #fff; color: #655d56; font: inherit; font-size: .75rem; cursor: pointer; }
+.alignControl button:last-child { border-right: 0; }
+.alignControl button[aria-pressed='true'] { background: #d96642; color: #fff; }
 .editor small { color: #746d66; line-height: 1.6; }
 .actions { display: grid; gap: .8rem; }
 .actions button, .actions a { padding: .8rem 1rem; border: 1px solid #d96642; border-radius: 999px; background: transparent; color: #b94d2d; font: inherit; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; }
 .actions button { background: #d96642; color: #fff; }
 .actions button:disabled { cursor: wait; opacity: .65; }
-@media (max-width: 900px) { .workspace { grid-template-columns: 1fr; } .actions { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 650px) { .page { width: min(100% - 1rem, 1180px); padding-top: 2.5rem; } .presetBar { align-items: flex-start; flex-wrap: wrap; } .poster { gap: 15px; padding: 20px 32px; } .posterTop > span { font-size: 10px; } .posterTop > strong { margin: 12px 0 8px; font-size: 34px; } .posterTop > p { font-size: 13px; } .qrBox { padding: 7px 7px 5px; } .qrBox svg { width: 86px; height: 86px; } .qrBox span { font-size: 8px; } .actions { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .workspace { grid-template-columns: 1fr; } .actions { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 650px) { .page { width: min(100% - 1rem, 1180px); padding-top: 2.5rem; } .presetBar { align-items: flex-start; flex-wrap: wrap; } .poster { gap: 15px; padding: 20px 32px; } .posterTop > span { font-size: 10px; } .posterTop > strong { margin: 12px 0 8px; font-size: 34px; } .posterTop > p { font-size: 13px; } .qrBox { padding: 7px 7px 5px; } .qrBox svg { width: 86px; height: 86px; } .qrBox span { font-size: 8px; } .textStyleControls { grid-template-columns: 68px 96px minmax(100px, 1fr); gap: .5rem; } .actions { grid-template-columns: 1fr; } }

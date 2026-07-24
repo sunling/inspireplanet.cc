@@ -55,24 +55,25 @@ const ActivityCalendar: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const showSnackbar = useGlobalSnackbar();
 
-  // 初始化默认日期
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(19, 0, 0, 0);
+  // 初始值在组件生命周期内保持稳定，避免错误提示等父组件更新重置表单。
+  const [initialValues] = useState<Meetup>(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(19, 0, 0, 0);
 
-  // 初始表单值
-  const initialValues: Meetup = {
-    title: '',
-    description: '',
-    mode: MeetupMode.ONLINE,
-    datetime: formatDateTimeLocal(tomorrow),
-    location: '',
-    duration: '',
-    max_ppl: null,
-    creator: getUserName() || '',
-    wechat_id: '',
-    cover: '',
-  };
+    return {
+      title: '',
+      description: '',
+      mode: MeetupMode.ONLINE,
+      datetime: formatDateTimeLocal(tomorrow),
+      location: '',
+      duration: '',
+      max_ppl: null,
+      creator: getUserName() || '',
+      wechat_id: '',
+      cover: '',
+    };
+  });
 
   // 从API加载活动数据
   const loadActivities = async () => {
