@@ -25,14 +25,29 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import SearchIcon from '@mui/icons-material/Search';
-import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import dayjs, { Dayjs } from 'dayjs';
+import 'dayjs/locale/zh-cn';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import WritingCard from '../../components/writing/WritingCard';
 import TopicChip from '../../components/writing/TopicChip';
 import Loading from '../../components/Loading';
 import Empty from '../../components/Empty';
-import { WritingPost, WritingTopic } from '../../netlify/types';
-import { writingsApi, writingTopicsApi } from '../../netlify/config';
+import {
+  WritingGroup,
+  WritingPartner,
+  WritingPost,
+  WritingTopic,
+} from '../../netlify/types';
+import {
+  writingGroupsApi,
+  writingsApi,
+  writingTopicsApi,
+} from '../../netlify/config';
 import { isOrganizer, isUserLoggedIn } from '../../utils/user';
+import { useGlobalSnackbar } from '../../context/app';
 
 const PAGE_SIZE = 9;
 
@@ -65,6 +80,7 @@ function formatTimelineDate(value: string): string {
 
 const WritingCircle: React.FC = () => {
   const navigate = useNavigate();
+  const snackbar = useGlobalSnackbar();
   const [searchParams, setSearchParams] = useSearchParams();
   const [topics, setTopics] = useState<WritingTopic[]>([]);
   const [posts, setPosts] = useState<WritingPost[]>([]);
@@ -72,15 +88,33 @@ const WritingCircle: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [topicsExpanded, setTopicsExpanded] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [topicQuery, setTopicQuery] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+  const [groups, setGroups] = useState<WritingGroup[]>([]);
+  const [groupsLoading, setGroupsLoading] = useState(true);
+  const [groupsError, setGroupsError] = useState('');
+  const [groupsExpanded, setGroupsExpanded] = useState(false);
+  const [partners, setPartners] = useState<WritingPartner[]>([]);
 
-  const scope = searchParams.get('scope') === 'mine' ? 'mine' : 'all';
+  const scope =
+    searchParams.get('scope') === 'mine'
+      ? 'mine'
+      : searchParams.get('scope') === 'partners'
+        ? 'partners'
+        : 'all';
   const topicId = searchParams.get('topic') || '';
   const sort = searchParams.get('sort') === 'oldest' ? 'oldest' : 'latest';
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.get('date') || '')
-    ? searchParams.get('date') || ''
+  const dateFrom = /^\d{4}-\d{2}-\d{2}$/.test(
+    searchParams.get('date_from') || ''
+  )
+    ? searchParams.get('date_from') || ''
     : '';
+  const dateTo = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.get('date_to') || '')
+    ? searchParams.get('date_to') || ''
+    : '';
+  const creator = searchParams.get('creator') || '';
+  const groupId = searchParams.get('group') || '';
   const parsedPage = Number(searchParams.get('page'));
   const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
@@ -98,18 +132,48 @@ const WritingCircle: React.FC = () => {
 
   useEffect(() => {
     let active = true;
+    setGroupsLoading(true);
+    setGroupsError('');
+    writingGroupsApi
+      .list()
+      .then((response) => {
+        if (!active) return;
+        if (response.success) setGroups(response.data?.groups || []);
+        else setGroupsError(response.error || '加载讨论组失败');
+      })
+      .catch(() => {
+        if (active) setGroupsError('加载讨论组失败，请稍后重试');
+      })
+      .finally(() => {
+        if (active) setGroupsLoading(false);
+      });
+    if (isUserLoggedIn()) {
+      writingGroupsApi.myPartners().then((response) => {
+        if (active && response.success)
+          setPartners(response.data?.partners || []);
+      });
+    }
+    return () => {
+      active = false;
+    };
+  }, [retryCount]);
+
+  useEffect(() => {
+    let active = true;
     setLoading(true);
     setError('');
 
     writingsApi
       .list({
         scope,
+        group_id: groupId || undefined,
         topic_ids: topicId ? [topicId] : undefined,
         sort,
         page,
         page_size: PAGE_SIZE,
-        date: date || undefined,
-        timezone_offset: new Date().getTimezoneOffset(),
+        creator: creator || undefined,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
       })
       .then((response) => {
         if (!active) return;
@@ -130,7 +194,17 @@ const WritingCircle: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [date, page, retryCount, scope, sort, topicId]);
+  }, [
+    creator,
+    dateFrom,
+    dateTo,
+    groupId,
+    page,
+    retryCount,
+    scope,
+    sort,
+    topicId,
+  ]);
 
   const updateParams = (updates: Record<string, string | null>) => {
     const next = new URLSearchParams(searchParams);
@@ -142,13 +216,35 @@ const WritingCircle: React.FC = () => {
   };
 
   const handleScopeChange = (_event: React.SyntheticEvent, value: string) => {
-    if (value === 'mine' && !isUserLoggedIn()) {
+    if ((value === 'mine' || value === 'partners') && !isUserLoggedIn()) {
       navigate(
-        `/login?redirect=${encodeURIComponent('/writing-circle?scope=mine')}`
+        `/login?redirect=${encodeURIComponent(`/writing-circle?scope=${value}`)}`
       );
       return;
     }
-    updateParams({ scope: value === 'mine' ? 'mine' : null, page: null });
+    updateParams({
+      scope: value === 'mine' || value === 'partners' ? value : null,
+      page: null,
+    });
+  };
+
+  const enterGroup = (selectedGroupId: string) => {
+    updateParams({ group: selectedGroupId, scope: null, page: null });
+    setGroupsExpanded(false);
+  };
+
+  const applyToGroup = async (groupId: string) => {
+    if (!isUserLoggedIn()) {
+      navigate(`/login?redirect=${encodeURIComponent('/writing-circle')}`);
+      return;
+    }
+    const response = await writingGroupsApi.apply(groupId);
+    if (!response.success) {
+      snackbar.error(response.error || '申请失败');
+      return;
+    }
+    snackbar.success('申请已提交，请等待审核');
+    setRetryCount((count) => count + 1);
   };
 
   const handleCreate = () => {
@@ -157,6 +253,22 @@ const WritingCircle: React.FC = () => {
       return;
     }
     navigate('/writing-circle/new');
+  };
+
+  const handleDateRangeChange = (from: Dayjs | null, to: Dayjs | null) => {
+    if (
+      from &&
+      to &&
+      (to.isBefore(from, 'day') || to.isAfter(from.add(1, 'year'), 'day'))
+    ) {
+      snackbar.warning('搜索时间范围最多为一年');
+      return;
+    }
+    updateParams({
+      date_from: from?.format('YYYY-MM-DD') || null,
+      date_to: to?.format('YYYY-MM-DD') || null,
+      page: null,
+    });
   };
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -171,6 +283,13 @@ const WritingCircle: React.FC = () => {
     matchesTopic(topic, topicQuery)
   );
   const isSearchingTopics = Boolean(topicQuery.trim());
+  const activeFilterCount = [
+    creator,
+    dateFrom,
+    dateTo,
+    topicId,
+    sort === 'oldest' ? sort : '',
+  ].filter(Boolean).length;
 
   return (
     <Box
@@ -191,7 +310,12 @@ const WritingCircle: React.FC = () => {
             bgcolor: '#fffaf4',
           }}
         >
-          <Stack spacing={1}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+            justifyContent="space-between"
+            spacing={2}
+          >
             <Box>
               <Typography
                 variant="h4"
@@ -210,8 +334,178 @@ const WritingCircle: React.FC = () => {
                 用话题和书写模板记录自我观察，让零散的感受慢慢成为可以回看的成长轨迹。
               </Typography>
             </Box>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+              justifyContent="flex-end"
+              spacing={1}
+              sx={{ flexShrink: 0, width: { xs: '100%', sm: 'auto' } }}
+            >
+              {groupId && (
+                <Chip
+                  icon={<GroupsOutlinedIcon />}
+                  size="small"
+                  sx={{
+                    alignSelf: { xs: 'flex-start', sm: 'center' },
+                    maxWidth: '100%',
+                    height: 26,
+                    color: '#496a61',
+                    bgcolor: '#edf4f1',
+                    border: '1px solid #d4e4de',
+                    fontWeight: 650,
+                    '& .MuiChip-icon': {
+                      color: '#62877d',
+                      fontSize: 16,
+                    },
+                    '& .MuiChip-label': {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    },
+                  }}
+                  label={
+                    groups.find((group) => group.id === groupId)?.name ||
+                    '当前讨论组'
+                  }
+                />
+              )}
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+                spacing={1}
+              >
+                <Button
+                  size="small"
+                  variant="outlined"
+                  endIcon={
+                    groupsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />
+                  }
+                  onClick={() => setGroupsExpanded((expanded) => !expanded)}
+                >
+                  讨论组
+                  {groups.length > 0 ? `（${groups.length}）` : ''}
+                </Button>
+                {groupId && (
+                  <Button
+                    size="small"
+                    color="inherit"
+                    onClick={() => updateParams({ group: null, page: null })}
+                  >
+                    返回全部
+                  </Button>
+                )}
+              </Stack>
+            </Stack>
           </Stack>
+          <Collapse in={groupsExpanded} unmountOnExit>
+            <Box
+              sx={{
+                mt: 2,
+                pt: 2,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                申请加入后，才能看到组内成员发布的专属书写。
+              </Typography>
+              {groupsError && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  {groupsError}
+                </Alert>
+              )}
+              {groupsLoading && <Loading />}
+              {!groupsLoading && !groupsError && groups.length === 0 && (
+                <Alert severity="info" sx={{ mt: 1 }}>
+                  暂无可加入的讨论组
+                </Alert>
+              )}
+              {groups.length > 0 && (
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(2, minmax(0, 1fr))',
+                      md: 'repeat(4, minmax(0, 1fr))',
+                    },
+                    gap: 1.25,
+                    mt: 1.25,
+                  }}
+                >
+                  {groups.map((group) => (
+                    <Paper
+                      key={group.id}
+                      variant="outlined"
+                      sx={{
+                        p: 1.25,
+                        borderRadius: 1.5,
+                        bgcolor: 'background.paper',
+                      }}
+                    >
+                      <Typography variant="subtitle2" fontWeight={700} noWrap>
+                        {group.name}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          display: '-webkit-box',
+                          my: 0.5,
+                          minHeight: 32,
+                          overflow: 'hidden',
+                          WebkitBoxOrient: 'vertical',
+                          WebkitLineClamp: 2,
+                        }}
+                      >
+                        {group.description || '一起持续书写与交流。'}
+                      </Typography>
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
+                        <Typography variant="caption">
+                          {group.member_count} 位成员
+                        </Typography>
+                        {group.membership_status === 'approved' ? (
+                          <Button
+                            size="small"
+                            sx={{ minWidth: 0, px: 1 }}
+                            variant={
+                              groupId === group.id ? 'contained' : 'outlined'
+                            }
+                            onClick={() => enterGroup(group.id)}
+                          >
+                            {groupId === group.id ? '当前讨论组' : '进入'}
+                          </Button>
+                        ) : group.membership_status === 'pending' ? (
+                          <Chip size="small" label="审核中" />
+                        ) : (
+                          <Button
+                            size="small"
+                            sx={{ minWidth: 0, px: 1 }}
+                            onClick={() => applyToGroup(group.id)}
+                          >
+                            申请加入
+                          </Button>
+                        )}
+                      </Stack>
+                    </Paper>
+                  ))}
+                </Box>
+              )}
+            </Box>
+          </Collapse>
         </Paper>
+
+        {groupId && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            正在查看「
+            {groups.find((group) => group.id === groupId)?.name || '讨论组'}
+            」的组内书写，仅该讨论组成员可见。
+          </Alert>
+        )}
 
         <Paper
           elevation={0}
@@ -229,6 +523,8 @@ const WritingCircle: React.FC = () => {
               justifyContent="space-between"
               alignItems={{ xs: 'stretch', sm: 'center' }}
               spacing={2}
+              useFlexGap
+              sx={{ flexWrap: 'wrap' }}
             >
               <Tabs
                 value={scope}
@@ -238,35 +534,93 @@ const WritingCircle: React.FC = () => {
               >
                 <Tab value="all" label="全部书写" />
                 <Tab value="mine" label="我的书写" />
+                <Tab value="partners" label="我的搭子" />
               </Tabs>
+              <Button
+                size="small"
+                color="inherit"
+                endIcon={
+                  filtersExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />
+                }
+                onClick={() => setFiltersExpanded((expanded) => !expanded)}
+                sx={{ flexShrink: 0, color: 'text.secondary' }}
+              >
+                {filtersExpanded
+                  ? '收起筛选'
+                  : activeFilterCount
+                    ? `展开筛选（${activeFilterCount}）`
+                    : '展开筛选'}
+              </Button>
               <Stack
-                direction="row"
+                direction={{ xs: 'column', md: 'row' }}
                 spacing={1}
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
+                sx={{
+                  display: filtersExpanded ? 'flex' : 'none',
+                  width: '100%',
+                }}
               >
                 <TextField
-                  type="date"
                   size="small"
-                  value={date}
+                  value={creator}
                   onChange={(event) =>
                     updateParams({
-                      date: event.target.value || null,
+                      creator: event.target.value || null,
                       page: null,
                     })
                   }
-                  aria-label="按发布日期筛选"
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <CalendarMonthOutlinedIcon
-                          color="action"
-                          sx={{ mr: 0.75, fontSize: 19 }}
-                        />
-                      ),
-                    },
-                  }}
-                  sx={{ flex: 1, minWidth: 0, width: { sm: 175 } }}
+                  placeholder="创造者名字"
+                  aria-label="按创造者名字搜索"
+                  sx={{ minWidth: 150 }}
                 />
+                <LocalizationProvider
+                  dateAdapter={AdapterDayjs}
+                  adapterLocale="zh-cn"
+                >
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <DatePicker
+                      label="开始日期"
+                      value={dateFrom ? dayjs(dateFrom) : null}
+                      onChange={(value) =>
+                        handleDateRangeChange(
+                          value,
+                          dateTo ? dayjs(dateTo) : null
+                        )
+                      }
+                      maxDate={dateTo ? dayjs(dateTo) : dayjs()}
+                      slotProps={{
+                        textField: {
+                          size: 'small',
+                          sx: { minWidth: 145 },
+                        },
+                      }}
+                    />
+                    <Typography color="text.secondary">至</Typography>
+                    <DatePicker
+                      label="结束日期"
+                      value={dateTo ? dayjs(dateTo) : null}
+                      onChange={(value) =>
+                        handleDateRangeChange(
+                          dateFrom ? dayjs(dateFrom) : null,
+                          value
+                        )
+                      }
+                      minDate={dateFrom ? dayjs(dateFrom) : undefined}
+                      maxDate={
+                        dateFrom
+                          ? dayjs(dateFrom).add(1, 'year').isBefore(dayjs())
+                            ? dayjs(dateFrom).add(1, 'year')
+                            : dayjs()
+                          : dayjs()
+                      }
+                      slotProps={{
+                        textField: {
+                          size: 'small',
+                          sx: { minWidth: 145 },
+                        },
+                      }}
+                    />
+                  </Stack>
+                </LocalizationProvider>
                 <FormControl
                   size="small"
                   sx={{ minWidth: { xs: 115, sm: 130 } }}
@@ -290,117 +644,148 @@ const WritingCircle: React.FC = () => {
               </Stack>
             </Stack>
 
-            <Box>
-              <TextField
-                fullWidth
-                size="small"
-                value={topicQuery}
-                onChange={(event) => setTopicQuery(event.target.value)}
-                placeholder="按书写话题名称搜索"
-                aria-label="搜索话题"
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <SearchIcon color="action" sx={{ mr: 1, fontSize: 20 }} />
-                    ),
-                  },
-                }}
-                sx={{
-                  display: { xs: 'flex', sm: 'flex' },
-                  mb: 2,
-                  maxWidth: 420,
-                }}
-              />
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                spacing={2}
-                sx={{ mb: 1.25 }}
-              >
-                <Stack direction="row" alignItems="center" spacing={0.75}>
-                  <LocalOfferOutlinedIcon
-                    color="action"
-                    sx={{ fontSize: 19 }}
-                  />
-                  <Typography variant="subtitle2" fontWeight={700}>
-                    按话题筛选
-                  </Typography>
-                  {topicId && (
-                    <Typography variant="caption" color="text.secondary">
-                      已选 1 个
+            <Collapse in={filtersExpanded} unmountOnExit>
+              <Box>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={topicQuery}
+                  onChange={(event) => setTopicQuery(event.target.value)}
+                  placeholder="按书写话题名称搜索"
+                  aria-label="搜索话题"
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <SearchIcon
+                          color="action"
+                          sx={{ mr: 1, fontSize: 20 }}
+                        />
+                      ),
+                    },
+                  }}
+                  sx={{
+                    display: { xs: 'flex', sm: 'flex' },
+                    mb: 2,
+                    maxWidth: 420,
+                  }}
+                />
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  spacing={2}
+                  sx={{ mb: 1.25 }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={0.75}>
+                    <LocalOfferOutlinedIcon
+                      color="action"
+                      sx={{ fontSize: 19 }}
+                    />
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      按话题筛选
                     </Typography>
+                    {topicId && (
+                      <Typography variant="caption" color="text.secondary">
+                        已选 1 个
+                      </Typography>
+                    )}
+                  </Stack>
+                  {canCollapseTopics && !isSearchingTopics && (
+                    <Button
+                      size="small"
+                      color="inherit"
+                      endIcon={
+                        topicsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />
+                      }
+                      onClick={() => setTopicsExpanded((expanded) => !expanded)}
+                      aria-expanded={topicsExpanded}
+                      aria-controls="writing-topic-filters"
+                      sx={{ color: 'text.secondary', flexShrink: 0 }}
+                    >
+                      {topicsExpanded ? '收起' : `展开全部（${topics.length}）`}
+                    </Button>
                   )}
                 </Stack>
-                {canCollapseTopics && !isSearchingTopics && (
-                  <Button
-                    size="small"
-                    color="inherit"
-                    endIcon={
-                      topicsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />
-                    }
-                    onClick={() => setTopicsExpanded((expanded) => !expanded)}
-                    aria-expanded={topicsExpanded}
-                    aria-controls="writing-topic-filters"
-                    sx={{ color: 'text.secondary', flexShrink: 0 }}
-                  >
-                    {topicsExpanded ? '收起' : `展开全部（${topics.length}）`}
-                  </Button>
-                )}
-              </Stack>
 
-              <Collapse
-                in={topicsExpanded || !canCollapseTopics || isSearchingTopics}
-                collapsedSize={40}
-                timeout={240}
-              >
-                <Box
-                  id="writing-topic-filters"
-                  sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}
+                <Collapse
+                  in={topicsExpanded || !canCollapseTopics || isSearchingTopics}
+                  collapsedSize={40}
+                  timeout={240}
                 >
-                  {!isSearchingTopics && (
-                    <Chip
-                      label="全部话题"
-                      variant="outlined"
-                      onClick={() => updateParams({ topic: null, page: null })}
-                      sx={{
-                        borderColor: !topicId ? '#496a61' : '#d9d1c7',
-                        bgcolor: !topicId ? '#496a61' : '#fcfaf7',
-                        color: !topicId ? '#fff' : '#625a52',
-                        fontWeight: !topicId ? 700 : 500,
-                        '&:hover': {
-                          bgcolor: !topicId ? '#3f5d55' : '#f3eee8',
-                        },
-                      }}
-                    />
-                  )}
-                  {matchingTopics.map((topic) => (
-                    <TopicChip
-                      key={topic.id}
-                      topic={topic}
-                      selected={topic.id === topicId}
-                      onClick={() =>
-                        updateParams({
-                          topic: topic.id === topicId ? null : topic.id,
-                          page: null,
-                        })
-                      }
-                    />
-                  ))}
-                  {isSearchingTopics && matchingTopics.length === 0 && (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ py: 0.75 }}
-                    >
-                      没有找到“{topicQuery.trim()}”相关话题
-                    </Typography>
-                  )}
-                </Box>
-              </Collapse>
-            </Box>
+                  <Box
+                    id="writing-topic-filters"
+                    sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}
+                  >
+                    {!isSearchingTopics && (
+                      <Chip
+                        label="全部话题"
+                        variant="outlined"
+                        onClick={() =>
+                          updateParams({ topic: null, page: null })
+                        }
+                        sx={{
+                          borderColor: !topicId ? '#496a61' : '#d9d1c7',
+                          bgcolor: !topicId ? '#496a61' : '#fcfaf7',
+                          color: !topicId ? '#fff' : '#625a52',
+                          fontWeight: !topicId ? 700 : 500,
+                          '&:hover': {
+                            bgcolor: !topicId ? '#3f5d55' : '#f3eee8',
+                          },
+                        }}
+                      />
+                    )}
+                    {matchingTopics.map((topic) => (
+                      <TopicChip
+                        key={topic.id}
+                        topic={topic}
+                        selected={topic.id === topicId}
+                        onClick={() =>
+                          updateParams({
+                            topic: topic.id === topicId ? null : topic.id,
+                            page: null,
+                          })
+                        }
+                      />
+                    ))}
+                    {isSearchingTopics && matchingTopics.length === 0 && (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ py: 0.75 }}
+                      >
+                        没有找到“{topicQuery.trim()}”相关话题
+                      </Typography>
+                    )}
+                  </Box>
+                </Collapse>
+              </Box>
+            </Collapse>
           </Stack>
         </Paper>
+
+        {scope === 'partners' && (
+          <Paper elevation={0} sx={{ p: 2.5, mb: 3, borderRadius: 3 }}>
+            <Typography fontWeight={750} gutterBottom>
+              我的书写搭子
+            </Typography>
+            {partners.length ? (
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                {partners.map((partner) => (
+                  <Chip
+                    key={partner.pairing_id}
+                    label={`${partner.user.name} · ${partner.group_name}`}
+                    color="secondary"
+                    variant="outlined"
+                  />
+                ))}
+              </Stack>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                暂未分配书写搭子，请联系圈子管理员。
+              </Typography>
+            )}
+          </Paper>
+        )}
 
         {loading ? (
           <Loading message="正在加载书写..." />
@@ -422,7 +807,13 @@ const WritingCircle: React.FC = () => {
         ) : posts.length === 0 ? (
           <Paper elevation={0} sx={{ p: 6, borderRadius: 3 }}>
             <Empty
-              message={scope === 'mine' ? '还没有书写记录' : '还没有公开书写'}
+              message={
+                scope === 'mine'
+                  ? '还没有书写记录'
+                  : scope === 'partners'
+                    ? '搭子暂时还没有公开书写'
+                    : '还没有公开书写'
+              }
               description="从一次真实的自我观察开始吧"
             />
           </Paper>

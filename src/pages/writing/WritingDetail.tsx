@@ -392,7 +392,9 @@ const WritingDetail: React.FC = () => {
         bgcolor: '#f7f5f2',
         pt: { xs: 3, md: 6 },
         pb:
-          post?.visibility === 'public' ? { xs: 17, sm: 15 } : { xs: 3, md: 6 },
+          post?.visibility !== 'private'
+            ? { xs: 17, sm: 15 }
+            : { xs: 3, md: 6 },
       }}
     >
       <Container maxWidth="md">
@@ -422,6 +424,14 @@ const WritingDetail: React.FC = () => {
                       <Chip
                         label="仅自己可见"
                         size="small"
+                        variant="outlined"
+                      />
+                    )}
+                    {post.visibility === 'group' && (
+                      <Chip
+                        label={post.group?.name || '讨论组可见'}
+                        size="small"
+                        color="primary"
                         variant="outlined"
                       />
                     )}
@@ -585,7 +595,7 @@ const WritingDetail: React.FC = () => {
                 </Box>
               )}
 
-              {post.visibility === 'public' && (
+              {post.visibility !== 'private' && (
                 <>
                   <Divider />
                   <Box>
@@ -619,7 +629,7 @@ const WritingDetail: React.FC = () => {
           </Paper>
         )}
       </Container>
-      {post?.visibility === 'public' && (
+      {post?.visibility !== 'private' && (
         <Paper
           square
           elevation={10}

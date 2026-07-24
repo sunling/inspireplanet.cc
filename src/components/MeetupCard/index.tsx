@@ -3,7 +3,6 @@ import {
   Box,
   Card,
   CardContent,
-  CardMedia,
   Typography,
   Button,
   Chip,
@@ -24,7 +23,10 @@ interface MeetupCardProps {
   showApprovalStats?: boolean;
 }
 
-export const MeetupCard: React.FC<MeetupCardProps> = ({ meetup, showApprovalStats = false }) => {
+export const MeetupCard: React.FC<MeetupCardProps> = ({
+  meetup,
+  showApprovalStats = false,
+}) => {
   const navigate = useNavigate();
 
   return (
@@ -35,17 +37,29 @@ export const MeetupCard: React.FC<MeetupCardProps> = ({ meetup, showApprovalStat
         flexDirection: 'column',
       }}
     >
-      {meetup.cover && (
-        <CardMedia
-          component="img"
-          height="180"
-          image={meetup.cover}
-          alt={meetup.title}
-        />
-      )}
       <CardContent sx={{ flexGrow: 1 }}>
-        <Typography variant="h6" component="h2" sx={{ fontSize: '1rem', mb: 1 }}>
+        <Typography
+          variant="h6"
+          component="h2"
+          sx={{ fontSize: '1rem', mb: 1 }}
+        >
           {meetup.title}
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            mb: 1.5,
+            lineHeight: 1.7,
+            whiteSpace: 'pre-wrap',
+            overflowWrap: 'anywhere',
+            display: '-webkit-box',
+            WebkitBoxOrient: 'vertical',
+            WebkitLineClamp: 6,
+            overflow: 'hidden',
+          }}
+        >
+          {meetup.description || '暂无活动描述'}
         </Typography>
         <Typography variant="body2" color="text.secondary" gutterBottom>
           📅 {formatDateCN(meetup.datetime)}

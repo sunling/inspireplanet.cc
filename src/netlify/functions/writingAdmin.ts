@@ -37,6 +37,9 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       topicLinks,
       topics,
       templates,
+      groups,
+      members,
+      pairs,
     ] = await Promise.all([
       supabase
         .from('writing_posts')
@@ -63,8 +66,31 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         .from('writing_templates')
         .select('id, name, slug, description, prompts, version, sort_order')
         .order('sort_order'),
+      supabase
+        .from('writing_groups')
+        .select('id, name, description, is_active, created_at')
+        .order('created_at'),
+      supabase
+        .from('writing_group_members')
+        .select(
+          'id, group_id, user_id, status, applied_at, user:users!writing_group_members_user_id_fkey(id, name, username)'
+        )
+        .order('applied_at', { ascending: false }),
+      supabase
+        .from('writing_partner_pairs')
+        .select(
+          'id, group_id, user_a_id, user_b_id, assignment_type, is_active, created_at'
+        )
+        .eq('is_active', true)
+        .order('created_at', { ascending: false }),
     ]);
-    if (topics.error || templates.error)
+    if (
+      topics.error ||
+      templates.error ||
+      groups.error ||
+      members.error ||
+      pairs.error
+    )
       return createErrorResponse('获取后台数据失败', 500);
     const counts = new Map<string, number>();
     (topicLinks.data || []).forEach((row) =>
@@ -90,6 +116,153 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       },
       topics: mappedTopics,
       templates: (templates.data || []).map(mapWritingTemplate),
+      groups: (groups.data || []).map((group) => ({
+        ...group,
+        id: String(group.id),
+      })),
+      members: (members.data || []).map((member: any) => ({
+        ...member,
+        id: String(member.id),
+        group_id: String(member.group_id),
+        user_id: String(member.user_id),
+        user: Array.isArray(member.user) ? member.user[0] : member.user,
+      })),
+      pairs: (pairs.data || []).map((pair) => ({
+        ...pair,
+        id: String(pair.id),
+        group_id: String(pair.group_id),
+        user_a_id: String(pair.user_a_id),
+        user_b_id: String(pair.user_b_id),
+      })),
+    });
+  }
+
+  if (action === 'saveGroup') {
+    const name = String(input.name || '').trim();
+    if (!name || name.length > 60)
+      return createErrorResponse('讨论组名称需为 1-60 个字');
+    const payload = {
+      name,
+      description: String(input.description || '').trim() || null,
+      is_active: input.is_active !== false,
+      updated_at: new Date().toISOString(),
+    };
+    const query = input.id
+      ? supabase.from('writing_groups').update(payload).eq('id', input.id)
+      : supabase.from('writing_groups').insert({
+          ...payload,
+          created_by: Number(user.id),
+        });
+    const { data, error } = await query
+      .select('id, name, description, is_active')
+      .single();
+    if (error || !data) return createErrorResponse('保存讨论组失败', 400);
+    if (!input.id) {
+      await supabase.from('writing_group_members').insert({
+        group_id: data.id,
+        user_id: Number(user.id),
+        status: 'approved',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: Number(user.id),
+      });
+    }
+    return createSuccessResponse({ group: { ...data, id: String(data.id) } });
+  }
+
+  if (action === 'reviewMembership') {
+    const status =
+      input.status === 'approved'
+        ? 'approved'
+        : input.status === 'rejected'
+          ? 'rejected'
+          : '';
+    if (!/^\d+$/.test(String(input.id || '')) || !status)
+      return createErrorResponse('审核参数无效');
+    const { error } = await supabase
+      .from('writing_group_members')
+      .update({
+        status,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: Number(user.id),
+      })
+      .eq('id', input.id);
+    if (error) return createErrorResponse('审核申请失败', 500);
+    return createSuccessResponse({ message: '审核完成' });
+  }
+
+  if (action === 'assignPartner') {
+    const groupId = String(input.group_id || '');
+    const userAId = String(input.user_a_id || '');
+    const userBId = String(input.user_b_id || '');
+    if (
+      !/^\d+$/.test(groupId) ||
+      !/^\d+$/.test(userAId) ||
+      !/^\d+$/.test(userBId) ||
+      userAId === userBId
+    )
+      return createErrorResponse('搭子分配参数无效');
+    const { data: approved } = await supabase
+      .from('writing_group_members')
+      .select('user_id')
+      .eq('group_id', groupId)
+      .eq('status', 'approved')
+      .in('user_id', [userAId, userBId]);
+    if ((approved || []).length !== 2)
+      return createErrorResponse('只能为同一讨论组的正式成员分配搭子');
+    await supabase
+      .from('writing_partner_pairs')
+      .update({ is_active: false })
+      .eq('group_id', groupId)
+      .eq('is_active', true)
+      .or(
+        `user_a_id.in.(${userAId},${userBId}),user_b_id.in.(${userAId},${userBId})`
+      );
+    const { error } = await supabase.from('writing_partner_pairs').insert({
+      group_id: Number(groupId),
+      user_a_id: Number(userAId),
+      user_b_id: Number(userBId),
+      assigned_by: Number(user.id),
+      assignment_type: 'manual',
+    });
+    if (error) return createErrorResponse('分配书写搭子失败', 500);
+    return createSuccessResponse({ message: '书写搭子已分配' });
+  }
+
+  if (action === 'randomAssignPartners') {
+    const groupId = String(input.group_id || '');
+    if (!/^\d+$/.test(groupId)) return createErrorResponse('讨论组无效');
+    const { data: approved, error: memberError } = await supabase
+      .from('writing_group_members')
+      .select('user_id')
+      .eq('group_id', groupId)
+      .eq('status', 'approved');
+    if (memberError) return createErrorResponse('获取讨论组成员失败', 500);
+    const ids = (approved || []).map((row) => Number(row.user_id));
+    if (ids.length < 2) return createErrorResponse('至少需要 2 名正式成员');
+    for (let index = ids.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [ids[index], ids[swapIndex]] = [ids[swapIndex], ids[index]];
+    }
+    await supabase
+      .from('writing_partner_pairs')
+      .update({ is_active: false })
+      .eq('group_id', groupId)
+      .eq('is_active', true);
+    const rows = [];
+    for (let index = 0; index + 1 < ids.length; index += 2) {
+      rows.push({
+        group_id: Number(groupId),
+        user_a_id: ids[index],
+        user_b_id: ids[index + 1],
+        assigned_by: Number(user.id),
+        assignment_type: 'random',
+      });
+    }
+    const { error } = await supabase.from('writing_partner_pairs').insert(rows);
+    if (error) return createErrorResponse('随机分配书写搭子失败', 500);
+    return createSuccessResponse({
+      message: `已生成 ${rows.length} 组书写搭子`,
+      unpaired_user_id: ids.length % 2 ? String(ids[ids.length - 1]) : null,
     });
   }
 

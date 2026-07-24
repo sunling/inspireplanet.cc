@@ -26,3 +26,4 @@ export { default as writingTopicsApi } from '../services/writingTopics';
 export { default as writingTemplatesApi } from '../services/writingTemplates';
 export { default as writingInteractionsApi } from '../services/writingInteractions';
 export { default as writingAdminApi } from '../services/writingAdmin';
+export { default as writingGroupsApi } from '../services/writingGroups';

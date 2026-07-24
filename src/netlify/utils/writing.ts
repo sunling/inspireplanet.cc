@@ -13,16 +13,35 @@ export const WRITING_POST_SELECT = `
   image_urls,
   template_id,
   template_snapshot,
+  group_id,
   is_anonymous,
   visibility,
   status,
   created_at,
   updated_at,
   author:users!writing_posts_user_id_fkey(id, name, username),
+  group:writing_groups(id, name),
   topic_links:writing_post_topics(
     topic:writing_topics(id, name, slug, description, sort_order, is_user_created)
   )
 `;
+
+export function getWritingDateRangeError(
+  dateFrom: string,
+  dateTo: string
+): string | null {
+  if (!dateFrom || !dateTo) return null;
+  const start = new Date(`${dateFrom}T00:00:00.000Z`);
+  const end = new Date(`${dateTo}T23:59:59.999Z`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return '日期范围无效';
+  }
+  if (end < start) return '结束日期不能早于开始日期';
+  if (end.getTime() - start.getTime() > 366 * 24 * 60 * 60 * 1000) {
+    return '时间范围最多为一年';
+  }
+  return null;
+}
 
 export function mapWritingTopic(row: any): WritingTopic {
   return {
@@ -90,6 +109,17 @@ export function mapWritingPost(
       : [],
     template_id: row.template_id ? String(row.template_id) : null,
     template_snapshot: normalizeTemplateSnapshot(row.template_snapshot),
+    group_id: row.group_id ? String(row.group_id) : null,
+    group: row.group
+      ? {
+          id: String(
+            Array.isArray(row.group) ? row.group[0]?.id : row.group.id
+          ),
+          name: Array.isArray(row.group)
+            ? row.group[0]?.name || ''
+            : row.group.name || '',
+        }
+      : null,
     topics: topicLinks
       .map((link: any) => link?.topic)
       .filter(Boolean)
@@ -108,7 +138,12 @@ export function mapWritingPost(
       username: isAnonymous ? null : author?.username || null,
     },
     is_anonymous: isAnonymous,
-    visibility: row.visibility === 'public' ? 'public' : 'private',
+    visibility:
+      row.visibility === 'public'
+        ? 'public'
+        : row.visibility === 'group'
+          ? 'group'
+          : 'private',
     status: row.status === 'hidden' ? 'hidden' : 'published',
     created_at: row.created_at,
     updated_at: row.updated_at,

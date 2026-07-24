@@ -76,14 +76,28 @@ async function getOrCreateAnonymousAlias(userId: string): Promise<string> {
 async function canViewPost(postId: string, userId?: string) {
   const { data } = await supabase
     .from('writing_posts')
-    .select('user_id, visibility, status')
+    .select('user_id, visibility, status, group_id')
     .eq('id', postId)
     .single();
-  return Boolean(
-    data &&
-    (String(data.user_id) === userId ||
-      (data.visibility === 'public' && data.status === 'published'))
-  );
+  if (!data) return false;
+  if (String(data.user_id) === userId) return true;
+  if (data.visibility === 'public' && data.status === 'published') return true;
+  if (
+    data.visibility === 'group' &&
+    data.status === 'published' &&
+    data.group_id &&
+    userId
+  ) {
+    const { data: membership } = await supabase
+      .from('writing_group_members')
+      .select('id')
+      .eq('group_id', data.group_id)
+      .eq('user_id', userId)
+      .eq('status', 'approved')
+      .maybeSingle();
+    return Boolean(membership);
+  }
+  return false;
 }
 
 function mapComment(row: any, userId?: string, isAdmin = false) {
