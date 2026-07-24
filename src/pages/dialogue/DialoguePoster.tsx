@@ -5,6 +5,20 @@ import html2canvas from 'html2canvas';
 import styles from './dialoguePoster.module.css';
 
 const siteOrigin = 'https://inspireplanet.cc';
+const posterBackgroundColor = '#f7f1e8';
+
+interface PosterTextStyle {
+  fontSize: number;
+  color: string;
+  textAlign: 'left' | 'center' | 'right';
+}
+
+const defaultTextStyles = {
+  eyebrow: { fontSize: 18, color: '#c85d3c', textAlign: 'left' },
+  title: { fontSize: 65, color: '#263a36', textAlign: 'left' },
+  description: { fontSize: 23, color: '#5c554f', textAlign: 'left' },
+  qrLabel: { fontSize: 13, color: '#263a36', textAlign: 'center' },
+} satisfies Record<string, PosterTextStyle>;
 
 const presets = {
   community: {
@@ -50,6 +64,72 @@ const wrapTextForExport = (element: HTMLElement) => {
   });
 };
 
+interface TextStyleControlsProps {
+  value: PosterTextStyle;
+  onChange: (value: PosterTextStyle) => void;
+}
+
+const TextStyleControls: React.FC<TextStyleControlsProps> = ({
+  value,
+  onChange,
+}) => (
+  <div className={styles.textStyleControls}>
+    <label>
+      字号
+      <span className={styles.numberInput}>
+        <input
+          type="number"
+          min="8"
+          max="120"
+          value={value.fontSize}
+          onChange={(event) =>
+            onChange({
+              ...value,
+              fontSize: Math.min(
+                120,
+                Math.max(8, Number(event.target.value) || 8),
+              ),
+            })
+          }
+        />
+        <span>px</span>
+      </span>
+    </label>
+    <label>
+      颜色
+      <span className={styles.colorInput}>
+        <input
+          type="color"
+          value={value.color}
+          onChange={(event) => onChange({ ...value, color: event.target.value })}
+        />
+        <span>{value.color.toUpperCase()}</span>
+      </span>
+    </label>
+    <div className={styles.alignControl}>
+      <span>水平对齐</span>
+      <div role="group" aria-label="水平对齐">
+        {(
+          [
+            ['left', '左'],
+            ['center', '中'],
+            ['right', '右'],
+          ] as const
+        ).map(([alignment, label]) => (
+          <button
+            key={alignment}
+            type="button"
+            aria-pressed={value.textAlign === alignment}
+            onClick={() => onChange({ ...value, textAlign: alignment })}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 const DialoguePoster: React.FC = () => {
   const [searchParams] = useSearchParams();
   const legacyLabel = searchParams.get('label');
@@ -71,6 +151,8 @@ const DialoguePoster: React.FC = () => {
   const [description, setDescription] = useState(initial.description);
   const [qrLabel, setQrLabel] = useState(initial.qrLabel);
   const [url, setUrl] = useState(initial.url);
+  const [qrColor, setQrColor] = useState('#273a36');
+  const [textStyles, setTextStyles] = useState(defaultTextStyles);
   const [downloading, setDownloading] = useState(false);
   const qrUrl = useMemo(() => normalizeUrl(url), [url]);
 
@@ -80,6 +162,13 @@ const DialoguePoster: React.FC = () => {
     setDescription(preset.description);
     setQrLabel(preset.qrLabel);
     setUrl(preset.url);
+  };
+
+  const updateTextStyle = (
+    field: keyof typeof defaultTextStyles,
+    value: PosterTextStyle,
+  ) => {
+    setTextStyles((current) => ({ ...current, [field]: value }));
   };
 
   const downloadPoster = async () => {
@@ -115,25 +204,21 @@ const DialoguePoster: React.FC = () => {
       const exportQr = exportPoster.querySelector('.poster-export-qr');
 
       if (exportEyebrow) {
-        exportEyebrow.style.fontSize = '18px';
-        exportEyebrow.style.lineHeight = '26px';
+        exportEyebrow.style.lineHeight = '1.45';
       }
       if (exportTitle) {
         exportTitle.style.margin = '28px 0 18px';
-        exportTitle.style.fontSize = '65px';
-        exportTitle.style.lineHeight = '73px';
+        exportTitle.style.lineHeight = '1.12';
       }
       if (exportDescription) {
-        exportDescription.style.fontSize = '23px';
-        exportDescription.style.lineHeight = '39px';
+        exportDescription.style.lineHeight = '1.7';
       }
       if (exportQr instanceof SVGElement) {
         exportQr.style.width = '172px';
         exportQr.style.height = '172px';
       }
       if (exportQrLabel) {
-        exportQrLabel.style.fontSize = '13px';
-        exportQrLabel.style.lineHeight = '18px';
+        exportQrLabel.style.lineHeight = '1.4';
       }
 
       [exportEyebrow, exportTitle, exportDescription, exportQrLabel].forEach(
@@ -147,7 +232,7 @@ const DialoguePoster: React.FC = () => {
 
       const canvas = await html2canvas(exportPoster, {
         scale: 2,
-        backgroundColor: '#f7f1e8',
+        backgroundColor: posterBackgroundColor,
         useCORS: true,
         logging: false,
         width: 720,
@@ -189,9 +274,36 @@ const DialoguePoster: React.FC = () => {
         <div className={styles.poster} ref={posterRef}>
           <div className={styles.orbit} aria-hidden="true" />
           <div className={styles.posterTop}>
-            <span data-poster-eyebrow>{eyebrow}</span>
-            <strong data-poster-title>{title}</strong>
-            <p data-poster-description>{description}</p>
+            <span
+              data-poster-eyebrow
+              style={{
+                fontSize: textStyles.eyebrow.fontSize,
+                color: textStyles.eyebrow.color,
+                textAlign: textStyles.eyebrow.textAlign,
+              }}
+            >
+              {eyebrow || '启发星球 · 页面分享'}
+            </span>
+            <strong
+              data-poster-title
+              style={{
+                fontSize: textStyles.title.fontSize,
+                color: textStyles.title.color,
+                textAlign: textStyles.title.textAlign,
+              }}
+            >
+              {title || '页面标题'}
+            </strong>
+            <p
+              data-poster-description
+              style={{
+                fontSize: textStyles.description.fontSize,
+                color: textStyles.description.color,
+                textAlign: textStyles.description.textAlign,
+              }}
+            >
+              {description || '用一句话告诉大家这个页面是做什么的。'}
+            </p>
           </div>
 
           <div className={styles.posterBottom}>
@@ -200,46 +312,83 @@ const DialoguePoster: React.FC = () => {
                 value={qrUrl}
                 size={172}
                 level="H"
-                bgColor="#fffdf9"
-                fgColor="#273a36"
+                bgColor={posterBackgroundColor}
+                fgColor={qrColor}
                 marginSize={2}
                 className="poster-export-qr"
               />
-              <span data-poster-qr-label>{qrLabel}</span>
+              <span
+                data-poster-qr-label
+                style={{
+                  fontSize: textStyles.qrLabel.fontSize,
+                  color: textStyles.qrLabel.color,
+                  textAlign: textStyles.qrLabel.textAlign,
+                }}
+              >
+                {qrLabel || '扫码进入：启发星球页面'}
+              </span>
             </div>
           </div>
         </div>
 
         <aside className={styles.editor}>
-          <label>
-            顶部文字
-            <input
-              value={eyebrow}
-              onChange={(event) => setEyebrow(event.target.value)}
+          <div className={styles.editorField}>
+            <label>
+              顶部文字
+              <textarea
+                rows={2}
+                value={eyebrow}
+                onChange={(event) => setEyebrow(event.target.value)}
+              />
+            </label>
+            <TextStyleControls
+              value={textStyles.eyebrow}
+              onChange={(value) => updateTextStyle('eyebrow', value)}
             />
-          </label>
-          <label>
-            海报标题
-            <input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
+          </div>
+          <div className={styles.editorField}>
+            <label>
+              海报标题
+              <textarea
+                rows={2}
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+              />
+            </label>
+            <TextStyleControls
+              value={textStyles.title}
+              onChange={(value) => updateTextStyle('title', value)}
             />
-          </label>
-          <label>
-            这个页面是做什么的
-            <textarea
-              rows={4}
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
+          </div>
+          <div className={styles.editorField}>
+            <label>
+              这个页面是做什么的
+              <textarea
+                rows={4}
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
+            </label>
+            <TextStyleControls
+              value={textStyles.description}
+              onChange={(value) => updateTextStyle('description', value)}
             />
-          </label>
-          <label>
-            二维码下方文字
-            <input
-              value={qrLabel}
-              onChange={(event) => setQrLabel(event.target.value)}
+          </div>
+          <div className={styles.editorField}>
+            <label>
+              二维码下方文字
+              <textarea
+                rows={2}
+                value={qrLabel}
+                onChange={(event) => setQrLabel(event.target.value)}
+                placeholder="例如：扫码进入活动详情"
+              />
+            </label>
+            <TextStyleControls
+              value={textStyles.qrLabel}
+              onChange={(value) => updateTextStyle('qrLabel', value)}
             />
-          </label>
+          </div>
           <label>
             页面地址
             <input
@@ -247,6 +396,18 @@ const DialoguePoster: React.FC = () => {
               onChange={(event) => setUrl(event.target.value)}
               placeholder="可填写 /create-card 或完整网址"
             />
+          </label>
+          <label className={styles.qrColorField}>
+            二维码颜色
+            <span className={styles.colorInput}>
+              <input
+                type="color"
+                value={qrColor}
+                onChange={(event) => setQrColor(event.target.value)}
+              />
+              <span>{qrColor.toUpperCase()}</span>
+            </span>
+            <small>背景自动与海报底色融合，请选择较深的二维码颜色。</small>
           </label>
 
           <div className={styles.actions}>

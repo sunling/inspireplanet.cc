@@ -114,6 +114,24 @@ const MeetupDetail: React.FC = () => {
     'initial' | 'loading' | 'success' | 'error'
   >('initial');
 
+  const handleCreatePoster = () => {
+    if (!meetup) return;
+
+    const posterTitle =
+      meetup.is_recurring && episode
+        ? `${meetup.title}EP${episode.episode_number}${episode.theme ? `：${episode.theme}` : ''}`
+        : meetup.title;
+    const targetUrl = `${location.pathname}${location.search}`;
+    const posterParams = new URLSearchParams({
+      title: posterTitle,
+      description: episode?.description || meetup.description,
+      label: '活动详情',
+      url: targetUrl,
+    });
+
+    navigate(`/page-poster?${posterParams.toString()}`);
+  };
+
   // 加载活动详情
   useEffect(() => {
     const meetupId = getMeetupId();
@@ -998,6 +1016,7 @@ const MeetupDetail: React.FC = () => {
                   gap: 2,
                   justifyContent: 'center',
                   mb: 2,
+                  flexWrap: 'wrap',
                 }}
               >
                 <Button
@@ -1020,6 +1039,19 @@ const MeetupDetail: React.FC = () => {
                   }}
                 >
                   分享活动
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={handleCreatePoster}
+                  startIcon={<span>🖼️</span>}
+                  sx={{
+                    py: 1.2,
+                    px: 3,
+                    fontSize: '1rem',
+                    textTransform: 'none',
+                  }}
+                >
+                  生成海报
                 </Button>
                 {isUpcomingMeetup && !isCurrentUserRSVPed && (
                   <Button

@@ -63,6 +63,7 @@ export interface Meetup {
   default_theme?: string; // fallback when no episode theme is set
   // 关联问卷ID
   survey_id?: string;
+  survey_questions?: SurveyQuestion[];
 
   // 是否跳过登录报名
   skip_login?: boolean;
@@ -452,6 +453,67 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
       }
     });
 
+    let createdSurveyId: string | null = null;
+    const hasSurveyQuestions =
+      Array.isArray(survey_questions) && survey_questions.length > 0;
+
+    // 允许原本没有报名问卷的活动在编辑时首次添加问题。
+    if (hasSurveyQuestions && !existingMeetup.survey_id) {
+      const meetupTitle = updateRecord.title || existingMeetup.title;
+      const { data: survey, error: surveyError } = await supabase
+        .from('surveys')
+        .insert({
+          title: `${meetupTitle} - 报名问卷`,
+          description: `活动「${meetupTitle}」的报名问卷`,
+          created_by:
+            updateData.user_id ||
+            existingMeetup.user_id ||
+            updateRecord.creator ||
+            existingMeetup.creator,
+          is_active: true,
+          allow_multiple_submissions: false,
+          meetup_id: Number(id),
+          is_for_meetup: true,
+        })
+        .select('id')
+        .single();
+
+      if (surveyError || !survey) {
+        console.error('Error creating survey during meetup update:', surveyError);
+        return createErrorResponse('创建报名问卷失败', 500);
+      }
+
+      createdSurveyId = survey.id;
+
+      const questionResults = await Promise.all(
+        survey_questions.map((question: any, index: number) =>
+          supabase.from('survey_questions').insert({
+            survey_id: survey.id,
+            type: question.type,
+            title: question.title,
+            description: question.description,
+            required: question.required,
+            options: question.options,
+            max_rating: question.maxRating,
+            placeholder: question.placeholder,
+            sort_order: question.sortOrder ?? index,
+          })
+        )
+      );
+      const questionErrors = questionResults.filter((result) => result.error);
+
+      if (questionErrors.length > 0) {
+        console.error(
+          'Error creating survey questions during meetup update:',
+          questionErrors
+        );
+        await supabase.from('surveys').delete().eq('id', survey.id);
+        return createErrorResponse('创建报名问题失败', 500);
+      }
+
+      updateRecord.survey_id = survey.id;
+    }
+
     const { data, error } = await supabase
       .from('meetups')
       .update(updateRecord)
@@ -460,18 +522,25 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
     if (error) {
       console.error('Database update error:', error);
+      if (createdSurveyId) {
+        await supabase.from('surveys').delete().eq('id', createdSurveyId);
+      }
       return createErrorResponse('更新活动数据库失败', 500);
     }
 
     if (
-      survey_questions &&
       Array.isArray(survey_questions) &&
       existingMeetup.survey_id
     ) {
-      await supabase
+      const { error: deleteQuestionsError } = await supabase
         .from('survey_questions')
         .delete()
         .eq('survey_id', existingMeetup.survey_id);
+
+      if (deleteQuestionsError) {
+        console.error('Error deleting old survey questions:', deleteQuestionsError);
+        return createErrorResponse('更新报名问题失败', 500);
+      }
 
       if (survey_questions.length > 0) {
         const questionPromises = survey_questions.map(
@@ -489,7 +558,13 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
             });
           }
         );
-        await Promise.all(questionPromises);
+        const questionResults = await Promise.all(questionPromises);
+        const questionErrors = questionResults.filter((result) => result.error);
+
+        if (questionErrors.length > 0) {
+          console.error('Error updating survey questions:', questionErrors);
+          return createErrorResponse('更新报名问题失败', 500);
+        }
       }
     }
 

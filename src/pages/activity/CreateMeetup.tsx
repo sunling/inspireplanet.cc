@@ -14,24 +14,25 @@ const CreateMeetup: React.FC = () => {
   const showSnackbar = useGlobalSnackbar();
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  // 初始化默认日期
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(19, 0, 0, 0);
+  // 初始值在组件生命周期内保持稳定，失败提示不会清空用户已填写的内容。
+  const [initialValues] = useState<Meetup>(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(19, 0, 0, 0);
 
-  // 初始表单值
-  const initialValues: Meetup = {
-    title: '',
-    description: '',
-    mode: MeetupMode.ONLINE,
-    datetime: formatDateTimeLocal(tomorrow),
-    location: '',
-    duration: '',
-    max_ppl: null,
-    creator: getUserName() || '',
-    wechat_id: '',
-    cover: '',
-  };
+    return {
+      title: '',
+      description: '',
+      mode: MeetupMode.ONLINE,
+      datetime: formatDateTimeLocal(tomorrow),
+      location: '',
+      duration: '',
+      max_ppl: null,
+      creator: getUserName() || '',
+      wechat_id: '',
+      cover: '',
+    };
+  });
 
   // 处理表单提交
   const handleSubmit = async (data: any) => {
