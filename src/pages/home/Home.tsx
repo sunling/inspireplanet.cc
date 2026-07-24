@@ -1,28 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
 import { Link } from 'react-router-dom';
-import {
-  Container,
-  Button,
-  Box,
-  Typography,
-  Paper,
-  IconButton,
-} from '@mui/material';
-import { useResponsive } from '@/hooks/useResponsive';
-import { ChevronRight, Star } from '@mui/icons-material';
-import Carousel from '@/components/Carousel';
+import { Container } from '@mui/material';
+import { ChevronRight } from '@mui/icons-material';
 import Empty from '@/components/Empty';
 import Loading from '@/components/Loading';
 import styles from './home.module.css';
 import ErrorCard from '@/components/ErrorCard';
-import {
-  getFontColorForGradient,
-  getRandomGradientClass,
-} from '@/constants/gradient';
-import DOMPurify from 'dompurify';
-import { marked } from 'marked';
-import html2canvas from 'html2canvas';
 import { weeklyCardsApi, meetupsApi } from '../../netlify/config';
 import { WeeklyCard } from '../../netlify/services/weeklyCards';
 import { Meetup } from '../../netlify/functions/meetup';
@@ -60,16 +44,21 @@ type EntryPoint = {
   href?: string;
 };
 
+const getDetailPreview = (detail = '') =>
+  detail
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/[#>*_`~\-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 const Home: React.FC = () => {
   const [cards, setCards] = useState<WeeklyCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [upcomingMeetups, setUpcomingMeetups] = useState<UpcomingMeetup[]>([]);
-  const { isMobile, isTablet } = useResponsive();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [gradients, setGradients] = useState<string[]>([]);
   const [showWechatQr, setShowWechatQr] = useState(false);
-  marked.setOptions({ breaks: true });
 
   // 加载最新卡片数据
   const fetchLatestCards = async () => {
@@ -87,7 +76,6 @@ const Home: React.FC = () => {
       ); // 过滤无效卡片
 
       setCards(formattedCards);
-      setGradients(formattedCards.map(() => getRandomGradientClass()));
       setIsLoading(false);
     } catch (err) {
       setError('加载卡片失败，请稍后重试');
@@ -132,35 +120,7 @@ const Home: React.FC = () => {
     fetchUpcomingMeetups();
   }, []);
 
-  useEffect(() => {
-    if (!isMobile || cards.length === 0) return;
-    const t = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % cards.length);
-    }, 5000);
-    return () => clearInterval(t);
-  }, [isMobile, cards.length]);
-
-  const handleDownloadMobile = async (card_id: string) => {
-    const el = document.getElementById(`home-mobile-card-${card_id}`);
-    if (!el) return;
-    const canvas = await html2canvas(el, {
-      backgroundColor: null,
-      scale: 3,
-      useCORS: true,
-      logging: false,
-    });
-    const link = document.createElement('a');
-    const safeTitle = (cards[currentIndex]?.title || 'card').replace(
-      /[^a-zA-Z0-9\u4e00-\u9fa5]/g,
-      '-'
-    );
-    link.download = `weekly-card-${safeTitle}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  };
-
-  // 渲染轮播内容
-  const renderCarouselContent = () => {
+  const renderWeeklyCards = () => {
     if (isLoading) {
       return <Loading message="加载卡片中..." size={40} />;
     }
@@ -185,136 +145,35 @@ const Home: React.FC = () => {
       );
     }
 
-    if (isMobile || isTablet) {
-      const card = cards[currentIndex];
-      const gradientClass = gradients[currentIndex] || 'card-gradient-1';
-      const fontColor = getFontColorForGradient(gradientClass);
-      return (
-        <Box sx={{ px: 1 }}>
-          <Paper
-            elevation={1}
-            id={`home-mobile-card-${card.id}`}
-            className={gradientClass}
-            sx={{
-              borderRadius: '12px',
-              overflow: 'hidden',
-              p: 3,
-              color: fontColor,
-              position: 'relative',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 'bold', mb: 2, color: fontColor }}
-            >
-              {card.title}
-            </Typography>
-
-            <Box
-              sx={{
-                backgroundColor: `${fontColor}10`,
-                p: 2,
-                borderRadius: '8px',
-                mb: 3,
-                fontStyle: 'italic',
-                position: 'relative',
-                pl: 4,
-                '&::before': {
-                  content: '"“"',
-                  position: 'absolute',
-                  left: 8,
-                  top: -10,
-                  fontSize: '2.2rem',
-                  lineHeight: 1,
-                  color: fontColor,
-                  opacity: 0.2,
-                },
-              }}
-            >
-              <Typography
-                variant="body1"
-                sx={{ color: fontColor, whiteSpace: 'pre-line' }}
-              >
-                {card.quote}
-              </Typography>
-            </Box>
-
-            <Box sx={{ fontSize: '1rem', lineHeight: 1.6, mb: 3 }}>
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(
-                    card.detail ? marked.parse(card.detail).toString() : ''
-                  ),
-                }}
-              />
-            </Box>
-
-            <Box
-              sx={{
-                mt: 'auto',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{ color: fontColor, opacity: 0.8 }}
-              >
-                — {card.name}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{ color: fontColor, opacity: 0.8 }}
-              >
-                {new Date(card.created).toLocaleDateString('zh-CN')}
-              </Typography>
-            </Box>
-
-            <IconButton
-              aria-label="下载"
-              onClick={() => handleDownloadMobile(card.id)}
-              sx={{
-                position: 'absolute',
-                bottom: 10,
-                right: 10,
-                backgroundColor: '#667eea',
-                color: 'white',
-                opacity: 0.8,
-                '&:hover': { opacity: 1 },
-              }}
-              size="small"
-            >
-              下载
-            </IconButton>
-          </Paper>
-        </Box>
-      );
-    }
-
     return (
-      <Carousel
-        items={cards}
-        autoPlay={true}
-        autoPlayInterval={5000}
-        showIndicators={true}
-      />
+      <div className={styles['weekly-grid']}>
+        {cards.slice(0, 3).map((card) => (
+          <article key={card.id} className={styles['weekly-card']}>
+            <div className={styles['weekly-meta']}>
+              <span>VOL. {card.episode}</span>
+              <time dateTime={card.created}>
+                {new Date(card.created).toLocaleDateString('zh-CN', {
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </time>
+            </div>
+            <h3>{card.title}</h3>
+            <blockquote>{card.quote}</blockquote>
+            {card.detail && (
+              <p className={styles['weekly-detail']}>
+                {getDetailPreview(card.detail)}
+              </p>
+            )}
+            <div className={styles['weekly-author']}>分享者 · {card.name}</div>
+            <Link to="/weekly-cards" className={styles['weekly-link']}>
+              阅读这期周刊 <ChevronRight fontSize="inherit" />
+            </Link>
+          </article>
+        ))}
+      </div>
     );
   };
-
-  const stories = [
-    {
-      text: '慢慢开始打开自己，愿意分享过去压箱底的经历。说出来之后发现，那些经历也有人共鸣。',
-    },
-    {
-      text: '在这里听多了别人的故事，有一天突然觉得自己也可以组织一个圆桌——就真的去做了。',
-    },
-    {
-      text: '报名成了当地的群主，开始在自己城市组织线下活动。没想到会走到这一步。',
-    },
-  ];
 
   const entryPoints: EntryPoint[] = [
     {
@@ -417,130 +276,71 @@ const Home: React.FC = () => {
 
         {/* 近期活动 */}
         {upcomingMeetups.length > 0 && (
-          <section className={styles['stories-section']}>
-            <h2 className={styles['stories-title']}>近期活动</h2>
-            <Box
-              sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}
-            >
+          <section className={styles['activity-section']}>
+            <div className={styles['section-heading']}>
+              <p>近期相遇</p>
+              <h2>接下来，我们会在这里见面</h2>
+            </div>
+            <div className={styles['activity-list']}>
               {upcomingMeetups.map(({ meetup, date, episodeNumber }) => {
                 const detailUrl = meetup.is_recurring
                   ? `/meetup-detail?id=${meetup.id}&date=${toLocalDateStr(date)}`
                   : `/meetup-detail?id=${meetup.id}`;
                 return (
-                  <Box
+                  <Link
                     key={`${meetup.id}-${toLocalDateStr(date)}`}
-                    component={Link}
                     to={detailUrl}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      p: '12px 16px',
-                      borderRadius: '10px',
-                      border: '1px solid #f0f0f0',
-                      backgroundColor: '#fafafa',
-                      textDecoration: 'none',
-                      color: 'inherit',
-                      transition: 'box-shadow 0.15s',
-                      '&:hover': {
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-                        backgroundColor: '#fff',
-                      },
-                    }}
+                    className={styles['activity-card']}
                   >
-                    {/* 日期块 */}
-                    <Box sx={{ textAlign: 'center', minWidth: 44 }}>
-                      <Typography
-                        sx={{
-                          fontSize: '1.3rem',
-                          fontWeight: 700,
-                          lineHeight: 1,
-                          color: '#ff6348',
-                        }}
-                      >
-                        {date.format('DD')}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: '0.7rem',
-                          color: '#999',
-                          textTransform: 'uppercase',
-                        }}
-                      >
-                        {date.format('MMM')}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography
-                        sx={{ fontWeight: 600, fontSize: '0.95rem', mb: 0.25 }}
-                        noWrap
-                      >
+                    <div className={styles['activity-date']}>
+                      <strong>{date.format('DD')}</strong>
+                      <span>{date.format('MMM')}</span>
+                    </div>
+                    <div className={styles['activity-content']}>
+                      <h3>
                         {meetup.title}
                         {episodeNumber ? ` EP${episodeNumber}` : ''}
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.78rem', color: '#999' }}>
+                      </h3>
+                      <p>
                         {date.format('HH:mm')} ·{' '}
                         {MeetupModeLabel[meetup.mode] ?? meetup.mode}
-                      </Typography>
-                    </Box>
-                    <ChevronRight
-                      sx={{ color: '#ccc', fontSize: '1.1rem', flexShrink: 0 }}
-                    />
-                  </Box>
+                      </p>
+                    </div>
+                    <ChevronRight className={styles['activity-arrow']} />
+                  </Link>
                 );
               })}
-            </Box>
-            <Box sx={{ textAlign: 'center' }}>
-              <Button
-                variant="outlined"
-                component={Link}
+            </div>
+            <div className={styles['activity-more']}>
+              <Link
                 to="/activity-calendar"
-                size="small"
-                sx={{
-                  borderColor: '#ff6348',
-                  color: '#ff6348',
-                  '&:hover': { borderColor: '#ff4500', color: '#ff4500' },
-                }}
+                className={styles['view-all-button']}
               >
-                查看活动日历 →
-              </Button>
-            </Box>
+                查看活动日历 <ChevronRight fontSize="inherit" />
+              </Link>
+            </div>
           </section>
         )}
 
-        {/* 卡片轮播 */}
+        {/* 最新周刊 */}
         <section className={styles['carousel-section']}>
-          <h2 className={styles['section-title-inline']}>最新周刊卡片</h2>
+          <div className={styles['section-heading']}>
+            <p>本周启发</p>
+            <h2>从真实经历里，带走一个新的视角</h2>
+          </div>
           <div className={styles['carousel-container']}>
-            {renderCarouselContent()}
+            {renderWeeklyCards()}
           </div>
           <div className={styles['view-all-container']}>
-            <Button
-              variant="contained"
-              component={Link}
+            <Link
               to="/weekly-cards"
-              endIcon={<ChevronRight />}
-              className={`${styles['view-all-button']} ${
-                isMobile ? styles['mobile-button'] : ''
-              }`}
+              className={styles['view-all-button']}
             >
-              <Star fontSize="inherit" />
-              查看往期周刊
-            </Button>
+              查看全部往期周刊 <ChevronRight fontSize="inherit" />
+            </Link>
           </div>
         </section>
 
-        {/* 成员故事 */}
-        <section className={styles['stories-section']}>
-          <h2 className={styles['stories-title']}>在这里发生的事</h2>
-          <div className={styles['stories-grid']}>
-            {stories.map((story, i) => (
-              <blockquote key={i} className={styles['story-card']}>
-                <p className={styles['story-text']}>{story.text}</p>
-              </blockquote>
-            ))}
-          </div>
-        </section>
       </Container>
 
       <aside

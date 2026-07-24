@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Container, Pagination } from '@mui/material';
+import styles from './cards.module.css';
 
 import useResponsive from '@/hooks/useResponsive';
 import { cardsApi } from '../../netlify/config';
@@ -58,9 +59,6 @@ const Cards: React.FC = () => {
 
   useEffect(() => {
     loadCards(page);
-    try {
-      (window as any).setCommentForm = (content?: string) => {};
-    } catch {}
   }, [page]);
 
   const handleCardClick = (card_id: string) => {
@@ -76,8 +74,13 @@ const Cards: React.FC = () => {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <Box sx={{ minHeight: '100vh', padding: 2, background: '#f8f8fa' }}>
+    <Box className={styles.page}>
       <Container maxWidth="lg">
+        <header className={styles.header}>
+          <p>星友创作</p>
+          <h1>金句卡片</h1>
+          <span>收藏那些击中你的句子，也记录此刻真实的感受。</span>
+        </header>
         <Box sx={{ py: 4 }}>
           {loading ? (
             <Loading size={40} />
@@ -104,7 +107,6 @@ const Cards: React.FC = () => {
                     <InspireCard
                       card={card}
                       onCardClick={handleCardClick}
-                      canComment={false}
                     />
                   </Box>
                 ))}

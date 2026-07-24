@@ -17,7 +17,7 @@ import useResponsive from '@/hooks/useResponsive';
 import { useGlobalSnackbar } from '@/context/app';
 import Loading from '@/components/Loading';
 import Empty from '@/components/Empty';
-import { cardsApi, commentsApi } from '../../netlify/config';
+import { cardsApi } from '../../netlify/config';
 import { getUserId, getUserName, isUserLoggedIn } from '../../utils/user';
 
 interface ValidationResult {
@@ -244,7 +244,6 @@ const MyCards: React.FC = () => {
                           >
                             <InspireCard
                               card={card as any}
-                              canComment={false}
                               canEdit={true}
                               onCardClick={(id: string) =>
                                 navigate(`/card-detail?id=${id}`)
@@ -252,30 +251,6 @@ const MyCards: React.FC = () => {
                               onEdit={(id: string) =>
                                 navigate(`/card-edit/${id}`)
                               }
-                              onSubmitComment={async (
-                                id: string,
-                                name: string,
-                                comment: string
-                              ) => {
-                                try {
-                                  const res = await commentsApi.create({
-                                    card_id: id,
-                                    name,
-                                    comment,
-                                  });
-                                  if (res.success) {
-                                    showSnackbar.success(
-                                      res.message || '评论提交成功！'
-                                    );
-                                  } else {
-                                    showSnackbar.error(
-                                      res.error || '提交评论失败'
-                                    );
-                                  }
-                                } catch (e: any) {
-                                  showSnackbar.error(e.message || '网络错误');
-                                }
-                              }}
                             />
                           </Grid>
                         ))}

@@ -1,56 +1,33 @@
-import React, { useState, useRef } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  TextField,
-  Card,
-  IconButton,
-  Chip,
-} from '@mui/material';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import React from 'react';
+import { Box, Typography, Card, IconButton, Chip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 
 import { CardItem } from '../../netlify/types';
-import { getFontColorForGradient, gradientStyles } from '@/constants/gradient';
+import { getFontColorForGradient } from '@/constants/gradient';
 import useResponsive from '@/hooks/useResponsive';
 import TextCollapse from '../TextCollapse';
 
 interface InspireCardProps {
   card: CardItem;
-  canComment?: boolean;
   canEdit?: boolean;
   onCardClick: (id: string) => void;
-  onSubmitComment?: (id: string, name: string, comment: string) => void;
   onEdit?: (id: string) => void;
 }
 
 const InspireCard: React.FC<InspireCardProps> = ({
   card,
   onCardClick,
-  canComment = true,
   canEdit = false,
-  onSubmitComment,
   onEdit,
 }) => {
   marked.setOptions({ breaks: true });
-  const [showCommentForm, setShowCommentForm] = useState<boolean>(!!canComment);
-  const [commentName, setCommentName] = useState<string>('');
-  const [commentText, setCommentText] = useState<string>('');
 
   const { isMobile } = useResponsive();
-
-  // 获取字体颜色和渐变样式
-  const fontColor = getFontColorForGradient(
-    card.gradient_class || 'card-gradient-1'
-  );
   const gradientClass = card.gradient_class || 'card-gradient-1';
-
-  // Quote box背景色：跟随渐变主题颜色的半透明背景
+  const fontColor = getFontColorForGradient(gradientClass);
   const quoteBoxBg = `${fontColor}10`;
 
   const finalImage = card.image_path || card.upload;
@@ -64,33 +41,6 @@ const InspireCard: React.FC<InspireCardProps> = ({
       month: 'short',
       day: 'numeric',
     });
-  };
-
-  const [likes, setLikes] = useState<number>(Number(card.likes_count) || 0);
-
-  const handleLike = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        const redirect = encodeURIComponent(
-          window.location.pathname + window.location.search
-        );
-        window.location.href = `/login?redirect=${redirect}`;
-        return;
-      }
-      const { cardsApi } = await import('../../netlify/config');
-      const res = await cardsApi.like(card.id);
-      if (res.success) {
-        setLikes(res.data?.likes_count || likes + 1);
-        try {
-          const setKey = 'likedCardIds';
-          const raw = localStorage.getItem(setKey);
-          const set = new Set<string>(raw ? JSON.parse(raw) : []);
-          set.add(card.id);
-          localStorage.setItem(setKey, JSON.stringify(Array.from(set)));
-        } catch {}
-      }
-    } catch {}
   };
 
   return (
@@ -112,11 +62,12 @@ const InspireCard: React.FC<InspireCardProps> = ({
         sx={{
           color: fontColor,
           fontFamily: 'sans-serif',
-          borderRadius: '8px',
-          padding: 2,
+          borderRadius: '16px',
+          padding: 2.5,
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          border: '1px solid rgba(255, 255, 255, 0.28)',
+          boxShadow: '0 8px 24px rgba(75, 55, 42, 0.08)',
         }}
       >
         {card.is_private && (
@@ -158,11 +109,17 @@ const InspireCard: React.FC<InspireCardProps> = ({
         <Box sx={{ mb: 2 }}>
           <Typography
             variant={isMobile ? 'h6' : 'h5'}
-            sx={{ fontWeight: 'bold', mb: 1 }}
+            sx={{
+              fontFamily: 'var(--font-serif)',
+              fontWeight: 600,
+              lineHeight: 1.4,
+              mb: 1,
+              color: fontColor,
+            }}
           >
             {card.title}
           </Typography>
-          <Typography variant="caption" sx={{ opacity: 0.8 }}>
+          <Typography variant="caption" sx={{ color: fontColor, opacity: 0.7 }}>
             {formatCardDate(card.created || '')}
           </Typography>
         </Box>
@@ -172,7 +129,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
           sx={{
             backgroundColor: quoteBoxBg,
             padding: 2,
-            borderRadius: 'var(--radius-sm)',
+            borderRadius: '10px',
             mb: 2,
             position: 'relative',
             pl: 4,
@@ -195,6 +152,7 @@ const InspireCard: React.FC<InspireCardProps> = ({
               fontStyle: 'italic',
               color: fontColor,
               whiteSpace: 'pre-line',
+              lineHeight: 1.75,
             }}
           >
             <TextCollapse
@@ -208,47 +166,33 @@ const InspireCard: React.FC<InspireCardProps> = ({
 
         {/* 卡片详情 */}
         {card.detail && (
-          <TextCollapse
-            html={DOMPurify.sanitize(
-              card.detail ? marked.parse(card.detail).toString() : ''
-            )}
-            maxLines={8}
-          />
+          <Box sx={{ color: fontColor, lineHeight: 1.7 }}>
+            <TextCollapse
+              html={DOMPurify.sanitize(
+                card.detail ? marked.parse(card.detail).toString() : ''
+              )}
+              maxLines={8}
+            />
+          </Box>
         )}
 
         {/* 卡片创作者 */}
         {card.creator && (
           <Box>
-            <Typography variant="caption" sx={{ fontWeight: 'medium' }}>
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 500, color: fontColor, opacity: 0.78 }}
+            >
               — {card.creator}
             </Typography>
           </Box>
         )}
       </Card>
 
-      {/* 操作栏：点赞与评论 */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-        <IconButton
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleLike();
-          }}
-        >
-          <FavoriteIcon fontSize="small" color="error" />
-        </IconButton>
-        <Typography variant="caption">{likes}</Typography>
-        <IconButton
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            onCardClick(card.id);
-          }}
-        >
-          <ChatBubbleOutlineIcon fontSize="small" />
-        </IconButton>
-        {canEdit && onEdit && (
+      {canEdit && onEdit && (
+        <Box sx={{ mt: 0.5 }}>
           <IconButton
+            aria-label="编辑卡片"
             size="small"
             onClick={(e) => {
               e.stopPropagation();
@@ -257,103 +201,6 @@ const InspireCard: React.FC<InspireCardProps> = ({
           >
             <EditIcon fontSize="small" />
           </IconButton>
-        )}
-      </Box>
-
-      {/* 卡片操作区域：仅在允许评论时显示浮层 */}
-      {canComment && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 'var(--spacing-md)',
-            opacity: 0,
-            '&:hover': {
-              opacity: 1,
-              transition: 'opacity 0.3s ease',
-            },
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Button
-            variant="contained"
-            color="primary"
-            size={isMobile ? 'small' : 'medium'}
-            sx={{ mb: 2 }}
-            onClick={() => onCardClick(card.id)}
-          >
-            查看详情
-          </Button>
-
-          {showCommentForm && onSubmitComment && (
-            <Box
-              sx={{
-                width: '100%',
-                backgroundColor: 'white',
-                padding: 2,
-                borderRadius: '4px',
-                mb: 2,
-              }}
-            >
-              <Typography
-                variant="subtitle2"
-                sx={{ mb: 1, color: 'var(--text)', fontWeight: 'bold' }}
-              >
-                添加评论
-              </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="你的名字"
-                value={commentName}
-                onChange={(e) => setCommentName(e.target.value)}
-                margin="dense"
-                onClick={(e) => e.stopPropagation()}
-              />
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                size="small"
-                placeholder="写下你的想法..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                margin="dense"
-                onClick={(e) => e.stopPropagation()}
-              />
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                size="small"
-                onClick={() =>
-                  onSubmitComment?.(card.id, commentName, commentText)
-                }
-              >
-                提交评论
-              </Button>
-            </Box>
-          )}
-
-          <Button
-            variant="contained"
-            color="success"
-            size={isMobile ? 'small' : 'medium'}
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowCommentForm(!showCommentForm);
-            }}
-          >
-            {showCommentForm ? '取消' : '添加评论'}
-          </Button>
         </Box>
       )}
     </Box>
