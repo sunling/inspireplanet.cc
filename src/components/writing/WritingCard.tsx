@@ -8,6 +8,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import { WritingPost } from '../../netlify/types';
 import { formatLocalDateTime } from '../../utils/date';
 import HighlightedText from './HighlightedText';
@@ -57,24 +58,26 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
             p: 3,
           }}
         >
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ mb: 1.5 }}
-          >
-            {post.visibility === 'private' && (
-              <Chip label="仅自己可见" size="small" variant="outlined" />
-            )}
-            {post.template_snapshot && (
-              <Chip
-                label={post.template_snapshot.template_name}
-                size="small"
-                color="secondary"
-                variant="outlined"
-              />
-            )}
-          </Stack>
+          {(post.visibility === 'private' || post.template_snapshot) && (
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ mb: 1.5 }}
+            >
+              {post.visibility === 'private' && (
+                <Chip label="仅自己可见" size="small" variant="outlined" />
+              )}
+              {post.template_snapshot && (
+                <Chip
+                  label={post.template_snapshot.template_name}
+                  size="small"
+                  color="secondary"
+                  variant="outlined"
+                />
+              )}
+            </Stack>
+          )}
 
           <Typography variant="h6" component="h2" fontWeight={700} gutterBottom>
             {title}
@@ -169,11 +172,51 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
             ))}
           </Box>
 
-          <Box sx={{ mt: 'auto' }}>
-            <Typography variant="caption" color="text.secondary">
-              {post.author.name} · {formatLocalDateTime(post.created_at)}
-            </Typography>
-          </Box>
+          <Stack
+            direction="row"
+            alignItems="flex-end"
+            justifyContent="space-between"
+            spacing={1}
+            sx={{ mt: 'auto', minWidth: 0 }}
+          >
+            <Stack spacing={0.1} sx={{ minWidth: 0 }}>
+              <Typography
+                variant="caption"
+                color="text.primary"
+                fontWeight={650}
+                noWrap
+              >
+                {post.author.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {formatLocalDateTime(post.created_at)}
+              </Typography>
+            </Stack>
+            {post.visibility === 'group' && (
+              <Chip
+                icon={<GroupsOutlinedIcon />}
+                label={post.group?.name || '讨论组'}
+                size="small"
+                sx={{
+                  flexShrink: 0,
+                  maxWidth: '48%',
+                  height: 26,
+                  color: '#496a61',
+                  bgcolor: '#edf4f1',
+                  border: '1px solid #d4e4de',
+                  fontWeight: 650,
+                  '& .MuiChip-icon': {
+                    color: '#62877d',
+                    fontSize: 16,
+                  },
+                  '& .MuiChip-label': {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  },
+                }}
+              />
+            )}
+          </Stack>
         </CardContent>
       </CardActionArea>
     </Card>

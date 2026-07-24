@@ -18,6 +18,7 @@ import {
 } from '../utils/server';
 import {
   mapWritingPost,
+  getWritingDateRangeError,
   normalizeTemplateSnapshot,
   WRITING_POST_SELECT,
 } from '../utils/writing';
@@ -48,6 +49,7 @@ interface PreparedWriting {
   custom_topic_names: string[];
   image_urls: string[];
   is_anonymous: boolean;
+  group_id: string | null;
 }
 
 export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
@@ -226,6 +228,7 @@ async function buildTemplateSnapshot(
 
 async function prepareWriting(
   payload: CreateWritingRequest,
+  userId: string,
   existing?: ExistingWriting
 ): Promise<PreparedWriting> {
   const title = String(payload.title || '').trim();
@@ -234,7 +237,23 @@ async function prepareWriting(
   if (body.length > 20000) throw new RequestError('正文不能超过 20000 个字');
 
   const visibility: WritingVisibility =
-    payload.visibility === 'public' ? 'public' : 'private';
+    payload.visibility === 'public'
+      ? 'public'
+      : payload.visibility === 'group'
+        ? 'group'
+        : 'private';
+  const group_id =
+    visibility === 'group' ? parseId(payload.group_id, '讨论组 ID') : null;
+  if (group_id) {
+    const { data: membership } = await supabase
+      .from('writing_group_members')
+      .select('id')
+      .eq('group_id', group_id)
+      .eq('user_id', userId)
+      .eq('status', 'approved')
+      .maybeSingle();
+    if (!membership) throw new RequestError('你还不是该讨论组成员', 403);
+  }
   const topic_ids = parseTopicIds(payload.topic_ids);
   await validateTopics(topic_ids);
 
@@ -274,6 +293,7 @@ async function prepareWriting(
     custom_topic_names,
     image_urls,
     is_anonymous: Boolean(payload.is_anonymous),
+    group_id,
   };
 }
 
@@ -290,22 +310,60 @@ async function fetchWritingRow(id: string): Promise<any> {
 
 async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
   const requestData = getDataFromEvent(event);
-  const scope = requestData.scope === 'mine' ? 'mine' : 'all';
+  const scope =
+    requestData.scope === 'mine'
+      ? 'mine'
+      : requestData.scope === 'partners'
+        ? 'partners'
+        : 'all';
   const sort = requestData.sort === 'oldest' ? 'oldest' : 'latest';
   const page = parsePositiveInteger(requestData.page, 1, 100000);
   const page_size = parsePositiveInteger(requestData.page_size, 12, 50);
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(requestData.date || ''))
-    ? String(requestData.date)
+  const creator = String(requestData.creator || '')
+    .trim()
+    .slice(0, 80);
+  const dateFrom = /^\d{4}-\d{2}-\d{2}$/.test(
+    String(requestData.date_from || '')
+  )
+    ? String(requestData.date_from)
     : '';
-  const parsedTimezoneOffset = Number(requestData.timezone_offset);
-  const timezoneOffset = Number.isFinite(parsedTimezoneOffset)
-    ? Math.max(-840, Math.min(840, parsedTimezoneOffset))
-    : 0;
+  const dateTo = /^\d{4}-\d{2}-\d{2}$/.test(String(requestData.date_to || ''))
+    ? String(requestData.date_to)
+    : '';
+  const shiftYear = (value: string, amount: number) => {
+    const date = new Date(`${value}T00:00:00.000Z`);
+    date.setUTCFullYear(date.getUTCFullYear() + amount);
+    return date.toISOString().slice(0, 10);
+  };
+  const effectiveDateFrom = dateFrom || (dateTo ? shiftYear(dateTo, -1) : '');
+  const effectiveDateTo = dateTo || (dateFrom ? shiftYear(dateFrom, 1) : '');
   const currentUser = await getAuthenticatedUser(event);
+  const groupId = requestData.group_id
+    ? parseId(requestData.group_id, '讨论组 ID')
+    : null;
 
-  if (scope === 'mine' && !currentUser) {
+  if ((scope === 'mine' || scope === 'partners') && !currentUser) {
     return createErrorResponse('未授权', 401);
   }
+  if (groupId) {
+    if (!currentUser) return createErrorResponse('请先登录', 401);
+    const { data: membership, error: membershipError } = await supabase
+      .from('writing_group_members')
+      .select('id')
+      .eq('group_id', groupId)
+      .eq('user_id', currentUser.id)
+      .eq('status', 'approved')
+      .maybeSingle();
+    if (membershipError)
+      return createErrorResponse('检查讨论组成员身份失败', 500);
+    if (!membership)
+      return createErrorResponse('只有讨论组成员可以查看组内书写', 403);
+  }
+  const dateRangeError = getWritingDateRangeError(
+    effectiveDateFrom,
+    effectiveDateTo
+  );
+  if (dateRangeError) return createErrorResponse(dateRangeError);
 
   let filteredPostIds: string[] | null = null;
   if (requestData.topic_ids) {
@@ -332,24 +390,91 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
     .from('writing_posts')
     .select(WRITING_POST_SELECT, { count: 'exact' });
 
-  if (scope === 'mine') {
+  if (groupId) {
+    query = query
+      .eq('group_id', groupId)
+      .eq('visibility', 'group')
+      .eq('status', 'published');
+    if (scope === 'mine') query = query.eq('user_id', currentUser!.id);
+  } else if (scope === 'mine') {
     query = query.eq('user_id', currentUser!.id);
+  } else if (scope === 'partners') {
+    const { data: pairs, error: pairError } = await supabase
+      .from('writing_partner_pairs')
+      .select('group_id, user_a_id, user_b_id')
+      .eq('is_active', true)
+      .or(`user_a_id.eq.${currentUser!.id},user_b_id.eq.${currentUser!.id}`);
+    if (pairError) return createErrorResponse('获取书写搭子失败', 500);
+    const partnerIds = Array.from(
+      new Set(
+        (pairs || []).map((pair: any) =>
+          String(pair.user_a_id) === currentUser!.id
+            ? String(pair.user_b_id)
+            : String(pair.user_a_id)
+        )
+      )
+    );
+    if (!partnerIds.length) {
+      return createSuccessResponse({ records: [], total: 0, page, page_size });
+    }
+    const pairGroupIds = Array.from(
+      new Set((pairs || []).map((pair: any) => String(pair.group_id)))
+    );
+    const { data: memberships } = await supabase
+      .from('writing_group_members')
+      .select('group_id')
+      .eq('user_id', currentUser!.id)
+      .eq('status', 'approved')
+      .in('group_id', pairGroupIds);
+    const approvedPairGroupIds = (memberships || []).map((row: any) =>
+      String(row.group_id)
+    );
+    query = query.in('user_id', partnerIds).eq('status', 'published');
+    query = approvedPairGroupIds.length
+      ? query.or(
+          `visibility.eq.public,and(visibility.eq.group,group_id.in.(${approvedPairGroupIds.join(',')}))`
+        )
+      : query.eq('visibility', 'public');
   } else {
-    query = query.eq('visibility', 'public').eq('status', 'published');
+    let memberGroupIds: string[] = [];
+    if (currentUser) {
+      const { data: memberships } = await supabase
+        .from('writing_group_members')
+        .select('group_id')
+        .eq('user_id', currentUser.id)
+        .eq('status', 'approved');
+      memberGroupIds = (memberships || []).map((row: any) =>
+        String(row.group_id)
+      );
+    }
+    query = query.eq('status', 'published');
+    query = memberGroupIds.length
+      ? query.or(
+          `visibility.eq.public,and(visibility.eq.group,group_id.in.(${memberGroupIds.join(',')}))`
+        )
+      : query.eq('visibility', 'public');
   }
 
   if (filteredPostIds) query = query.in('id', filteredPostIds);
 
-  if (date) {
-    const [year, month, day] = date.split('-').map(Number);
-    const start = new Date(
-      Date.UTC(year, month - 1, day) + timezoneOffset * 60 * 1000
-    );
-    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-    query = query
-      .gte('created_at', start.toISOString())
-      .lt('created_at', end.toISOString());
+  if (creator) {
+    const escapedCreator = creator.replace(/[%_,()]/g, '');
+    const { data: matchedUsers, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .or(`name.ilike.%${escapedCreator}%,username.ilike.%${escapedCreator}%`);
+    if (userError) return createErrorResponse('搜索创造者失败', 500);
+    const userIds = (matchedUsers || []).map((row: any) => String(row.id));
+    if (!userIds.length) {
+      return createSuccessResponse({ records: [], total: 0, page, page_size });
+    }
+    query = query.in('user_id', userIds);
+    if (scope !== 'mine') query = query.eq('is_anonymous', false);
   }
+  if (effectiveDateFrom)
+    query = query.gte('created_at', `${effectiveDateFrom}T00:00:00.000Z`);
+  if (effectiveDateTo)
+    query = query.lte('created_at', `${effectiveDateTo}T23:59:59.999Z`);
 
   const from = (page - 1) * page_size;
   const { data, error, count } = await query
@@ -373,8 +498,23 @@ async function handleGetById(event: NetlifyEvent): Promise<NetlifyResponse> {
   const currentUser = await getAuthenticatedUser(event);
   const row = await fetchWritingRow(id);
   const isOwner = currentUser && String(row.user_id) === currentUser.id;
+  let isGroupMember = false;
+  if (!isOwner && row.visibility === 'group' && currentUser && row.group_id) {
+    const { data: membership } = await supabase
+      .from('writing_group_members')
+      .select('id')
+      .eq('group_id', row.group_id)
+      .eq('user_id', currentUser.id)
+      .eq('status', 'approved')
+      .maybeSingle();
+    isGroupMember = Boolean(membership);
+  }
 
-  if (!isOwner && (row.visibility !== 'public' || row.status !== 'published')) {
+  if (
+    !isOwner &&
+    !isGroupMember &&
+    (row.visibility !== 'public' || row.status !== 'published')
+  ) {
     throw new RequestError('书写不存在', 404);
   }
 
@@ -388,7 +528,8 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   if (!currentUser) return createErrorResponse('未授权', 401);
 
   const writing = await prepareWriting(
-    getDataFromEvent(event) as CreateWritingRequest
+    getDataFromEvent(event) as CreateWritingRequest,
+    currentUser.id
   );
   const { data: postId, error } = await supabase.rpc('create_writing_post_v2', {
     p_user_id: Number(currentUser.id),
@@ -403,18 +544,22 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   });
 
   if (error || !postId) throw new RequestError('发布书写失败', 500);
-  const { error: anonymousError } = await supabase
+  const { error: metadataError } = await supabase
     .from('writing_posts')
-    .update({ is_anonymous: writing.is_anonymous })
+    .update({
+      visibility: writing.visibility,
+      is_anonymous: writing.is_anonymous,
+      group_id: writing.group_id ? Number(writing.group_id) : null,
+    })
     .eq('id', postId)
     .eq('user_id', currentUser.id);
-  if (anonymousError) {
+  if (metadataError) {
     await supabase
       .from('writing_posts')
       .delete()
       .eq('id', postId)
       .eq('user_id', currentUser.id);
-    throw new RequestError('设置匿名状态失败', 500);
+    throw new RequestError('设置书写权限失败', 500);
   }
   const row = await fetchWritingRow(String(postId));
   return createSuccessResponse(
@@ -442,6 +587,7 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
   const writing = await prepareWriting(
     payload as CreateWritingRequest,
+    currentUser.id,
     existing
   );
   const { data: updated, error } = await supabase.rpc(
@@ -461,12 +607,16 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   );
 
   if (error || !updated) throw new RequestError('更新书写失败', 500);
-  const { error: anonymousError } = await supabase
+  const { error: metadataError } = await supabase
     .from('writing_posts')
-    .update({ is_anonymous: writing.is_anonymous })
+    .update({
+      visibility: writing.visibility,
+      is_anonymous: writing.is_anonymous,
+      group_id: writing.group_id ? Number(writing.group_id) : null,
+    })
     .eq('id', id)
     .eq('user_id', currentUser.id);
-  if (anonymousError) throw new RequestError('设置匿名状态失败', 500);
+  if (metadataError) throw new RequestError('设置书写权限失败', 500);
   const row = await fetchWritingRow(id);
   return createSuccessResponse({ post: mapWritingPost(row, currentUser.id) });
 }

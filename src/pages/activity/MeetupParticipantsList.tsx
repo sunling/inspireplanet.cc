@@ -77,7 +77,15 @@ const MeetupParticipantsList: React.FC = () => {
             };
           })
         );
-        setMeetups(meetupsWithStats);
+        setMeetups(
+          meetupsWithStats.sort((left, right) => {
+            const leftTime = new Date(left.datetime).getTime();
+            const rightTime = new Date(right.datetime).getTime();
+            if (!Number.isFinite(leftTime)) return 1;
+            if (!Number.isFinite(rightTime)) return -1;
+            return rightTime - leftTime;
+          })
+        );
       } else {
         showSnackbar.error(response.error || '加载失败');
       }

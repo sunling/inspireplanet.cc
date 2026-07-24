@@ -1,5 +1,33 @@
-export type WritingVisibility = 'public' | 'private';
+export type WritingVisibility = 'public' | 'private' | 'group';
 export type WritingStatus = 'published' | 'hidden';
+export type WritingGroupMemberStatus = 'pending' | 'approved' | 'rejected';
+
+export interface WritingGroup {
+  id: string;
+  name: string;
+  description?: string | null;
+  is_active: boolean;
+  member_count: number;
+  membership_status?: WritingGroupMemberStatus | null;
+}
+
+export interface WritingGroupMember {
+  id: string;
+  group_id: string;
+  user_id: string;
+  status: WritingGroupMemberStatus;
+  user: WritingAuthor;
+  applied_at: string;
+}
+
+export interface WritingPartner {
+  pairing_id: string;
+  group_id: string;
+  group_name: string;
+  user: WritingAuthor;
+  assignment_type: 'manual' | 'random';
+  created_at: string;
+}
 
 export interface WritingTopic {
   id: string;
@@ -53,6 +81,8 @@ export interface WritingPost {
   image_urls: string[];
   template_id?: string | null;
   template_snapshot?: WritingTemplateSnapshot | null;
+  group_id?: string | null;
+  group?: Pick<WritingGroup, 'id' | 'name'> | null;
   topics: WritingTopic[];
   author: WritingAuthor;
   is_anonymous: boolean;
@@ -101,18 +131,21 @@ export interface CreateWritingRequest {
   topic_ids?: string[];
   visibility: WritingVisibility;
   is_anonymous?: boolean;
+  group_id?: string | null;
 }
 
 export type UpdateWritingRequest = CreateWritingRequest;
 
 export interface WritingListParams {
-  scope?: 'all' | 'mine';
+  scope?: 'all' | 'mine' | 'partners';
+  group_id?: string;
   topic_ids?: string[];
   sort?: 'latest' | 'oldest';
   page?: number;
   page_size?: number;
-  date?: string;
-  timezone_offset?: number;
+  creator?: string;
+  date_from?: string;
+  date_to?: string;
 }
 
 export interface WritingListResponse {

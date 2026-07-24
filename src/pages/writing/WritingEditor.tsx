@@ -24,6 +24,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import Loading from '../../components/Loading';
 import {
   CreateWritingRequest,
+  WritingGroup,
   WritingTemplate,
   WritingTemplatePrompt,
   WritingTopic,
@@ -34,6 +35,7 @@ import {
   writingTemplatesApi,
   writingTopicsApi,
   imagesApi,
+  writingGroupsApi,
 } from '../../netlify/config';
 import { useGlobalSnackbar } from '../../context/app';
 import { extractHashtags } from '../../utils/hashtags';
@@ -58,6 +60,7 @@ const WritingEditor: React.FC = () => {
 
   const [topics, setTopics] = useState<WritingTopic[]>([]);
   const [templates, setTemplates] = useState<WritingTemplate[]>([]);
+  const [groups, setGroups] = useState<WritingGroup[]>([]);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [templateId, setTemplateId] = useState('');
@@ -65,6 +68,7 @@ const WritingEditor: React.FC = () => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<WritingVisibility>('public');
+  const [groupId, setGroupId] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -80,12 +84,17 @@ const WritingEditor: React.FC = () => {
       setLoading(true);
       setError('');
       try {
-        const [topicsResponse, templatesResponse, postResponse] =
-          await Promise.all([
-            writingTopicsApi.getAll(),
-            writingTemplatesApi.getAll(),
-            id ? writingsApi.getById(id) : Promise.resolve(null),
-          ]);
+        const [
+          topicsResponse,
+          templatesResponse,
+          groupsResponse,
+          postResponse,
+        ] = await Promise.all([
+          writingTopicsApi.getAll(),
+          writingTemplatesApi.getAll(),
+          writingGroupsApi.list(),
+          id ? writingsApi.getById(id) : Promise.resolve(null),
+        ]);
 
         if (!active) return;
         if (!topicsResponse.success || !templatesResponse.success) {
@@ -95,6 +104,11 @@ const WritingEditor: React.FC = () => {
 
         setTopics(topicsResponse.data?.topics || []);
         setTemplates(templatesResponse.data?.templates || []);
+        setGroups(
+          (groupsResponse.data?.groups || []).filter(
+            (group) => group.membership_status === 'approved'
+          )
+        );
 
         if (id) {
           if (!postResponse?.success || !postResponse.data?.post) {
@@ -110,6 +124,7 @@ const WritingEditor: React.FC = () => {
           setBody(post.body || '');
           setTemplateId(post.template_id || '');
           setVisibility(post.visibility);
+          setGroupId(post.group_id || '');
           setIsAnonymous(post.is_anonymous);
           setImageUrls(post.image_urls || []);
 
@@ -256,6 +271,10 @@ const WritingEditor: React.FC = () => {
       showSnackbar.warning('请等待图片上传完成');
       return;
     }
+    if (visibility === 'group' && !groupId) {
+      showSnackbar.warning('请选择讨论组');
+      return;
+    }
     const payload: CreateWritingRequest = {
       title,
       body,
@@ -267,6 +286,7 @@ const WritingEditor: React.FC = () => {
       })),
       topic_ids: topicIds,
       visibility,
+      group_id: visibility === 'group' ? groupId : null,
       is_anonymous: isAnonymous,
     };
 
@@ -565,7 +585,37 @@ const WritingEditor: React.FC = () => {
                     control={<Radio />}
                     label="公开到书写圈子（默认）"
                   />
+                  {groups.length > 0 && (
+                    <FormControlLabel
+                      value="group"
+                      control={<Radio />}
+                      label="仅指定讨论组成员可见"
+                    />
+                  )}
                 </RadioGroup>
+                {visibility === 'group' && (
+                  <FormControl fullWidth sx={{ mt: 1.5 }}>
+                    <InputLabel id="writing-group-label">选择讨论组</InputLabel>
+                    <Select
+                      labelId="writing-group-label"
+                      label="选择讨论组"
+                      value={groupId}
+                      onChange={(event) =>
+                        setGroupId(String(event.target.value))
+                      }
+                    >
+                      {groups
+                        .filter(
+                          (group) => group.membership_status === 'approved'
+                        )
+                        .map((group) => (
+                        <MenuItem key={group.id} value={group.id}>
+                          {group.name}
+                        </MenuItem>
+                        ))}
+                    </Select>
+                  </FormControl>
+                )}
                 <FormControlLabel
                   control={
                     <Switch
