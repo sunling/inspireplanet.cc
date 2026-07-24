@@ -25,10 +25,17 @@ export async function handler(
     return createErrorResponse('邮件服务尚未配置', 500);
   }
 
+  const to = process.env.CONTACT_EMAIL?.split(',')
+    .map((address) => address.trim())
+    .filter(Boolean);
+  if (!to?.length) {
+    console.error('[sendEmail] CONTACT_EMAIL is not configured');
+    return createErrorResponse('邮件收件人尚未配置', 500);
+  }
+
   try {
     const resend = new Resend(resendKey);
     const from = process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc';
-    const to = process.env.CONTACT_EMAIL || 'sunling621@gmail.com';
 
     const { error } = await resend.emails.send({
       from: `启发星球 <${from}>`,

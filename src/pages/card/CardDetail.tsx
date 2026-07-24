@@ -10,8 +10,6 @@ import {
   Typography,
   Paper,
   Button,
-  TextField,
-  Divider,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -20,14 +18,13 @@ import {
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import useResponsive from '@/hooks/useResponsive';
-import { CardItem, Comment } from '../../netlify/types';
-import { cardsApi, commentsApi } from '../../netlify/config';
+import { CardItem } from '../../netlify/types';
+import { cardsApi } from '../../netlify/config';
 import { getFontColorForGradient } from '@/constants/gradient';
 import Loading from '@/components/Loading';
-import Empty from '@/components/Empty';
 import ErrorCard from '@/components/ErrorCard';
 import { useGlobalSnackbar } from '@/context/app';
-import { getUserId, isUserLoggedIn, logoutUser } from '../../utils';
+import { getUserId } from '../../utils';
 
 const CardDetail: React.FC = () => {
   const location = useLocation();
@@ -40,12 +37,10 @@ const CardDetail: React.FC = () => {
   };
 
   const cardRef = useRef<HTMLDivElement>(null);
-  const commentInputRef = useRef<HTMLInputElement>(null);
   const { isMobile } = useResponsive();
   const showSnackbar = useGlobalSnackbar();
 
   const [card, setCard] = useState<CardItem | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canDelete, setCanDelete] = useState(false);
@@ -53,19 +48,13 @@ const CardDetail: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // 评论表单状态
-  const [commentForm, setCommentForm] = useState({
-    content: '',
-  });
-  const [submittingComment, setSubmittingComment] = useState(false);
-
   // 加载卡片详情
-  const fetchCardById = async (cardId: string) => {
+  const fetchCardById = async (card_id: string) => {
     try {
       setIsLoading(true);
       setError(null);
       // 使用统一API封装获取卡片详情
-      const response = await cardsApi.getById(cardId);
+      const response = await cardsApi.getById(card_id);
 
       console.log('加载卡片详情返回', response);
 
@@ -86,7 +75,6 @@ const CardDetail: React.FC = () => {
 
       setCard(normalizedCard);
       checkDeletePermission(normalizedCard);
-      fetchComments(cardId);
     } catch (error) {
       console.error('获取卡片失败:', error);
       const text = '获取卡片失败';
@@ -95,43 +83,6 @@ const CardDetail: React.FC = () => {
       return null;
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // 加载评论
-  const fetchComments = async (cardId: string) => {
-    try {
-      // 使用统一的api对象获取评论
-      const response = await commentsApi.getByCardId(cardId);
-      console.log('fetchComments返回', response);
-
-      if (!response.success) {
-        const text = '获取评论失败：' + (response.error || '未知错误');
-        showSnackbar.error(text);
-        return;
-      }
-
-      const commentData = response.data?.comments || [];
-
-      // 规范化评论数据格式，支持更多可能的字段名
-      const list = commentData.map(
-        (comment: any): Comment => ({
-          id: comment.id,
-          name: comment.name || comment.creator || '匿名用户',
-          comment: comment.comment || comment.content || '',
-          created: comment.created || new Date().toISOString(),
-          cardId: comment.cardId || cardId, // 确保cardId存在
-          createdAt: comment.comment.created || new Date().toISOString(),
-          card_id: '',
-          created_at: '',
-        })
-      );
-      setComments(list);
-    } catch (error) {
-      console.error('获取评论失败:', error);
-      showSnackbar.error('获取评论失败');
-
-      return [];
     }
   };
 
@@ -151,8 +102,8 @@ const CardDetail: React.FC = () => {
   // 初始化页面
   useEffect(() => {
     const initPage = async () => {
-      const cardId = getCardId();
-      if (!cardId) {
+      const card_id = getCardId();
+      if (!card_id) {
         const text = '未找到卡片ID，请返回卡片列表页面重试。';
         setError(text);
 
@@ -161,7 +112,7 @@ const CardDetail: React.FC = () => {
         return;
       }
 
-      fetchCardById(cardId);
+      fetchCardById(card_id);
     };
     initPage();
   }, [location.search]);
@@ -213,12 +164,12 @@ const CardDetail: React.FC = () => {
 
   // 确认删除
   const handleDeleteConfirm = async () => {
-    const cardId = getCardId();
-    if (!cardId) return;
+    const card_id = getCardId();
+    if (!card_id) return;
 
     setDeleting(true);
     try {
-      const response = await cardsApi.delete(cardId);
+      const response = await cardsApi.delete(card_id);
       if (!response.success) {
         showSnackbar.error('删除失败：' + (response.error || '未知错误'));
         return;
@@ -239,81 +190,6 @@ const CardDetail: React.FC = () => {
     setShowDeleteDialog(false);
   };
 
-  // 提交评论
-  const handleCommentSubmit = async () => {
-    const cardId = getCardId();
-    if (!isUserLoggedIn()) {
-      const redirect = cardId ? `/card-detail?id=${cardId}` : '/cards';
-      navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
-      return;
-    }
-    if (!commentForm.content.trim()) {
-      showSnackbar.warning('请输入评论内容');
-      return;
-    }
-
-    if (!cardId) {
-      showSnackbar.warning('卡片ID无效');
-      return;
-    }
-
-    setSubmittingComment(true);
-
-    try {
-      // 使用统一API封装提交评论
-      console.log('正在提交评论...');
-      const response = await commentsApi.create({
-        cardId: cardId,
-        comment: commentForm.content,
-      });
-
-      if (!response.success) {
-        if (response.statusCode === 401) {
-          logoutUser();
-          showSnackbar.error('登录已过期，请重新登录');
-          const redirect = `/card-detail?id=${cardId}`;
-          navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
-          return;
-        }
-        const text = '提交评论失败：' + (response.error || '未知错误');
-        showSnackbar.warning(text);
-        return;
-      }
-
-      await fetchComments(cardId);
-
-      // 重置表单
-      setCommentForm({ content: '' });
-
-      showSnackbar.success('评论提交成功！');
-    } catch (error: any) {
-      console.error('提交评论失败:', error.message || error);
-
-      showSnackbar.error('提交评论失败，请稍后重试');
-    } finally {
-      setSubmittingComment(false);
-    }
-  };
-
-  // 格式化日期
-  const formatCommentDate = (dateString: string) => {
-    try {
-      if (!dateString) return '日期未知';
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return '日期未知';
-      }
-      return `${date.getFullYear()}年${
-        date.getMonth() + 1
-      }月${date.getDate()}日 ${date.getHours()}:${String(
-        date.getMinutes()
-      ).padStart(2, '0')}`;
-    } catch (e) {
-      console.error('日期格式化错误:', e);
-      return '日期未知';
-    }
-  };
-
   // 清理和处理内容
   const sanitizeContent = (content: string | undefined | null) => {
     if (!content) return '';
@@ -323,21 +199,6 @@ const CardDetail: React.FC = () => {
       console.error('内容净化错误:', e);
       return String(content);
     }
-  };
-
-  // 回复评论
-  const handleReplyClick = (name: string) => {
-    setCommentForm((prev) => ({ ...prev, content: `@${name} ` }));
-    setTimeout(() => {
-      try {
-        commentInputRef.current?.focus();
-        const el = commentInputRef.current as any;
-        if (el && el.setSelectionRange) {
-          const len = el.value.length;
-          el.setSelectionRange(len, len);
-        }
-      } catch {}
-    }, 50);
   };
 
   // 处理Markdown内容
@@ -361,7 +222,7 @@ const CardDetail: React.FC = () => {
       sx={{
         minHeight: '100vh',
         py: { xs: 4, sm: 8 },
-        background: '#eff3fb',
+        background: '#fffaf6',
       }}
     >
       <Container maxWidth="md">
@@ -393,13 +254,13 @@ const CardDetail: React.FC = () => {
         ) : (
           <>
             <Paper
-              elevation={3}
+              elevation={0}
               sx={{
                 mb: 6,
                 borderRadius: '16px',
                 overflow: 'hidden',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(10px)',
+                border: '1px solid #e9e0d7',
+                backgroundColor: '#fff',
               }}
             >
               <div className="card-container">
@@ -594,8 +455,8 @@ const CardDetail: React.FC = () => {
                 loading={downloading}
                 onClick={handleDownloadCard}
                 sx={{
-                  backgroundColor: '#3182ce',
-                  '&:hover': { backgroundColor: '#2c5aa0' },
+                  backgroundColor: '#c95837',
+                  '&:hover': { backgroundColor: '#a9462c' },
                   py: 1.5,
                   px: { xs: 3, sm: 4 },
                   minWidth: { xs: 'auto', sm: '140px' },
@@ -665,131 +526,6 @@ const CardDetail: React.FC = () => {
               </DialogActions>
             </Dialog>
 
-            <Paper
-              elevation={3}
-              sx={{
-                p: { xs: 3, sm: 4 },
-                borderRadius: '16px',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(10px)',
-              }}
-            >
-              <Typography
-                variant={isMobile ? 'h6' : 'h5'}
-                component="h2"
-                sx={{ mb: 4, color: 'var(--primary)' }}
-              >
-                评论
-              </Typography>
-
-              <Box sx={{ mb: 6 }}>
-                {comments.length === 0 ? (
-                  <Empty message="暂无评论" description="快来分享您的想法吧" />
-                ) : (
-                  comments.map((comment) => (
-                    <Paper
-                      key={comment.id || comment.created}
-                      elevation={1}
-                      sx={{
-                        p: 3,
-                        mb: 3,
-                        borderRadius: '8px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                        transition: 'box-shadow 0.3s ease',
-                        '&:hover': {
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          mb: 1,
-                          flexDirection: isMobile ? 'column' : 'row',
-                          gap: 1,
-                          textAlign: isMobile ? 'center' : 'left',
-                        }}
-                      >
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ fontWeight: 'bold', color: 'var(--primary)' }}
-                        >
-                          {sanitizeContent(comment.name || comment.Name)}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {formatCommentDate(comment.created)}
-                        </Typography>
-                      </Box>
-                      <Typography variant="body2" color="text.primary">
-                        <span
-                          dangerouslySetInnerHTML={{
-                            __html: sanitizeContent(
-                              comment.comment || comment.created
-                            ).replace(/\n/g, '<br>'),
-                          }}
-                        />
-                      </Typography>
-                      <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
-                        <Button
-                          size="small"
-                          variant="text"
-                          onClick={() =>
-                            handleReplyClick(comment.name || comment.Name)
-                          }
-                        >
-                          回复
-                        </Button>
-                      </Box>
-                    </Paper>
-                  ))
-                )}
-              </Box>
-
-              <Divider sx={{ mb: 4 }} />
-
-              <Typography variant="h6" sx={{ mb: 3, color: 'var(--primary)' }}>
-                添加评论
-              </Typography>
-
-              <Box>
-                <TextField
-                  fullWidth
-                  label="评论内容"
-                  multiline
-                  rows={isMobile ? 3 : 4}
-                  value={commentForm.content}
-                  inputRef={commentInputRef}
-                  onChange={(e) =>
-                    setCommentForm((prev) => ({
-                      ...prev,
-                      content: e.target.value,
-                    }))
-                  }
-                  placeholder="写下您的想法..."
-                  margin="normal"
-                  variant="outlined"
-                  size={isMobile ? 'small' : 'medium'}
-                  sx={{ mb: 3 }}
-                />
-
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={submittingComment}
-                  onClick={handleCommentSubmit}
-                  fullWidth={isMobile}
-                  sx={{
-                    mt: 3,
-                    '&:hover': { backgroundColor: '#5a67d8' },
-                    py: 1.2,
-                  }}
-                >
-                  {submittingComment ? '提交中...' : '提交评论'}
-                </Button>
-              </Box>
-            </Paper>
           </>
         )}
       </Container>

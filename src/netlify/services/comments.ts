@@ -4,19 +4,23 @@ import { http } from '../config/http';
 
 export const commentsApi = {
   getByCardId: async (
-    cardId: string
+    card_id: string
   ): Promise<ApiResponse<{ comments: Comment[] }>> => {
     return http.get<{ comments: Comment[] }>('/comments', 'getByCardId', {
-      cardId,
+      card_id,
     });
   },
 
   create: async (data: {
-    cardId: string;
+    card_id: string;
     comment: string;
     name?: string;
   }): Promise<ApiResponse<Comment>> => {
-    return http.post<Comment>('/comments', 'create', data);
+    return http.post<Comment>('/comments', 'create', {
+      card_id: data.card_id,
+      comment: data.comment,
+      name: data.name,
+    });
   },
 };
 

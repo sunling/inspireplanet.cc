@@ -37,14 +37,13 @@ export const cardsApi = {
   },
 
   like: async (
-    cardId: string
-  ): Promise<ApiResponse<{ success: boolean; likesCount: number }>> => {
-    return http.post<{ success: boolean; likesCount: number }>(
+    card_id: string
+  ): Promise<ApiResponse<{ success: boolean; likes_count: number }>> => {
+    return http.post<{ success: boolean; likes_count: number }>(
       '/cards',
       'like',
       {
-        functionName: 'like',
-        cardId,
+        card_id,
       }
     );
   },

@@ -1,0 +1,45 @@
+.page {
+  min-height: 100vh;
+  padding: 1rem;
+  background: #fffaf6;
+}
+
+.header {
+  padding: 4.5rem 1rem 2rem;
+  text-align: center;
+}
+
+.header p {
+  margin: 0 0 0.65rem;
+  color: #d96642;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.header h1 {
+  margin: 0;
+  color: #302d2a;
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.header span {
+  display: block;
+  max-width: 520px;
+  margin: 1rem auto 0;
+  color: #706961;
+  line-height: 1.7;
+}
+
+@media (max-width: 600px) {
+  .page {
+    padding: 0 0.5rem;
+  }
+
+  .header {
+    padding: 3rem 0.5rem 1rem;
+  }
+}

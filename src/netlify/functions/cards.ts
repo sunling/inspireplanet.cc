@@ -178,7 +178,7 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
     cache.allCards = null;
     cache.cardsByIds = {};
     const requestData = getDataFromEvent(event);
-    const userId = requestData.userId;
+    const user_id = requestData.user_id;
     const idParam = requestData.id;
     const pageParam = requestData.page ? parseInt(requestData.page, 10) : null;
     const limitParam = requestData.limit
@@ -223,8 +223,8 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
         )
       : query.or('is_private.eq.false,is_private.is.null');
 
-    if (userId) {
-      query = query.eq('user_id', userId);
+    if (user_id) {
+      query = query.eq('user_id', user_id);
     }
 
     query = query.order('created', { ascending: false }).limit(25);
@@ -431,7 +431,7 @@ async function handleLike(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse(updateError.message, 500);
     }
 
-    return createSuccessResponse({ likesCount: next });
+    return createSuccessResponse({ likes_count: next });
   } catch (e: any) {
     return createErrorResponse(e.message || '服务器错误', 500);
   }
@@ -467,9 +467,9 @@ async function deleteCard(
 
     // 从查询参数获取卡片ID
     const params = event.queryStringParameters || {};
-    const cardId = params.id;
+    const card_id = params.id;
 
-    if (!cardId) {
+    if (!card_id) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Missing card id' }),
@@ -480,7 +480,7 @@ async function deleteCard(
     const { data: existingCard, error: fetchError } = await supabase
       .from('cards')
       .select('*')
-      .eq('id', cardId)
+      .eq('id', card_id)
       .single();
 
     if (fetchError || !existingCard) {
@@ -551,13 +551,13 @@ async function deleteCard(
     }
 
     // 删除Supabase中的卡片
-    console.log('Attempting to delete card from Supabase, id:', cardId);
+    console.log('Attempting to delete card from Supabase, id:', card_id);
 
     // 先检查卡片是否真的存在
     const { data: cardBeforeDelete, error: checkError } = await supabase
       .from('cards')
       .select('id, username, creator')
-      .eq('id', cardId)
+      .eq('id', card_id)
       .single();
 
     console.log('Card before delete:', cardBeforeDelete);
@@ -578,7 +578,7 @@ async function deleteCard(
     } = await supabase
       .from('cards')
       .delete({ count: 'exact' })
-      .eq('id', cardId)
+      .eq('id', card_id)
       .select();
 
     console.log('Delete operation result:', {

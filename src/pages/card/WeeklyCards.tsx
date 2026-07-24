@@ -26,6 +26,7 @@ import { useGlobalSnackbar } from '@/context/app';
 import Empty from '@/components/Empty';
 import Loading from '@/components/Loading';
 import { WeeklyCard } from '../../netlify/services/weeklyCards';
+import styles from './weeklyCards.module.css';
 
 export interface WeeklyCardItem extends WeeklyCard {
   gradient: string;
@@ -536,14 +537,14 @@ const WeeklyCards: React.FC = () => {
     );
   };
 
-  const handleDownloadCard = async (cardId: string) => {
+  const handleDownloadCard = async (card_id: string) => {
     let wrapper: HTMLDivElement | null = null;
 
     try {
-      const original = document.getElementById(`card-${cardId}`);
+      const original = document.getElementById(`card-${card_id}`);
       if (!original) return;
 
-      const card = cards.find((c) => c.id === cardId);
+      const card = cards.find((c) => c.id === card_id);
       if (!card) return;
 
       wrapper = document.createElement('div');
@@ -654,7 +655,7 @@ const WeeklyCards: React.FC = () => {
       });
 
       const link = document.createElement('a');
-      link.download = `weekly-card-${cardId}.png`;
+      link.download = `weekly-card-${card_id}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (error) {
@@ -708,19 +709,25 @@ const WeeklyCards: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        py: 8,
-        background: '#fff9f0',
+        pb: 8,
+        background: '#fffaf6',
       }}
     >
       <Container maxWidth="lg">
+        <header className={styles.header}>
+          <p>星友分享</p>
+          <h1>启发星球周刊</h1>
+          <span>从每周真实的分享里，收藏一句话，也带走一个新的视角。</span>
+        </header>
+
         <Paper
-          elevation={1}
+          elevation={0}
           sx={{
-            p: 3,
-            mb: 6,
-            borderRadius: '12px',
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
+            p: { xs: 1.5, sm: 2 },
+            mb: 7,
+            border: '1px solid #e9e0d7',
+            borderRadius: '16px',
+            backgroundColor: '#fff',
           }}
         >
           <TextField
@@ -780,7 +787,12 @@ const WeeklyCards: React.FC = () => {
                   <Typography
                     variant="h3"
                     component="h2"
-                    sx={{ fontWeight: 'bold', mb: 3, color: '#4a4a6a' }}
+                    sx={{
+                      fontFamily: 'var(--font-serif)',
+                      fontWeight: 600,
+                      mb: 3,
+                      color: '#302d2a',
+                    }}
                   >
                     {year} 年
                   </Typography>
@@ -793,11 +805,12 @@ const WeeklyCards: React.FC = () => {
                       component="h3"
                       id={`episode-${year}-${episode.toLowerCase()}`}
                       sx={{
-                        fontWeight: 'bold',
+                        fontFamily: 'var(--font-serif)',
+                        fontWeight: 600,
                         paddingBottom: '0.75rem',
                         marginBottom: '1.5rem',
-                        color: '#667eea',
-                        borderBottom: '1px solid #667eea',
+                        color: '#3b3733',
+                        borderBottom: '1px solid #e9e0d7',
                       }}
                     >
                       {episode}
@@ -824,19 +837,29 @@ const WeeklyCards: React.FC = () => {
                               }}
                             >
                               <Paper
-                                elevation={1}
+                                elevation={0}
                                 id={`card-${card.id}`}
                                 className={cardGradientClass}
                                 sx={{
                                   height: '100%',
-                                  borderRadius: '12px',
+                                  borderRadius: '16px',
                                   overflow: 'hidden',
-                                  p: 4,
+                                  p: { xs: 2.5, sm: 3.5 },
                                   color: fontColor,
                                   position: 'relative',
-                                  backdropFilter: 'blur(10px)',
                                   display: 'flex',
                                   flexDirection: 'column',
+                                  border:
+                                    '1px solid rgba(255, 255, 255, 0.28)',
+                                  boxShadow:
+                                    '0 8px 24px rgba(75, 55, 42, 0.08)',
+                                  transition:
+                                    'transform 0.2s ease, box-shadow 0.2s ease',
+                                  '&:hover': {
+                                    transform: 'translateY(-3px)',
+                                    boxShadow:
+                                      '0 12px 30px rgba(75, 55, 42, 0.12)',
+                                  },
                                 }}
                               >
                                 <Box className="card-export-content">
@@ -954,9 +977,7 @@ const WeeklyCards: React.FC = () => {
                                     }}
                                   >
                                     {card.name ? (
-                                      <>
-                                        星友「{card.name}」的分享
-                                      </>
+                                      <>星友「{card.name}」的分享</>
                                     ) : (
                                       '星友分享'
                                     )}
@@ -980,9 +1001,9 @@ const WeeklyCards: React.FC = () => {
                                   position: 'absolute',
                                   bottom: 10,
                                   right: 10,
-                                  backgroundColor: '#667eea',
+                                  backgroundColor: toRgba(fontColor, 0.72),
                                   '&:hover': {
-                                    backgroundColor: '#5a67d8',
+                                    backgroundColor: toRgba(fontColor, 0.9),
                                     opacity: '1',
                                   },
                                   minWidth: 'auto',
@@ -1015,7 +1036,17 @@ const WeeklyCards: React.FC = () => {
               variant="outlined"
               onClick={handleShowAll}
               disabled={loadingAll}
-              sx={{ color: '#667eea', borderColor: '#667eea', px: 4 }}
+              sx={{
+                color: '#c95837',
+                borderColor: '#d9a28e',
+                borderRadius: '999px',
+                px: 4,
+                '&:hover': {
+                  color: '#a9462c',
+                  borderColor: '#c95837',
+                  backgroundColor: '#fff7f2',
+                },
+              }}
             >
               {loadingAll ? '加载中…' : '查看往期'}
             </Button>
@@ -1032,6 +1063,12 @@ const WeeklyCards: React.FC = () => {
               }}
               color="primary"
               shape="rounded"
+              sx={{
+                '& .Mui-selected': {
+                  backgroundColor: '#d96642 !important',
+                  color: '#fff',
+                },
+              }}
             />
           </Box>
         )}
@@ -1039,13 +1076,12 @@ const WeeklyCards: React.FC = () => {
         {/* 返回首页链接 */}
         <Box sx={{ mt: 8, textAlign: 'center' }}>
           <Button
-            variant="contained"
+            variant="text"
             component={Link}
             to="/"
             sx={{
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              color: '#667eea',
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
+              color: '#c95837',
+              '&:hover': { backgroundColor: '#fff1e9' },
               py: 1.2,
               px: 4,
             }}

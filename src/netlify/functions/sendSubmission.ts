@@ -34,15 +34,28 @@ export async function handler(
     return createErrorResponse('邮件服务尚未配置', 500);
   }
 
+  const to = process.env.CONTACT_EMAIL?.split(',')
+    .map((address) => address.trim())
+    .filter(Boolean);
+  const cc = process.env.SUBMISSION_CC_EMAILS?.split(',')
+    .map((address) => address.trim())
+    .filter(Boolean);
+  if (!to?.length || !cc?.length) {
+    console.error(
+      '[sendSubmission] CONTACT_EMAIL or SUBMISSION_CC_EMAILS is not configured'
+    );
+    return createErrorResponse('投稿邮件收件人尚未配置', 500);
+  }
+
   try {
     const resend = new Resend(resendKey);
     const from = process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc';
-    const to = process.env.CONTACT_EMAIL || 'sunling621@gmail.com';
     const author = name.trim().slice(0, 80);
 
     const { error } = await resend.emails.send({
       from: `启发星球 <${from}>`,
       to,
+      cc,
       replyTo: email.trim(),
       subject: `启发星球新投稿｜${author}`,
       text: [

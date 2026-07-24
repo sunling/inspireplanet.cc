@@ -146,6 +146,7 @@ export interface Comment {
   card_id: string;
   name: string;
   comment: string;
+  created: string;
   created_at: string;
   [key: string]: any;
 }
