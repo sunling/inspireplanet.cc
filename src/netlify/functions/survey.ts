@@ -359,7 +359,6 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     }
 
     const existingQuestionIds = (existingQuestions || []).map((q) => q.id);
-    const newQuestionIds = questions.map((q) => q.id);
 
     // 更新或创建问题
     const questionPromises = questions.map((question, index) => {
@@ -423,23 +422,6 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     if (questionErrors.length > 0) {
       console.error('Error updating/creating questions:', questionErrors);
       return createErrorResponse('更新问题失败', 500);
-    }
-
-    // 删除被移除的问题（不存在于新列表中的旧问题）
-    const removedQuestionIds = existingQuestionIds.filter(
-      (existingId) => !newQuestionIds.includes(existingId)
-    );
-
-    if (removedQuestionIds.length > 0) {
-      const { error: deleteError } = await supabase
-        .from('survey_questions')
-        .delete()
-        .in('id', removedQuestionIds);
-
-      if (deleteError) {
-        console.error('Error deleting removed questions:', deleteError);
-        return createErrorResponse(deleteError.message, 500);
-      }
     }
 
     return createSuccessResponse({ id, message: '问卷更新成功' });
