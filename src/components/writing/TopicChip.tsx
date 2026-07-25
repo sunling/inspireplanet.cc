@@ -21,34 +21,14 @@ const TopicChip: React.FC<TopicChipProps> = ({
     variant="outlined"
     sx={[
       {
-        borderColor: selected
-          ? '#496a61'
-          : topic.is_user_created
-            ? '#d9c8df'
-            : '#d9d1c7',
-        bgcolor: selected
-          ? '#496a61'
-          : topic.is_user_created
-            ? '#faf6fc'
-            : '#fcfaf7',
-        color: selected
-          ? '#fff'
-          : topic.is_user_created
-            ? '#735b7c'
-            : '#625a52',
+        borderColor: selected ? '#496a61' : '#d9d1c7',
+        bgcolor: selected ? '#496a61' : '#fcfaf7',
+        color: selected ? '#fff' : '#625a52',
         fontWeight: selected ? 700 : 500,
         '&:hover': props.onClick
           ? {
-              bgcolor: selected
-                ? '#3f5d55'
-                : topic.is_user_created
-                  ? '#f3eaf6'
-                  : '#f3eee8',
-              borderColor: selected
-                ? '#3f5d55'
-                : topic.is_user_created
-                  ? '#cbb3d3'
-                  : '#c9bdb0',
+              bgcolor: selected ? '#3f5d55' : '#f3eee8',
+              borderColor: selected ? '#3f5d55' : '#c9bdb0',
             }
           : undefined,
       },

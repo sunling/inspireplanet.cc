@@ -28,8 +28,15 @@ import {
   DialogActions,
   IconButton,
   Pagination,
+  Divider,
+  useMediaQuery,
 } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import {
+  ArrowBack,
+  CalendarTodayOutlined,
+  EmailOutlined,
+} from '@mui/icons-material';
 import {
   meetupsApi,
   rsvpApi,
@@ -60,6 +67,8 @@ const MeetupParticipants: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const showSnackbar = useGlobalSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [meetup, setMeetup] = useState<Meetup | null>(null);
   const [participants, setParticipants] = useState<RSVP[]>([]);
@@ -360,14 +369,28 @@ const MeetupParticipants: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container
+      maxWidth="lg"
+      sx={{ py: { xs: 2, sm: 4 }, px: { xs: 2, sm: 3 } }}
+    >
       {/* 页面标题 */}
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box
+        sx={{
+          mb: { xs: 3, sm: 4 },
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 1,
+        }}
+      >
         <IconButton onClick={() => navigate('/meetup-participants-list')}>
           <ArrowBack />
         </IconButton>
         <Box>
-          <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
+          <Typography
+            variant="h4"
+            fontWeight="bold"
+            sx={{ mb: 0.5, fontSize: { xs: '1.35rem', sm: '2.125rem' } }}
+          >
             {meetup?.title || '加载中...'} - 报名管理
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -387,6 +410,9 @@ const MeetupParticipants: React.FC = () => {
           gap: 2,
           flexWrap: 'wrap',
           alignItems: 'center',
+          '& > *': {
+            width: { xs: '100%', sm: 'auto' },
+          },
         }}
       >
         {/* 搜索框 */}
@@ -395,11 +421,11 @@ const MeetupParticipants: React.FC = () => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           size="small"
-          sx={{ flex: 1, minWidth: 200 }}
+          sx={{ flex: 1, minWidth: { sm: 200 } }}
         />
 
         {/* 状态筛选 */}
-        <FormControl size="small" sx={{ minWidth: 150 }}>
+        <FormControl size="small" sx={{ minWidth: { sm: 150 } }}>
           <InputLabel>状态</InputLabel>
           <Select
             value={filterStatus}
@@ -475,10 +501,298 @@ const MeetupParticipants: React.FC = () => {
       )}
 
       {/* 报名列表 */}
-      <Card>
+      <Card
+        sx={{
+          overflow: 'visible',
+          bgcolor: { xs: 'transparent', sm: 'background.paper' },
+          boxShadow: { xs: 'none', sm: 1 },
+        }}
+      >
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
             <CircularProgress size={40} />
+          </Box>
+        ) : isMobile ? (
+          <Box sx={{ p: { xs: 0, sm: 2 } }}>
+            {filteredParticipants.length > 0 && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  mb: 2,
+                  px: { xs: 0.5, sm: 1 },
+                }}
+              >
+                <Checkbox
+                  checked={
+                    selectedParticipants.length ===
+                      filteredParticipants.length &&
+                    filteredParticipants.length > 0
+                  }
+                  indeterminate={
+                    selectedParticipants.length > 0 &&
+                    selectedParticipants.length < filteredParticipants.length
+                  }
+                  onChange={toggleSelectAll}
+                />
+                <Typography variant="body2" fontWeight={600}>
+                  {selectedParticipants.length > 0
+                    ? `已选择 ${selectedParticipants.length} 人`
+                    : `全选当前 ${filteredParticipants.length} 人`}
+                </Typography>
+              </Box>
+            )}
+
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: 'minmax(0, 1fr)',
+                  md: 'repeat(2, minmax(0, 1fr))',
+                },
+                gap: 2,
+              }}
+            >
+              {filteredParticipants.map((participant) => {
+                const answerItems =
+                  participant.survey_answers && survey
+                    ? parseSurveyAnswers(participant.survey_answers, survey)
+                    : [];
+
+                return (
+                  <Card
+                    key={participant.id}
+                    variant="outlined"
+                    sx={{
+                      borderRadius: 2.5,
+                      borderColor: selectedParticipants.includes(participant.id)
+                        ? 'primary.main'
+                        : 'divider',
+                      bgcolor: 'background.paper',
+                      transition: 'border-color 0.2s, box-shadow 0.2s',
+                      boxShadow: selectedParticipants.includes(participant.id)
+                        ? 2
+                        : 0,
+                    }}
+                  >
+                    <CardContent
+                      sx={{
+                        p: { xs: 2, sm: 2.5 },
+                        '&:last-child': { pb: { xs: 2, sm: 2.5 } },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 1,
+                          mb: 1.5,
+                        }}
+                      >
+                        <Checkbox
+                          sx={{ p: 0.5, ml: -0.5, mt: -0.25 }}
+                          checked={selectedParticipants.includes(
+                            participant.id
+                          )}
+                          onChange={() => toggleSelect(participant.id)}
+                          disabled={participant.status === RSVPStatus.CANCELLED}
+                        />
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                          <Typography fontWeight={700} fontSize="1.05rem">
+                            {participant.name || '未知'}
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              gap: 1,
+                              mt: 1,
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                px: 1.25,
+                                py: 0.5,
+                                borderRadius: 10,
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                backgroundColor: getRSVPStatusStyle(
+                                  participant.status
+                                ).backgroundColor,
+                                color: getRSVPStatusStyle(participant.status)
+                                  .color,
+                              }}
+                            >
+                              {getRSVPStatusLabel(participant.status)}
+                            </Box>
+                            <Box
+                              sx={{
+                                px: 1.25,
+                                py: 0.5,
+                                borderRadius: 10,
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                backgroundColor: getApprovalStatusStyle(
+                                  participant.application_status
+                                ).backgroundColor,
+                                color: getApprovalStatusStyle(
+                                  participant.application_status
+                                ).color,
+                              }}
+                            >
+                              {getApprovalStatusLabel(
+                                participant.application_status
+                              )}
+                            </Box>
+                          </Box>
+                        </Box>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1,
+                          color: 'text.secondary',
+                        }}
+                      >
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <EmailOutlined sx={{ fontSize: 18, flexShrink: 0 }} />
+                          <Typography
+                            variant="body2"
+                            sx={{ overflowWrap: 'anywhere' }}
+                          >
+                            {participant.email || '未填写邮箱'}
+                          </Typography>
+                        </Box>
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <CalendarTodayOutlined
+                            sx={{ fontSize: 17, flexShrink: 0 }}
+                          />
+                          <Typography variant="body2">
+                            {new Date(participant.created_at).toLocaleString(
+                              'zh-CN'
+                            )}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      <Divider sx={{ my: 2 }} />
+
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          fontWeight={600}
+                        >
+                          报名答案
+                        </Typography>
+                        {answerItems.length > 0 ? (
+                          <TextCollapse
+                            text=""
+                            maxItems={3}
+                            sx={{
+                              mt: 0.75,
+                              pl: 2.25,
+                              fontSize: '0.875rem',
+                            }}
+                          >
+                            {answerItems.map((item, idx) => (
+                              <Box
+                                component="li"
+                                key={idx}
+                                sx={{ mb: 0.5, lineHeight: 1.5 }}
+                              >
+                                <Typography
+                                  component="span"
+                                  variant="body2"
+                                  sx={{ fontWeight: 500 }}
+                                >
+                                  {item.title}
+                                </Typography>
+                                <Typography
+                                  component="span"
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  ：{item.answer}
+                                </Typography>
+                              </Box>
+                            ))}
+                          </TextCollapse>
+                        ) : participant.survey_answers ? (
+                          <Typography
+                            variant="body2"
+                            sx={{ mt: 0.75, overflowWrap: 'anywhere' }}
+                          >
+                            {participant.survey_answers}
+                          </Typography>
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mt: 0.75 }}
+                          >
+                            无
+                          </Typography>
+                        )}
+                      </Box>
+
+                      <Divider sx={{ my: 2 }} />
+
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'flex-end',
+                          gap: 1,
+                        }}
+                      >
+                        {participant.application_status ===
+                          ApprovalStatus.PENDING && (
+                          <>
+                            <Button
+                              variant="outlined"
+                              color="success"
+                              onClick={() => approveParticipant(participant.id)}
+                              loading={approvingIds.has(participant.id)}
+                              loadingPosition="start"
+                            >
+                              通过
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              onClick={() => rejectParticipant(participant.id)}
+                              loading={rejectingIds.has(participant.id)}
+                              loadingPosition="start"
+                            >
+                              拒绝
+                            </Button>
+                          </>
+                        )}
+                        {participant.application_status ===
+                          ApprovalStatus.APPROVED && (
+                          <Typography variant="body2" color="text.secondary">
+                            已审批通过
+                          </Typography>
+                        )}
+                        {participant.application_status ===
+                          ApprovalStatus.REJECTED && (
+                          <Typography variant="body2" color="text.secondary">
+                            已拒绝
+                          </Typography>
+                        )}
+                      </Box>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </Box>
           </Box>
         ) : (
           <TableContainer component={Paper}>
@@ -491,6 +805,11 @@ const MeetupParticipants: React.FC = () => {
                         selectedParticipants.length ===
                           filteredParticipants.length &&
                         filteredParticipants.length > 0
+                      }
+                      indeterminate={
+                        selectedParticipants.length > 0 &&
+                        selectedParticipants.length <
+                          filteredParticipants.length
                       }
                       onChange={toggleSelectAll}
                     />
@@ -670,15 +989,18 @@ const MeetupParticipants: React.FC = () => {
         )}
 
         {/* 分页组件 */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, pb: 4 }}>
-          <Pagination
-            count={Math.ceil(totalCount / pageSize)}
-            page={currentPage}
-            onChange={handlePageChange}
-            color="primary"
-            size="large"
-          />
-        </Box>
+        {totalCount > pageSize && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, pb: 4 }}>
+            <Pagination
+              count={Math.ceil(totalCount / pageSize)}
+              page={currentPage}
+              onChange={handlePageChange}
+              color="primary"
+              size="small"
+              siblingCount={0}
+            />
+          </Box>
+        )}
       </Card>
 
       {/* 空状态 */}
