@@ -479,7 +479,10 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
         .single();
 
       if (surveyError || !survey) {
-        console.error('Error creating survey during meetup update:', surveyError);
+        console.error(
+          'Error creating survey during meetup update:',
+          surveyError
+        );
         return createErrorResponse('创建报名问卷失败', 500);
       }
 
@@ -528,43 +531,45 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('更新活动数据库失败', 500);
     }
 
-    if (
-      Array.isArray(survey_questions) &&
-      existingMeetup.survey_id
-    ) {
-      const { error: deleteQuestionsError } = await supabase
-        .from('survey_questions')
-        .delete()
-        .eq('survey_id', existingMeetup.survey_id);
+    if (Array.isArray(survey_questions) && existingMeetup.survey_id) {
+      const questionPromises = survey_questions.map(
+        (question: any, index: number) => {
+          const questionData = {
+            type: question.type,
+            title: question.title,
+            description: question.description,
+            required: question.required,
+            options: question.options,
+            max_rating: question.maxRating,
+            placeholder: question.placeholder,
+            sort_order: question.sortOrder ?? index,
+          };
+          const hasPersistedId =
+            typeof question.id === 'string' &&
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+              question.id
+            );
 
-      if (deleteQuestionsError) {
-        console.error('Error deleting old survey questions:', deleteQuestionsError);
-        return createErrorResponse('更新报名问题失败', 500);
-      }
-
-      if (survey_questions.length > 0) {
-        const questionPromises = survey_questions.map(
-          (question: any, index: number) => {
-            return supabase.from('survey_questions').insert({
-              survey_id: existingMeetup.survey_id,
-              type: question.type,
-              title: question.title,
-              description: question.description,
-              required: question.required,
-              options: question.options,
-              max_rating: question.maxRating,
-              placeholder: question.placeholder,
-              sort_order: question.sortOrder ?? index,
-            });
+          if (hasPersistedId) {
+            return supabase
+              .from('survey_questions')
+              .update(questionData)
+              .eq('id', question.id)
+              .eq('survey_id', existingMeetup.survey_id);
           }
-        );
-        const questionResults = await Promise.all(questionPromises);
-        const questionErrors = questionResults.filter((result) => result.error);
 
-        if (questionErrors.length > 0) {
-          console.error('Error updating survey questions:', questionErrors);
-          return createErrorResponse('更新报名问题失败', 500);
+          return supabase.from('survey_questions').insert({
+            survey_id: existingMeetup.survey_id,
+            ...questionData,
+          });
         }
+      );
+      const questionResults = await Promise.all(questionPromises);
+      const questionErrors = questionResults.filter((result) => result.error);
+
+      if (questionErrors.length > 0) {
+        console.error('Error updating survey questions:', questionErrors);
+        return createErrorResponse('更新报名问题失败', 500);
       }
     }
 
