@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import html2canvas from 'html2canvas';
@@ -26,6 +26,7 @@ const presets = {
     title: '加入启发星球微信群',
     description: '和我们一起分享最近的启发、问题和行动。',
     qrLabel: '扫码进入：加入微信群',
+    groupQrLabel: '扫码加入：启发星球微信群',
     url: `${siteOrigin}/join`,
   },
   dialogue: {
@@ -33,6 +34,7 @@ const presets = {
     title: '一起把问题说清楚',
     description: '带着一个最近真实面对、还没有想清楚的问题来。',
     qrLabel: '扫码进入：对话实验报名',
+    groupQrLabel: '扫码加入：活动群聊',
     url: `${siteOrigin}/clarify-together/participant`,
   },
   cards: {
@@ -40,6 +42,7 @@ const presets = {
     title: '创建一张启发卡片',
     description: '把此刻触动你的想法、句子和经历，做成一张可以分享的卡片。',
     qrLabel: '扫码进入：创建启发卡片',
+    groupQrLabel: '扫码加入：交流群聊',
     url: `${siteOrigin}/create-card`,
   },
 };
@@ -87,7 +90,7 @@ const TextStyleControls: React.FC<TextStyleControlsProps> = ({
               ...value,
               fontSize: Math.min(
                 120,
-                Math.max(8, Number(event.target.value) || 8),
+                Math.max(8, Number(event.target.value) || 8)
               ),
             })
           }
@@ -101,7 +104,9 @@ const TextStyleControls: React.FC<TextStyleControlsProps> = ({
         <input
           type="color"
           value={value.color}
-          onChange={(event) => onChange({ ...value, color: event.target.value })}
+          onChange={(event) =>
+            onChange({ ...value, color: event.target.value })
+          }
         />
         <span>{value.color.toUpperCase()}</span>
       </span>
@@ -143,30 +148,64 @@ const DialoguePoster: React.FC = () => {
     qrLabel:
       searchParams.get('qrLabel') ||
       (legacyLabel ? `扫码进入：${legacyLabel}` : presets.community.qrLabel),
+    groupQrLabel:
+      searchParams.get('groupQrLabel') || presets.community.groupQrLabel,
     url: searchParams.get('url') || presets.community.url,
   };
   const posterRef = useRef<HTMLDivElement>(null);
+  const qrImageInputRef = useRef<HTMLInputElement>(null);
   const [eyebrow, setEyebrow] = useState(initial.eyebrow);
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description);
   const [qrLabel, setQrLabel] = useState(initial.qrLabel);
+  const [groupQrLabel, setGroupQrLabel] = useState(initial.groupQrLabel);
   const [url, setUrl] = useState(initial.url);
   const [qrColor, setQrColor] = useState('#273a36');
+  const [qrImageUrl, setQrImageUrl] = useState('');
+  const [qrImageName, setQrImageName] = useState('');
   const [textStyles, setTextStyles] = useState(defaultTextStyles);
   const [downloading, setDownloading] = useState(false);
   const qrUrl = useMemo(() => normalizeUrl(url), [url]);
+
+  useEffect(
+    () => () => {
+      if (qrImageUrl) URL.revokeObjectURL(qrImageUrl);
+    },
+    [qrImageUrl]
+  );
+
+  const handleQrImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setQrImageUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return URL.createObjectURL(file);
+    });
+    setQrImageName(file.name);
+  };
+
+  const removeQrImage = () => {
+    setQrImageUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return '';
+    });
+    setQrImageName('');
+    if (qrImageInputRef.current) qrImageInputRef.current.value = '';
+  };
 
   const applyPreset = (preset: (typeof presets)[keyof typeof presets]) => {
     setEyebrow(preset.eyebrow);
     setTitle(preset.title);
     setDescription(preset.description);
     setQrLabel(preset.qrLabel);
+    setGroupQrLabel(preset.groupQrLabel);
     setUrl(preset.url);
   };
 
   const updateTextStyle = (
     field: keyof typeof defaultTextStyles,
-    value: PosterTextStyle,
+    value: PosterTextStyle
   ) => {
     setTextStyles((current) => ({ ...current, [field]: value }));
   };
@@ -190,18 +229,20 @@ const DialoguePoster: React.FC = () => {
       });
 
       const exportEyebrow = exportPoster.querySelector(
-        '[data-poster-eyebrow]',
+        '[data-poster-eyebrow]'
       ) as HTMLElement | null;
       const exportTitle = exportPoster.querySelector(
-        '[data-poster-title]',
+        '[data-poster-title]'
       ) as HTMLElement | null;
       const exportDescription = exportPoster.querySelector(
-        '[data-poster-description]',
+        '[data-poster-description]'
       ) as HTMLElement | null;
-      const exportQrLabel = exportPoster.querySelector(
-        '[data-poster-qr-label]',
-      ) as HTMLElement | null;
-      const exportQr = exportPoster.querySelector('.poster-export-qr');
+      const exportQrLabels = Array.from(
+        exportPoster.querySelectorAll<HTMLElement>('[data-poster-qr-label]')
+      );
+      const exportQrs = Array.from(
+        exportPoster.querySelectorAll('.poster-export-qr')
+      );
 
       if (exportEyebrow) {
         exportEyebrow.style.lineHeight = '1.45';
@@ -213,21 +254,29 @@ const DialoguePoster: React.FC = () => {
       if (exportDescription) {
         exportDescription.style.lineHeight = '1.7';
       }
-      if (exportQr instanceof SVGElement) {
-        exportQr.style.width = '172px';
-        exportQr.style.height = '172px';
-      }
-      if (exportQrLabel) {
-        exportQrLabel.style.lineHeight = '1.4';
-      }
+      exportQrs.forEach((exportQr) => {
+        if (
+          exportQr instanceof SVGElement ||
+          exportQr instanceof HTMLImageElement
+        ) {
+          exportQr.style.width = '172px';
+          exportQr.style.height = '172px';
+        }
+      });
+      exportQrLabels.forEach((label) => {
+        label.style.lineHeight = '1.4';
+      });
 
-      [exportEyebrow, exportTitle, exportDescription, exportQrLabel].forEach(
-        (element) => element && wrapTextForExport(element),
-      );
+      [
+        exportEyebrow,
+        exportTitle,
+        exportDescription,
+        ...exportQrLabels,
+      ].forEach((element) => element && wrapTextForExport(element));
 
       document.body.appendChild(exportPoster);
       await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       );
 
       const canvas = await html2canvas(exportPoster, {
@@ -328,6 +377,25 @@ const DialoguePoster: React.FC = () => {
                 {qrLabel || '扫码进入：启发星球页面'}
               </span>
             </div>
+            {qrImageUrl && (
+              <div className={styles.qrBox}>
+                <img
+                  src={qrImageUrl}
+                  alt="群聊二维码"
+                  className={`poster-export-qr ${styles.uploadedQr}`}
+                />
+                <span
+                  data-poster-qr-label
+                  style={{
+                    fontSize: textStyles.qrLabel.fontSize,
+                    color: textStyles.qrLabel.color,
+                    textAlign: textStyles.qrLabel.textAlign,
+                  }}
+                >
+                  {groupQrLabel || '扫码加入：活动群聊'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -376,18 +444,54 @@ const DialoguePoster: React.FC = () => {
           </div>
           <div className={styles.editorField}>
             <label>
-              二维码下方文字
+              活动二维码备注
               <textarea
                 rows={2}
                 value={qrLabel}
                 onChange={(event) => setQrLabel(event.target.value)}
-                placeholder="例如：扫码进入活动详情"
+                placeholder="例如：扫码查看活动详情并报名"
               />
             </label>
             <TextStyleControls
               value={textStyles.qrLabel}
               onChange={(value) => updateTextStyle('qrLabel', value)}
             />
+          </div>
+          <div className={styles.uploadField}>
+            <span>群聊二维码图片（可选）</span>
+            <input
+              ref={qrImageInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={handleQrImageChange}
+            />
+            <div className={styles.uploadActions}>
+              <button
+                type="button"
+                onClick={() => qrImageInputRef.current?.click()}
+              >
+                {qrImageUrl ? '更换二维码' : '上传群聊二维码'}
+              </button>
+              {qrImageUrl && (
+                <button type="button" onClick={removeQrImage}>
+                  移除图片
+                </button>
+              )}
+            </div>
+            <small>
+              {qrImageName
+                ? `当前使用：${qrImageName}`
+                : '上传后会与活动二维码同时展示。'}
+            </small>
+            <label>
+              群聊二维码备注
+              <textarea
+                rows={2}
+                value={groupQrLabel}
+                onChange={(event) => setGroupQrLabel(event.target.value)}
+                placeholder="例如：扫码加入活动群，二维码 7 天内有效"
+              />
+            </label>
           </div>
           <label>
             页面地址
@@ -407,7 +511,7 @@ const DialoguePoster: React.FC = () => {
               />
               <span>{qrColor.toUpperCase()}</span>
             </span>
-            <small>背景自动与海报底色融合，请选择较深的二维码颜色。</small>
+            <small>此颜色用于根据页面地址生成的活动二维码。</small>
           </label>
 
           <div className={styles.actions}>
@@ -423,7 +527,9 @@ const DialoguePoster: React.FC = () => {
             </a>
             <Link to="/create-card">创建启发卡片</Link>
           </div>
-          <small>二维码统一使用正式域名，即使在本地制作也可以直接分享。</small>
+          <small>
+            活动二维码统一使用正式域名；上传群聊二维码后，两张二维码会一起出现在海报中。
+          </small>
         </aside>
       </div>
     </main>
