@@ -12,7 +12,6 @@ import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import { WritingPost } from '../../netlify/types';
 import { formatLocalDateTime } from '../../utils/date';
 import HighlightedText from './HighlightedText';
-import TopicChip from './TopicChip';
 
 interface WritingCardProps {
   post: WritingPost;
@@ -191,9 +190,19 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
             </Box>
           )}
 
-          <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 2 }}>
+          <Box sx={{ display: 'flex', gap: 1.25, flexWrap: 'wrap', mb: 2 }}>
             {post.topics.map((topic) => (
-              <TopicChip key={topic.id} topic={topic} size="small" />
+              <Typography
+                key={topic.id}
+                component="span"
+                variant="body2"
+                sx={{
+                  color: '#496a61',
+                  fontWeight: 600,
+                }}
+              >
+                {topic.name.startsWith('#') ? topic.name : `#${topic.name}`}
+              </Typography>
             ))}
           </Box>
 

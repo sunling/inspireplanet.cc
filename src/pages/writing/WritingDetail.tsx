@@ -32,7 +32,6 @@ import { writingInteractionsApi, writingsApi } from '../../netlify/config';
 import { formatDate, formatLocalDateTime } from '../../utils/date';
 import { useGlobalSnackbar } from '../../context/app';
 import HighlightedText from '../../components/writing/HighlightedText';
-import TopicChip from '../../components/writing/TopicChip';
 import { isUserLoggedIn } from '../../utils/user';
 
 const WritingDetail: React.FC = () => {
@@ -599,9 +598,21 @@ const WritingDetail: React.FC = () => {
               )}
 
               {post.topics.length > 0 && (
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
                   {post.topics.map((topic) => (
-                    <TopicChip key={topic.id} topic={topic} />
+                    <Typography
+                      key={topic.id}
+                      component="span"
+                      variant="body2"
+                      sx={{
+                        color: '#496a61',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {topic.name.startsWith('#')
+                        ? topic.name
+                        : `#${topic.name}`}
+                    </Typography>
                   ))}
                 </Box>
               )}

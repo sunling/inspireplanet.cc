@@ -467,46 +467,6 @@ const WritingEditor: React.FC = () => {
 
               <Box>
                 <Typography variant="h6" gutterBottom>
-                  自定义话题
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 1.5 }}
-                >
-                  在标题、正文或模板回答中输入 #话题，发布时会自动创建。最多 5
-                  个。
-                </Typography>
-                {detectedHashtags.length ? (
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    {detectedHashtags.map((hashtag) => (
-                      <Chip
-                        key={hashtag}
-                        label={hashtag}
-                        variant="outlined"
-                        sx={{
-                          borderColor: '#d9c8df',
-                          bgcolor: '#faf6fc',
-                          color: '#735b7c',
-                          fontWeight: 500,
-                        }}
-                      />
-                    ))}
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="text.disabled">
-                    暂未识别到自定义话题
-                  </Typography>
-                )}
-                {detectedHashtags.length > 5 && (
-                  <Alert severity="warning" sx={{ mt: 1.5 }}>
-                    已识别 {detectedHashtags.length} 个话题，请保留最多 5 个。
-                  </Alert>
-                )}
-              </Box>
-
-              <Box>
-                <Typography variant="h6" gutterBottom>
                   图片（可选）
                 </Typography>
                 <Typography
@@ -638,14 +598,14 @@ const WritingEditor: React.FC = () => {
 
               <Box>
                 <Typography variant="h6" gutterBottom>
-                  选择话题（可选）
+                  话题（可选）
                 </Typography>
                 <Typography
                   variant="body2"
                   color="text.secondary"
                   sx={{ mb: 1.5 }}
                 >
-                  话题用于辅助整理和筛选，最多选择 5 个
+                  选择已有话题，或直接在标题、正文中输入 #话题。最多 5 个。
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   {topics
@@ -662,6 +622,21 @@ const WritingEditor: React.FC = () => {
                       );
                     })}
                 </Box>
+                {detectedHashtags.length > 0 && (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 1.5 }}
+                  >
+                    已从内容识别：
+                    {detectedHashtags.join(' ')}
+                  </Typography>
+                )}
+                {detectedHashtags.length > 5 && (
+                  <Alert severity="warning" sx={{ mt: 1.5 }}>
+                    已识别 {detectedHashtags.length} 个话题，请保留最多 5 个。
+                  </Alert>
+                )}
               </Box>
 
               <Box>
