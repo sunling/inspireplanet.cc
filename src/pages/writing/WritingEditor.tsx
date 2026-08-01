@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Container,
   FormControl,
   FormControlLabel,
@@ -42,6 +43,13 @@ import { extractHashtags } from '../../utils/hashtags';
 import TopicChip from '../../components/writing/TopicChip';
 
 const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const MAX_WRITING_IMAGES = 9;
+
+interface PendingImageUpload {
+  id: string;
+  name: string;
+  status: 'waiting' | 'uploading' | 'failed';
+}
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -71,6 +79,9 @@ const WritingEditor: React.FC = () => {
   const [groupId, setGroupId] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [pendingImageUploads, setPendingImageUploads] = useState<
+    PendingImageUpload[]
+  >([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [historicalTemplateName, setHistoricalTemplateName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -219,8 +230,11 @@ const WritingEditor: React.FC = () => {
     const files = Array.from(event.target.files || []);
     event.target.value = '';
     if (!files.length) return;
-    if (imageUrls.length + files.length > 3) {
-      showSnackbar.warning('每篇书写最多上传 3 张图片');
+    if (
+      imageUrls.length + pendingImageUploads.length + files.length >
+      MAX_WRITING_IMAGES
+    ) {
+      showSnackbar.warning(`每篇书写最多上传 ${MAX_WRITING_IMAGES} 张图片`);
       return;
     }
     if (
@@ -235,22 +249,50 @@ const WritingEditor: React.FC = () => {
     }
 
     setUploadingImages(true);
+    const batchId = Date.now();
+    const pendingUploads = files.map((file, index) => ({
+      id: `${batchId}-${index}`,
+      name: file.name,
+      status: 'waiting' as const,
+    }));
+    setPendingImageUploads((current) => [...current, ...pendingUploads]);
+    let successCount = 0;
     try {
-      const uploadedUrls: string[] = [];
-      for (const file of files) {
-        const dataUrl = await readFileAsDataUrl(file);
-        const response = await imagesApi.upload(dataUrl, 'writing');
-        if (!response.success || !response.data?.url) {
-          throw new Error(response.error || '图片上传失败');
+      for (const [index, file] of files.entries()) {
+        const pendingId = pendingUploads[index].id;
+        setPendingImageUploads((current) =>
+          current.map((item) =>
+            item.id === pendingId ? { ...item, status: 'uploading' } : item
+          )
+        );
+        try {
+          const dataUrl = await readFileAsDataUrl(file);
+          const response = await imagesApi.upload(dataUrl, 'writing');
+          if (!response.success || !response.data?.url) {
+            throw new Error(response.error || '图片上传失败');
+          }
+          setImageUrls((current) => [...current, response.data!.url]);
+          setPendingImageUploads((current) =>
+            current.filter((item) => item.id !== pendingId)
+          );
+          successCount += 1;
+        } catch {
+          setPendingImageUploads((current) =>
+            current.map((item) =>
+              item.id === pendingId ? { ...item, status: 'failed' } : item
+            )
+          );
         }
-        uploadedUrls.push(response.data.url);
       }
-      setImageUrls((current) => [...current, ...uploadedUrls]);
-      showSnackbar.success('图片上传成功');
-    } catch (uploadError) {
-      showSnackbar.error(
-        uploadError instanceof Error ? uploadError.message : '图片上传失败'
-      );
+      if (successCount === files.length) {
+        showSnackbar.success(`${successCount} 张图片上传成功`);
+      } else if (successCount > 0) {
+        showSnackbar.warning(
+          `${successCount} 张上传成功，${files.length - successCount} 张失败`
+        );
+      } else {
+        showSnackbar.error('图片上传失败，请重试');
+      }
     } finally {
       setUploadingImages(false);
     }
@@ -472,29 +514,31 @@ const WritingEditor: React.FC = () => {
                   color="text.secondary"
                   sx={{ mb: 1.5 }}
                 >
-                  最多 3 张，每张不超过 5MB，支持 PNG、JPEG 和 WebP。
+                  最多 9 张，每张不超过 5MB，支持 PNG、JPEG 和 WebP。已添加{' '}
+                  {imageUrls.length}/9 张。
                 </Typography>
-                {imageUrls.length > 0 && (
+                {imageUrls.length + pendingImageUploads.length > 0 && (
                   <Box
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: {
-                        xs: '1fr',
+                        xs: 'repeat(3, minmax(0, 1fr))',
                         sm: 'repeat(3, minmax(0, 1fr))',
                       },
                       gap: 2,
                       mb: 2,
                     }}
                   >
-                    {imageUrls.map((imageUrl) => (
+                    {imageUrls.map((imageUrl, index) => (
                       <Box key={imageUrl} sx={{ position: 'relative' }}>
                         <Box
                           component="img"
                           src={imageUrl}
-                          alt="书写配图"
+                          alt={`书写配图 ${index + 1}`}
                           sx={{
                             width: '100%',
-                            height: 160,
+                            aspectRatio: '1 / 1',
+                            display: 'block',
                             objectFit: 'cover',
                             borderRadius: 2,
                           }}
@@ -516,9 +560,64 @@ const WritingEditor: React.FC = () => {
                         </Button>
                       </Box>
                     ))}
+                    {pendingImageUploads.map((upload) => (
+                      <Box
+                        key={upload.id}
+                        sx={{
+                          position: 'relative',
+                          aspectRatio: '1 / 1',
+                          display: 'grid',
+                          placeItems: 'center',
+                          bgcolor: '#ebe8e4',
+                          color: 'text.secondary',
+                          borderRadius: 2,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Stack spacing={1} alignItems="center" sx={{ px: 1 }}>
+                          {upload.status === 'uploading' ? (
+                            <CircularProgress size={24} />
+                          ) : (
+                            <AddPhotoAlternateIcon color="disabled" />
+                          )}
+                          <Typography
+                            variant="caption"
+                            color={
+                              upload.status === 'failed'
+                                ? 'error.main'
+                                : 'text.secondary'
+                            }
+                            textAlign="center"
+                          >
+                            {upload.status === 'uploading'
+                              ? '上传中'
+                              : upload.status === 'failed'
+                                ? '上传失败'
+                                : '等待上传'}
+                          </Typography>
+                          {upload.status === 'failed' && (
+                            <Button
+                              type="button"
+                              color="error"
+                              size="small"
+                              onClick={() =>
+                                setPendingImageUploads((current) =>
+                                  current.filter(
+                                    (item) => item.id !== upload.id
+                                  )
+                                )
+                              }
+                            >
+                              移除
+                            </Button>
+                          )}
+                        </Stack>
+                      </Box>
+                    ))}
                   </Box>
                 )}
-                {imageUrls.length < 3 && (
+                {imageUrls.length + pendingImageUploads.length <
+                  MAX_WRITING_IMAGES && (
                   <Button
                     component="label"
                     variant="outlined"
@@ -609,9 +708,9 @@ const WritingEditor: React.FC = () => {
                           (group) => group.membership_status === 'approved'
                         )
                         .map((group) => (
-                        <MenuItem key={group.id} value={group.id}>
-                          {group.name}
-                        </MenuItem>
+                          <MenuItem key={group.id} value={group.id}>
+                            {group.name}
+                          </MenuItem>
                         ))}
                     </Select>
                   </FormControl>

@@ -143,25 +143,50 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
                     : `repeat(${Math.min(post.image_urls.length, 3)}, minmax(0, 1fr))`,
                 gap: 0.75,
                 mb: 2,
+                overflow: 'hidden',
+                borderRadius: 1.5,
               }}
             >
               {post.image_urls.slice(0, 3).map((imageUrl, index) => (
                 <Box
                   key={imageUrl}
-                  component="img"
-                  src={imageUrl}
-                  alt={`${title}配图 ${index + 1}`}
-                  loading="lazy"
                   sx={{
-                    display: 'block',
-                    width: '100%',
+                    position: 'relative',
+                    overflow: 'hidden',
                     aspectRatio:
                       post.image_urls.length === 1 ? '4 / 3' : '1 / 1',
-                    maxHeight: post.image_urls.length === 1 ? 210 : 120,
-                    objectFit: 'cover',
-                    borderRadius: 1.5,
+                    maxHeight: post.image_urls.length === 1 ? 210 : 128,
                   }}
-                />
+                >
+                  <Box
+                    component="img"
+                    src={imageUrl}
+                    alt={`${title}配图 ${index + 1}`}
+                    loading="lazy"
+                    sx={{
+                      display: 'block',
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                    }}
+                  />
+                  {index === 2 && post.image_urls.length > 3 && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'grid',
+                        placeItems: 'center',
+                        bgcolor: 'rgba(20, 16, 24, 0.52)',
+                        color: 'common.white',
+                        fontSize: '1.25rem',
+                        fontWeight: 700,
+                      }}
+                    >
+                      +{post.image_urls.length - 3}
+                    </Box>
+                  )}
+                </Box>
               ))}
             </Box>
           )}

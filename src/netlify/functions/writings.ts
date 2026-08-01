@@ -37,6 +37,7 @@ interface ExistingWriting {
   user_id: string | number;
   template_id?: string | number | null;
   template_snapshot?: WritingTemplateSnapshot | null | Record<string, unknown>;
+  image_urls?: string[] | null;
 }
 
 interface PreparedWriting {
@@ -133,7 +134,7 @@ function normalizeImageUrls(value: unknown): string[] {
   const urls = Array.from(
     new Set(value.map((item) => String(item || '').trim()).filter(Boolean))
   );
-  if (urls.length > 3) throw new RequestError('最多上传 3 张图片');
+  if (urls.length > 9) throw new RequestError('最多上传 9 张图片');
 
   urls.forEach((value) => {
     try {
@@ -540,11 +541,15 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
     p_visibility: writing.visibility,
     p_topic_ids: writing.topic_ids.map(Number),
     p_custom_topic_names: writing.custom_topic_names,
-    p_image_urls: writing.image_urls,
+    // 线上旧版 RPC 最多接受 3 张；完整图片数组在下方统一写入。
+    p_image_urls: writing.image_urls.slice(0, 3),
   });
 
-  if (error || !postId) throw new RequestError('发布书写失败', 500);
-  const { error: metadataError } = await supabase
+  if (error || !postId) {
+    console.error('[writings] create RPC failed:', error);
+    throw new RequestError('发布书写失败', 500);
+  }
+  const { error: permissionError } = await supabase
     .from('writing_posts')
     .update({
       visibility: writing.visibility,
@@ -553,13 +558,35 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
     })
     .eq('id', postId)
     .eq('user_id', currentUser.id);
-  if (metadataError) {
+  if (permissionError) {
+    console.error(
+      '[writings] create permission update failed:',
+      permissionError
+    );
     await supabase
       .from('writing_posts')
       .delete()
       .eq('id', postId)
       .eq('user_id', currentUser.id);
     throw new RequestError('设置书写权限失败', 500);
+  }
+  const { error: imageError } = await supabase
+    .from('writing_posts')
+    .update({ image_urls: writing.image_urls })
+    .eq('id', postId)
+    .eq('user_id', currentUser.id);
+  if (imageError) {
+    console.error('[writings] create image update failed:', imageError);
+    await supabase
+      .from('writing_posts')
+      .delete()
+      .eq('id', postId)
+      .eq('user_id', currentUser.id);
+    const message =
+      imageError.code === '23514'
+        ? '数据库图片数量限制尚未升级，请先执行最新迁移'
+        : '保存书写图片失败';
+    throw new RequestError(message, 500);
   }
   const row = await fetchWritingRow(String(postId));
   return createSuccessResponse(
@@ -576,7 +603,7 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   const id = parseId(payload.id, '书写 ID');
   const { data: existing, error: existingError } = await supabase
     .from('writing_posts')
-    .select('id, user_id, template_id, template_snapshot')
+    .select('id, user_id, template_id, template_snapshot, image_urls')
     .eq('id', id)
     .single();
 
@@ -602,12 +629,16 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
       p_visibility: writing.visibility,
       p_topic_ids: writing.topic_ids.map(Number),
       p_custom_topic_names: writing.custom_topic_names,
-      p_image_urls: writing.image_urls,
+      // 兼容仍限制 3 张图片的旧版数据库函数。
+      p_image_urls: writing.image_urls.slice(0, 3),
     }
   );
 
-  if (error || !updated) throw new RequestError('更新书写失败', 500);
-  const { error: metadataError } = await supabase
+  if (error || !updated) {
+    console.error('[writings] update RPC failed:', error);
+    throw new RequestError('更新书写失败', 500);
+  }
+  const { error: permissionError } = await supabase
     .from('writing_posts')
     .update({
       visibility: writing.visibility,
@@ -616,7 +647,28 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     })
     .eq('id', id)
     .eq('user_id', currentUser.id);
-  if (metadataError) throw new RequestError('设置书写权限失败', 500);
+  if (permissionError) {
+    console.error('[writings] update permission failed:', permissionError);
+    throw new RequestError('设置书写权限失败', 500);
+  }
+  const { error: imageError } = await supabase
+    .from('writing_posts')
+    .update({ image_urls: writing.image_urls })
+    .eq('id', id)
+    .eq('user_id', currentUser.id);
+  if (imageError) {
+    console.error('[writings] update image failed:', imageError);
+    await supabase
+      .from('writing_posts')
+      .update({ image_urls: existing.image_urls || [] })
+      .eq('id', id)
+      .eq('user_id', currentUser.id);
+    const message =
+      imageError.code === '23514'
+        ? '数据库图片数量限制尚未升级，请先执行最新迁移'
+        : '保存书写图片失败';
+    throw new RequestError(message, 500);
+  }
   const row = await fetchWritingRow(id);
   return createSuccessResponse({ post: mapWritingPost(row, currentUser.id) });
 }
