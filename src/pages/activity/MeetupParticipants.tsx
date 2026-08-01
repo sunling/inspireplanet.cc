@@ -58,10 +58,7 @@ import {
 import { Survey } from '../../netlify/types/survey';
 import StatsCard from '../../components/StatsCard';
 import TextCollapse from '../../components/TextCollapse';
-import {
-  parseSurveyAnswers,
-  calculateParticipantStats,
-} from '../../utils/meetup';
+import { parseSurveyAnswers } from '../../utils/meetup';
 
 const MeetupParticipants: React.FC = () => {
   const navigate = useNavigate();
@@ -79,6 +76,8 @@ const MeetupParticipants: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [isBatchApproving, setIsBatchApproving] = useState(false);
   // 问卷相关状态
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [surveyLoading, setSurveyLoading] = useState(false);
@@ -154,14 +153,16 @@ const MeetupParticipants: React.FC = () => {
         const participantsList = (participantsResponse.data?.participants ||
           []) as RSVP[];
         setParticipants(participantsList);
-        setTotalCount(participantsResponse.data?.total || 0);
-        setStats(
-          calculateParticipantStats(
-            participantsList,
-            participantsResponse.data?.confirmedCount || 0,
-            participantsResponse.data?.cancelledCount || 0
-          )
-        );
+        const data = participantsResponse.data;
+        setTotalCount(data?.total || 0);
+        setStats({
+          total: data?.total || 0,
+          confirmed: data?.confirmedCount || 0,
+          cancelled: data?.cancelledCount || 0,
+          pending: data?.pendingCount || 0,
+          approved: data?.approvedCount || 0,
+          rejected: data?.rejectedCount || 0,
+        });
       }
     } catch (error) {
       console.error('加载数据失败:', error);
@@ -183,14 +184,16 @@ const MeetupParticipants: React.FC = () => {
         const participantsList = (participantsResponse.data?.participants ||
           []) as RSVP[];
         setParticipants(participantsList);
-        setTotalCount(participantsResponse.data?.total || 0);
-        setStats(
-          calculateParticipantStats(
-            participantsList,
-            participantsResponse.data?.confirmedCount || 0,
-            participantsResponse.data?.cancelledCount || 0
-          )
-        );
+        const data = participantsResponse.data;
+        setTotalCount(data?.total || 0);
+        setStats({
+          total: data?.total || 0,
+          confirmed: data?.confirmedCount || 0,
+          cancelled: data?.cancelledCount || 0,
+          pending: data?.pendingCount || 0,
+          approved: data?.approvedCount || 0,
+          rejected: data?.rejectedCount || 0,
+        });
       }
     } catch (error) {
       console.error('刷新统计数据失败:', error);
@@ -231,6 +234,16 @@ const MeetupParticipants: React.FC = () => {
       (p.email && p.email.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
+  const selectableFilteredParticipants = filteredParticipants.filter(
+    (p) => p.status !== RSVPStatus.CANCELLED
+  );
+  const selectedPendingCount = selectedParticipants.filter((id) => {
+    const participant = participants.find((p) => p.id === id);
+    return (
+      participant?.status === RSVPStatus.CONFIRMED &&
+      participant.application_status === ApprovalStatus.PENDING
+    );
+  }).length;
 
   // 切换选择
   const toggleSelect = (id: string) => {
@@ -241,10 +254,55 @@ const MeetupParticipants: React.FC = () => {
 
   // 全选/取消全选
   const toggleSelectAll = () => {
-    if (selectedParticipants.length === filteredParticipants.length) {
+    const selectableIds = selectableFilteredParticipants.map((p) => p.id);
+    if (selectableIds.every((id) => selectedParticipants.includes(id))) {
       setSelectedParticipants([]);
     } else {
-      setSelectedParticipants(filteredParticipants.map((p) => p.id));
+      setSelectedParticipants(selectableIds);
+    }
+  };
+
+  // 批量通过选中的待审批参与者
+  const approveSelected = async () => {
+    setShowApproveDialog(false);
+    if (!meetupId) return;
+
+    const pendingParticipants = selectedParticipants.filter((id) => {
+      const participant = participants.find((p) => p.id === id);
+      return (
+        participant?.status === RSVPStatus.CONFIRMED &&
+        participant.application_status === ApprovalStatus.PENDING
+      );
+    });
+
+    if (pendingParticipants.length === 0) {
+      showSnackbar.info('没有待审批的参与者');
+      setSelectedParticipants([]);
+      return;
+    }
+
+    setIsBatchApproving(true);
+    try {
+      const response = await participantsApi.batchConfirm({
+        meetup_id: Number(meetupId),
+        rsvp_ids: pendingParticipants.map((id) => Number(id)),
+        send_email: true,
+        approved_by: getUserName() || '',
+      });
+      if (response.success) {
+        showSnackbar.success(
+          response.message || `已通过 ${pendingParticipants.length} 位参与者`
+        );
+        await loadData(currentPage);
+      } else {
+        showSnackbar.error(response.error || '批量通过失败');
+      }
+    } catch (error) {
+      console.error('批量通过失败:', error);
+      showSnackbar.error('批量通过失败');
+    } finally {
+      setIsBatchApproving(false);
+      setSelectedParticipants([]);
     }
   };
 
@@ -417,7 +475,7 @@ const MeetupParticipants: React.FC = () => {
       >
         {/* 搜索框 */}
         <TextField
-          label="搜索姓名或邮箱"
+          label="搜索当前页姓名或邮箱"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           size="small"
@@ -440,13 +498,24 @@ const MeetupParticipants: React.FC = () => {
 
         {/* 操作按钮 */}
         {selectedParticipants.length > 0 && (
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => setShowConfirmDialog(true)}
-          >
-            批量拒绝 ({selectedParticipants.length})
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={() => setShowApproveDialog(true)}
+              disabled={isBatchApproving || selectedPendingCount === 0}
+            >
+              批量通过 ({selectedPendingCount})
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => setShowConfirmDialog(true)}
+              disabled={isBatchApproving}
+            >
+              批量拒绝 ({selectedParticipants.length})
+            </Button>
+          </Box>
         )}
 
         {/* 返回按钮 */}
@@ -796,31 +865,29 @@ const MeetupParticipants: React.FC = () => {
           </Box>
         ) : (
           <TableContainer component={Paper}>
-            <Table>
+            <Table sx={{ tableLayout: 'fixed', minWidth: 960 }}>
               <TableHead>
                 <TableRow>
                   <TableCell padding="checkbox">
                     <Checkbox
                       checked={
                         selectedParticipants.length ===
-                          filteredParticipants.length &&
-                        filteredParticipants.length > 0
+                          selectableFilteredParticipants.length &&
+                        selectableFilteredParticipants.length > 0
                       }
                       indeterminate={
                         selectedParticipants.length > 0 &&
                         selectedParticipants.length <
-                          filteredParticipants.length
+                          selectableFilteredParticipants.length
                       }
                       onChange={toggleSelectAll}
                     />
                   </TableCell>
-                  <TableCell>姓名</TableCell>
-                  <TableCell>邮箱</TableCell>
-                  <TableCell>报名时间</TableCell>
-                  <TableCell>报名答案</TableCell>
-                  <TableCell>报名状态</TableCell>
-                  <TableCell>审批状态</TableCell>
-                  <TableCell>操作</TableCell>
+                  <TableCell sx={{ width: 220 }}>报名用户</TableCell>
+                  <TableCell sx={{ width: '38%' }}>报名答案</TableCell>
+                  <TableCell sx={{ width: 100 }}>报名状态</TableCell>
+                  <TableCell sx={{ width: 100 }}>审批状态</TableCell>
+                  <TableCell sx={{ width: 120 }}>操作</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -833,22 +900,28 @@ const MeetupParticipants: React.FC = () => {
                         disabled={participant.status === RSVPStatus.CANCELLED}
                       />
                     </TableCell>
-                    <TableCell>
-                      <Typography fontWeight="500">
+                    <TableCell sx={{ verticalAlign: 'middle' }}>
+                      <Typography fontWeight="600">
                         {participant.name || '未知'}
                       </Typography>
+                      <Typography
+                        color="text.secondary"
+                        variant="body2"
+                        sx={{ mt: 0.5, overflowWrap: 'anywhere' }}
+                      >
+                        {participant.email || '未填写邮箱'}
+                      </Typography>
+                      <Typography
+                        color="text.secondary"
+                        variant="caption"
+                        sx={{ display: 'block', mt: 0.5 }}
+                      >
+                        {new Date(participant.created_at).toLocaleString(
+                          'zh-CN'
+                        )}
+                      </Typography>
                     </TableCell>
-                    <TableCell>
-                      {participant.email || (
-                        <Typography color="text.secondary" variant="body2">
-                          未填写
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(participant.created_at).toLocaleString('zh-CN')}
-                    </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ verticalAlign: 'top' }}>
                       {participant.survey_answers && survey ? (
                         (() => {
                           const answerItems = parseSurveyAnswers(
@@ -871,7 +944,7 @@ const MeetupParticipants: React.FC = () => {
                             <TextCollapse
                               text=""
                               maxItems={3}
-                              sx={{ maxWidth: 300, fontSize: '0.875rem' }}
+                              sx={{ width: '100%', fontSize: '0.875rem' }}
                             >
                               {answerItems.map((item, idx) => (
                                 <Box
@@ -1013,6 +1086,25 @@ const MeetupParticipants: React.FC = () => {
       )}
 
       {/* 确认对话框 */}
+      <Dialog
+        open={showApproveDialog}
+        onClose={() => setShowApproveDialog(false)}
+      >
+        <DialogTitle>批量通过</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            确定要通过选中的 {selectedPendingCount}{' '}
+            位待审批参与者吗？通过后将发送报名确认邮件。
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowApproveDialog(false)}>取消</Button>
+          <Button variant="contained" color="success" onClick={approveSelected}>
+            确认通过
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog
         open={showConfirmDialog}
         onClose={() => setShowConfirmDialog(false)}
