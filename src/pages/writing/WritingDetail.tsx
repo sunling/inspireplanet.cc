@@ -535,12 +535,23 @@ const WritingDetail: React.FC = () => {
                 <Box
                   sx={{
                     display: 'grid',
-                    gridTemplateColumns:
-                      post.image_urls.length === 1
-                        ? 'minmax(0, 440px)'
-                        : 'repeat(3, minmax(0, 1fr))',
+                    gridTemplateColumns: {
+                      xs:
+                        post.image_urls.length === 1
+                          ? '1fr'
+                          : post.image_urls.length === 2
+                            ? 'repeat(2, minmax(0, 1fr))'
+                            : 'repeat(3, minmax(0, 1fr))',
+                      sm:
+                        post.image_urls.length === 1
+                          ? 'minmax(0, 560px)'
+                          : post.image_urls.length === 2
+                            ? 'repeat(2, minmax(0, 1fr))'
+                            : 'repeat(3, minmax(0, 1fr))',
+                    },
                     gap: { xs: 0.75, sm: 1 },
-                    maxWidth: post.image_urls.length === 1 ? 440 : 620,
+                    maxWidth: post.image_urls.length === 1 ? 560 : 760,
+                    width: '100%',
                   }}
                 >
                   {post.image_urls.map((imageUrl, index) => (
@@ -559,7 +570,7 @@ const WritingDetail: React.FC = () => {
                         overflow: 'hidden',
                         borderRadius: 1.5,
                         aspectRatio:
-                          post.image_urls.length === 1 ? '4 / 3' : '1 / 1',
+                          post.image_urls.length === 1 ? '16 / 10' : '1 / 1',
                         '&:focus-visible': {
                           outline: '3px solid',
                           outlineColor: 'primary.light',
