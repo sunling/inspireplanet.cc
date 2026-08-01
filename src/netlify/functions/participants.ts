@@ -243,7 +243,7 @@ async function handleBatchConfirm(event: NetlifyEvent) {
 async function handleGetParticipants(event: NetlifyEvent) {
   try {
     const requestData = getDataFromEvent(event);
-    const { meetup_id, page = 1, limit = 10 } = requestData;
+    const { meetup_id, page = 1, limit = 10, stats_only = false } = requestData;
 
     if (!meetup_id) {
       return createErrorResponse('缺少活动ID');
@@ -254,29 +254,56 @@ async function handleGetParticipants(event: NetlifyEvent) {
       return createErrorResponse('活动ID不合法');
     }
 
-    // 获取总数
-    const { count: total, error: countError } = await supabase
-      .from('meetup_rsvps')
-      .select('id', { count: 'exact', head: true })
-      .eq('meetup_id', meetupIdNum);
+    // 一次并行获取完整统计，避免用当前页数据推算审批状态。
+    const countBy = (field?: string, value?: string) => {
+      let query = supabase
+        .from('meetup_rsvps')
+        .select('id', { count: 'exact', head: true })
+        .eq('meetup_id', meetupIdNum);
+      if (field && value) query = query.eq(field, value);
+      return query;
+    };
+    const [
+      totalResult,
+      confirmedResult,
+      cancelledResult,
+      pendingResult,
+      approvedResult,
+      rejectedResult,
+    ] = await Promise.all([
+      countBy(),
+      countBy('status', RSVPStatus.CONFIRMED),
+      countBy('status', RSVPStatus.CANCELLED),
+      countBy('application_status', ApprovalStatus.PENDING),
+      countBy('application_status', ApprovalStatus.APPROVED),
+      countBy('application_status', ApprovalStatus.REJECTED),
+    ]);
 
+    const countError = [
+      totalResult,
+      confirmedResult,
+      cancelledResult,
+      pendingResult,
+      approvedResult,
+      rejectedResult,
+    ].find((result) => result.error)?.error;
     if (countError) {
       console.error('Get participants count error:', countError);
       return createErrorResponse('获取参与者失败', 500);
     }
 
-    // 获取各状态的数量
-    const { count: confirmedCount } = await supabase
-      .from('meetup_rsvps')
-      .select('id', { count: 'exact', head: true })
-      .eq('meetup_id', meetupIdNum)
-      .eq('status', RSVPStatus.CONFIRMED);
+    const stats = {
+      total: totalResult.count || 0,
+      confirmedCount: confirmedResult.count || 0,
+      cancelledCount: cancelledResult.count || 0,
+      pendingCount: pendingResult.count || 0,
+      approvedCount: approvedResult.count || 0,
+      rejectedCount: rejectedResult.count || 0,
+    };
 
-    const { count: cancelledCount } = await supabase
-      .from('meetup_rsvps')
-      .select('id', { count: 'exact', head: true })
-      .eq('meetup_id', meetupIdNum)
-      .eq('status', RSVPStatus.CANCELLED);
+    if (stats_only) {
+      return createSuccessResponse({ participants: [], ...stats });
+    }
 
     // 计算分页参数
     const pageNum = Number(page) || 1;
@@ -371,9 +398,7 @@ async function handleGetParticipants(event: NetlifyEvent) {
 
     return createSuccessResponse({
       participants: enrichedParticipants,
-      total,
-      confirmedCount: confirmedCount || 0,
-      cancelledCount: cancelledCount || 0,
+      ...stats,
     });
   } catch (error) {
     console.error('Get participants error:', error);

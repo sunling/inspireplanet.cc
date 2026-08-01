@@ -14,7 +14,6 @@ import { useGlobalSnackbar } from '../../context/app';
 import { meetupsApi } from '../../netlify/services/meetups';
 import participantsApi from '../../netlify/services/participants';
 import { Meetup } from '../../netlify/functions/meetup';
-import { RSVPStatus, ApprovalStatus } from '../../netlify/types/rsvp';
 import { MeetupCard } from '../../components/MeetupCard';
 
 interface MeetupWithRsvpCount extends Meetup {
@@ -44,25 +43,16 @@ const MeetupParticipantsList: React.FC = () => {
               const participantsResponse =
                 await participantsApi.getParticipants({
                   meetup_id: Number(meetup.id),
-                  limit: 9999,
+                  stats_only: true,
                 });
-              if (
-                participantsResponse.success &&
-                participantsResponse.data?.participants
-              ) {
-                const participants = participantsResponse.data.participants;
+              if (participantsResponse.success && participantsResponse.data) {
+                const stats = participantsResponse.data;
                 return {
                   ...meetup,
-                  rsvpCount: participants.length,
-                  pendingCount: participants.filter(
-                    (p: any) => p.application_status === ApprovalStatus.PENDING
-                  ).length,
-                  approvedCount: participants.filter(
-                    (p: any) => p.application_status === ApprovalStatus.APPROVED
-                  ).length,
-                  cancelledCount: participants.filter(
-                    (p: any) => p.status === RSVPStatus.CANCELLED
-                  ).length,
+                  rsvpCount: stats.total || 0,
+                  pendingCount: stats.pendingCount || 0,
+                  approvedCount: stats.approvedCount || 0,
+                  cancelledCount: stats.cancelledCount || 0,
                 };
               }
             } catch (err) {

@@ -11,6 +11,7 @@ interface GetParticipantsParams {
   meetup_id: number;
   page?: number;
   limit?: number;
+  stats_only?: boolean;
 }
 
 export interface Participant {
