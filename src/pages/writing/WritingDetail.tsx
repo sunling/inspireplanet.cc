@@ -9,23 +9,25 @@ import {
   Container,
   CircularProgress,
   Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   IconButton,
+  InputAdornment,
   Paper,
   Stack,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
-import TipsAndUpdatesOutlinedIcon from '@mui/icons-material/TipsAndUpdatesOutlined';
-import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
+import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded';
+import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
 import CloseIcon from '@mui/icons-material/Close';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
-import PersonOffOutlinedIcon from '@mui/icons-material/PersonOffOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import Loading from '../../components/Loading';
 import { WritingComment, WritingPost } from '../../netlify/types';
@@ -35,6 +37,11 @@ import { useGlobalSnackbar } from '../../context/app';
 import HighlightedText from '../../components/writing/HighlightedText';
 import { isUserLoggedIn } from '../../utils/user';
 import { downloadCard } from '../../utils/share';
+
+interface PendingCommentDeletion {
+  id: string;
+  removedIds: string[];
+}
 
 const WritingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -46,10 +53,11 @@ const WritingDetail: React.FC = () => {
   const [error, setError] = useState('');
   const [comments, setComments] = useState<WritingComment[]>([]);
   const [comment, setComment] = useState('');
-  const [commentAnonymous, setCommentAnonymous] = useState(false);
   const [replyTo, setReplyTo] = useState<WritingComment | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submittingAnonymously, setSubmittingAnonymously] = useState(false);
+  const [interactionInputFocused, setInteractionInputFocused] = useState(false);
   const [interactionLoading, setInteractionLoading] = useState(true);
   const [resonanceLoading, setResonanceLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
@@ -60,6 +68,8 @@ const WritingDetail: React.FC = () => {
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
     null
   );
+  const [pendingCommentDeletion, setPendingCommentDeletion] =
+    useState<PendingCommentDeletion | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -174,53 +184,102 @@ const WritingDetail: React.FC = () => {
     }
   };
 
-  const handleComment = async () => {
-    if (!id || !comment.trim() || !requireLogin()) return;
+  const handleComment = async (isAnonymous = false) => {
+    if (!id || !comment.trim() || submitting || !requireLogin()) return;
+    setSubmittingAnonymously(isAnonymous);
     setSubmitting(true);
     try {
       const response = await writingInteractionsApi.addComment(
         id,
         comment,
         null,
-        commentAnonymous
+        isAnonymous
       );
       if (!response.success || !response.data)
         return showSnackbar.error(response.error || '评论失败');
       const newComment = response.data.comment;
       setComments((current) => [...current, newComment]);
+      setPost((current) =>
+        current
+          ? { ...current, comment_count: current.comment_count + 1 }
+          : current
+      );
       setComment('');
+      showSnackbar.success('回应已送出');
     } catch {
       showSnackbar.error('评论失败，请稍后重试');
     } finally {
       setSubmitting(false);
+      setSubmittingAnonymously(false);
     }
   };
 
-  const handleReply = async () => {
-    if (!id || !replyTo || !replyContent.trim() || !requireLogin()) return;
+  const handleReply = async (isAnonymous = false) => {
+    if (
+      !id ||
+      !replyTo ||
+      !replyContent.trim() ||
+      submitting ||
+      !requireLogin()
+    )
+      return;
+    setSubmittingAnonymously(isAnonymous);
     setSubmitting(true);
     try {
       const response = await writingInteractionsApi.addComment(
         id,
         replyContent,
         replyTo.id,
-        commentAnonymous
+        isAnonymous
       );
       if (!response.success || !response.data)
         return showSnackbar.error(response.error || '回复失败');
       const newReply = response.data.comment;
       setComments((current) => [...current, newReply]);
+      setPost((current) =>
+        current
+          ? { ...current, comment_count: current.comment_count + 1 }
+          : current
+      );
       setReplyTo(null);
       setReplyContent('');
+      showSnackbar.success('回复已送出');
     } catch {
       showSnackbar.error('回复失败，请稍后重试');
     } finally {
       setSubmitting(false);
+      setSubmittingAnonymously(false);
     }
   };
 
-  const handleDeleteComment = async (commentId: string) => {
+  const handleDeleteComment = (commentId: string) => {
     if (deletingCommentId) return;
+    const removedIds = new Set([commentId]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      comments.forEach((item) => {
+        if (
+          item.parent_id &&
+          removedIds.has(item.parent_id) &&
+          !removedIds.has(item.id)
+        ) {
+          removedIds.add(item.id);
+          changed = true;
+        }
+      });
+    }
+    setPendingCommentDeletion({
+      id: commentId,
+      removedIds: Array.from(removedIds),
+    });
+  };
+
+  const confirmDeleteComment = async () => {
+    if (!pendingCommentDeletion || deletingCommentId) return;
+    const { id: commentId, removedIds: pendingRemovedIds } =
+      pendingCommentDeletion;
+    const removedIds = new Set(pendingRemovedIds);
     setDeletingCommentId(commentId);
     try {
       const response = await writingInteractionsApi.deleteComment(commentId);
@@ -228,24 +287,25 @@ const WritingDetail: React.FC = () => {
         showSnackbar.error(response.error || '删除失败');
         return;
       }
-      setComments((current) => {
-        const removed = new Set([commentId]);
-        let changed = true;
-        while (changed) {
-          changed = false;
-          current.forEach((item) => {
-            if (
-              item.parent_id &&
-              removed.has(item.parent_id) &&
-              !removed.has(item.id)
-            ) {
-              removed.add(item.id);
-              changed = true;
+      setComments((current) =>
+        current.filter((item) => !removedIds.has(item.id))
+      );
+      setPost((current) =>
+        current
+          ? {
+              ...current,
+              comment_count: Math.max(
+                0,
+                current.comment_count - removedIds.size
+              ),
             }
-          });
-        }
-        return current.filter((item) => !removed.has(item.id));
-      });
+          : current
+      );
+      if (replyTo && removedIds.has(replyTo.id)) {
+        setReplyTo(null);
+        setReplyContent('');
+      }
+      setPendingCommentDeletion(null);
       showSnackbar.success('评论已删除');
     } catch {
       showSnackbar.error('删除失败，请稍后重试');
@@ -592,7 +652,7 @@ const WritingDetail: React.FC = () => {
                 <Divider />
                 <Box>
                   <Typography sx={{ whiteSpace: 'pre-wrap', lineHeight: 2 }}>
-                    <HighlightedText text={post.body} />
+                    <HighlightedText text={post.body} hideHashtags />
                   </Typography>
                 </Box>
               </>
@@ -666,19 +726,30 @@ const WritingDetail: React.FC = () => {
 
             {post.topics.length > 0 && (
               <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                {post.topics.map((topic) => (
-                  <Typography
-                    key={topic.id}
-                    component="span"
-                    variant="body2"
-                    sx={{
-                      color: '#496a61',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {topic.name.startsWith('#') ? topic.name : `#${topic.name}`}
-                  </Typography>
-                ))}
+                {post.topics
+                  .filter(
+                    (topic, index, topics) =>
+                      topics.findIndex(
+                        (candidate) =>
+                          candidate.name.toLocaleLowerCase() ===
+                          topic.name.toLocaleLowerCase()
+                      ) === index
+                  )
+                  .map((topic) => (
+                    <Typography
+                      key={topic.id}
+                      component="span"
+                      variant="body2"
+                      sx={{
+                        color: '#496a61',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {topic.name.startsWith('#')
+                        ? topic.name
+                        : `#${topic.name}`}
+                    </Typography>
+                  ))}
               </Box>
             )}
 
@@ -704,6 +775,11 @@ const WritingDetail: React.FC = () => {
                     </Stack>
                   ) : (
                     <Stack spacing={2} sx={{ mt: 3 }}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        {comments.length > 0
+                          ? `${comments.length} 条回应`
+                          : '还没有回应，欢迎留下第一条感受'}
+                      </Typography>
                       {comments
                         .filter((item) => !item.parent_id)
                         .map((item) => renderComment(item))}
@@ -783,7 +859,7 @@ const WritingDetail: React.FC = () => {
               <Typography
                 sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.9, fontSize: 15 }}
               >
-                <HighlightedText text={post.body} />
+                <HighlightedText text={post.body} hideHashtags />
               </Typography>
             )}
             {post.image_urls.length > 0 && (
@@ -870,48 +946,71 @@ const WritingDetail: React.FC = () => {
                 </Button>
               </Stack>
             )}
-            <Stack direction="row" spacing={1} alignItems="flex-end">
-              <Button
-                onClick={handleResonance}
-                aria-label={`${post.has_resonated ? '取消共鸣' : '共鸣'}，当前 ${post.resonance_count} 次`}
-                startIcon={
-                  post.has_resonated ? (
-                    <TipsAndUpdatesIcon />
+            <Stack
+              direction={interactionInputFocused ? 'column' : 'row'}
+              spacing={1}
+              alignItems={interactionInputFocused ? 'stretch' : 'flex-end'}
+            >
+              {!interactionInputFocused && (
+                <Button
+                  onClick={handleResonance}
+                  aria-label={`${post.has_resonated ? '取消共鸣' : '共鸣'}，当前 ${post.resonance_count} 次`}
+                  startIcon={
+                    post.has_resonated ? (
+                      <FavoriteRoundedIcon />
+                    ) : (
+                      <FavoriteBorderRoundedIcon />
+                    )
+                  }
+                  variant={post.has_resonated ? 'contained' : 'outlined'}
+                  disabled={resonanceLoading || interactionLoading}
+                  sx={{
+                    width: 64,
+                    minWidth: 64,
+                    maxWidth: 64,
+                    height: 40,
+                    flexShrink: 0,
+                    boxSizing: 'border-box',
+                    overflow: 'hidden',
+                    borderRadius: 1.5,
+                    px: 1,
+                    borderColor: post.has_resonated ? '#d75265' : '#d68b96',
+                    borderWidth: post.has_resonated ? 2 : 1,
+                    bgcolor: post.has_resonated ? '#d75265' : 'transparent',
+                    color: post.has_resonated ? '#fff' : '#b34858',
+                    '& .MuiButton-startIcon': { mr: 0.5, ml: 0 },
+                    '&:hover': {
+                      borderColor: '#bd3f52',
+                      bgcolor: post.has_resonated ? '#bd3f52' : '#fff4f5',
+                    },
+                  }}
+                >
+                  {resonanceLoading ? (
+                    <CircularProgress size={16} color="inherit" />
                   ) : (
-                    <TipsAndUpdatesOutlinedIcon />
-                  )
-                }
-                variant={post.has_resonated ? 'contained' : 'outlined'}
-                disabled={resonanceLoading || interactionLoading}
-                sx={{
-                  minWidth: 64,
-                  height: 40,
-                  borderRadius: 1.5,
-                  px: { xs: 1, sm: 2 },
-                  borderColor: '#c58b2a',
-                  borderWidth: post.has_resonated ? 2 : 1,
-                  bgcolor: post.has_resonated ? '#c58b2a' : 'transparent',
-                  color: post.has_resonated ? '#fff' : '#95691f',
-                  '& .MuiButton-startIcon': { mr: 0.5 },
-                  '&:hover': {
-                    borderColor: '#a8731e',
-                    bgcolor: post.has_resonated ? '#a8731e' : '#fff8e8',
-                  },
-                }}
-              >
-                {resonanceLoading ? (
-                  <CircularProgress size={16} color="inherit" />
-                ) : (
-                  post.resonance_count
-                )}
-              </Button>
+                    <Box
+                      component="span"
+                      sx={{ minWidth: 18, fontVariantNumeric: 'tabular-nums' }}
+                    >
+                      {post.resonance_count > 99 ? '99+' : post.resonance_count}
+                    </Box>
+                  )}
+                </Button>
+              )}
               <TextField
                 fullWidth
                 inputRef={interactionInputRef}
                 size="small"
                 multiline
-                maxRows={3}
+                minRows={interactionInputFocused ? 3 : 1}
+                maxRows={5}
                 value={replyTo ? replyContent : comment}
+                onFocus={() => setInteractionInputFocused(true)}
+                onBlur={(event) => {
+                  const nextTarget = event.relatedTarget as HTMLElement | null;
+                  if (nextTarget?.dataset.commentSend === 'true') return;
+                  setInteractionInputFocused(false);
+                }}
                 onChange={(event) => {
                   const value = event.target.value.slice(0, 500);
                   if (replyTo) setReplyContent(value);
@@ -922,74 +1021,193 @@ const WritingDetail: React.FC = () => {
                 }
                 slotProps={{
                   input: {
-                    startAdornment: (
-                      <ChatBubbleOutlineIcon
-                        color="action"
-                        sx={{ mr: 1, fontSize: 19, alignSelf: 'center' }}
-                      />
+                    endAdornment: (
+                      <InputAdornment
+                        position="end"
+                        sx={{
+                          alignSelf: interactionInputFocused
+                            ? 'flex-end'
+                            : 'center',
+                          mb: interactionInputFocused ? 0.5 : 0,
+                          ml: 0.75,
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          color="text.disabled"
+                          sx={{ whiteSpace: 'nowrap' }}
+                        >
+                          {(replyTo ? replyContent : comment).length}/500
+                        </Typography>
+                      </InputAdornment>
                     ),
                   },
                 }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    bgcolor: interactionInputFocused
+                      ? '#fff'
+                      : 'rgba(247, 247, 247, 0.9)',
+                    transition: 'background-color 0.2s ease',
+                  },
+                }}
               />
-              <Tooltip
-                title={commentAnonymous ? '取消匿名评论' : '使用佚名评论'}
-              >
+              {interactionInputFocused ? (
+                <Stack direction="row" spacing={1} width="100%">
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    color="inherit"
+                    data-comment-send="true"
+                    onClick={() => {
+                      interactionInputRef.current?.blur();
+                      setInteractionInputFocused(false);
+                    }}
+                    sx={{
+                      height: 40,
+                      borderRadius: 2,
+                      color: 'text.secondary',
+                      borderColor: 'divider',
+                      bgcolor: 'transparent',
+                      '&:hover': {
+                        borderColor: 'text.disabled',
+                        bgcolor: 'action.hover',
+                      },
+                    }}
+                  >
+                    取消
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    data-comment-send="true"
+                    startIcon={
+                      submitting && submittingAnonymously ? (
+                        <CircularProgress size={18} color="inherit" />
+                      ) : undefined
+                    }
+                    onClick={() => {
+                      if (replyTo) void handleReply(true);
+                      else void handleComment(true);
+                      setInteractionInputFocused(false);
+                    }}
+                    disabled={
+                      !(replyTo ? replyContent : comment).trim() || submitting
+                    }
+                    sx={{ height: 40, borderRadius: 2 }}
+                  >
+                    {replyTo ? '匿名回复' : '匿名评论'}
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    data-comment-send="true"
+                    startIcon={
+                      submitting && !submittingAnonymously ? (
+                        <CircularProgress size={18} color="inherit" />
+                      ) : (
+                        <SendRoundedIcon fontSize="small" />
+                      )
+                    }
+                    onClick={() => {
+                      if (replyTo) void handleReply(false);
+                      else void handleComment(false);
+                      setInteractionInputFocused(false);
+                    }}
+                    disabled={
+                      !(replyTo ? replyContent : comment).trim() || submitting
+                    }
+                    sx={{ height: 40, borderRadius: 2, boxShadow: 'none' }}
+                  >
+                    {replyTo ? '发送回复' : '发送评论'}
+                  </Button>
+                </Stack>
+              ) : (
                 <IconButton
-                  aria-label={
-                    commentAnonymous ? '取消匿名评论' : '使用佚名评论'
+                  color="primary"
+                  data-comment-send="true"
+                  onClick={() => {
+                    if (replyTo) void handleReply();
+                    else void handleComment();
+                    setInteractionInputFocused(false);
+                  }}
+                  disabled={
+                    !(replyTo ? replyContent : comment).trim() || submitting
                   }
-                  aria-pressed={commentAnonymous}
-                  onClick={() => setCommentAnonymous((value) => !value)}
+                  aria-label={
+                    replyTo ? `发送给 ${replyTo.author.name}` : '发送评论'
+                  }
                   sx={{
-                    width: 40,
+                    width: 64,
+                    minWidth: 64,
+                    maxWidth: 64,
                     height: 40,
                     flexShrink: 0,
                     borderRadius: 1.5,
-                    border: '1px solid',
-                    borderColor: commentAnonymous ? '#e87545' : 'divider',
-                    bgcolor: commentAnonymous ? '#e87545' : 'transparent',
-                    color: commentAnonymous ? '#fff' : 'text.secondary',
-                    '&:hover': {
-                      bgcolor: commentAnonymous ? '#cf6034' : 'action.hover',
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '&:hover': { bgcolor: 'primary.dark' },
+                    '&.Mui-disabled': {
+                      bgcolor: 'action.disabledBackground',
+                      color: 'action.disabled',
                     },
                   }}
                 >
-                  <PersonOffOutlinedIcon fontSize="small" />
+                  {submitting ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    <SendRoundedIcon fontSize="small" />
+                  )}
                 </IconButton>
-              </Tooltip>
-              <IconButton
-                color="primary"
-                onClick={replyTo ? handleReply : handleComment}
-                disabled={
-                  !(replyTo ? replyContent : comment).trim() || submitting
-                }
-                aria-label={
-                  replyTo ? `发送给 ${replyTo.author.name}` : '发送评论'
-                }
-                sx={{
-                  width: 40,
-                  height: 40,
-                  flexShrink: 0,
-                  borderRadius: 1.5,
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                  '&:hover': { bgcolor: 'primary.dark' },
-                  '&.Mui-disabled': {
-                    bgcolor: 'action.disabledBackground',
-                    color: 'action.disabled',
-                  },
-                }}
-              >
-                {submitting ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  <SendRoundedIcon fontSize="small" />
-                )}
-              </IconButton>
+              )}
             </Stack>
           </Container>
         </Paper>
       )}
+      <Dialog
+        open={Boolean(pendingCommentDeletion)}
+        onClose={() => {
+          if (!deletingCommentId) setPendingCommentDeletion(null);
+        }}
+        maxWidth="xs"
+        fullWidth
+        aria-labelledby="delete-comment-title"
+      >
+        <DialogTitle id="delete-comment-title">删除评论</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {pendingCommentDeletion &&
+            pendingCommentDeletion.removedIds.length > 1
+              ? `这条评论下还有 ${pendingCommentDeletion.removedIds.length - 1} 条回复，删除后将一并移除且无法恢复。`
+              : '这条评论删除后将无法恢复。'}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button
+            color="inherit"
+            onClick={() => setPendingCommentDeletion(null)}
+            disabled={Boolean(deletingCommentId)}
+          >
+            取消
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            startIcon={
+              deletingCommentId ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <DeleteOutlineIcon />
+              )
+            }
+            onClick={() => void confirmDeleteComment()}
+            disabled={Boolean(deletingCommentId)}
+          >
+            {deletingCommentId ? '删除中' : '确认删除'}
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog
         open={Boolean(downloadImage)}
         onClose={() => setDownloadImage('')}
