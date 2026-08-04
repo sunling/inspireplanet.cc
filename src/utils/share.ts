@@ -64,19 +64,14 @@ async function loadWechatSDK(): Promise<void> {
  * @returns Promise<boolean> 加载是否成功
  */
 async function loadHtml2Canvas(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (typeof (window as Window).html2canvas !== 'undefined') {
-      resolve(true);
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src =
-      'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.head.appendChild(script);
-  });
+  if (typeof (window as Window).html2canvas !== 'undefined') return true;
+  try {
+    const { default: html2canvas } = await import('html2canvas');
+    (window as Window).html2canvas = html2canvas;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -146,7 +141,8 @@ export async function loadQRCodeLibrary(): Promise<boolean> {
 
 export async function downloadCard(
   element: HTMLElement | null | undefined,
-  filenamePrefix?: string
+  filenamePrefix?: string,
+  onImageReady?: (imageDataUrl: string) => void
 ): Promise<boolean> {
   if (!element) {
     console.error('找不到要下载的卡片元素');
@@ -238,8 +234,15 @@ export async function downloadCard(
     );
 
     // 使用html2canvas捕获
+    const maxCanvasArea = 15_000_000;
+    const captureScale = Math.min(
+      3,
+      Math.sqrt(
+        maxCanvasArea / Math.max(1, clone.offsetWidth * clone.offsetHeight)
+      )
+    );
     const canvas = await (window as Window).html2canvas(clone, {
-      scale: 3, // 高清导出
+      scale: captureScale,
       logging: false,
       useCORS: true,
       allowTaint: false,
@@ -249,6 +252,14 @@ export async function downloadCard(
       width: clone.offsetWidth,
       height: clone.offsetHeight,
     });
+
+    // 微信内置浏览器会忽略 a[download]。调用方可以接收成图并展示，
+    // 让用户直接长按保存到相册。
+    if (onImageReady) {
+      onImageReady(canvas.toDataURL('image/png', 0.95));
+      document.body.removeChild(sandbox);
+      return true;
+    }
 
     // 创建下载链接
     return new Promise((resolve) => {
