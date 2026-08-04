@@ -146,7 +146,7 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
                 borderRadius: 1.5,
               }}
             >
-              {post.image_urls.slice(0, 3).map((imageUrl, index) => (
+              {post.image_urls.slice(0, 9).map((imageUrl, index) => (
                 <Box
                   key={imageUrl}
                   sx={{
@@ -169,7 +169,7 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
                       objectFit: 'cover',
                     }}
                   />
-                  {index === 2 && post.image_urls.length > 3 && (
+                  {index === 8 && post.image_urls.length > 9 && (
                     <Box
                       sx={{
                         position: 'absolute',
@@ -182,7 +182,7 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
                         fontWeight: 700,
                       }}
                     >
-                      +{post.image_urls.length - 3}
+                      +{post.image_urls.length - 9}
                     </Box>
                   )}
                 </Box>
