@@ -51,6 +51,32 @@ interface PendingImageUpload {
   status: 'waiting' | 'uploading' | 'failed';
 }
 
+interface CharacterCountProps {
+  current: number;
+  max: number;
+}
+
+const CharacterCount: React.FC<CharacterCountProps> = ({ current, max }) => (
+  <Typography
+    variant="caption"
+    color="text.disabled"
+    sx={{
+      position: 'absolute',
+      right: 12,
+      bottom: 9,
+      zIndex: 1,
+      px: 0.5,
+      borderRadius: 0.75,
+      bgcolor: 'rgba(255, 255, 255, 0.88)',
+      lineHeight: 1.5,
+      whiteSpace: 'nowrap',
+      pointerEvents: 'none',
+    }}
+  >
+    {current}/{max}
+  </Typography>
+);
+
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -378,14 +404,16 @@ const WritingEditor: React.FC = () => {
             sx={{ p: { xs: 3, md: 5 }, borderRadius: 4 }}
           >
             <Stack spacing={4}>
-              <TextField
-                label="标题（可选）"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                inputProps={{ maxLength: 80 }}
-                helperText={`${title.length}/80`}
-                fullWidth
-              />
+              <Box sx={{ position: 'relative' }}>
+                <TextField
+                  label="标题（可选）"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  slotProps={{ htmlInput: { maxLength: 80 } }}
+                  fullWidth
+                />
+                <CharacterCount current={title.length} max={80} />
+              </Box>
 
               <FormControl fullWidth>
                 <InputLabel id="writing-template-label">
@@ -432,38 +460,54 @@ const WritingEditor: React.FC = () => {
                   </Typography>
                   <Stack spacing={2}>
                     {promptFields.map((prompt) => (
-                      <TextField
-                        key={prompt.key}
-                        label={prompt.prompt}
-                        placeholder={prompt.placeholder}
-                        value={answers[prompt.key] || ''}
-                        onChange={(event) =>
-                          setAnswers((current) => ({
-                            ...current,
-                            [prompt.key]: event.target.value,
-                          }))
-                        }
-                        multiline
-                        minRows={3}
-                        inputProps={{ maxLength: 4000 }}
-                        fullWidth
-                      />
+                      <Box key={prompt.key} sx={{ position: 'relative' }}>
+                        <TextField
+                          label={prompt.prompt}
+                          placeholder={prompt.placeholder}
+                          value={answers[prompt.key] || ''}
+                          onChange={(event) =>
+                            setAnswers((current) => ({
+                              ...current,
+                              [prompt.key]: event.target.value,
+                            }))
+                          }
+                          multiline
+                          minRows={3}
+                          slotProps={{ htmlInput: { maxLength: 4000 } }}
+                          fullWidth
+                        />
+                        <CharacterCount
+                          current={(answers[prompt.key] || '').length}
+                          max={4000}
+                        />
+                      </Box>
                     ))}
                   </Stack>
                 </Box>
               )}
 
-              <TextField
-                label="正文"
-                placeholder="自由地写下观察；输入 #话题 可以创建自己的话题。"
-                value={body}
-                onChange={(event) => setBody(event.target.value)}
-                multiline
-                minRows={8}
-                inputProps={{ maxLength: 20000 }}
-                helperText={`${body.length}/20000 · 输入 #话题 会自动识别并标亮`}
-                fullWidth
-              />
+              <Box>
+                <Box sx={{ position: 'relative' }}>
+                  <TextField
+                    label="正文"
+                    placeholder="自由地写下观察；输入 #话题 可以创建自己的话题。"
+                    value={body}
+                    onChange={(event) => setBody(event.target.value)}
+                    multiline
+                    minRows={8}
+                    slotProps={{ htmlInput: { maxLength: 20000 } }}
+                    fullWidth
+                  />
+                  <CharacterCount current={body.length} max={20000} />
+                </Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mx: 1.75, mt: 0.5 }}
+                >
+                  输入 #话题 会自动识别并标亮
+                </Typography>
+              </Box>
 
               <Box>
                 <Typography variant="h6" gutterBottom>
