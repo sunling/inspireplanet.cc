@@ -19,6 +19,7 @@ import {
 } from '@/constants/gradient';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import { saveImageDataUrl } from '@/utils/share';
 export interface CarouselItem extends WeeklyCard {
   category?: string;
 }
@@ -140,14 +141,14 @@ const Carousel: React.FC<CarouselProps> = ({
         useCORS: true,
         logging: false,
       });
-      const link = document.createElement('a');
       const safeTitle = (items[index]?.title || 'weekly-card').replace(
         /[^a-zA-Z0-9\u4e00-\u9fa5]/g,
         '-'
       );
-      link.download = `weekly-card-${safeTitle}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      saveImageDataUrl(
+        canvas.toDataURL('image/png'),
+        `weekly-card-${safeTitle}.png`
+      );
     } catch (_) {}
   };
 

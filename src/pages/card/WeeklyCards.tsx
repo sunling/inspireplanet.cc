@@ -19,7 +19,11 @@ import DownloadIcon from '@mui/icons-material/Download';
 import useResponsive from '@/hooks/useResponsive';
 
 import { getFontColorForGradient, gradientClasses } from '@/constants/gradient';
-import { loadQRCodeLibrary } from '@/utils/share';
+import {
+  isMobileBrowser,
+  loadQRCodeLibrary,
+  saveImageDataUrl,
+} from '@/utils/share';
 
 import { weeklyCardsApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
@@ -654,10 +658,13 @@ const WeeklyCards: React.FC = () => {
         windowHeight: finalExportHeight,
       });
 
-      const link = document.createElement('a');
-      link.download = `weekly-card-${card_id}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      saveImageDataUrl(
+        canvas.toDataURL('image/png'),
+        `weekly-card-${card_id}.png`
+      );
+      showSnackbar.success(
+        isMobileBrowser() ? '图片已生成，请长按保存到相册' : '周刊卡片已下载'
+      );
     } catch (error) {
       if (error instanceof Error) {
         alert(`下载失败: ${error.message}`);
@@ -849,8 +856,7 @@ const WeeklyCards: React.FC = () => {
                                   position: 'relative',
                                   display: 'flex',
                                   flexDirection: 'column',
-                                  border:
-                                    '1px solid rgba(255, 255, 255, 0.28)',
+                                  border: '1px solid rgba(255, 255, 255, 0.28)',
                                   boxShadow:
                                     '0 8px 24px rgba(75, 55, 42, 0.08)',
                                   transition:

@@ -9,6 +9,7 @@ import { getUserId } from '@/utils/user';
 import { gradientOptions } from '@/constants/gradient';
 import EditForm, { EditFormRef } from '../components/EditForm';
 import { getUserName } from '../../../utils';
+import { isMobileBrowser, saveImageDataUrl } from '@/utils/share';
 
 const CreateCard: React.FC = () => {
   const navigate = useNavigate();
@@ -89,18 +90,11 @@ const CreateCard: React.FC = () => {
       logging: false,
     });
 
-    // 创建下载链接
-    const link = document.createElement('a');
     const fileName = `inspire-card-${Date.now()}.png`;
-    link.download = fileName;
-    link.href = canvas.toDataURL('image/png');
-
-    // 触发下载
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    showSnackbar.success('卡片下载成功');
+    saveImageDataUrl(canvas.toDataURL('image/png'), fileName);
+    showSnackbar.success(
+      isMobileBrowser() ? '图片已生成，请长按保存到相册' : '卡片下载成功'
+    );
   };
 
   return (

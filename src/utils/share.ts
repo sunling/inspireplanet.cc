@@ -40,6 +40,94 @@ export interface InitDownloadConfig {
   getFileName?: () => string;
 }
 
+export function isMobileBrowser(): boolean {
+  const { userAgent, maxTouchPoints } = window.navigator;
+  return (
+    /Android|iPhone|iPad|iPod|Mobile|IEMobile|Opera Mini/i.test(userAgent) ||
+    (/Macintosh/i.test(userAgent) && maxTouchPoints > 1)
+  );
+}
+
+/**
+ * 普通浏览器触发文件下载；微信内置浏览器展示原图，供用户长按保存。
+ */
+export function saveImageDataUrl(
+  imageDataUrl: string,
+  filename: string
+): 'downloaded' | 'previewed' {
+  if (!isMobileBrowser()) {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = imageDataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    return 'downloaded';
+  }
+
+  document.getElementById('wechat-image-save-overlay')?.remove();
+  const previousOverflow = document.body.style.overflow;
+  const overlay = document.createElement('div');
+  overlay.id = 'wechat-image-save-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', '长按图片保存到相册');
+  overlay.style.cssText = [
+    'position:fixed',
+    'inset:0',
+    'z-index:2147483647',
+    'overflow:auto',
+    'padding:24px 16px 40px',
+    'box-sizing:border-box',
+    'background:rgba(18,18,18,.94)',
+    'text-align:center',
+    'color:#fff',
+  ].join(';');
+
+  const title = document.createElement('p');
+  title.textContent = '长按图片，选择“保存图片”';
+  title.style.cssText = 'margin:0 40px 16px;font-size:16px;font-weight:700';
+
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.textContent = '关闭';
+  close.setAttribute('aria-label', '关闭图片预览');
+  close.style.cssText = [
+    'position:fixed',
+    'top:14px',
+    'right:14px',
+    'z-index:1',
+    'border:1px solid rgba(255,255,255,.5)',
+    'border-radius:999px',
+    'padding:7px 12px',
+    'background:rgba(0,0,0,.45)',
+    'color:#fff',
+    'font-size:14px',
+  ].join(';');
+
+  const image = document.createElement('img');
+  image.src = imageDataUrl;
+  image.alt = '可长按保存的图片';
+  image.style.cssText =
+    'display:block;width:auto;max-width:100%;height:auto;margin:0 auto;background:#fff';
+
+  const cleanup = () => {
+    document.removeEventListener('keydown', handleKeyDown);
+    overlay.remove();
+    document.body.style.overflow = previousOverflow;
+  };
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') cleanup();
+  };
+  close.addEventListener('click', cleanup);
+  document.addEventListener('keydown', handleKeyDown);
+  overlay.append(title, close, image);
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+  close.focus();
+  return 'previewed';
+}
+
 /**
  * 动态加载微信JS SDK
  * @returns Promise<void>
@@ -270,19 +358,21 @@ export async function downloadCard(
             return;
           }
 
-          const link = document.createElement('a');
-          link.download = `${
+          const imageUrl = URL.createObjectURL(blob);
+          const fileName = `${
             filenamePrefix || 'inspiration-card'
           }-${Date.now()}.png`;
-          link.href = URL.createObjectURL(blob);
-          document.body.appendChild(link);
-          link.click();
+
+          if (isMobileBrowser()) {
+            saveImageDataUrl(canvas.toDataURL('image/png', 0.95), fileName);
+          } else {
+            saveImageDataUrl(imageUrl, fileName);
+          }
 
           // 清理
           setTimeout(() => {
-            document.body.removeChild(link);
             document.body.removeChild(sandbox);
-            URL.revokeObjectURL(link.href);
+            URL.revokeObjectURL(imageUrl);
           }, 100);
 
           resolve(true);
