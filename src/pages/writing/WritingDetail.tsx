@@ -34,7 +34,7 @@ import { formatDate, formatLocalDateTime } from '../../utils/date';
 import { useGlobalSnackbar } from '../../context/app';
 import HighlightedText from '../../components/writing/HighlightedText';
 import { isUserLoggedIn } from '../../utils/user';
-import { downloadCard } from '../../utils/share';
+import { downloadCard, isMobileBrowser } from '../../utils/share';
 
 const WritingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -133,17 +133,17 @@ const WritingDetail: React.FC = () => {
     if (!post || downloading) return;
     setDownloading(true);
     try {
-      const isWechat = /MicroMessenger/i.test(window.navigator.userAgent);
+      const isMobile = isMobileBrowser();
       const safeTitle = (post.title || '一则自我观察')
         .replace(/[\\/:*?"<>|]/g, '-')
         .slice(0, 40);
       const success = await downloadCard(
         downloadCardRef.current,
         `书写-${safeTitle}`,
-        isWechat ? setDownloadImage : undefined
+        isMobile ? setDownloadImage : undefined
       );
       if (!success) showSnackbar.error('生成书写图片失败，请稍后重试');
-      else if (!isWechat) showSnackbar.success('书写图片已下载');
+      else if (!isMobile) showSnackbar.success('书写图片已下载');
     } catch {
       showSnackbar.error('生成书写图片失败，请稍后重试');
     } finally {
