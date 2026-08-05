@@ -161,25 +161,38 @@
   background: #1f1b18;
 }
 
-.photoLayer {
+.photoLayer,
+.photoForeground {
   position: absolute;
   inset: 0;
-  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+.photoLayer {
+  z-index: 0;
+  background-size: cover;
   filter: brightness(0.96) saturate(0.98);
   transform: scale(1.01);
 }
 
 .photoContain .photoLayer {
+  inset: -18px;
+  background-size: cover;
+  filter: blur(18px) brightness(0.72) saturate(0.9);
+  transform: scale(1.1);
+}
+
+.photoForeground {
+  z-index: 1;
   background-size: contain;
-  transform: none;
-  background-color: #211d1a;
+  filter: brightness(0.96) saturate(0.98);
 }
 
 .overlay {
   position: absolute;
   inset: 0;
+  z-index: 1;
   background: linear-gradient(
     180deg,
     rgba(8, 7, 6, 0.03) 0%,
@@ -264,7 +277,11 @@
 }
 
 .cardLongText .textPanel {
-  padding-bottom: 18px;
+  padding-bottom: 86px;
+}
+
+.cardWithPhoto.cardLongText .textPanel {
+  padding-bottom: 94px;
 }
 
 .qrFloat {
@@ -279,12 +296,6 @@
   color: #4a372d;
   text-align: center;
   box-shadow: 0 10px 24px rgba(48, 31, 22, 0.14);
-}
-
-.cardLongText .qrFloat {
-  position: static;
-  float: right;
-  margin: 0 0 10px 16px;
 }
 
 .qrFloat svg {
@@ -338,7 +349,6 @@
 }
 
 .byline {
-  clear: both;
   margin-top: 16px;
   max-width: 70%;
   overflow: hidden;
@@ -392,6 +402,14 @@
     padding: 18px;
   }
 
+  .cardLongText .textPanel {
+    padding-bottom: 80px;
+  }
+
+  .cardWithPhoto.cardLongText .textPanel {
+    padding-bottom: 88px;
+  }
+
   .expressionCue {
     max-width: 52%;
     font-size: 0.68rem;
@@ -404,10 +422,6 @@
   .qrFloat {
     width: 64px;
     padding: 5px 5px 4px;
-  }
-
-  .cardLongText .qrFloat {
-    margin-left: 12px;
   }
 
   .qrFloat span {
