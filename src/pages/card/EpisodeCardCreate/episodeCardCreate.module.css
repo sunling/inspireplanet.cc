@@ -179,6 +179,10 @@
   color: #d86f42;
 }
 
+.publishPanel :global(.MuiCheckbox-root.Mui-checked) {
+  color: #d86f42;
+}
+
 .publishPanel small {
   padding-left: 32px;
   color: #8d8379;
@@ -189,6 +193,15 @@
   margin-top: 2px;
   border-radius: 12px;
   box-shadow: none;
+}
+
+.publishPanel :global(.MuiButton-contained:not(.Mui-disabled)) {
+  background: #e56f45;
+  color: #fff;
+}
+
+.publishPanel :global(.MuiButton-contained:not(.Mui-disabled):hover) {
+  background: #ca5c36;
 }
 
 .wallLink,
