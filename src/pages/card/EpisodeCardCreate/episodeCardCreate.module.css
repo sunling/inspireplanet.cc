@@ -55,7 +55,7 @@
   margin-top: -10px;
   text-align: right;
   color: #8d8379;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
 .photoButton,
@@ -106,17 +106,37 @@
   color: #514a44;
 }
 
+.qrNote {
+  margin: 2px 0 0;
+  padding-left: 12px;
+  border-left: 3px solid #efb08f;
+  color: #756b62;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
 .card {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 5;
   overflow: hidden;
   border-radius: 28px;
-  background: linear-gradient(145deg, #fff4dc, #f7c8aa 55%, #df8c6a);
+  background:
+    radial-gradient(circle at 18% 15%, rgba(255, 255, 255, 0.72), transparent 28%),
+    linear-gradient(145deg, #fff4dc, #f7c8aa 55%, #df8c6a);
   box-shadow: 0 18px 50px rgba(87, 53, 36, 0.16);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 20px;
+  pointer-events: none;
 }
 
 .cardWithPhoto {
@@ -133,8 +153,8 @@
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(15, 13, 11, 0.24),
-    rgba(15, 13, 11, 0.72)
+    rgba(15, 13, 11, 0.22),
+    rgba(15, 13, 11, 0.76)
   );
 }
 
@@ -146,38 +166,98 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 24px;
+  gap: 20px;
+}
+
+.cardLongText .cardContent {
+  padding-top: 34px;
+  gap: 14px;
 }
 
 .mainContent {
   min-height: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  justify-content: center;
+  gap: 22px;
+}
+
+.mainContentWithIllustration {
+  justify-content: flex-start;
 }
 
 .illustration {
   width: 100%;
-  max-height: 48%;
+  max-height: 42%;
   object-fit: contain;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: 0 12px 28px rgba(54, 36, 26, 0.14);
+}
+
+.illustrationCompact {
+  max-height: 30%;
 }
 
 .quote {
+  position: relative;
+  min-height: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: clamp(1.55rem, 4vw, 2.35rem);
   font-weight: 650;
-  line-height: 1.55;
   letter-spacing: 0.02em;
+  text-wrap: pretty;
+}
+
+.quote::before {
+  content: '“';
+  display: block;
+  margin-bottom: -0.16em;
+  color: rgba(154, 73, 38, 0.36);
+  font-family: Georgia, serif;
+  font-size: 1.75em;
+  font-weight: 400;
+  line-height: 0.7;
+}
+
+.cardWithPhoto .quote::before {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.quoteLarge {
+  font-size: clamp(1.85rem, 4.8vw, 2.75rem);
+  line-height: 1.48;
+}
+
+.quoteMedium {
+  font-size: clamp(1.48rem, 3.8vw, 2.08rem);
+  line-height: 1.52;
+}
+
+.quoteSmall {
+  font-size: clamp(1.16rem, 3vw, 1.55rem);
+  line-height: 1.52;
+}
+
+.quoteXSmall {
+  font-size: clamp(0.98rem, 2.45vw, 1.25rem);
+  line-height: 1.48;
+  letter-spacing: 0.01em;
 }
 
 .cardFooter {
+  flex: 0 0 auto;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(96, 64, 45, 0.2);
+}
+
+.cardWithPhoto .cardFooter {
+  border-top-color: rgba(255, 255, 255, 0.28);
 }
 
 .episodeInfo {
@@ -185,18 +265,29 @@
   flex-direction: column;
   gap: 5px;
   min-width: 0;
-  font-size: 0.83rem;
+  font-size: 0.8rem;
   line-height: 1.35;
+}
+
+.episodeInfo strong {
+  letter-spacing: 0.05em;
 }
 
 .episodeInfo span {
   opacity: 0.84;
 }
 
+.brandMark {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  opacity: 0.8;
+}
+
 .qrBlock {
-  flex: 0 0 92px;
+  flex: 0 0 94px;
   padding: 8px;
-  border-radius: 12px;
+  border-radius: 14px;
   background: #fff;
   color: #403a35;
   display: flex;
@@ -205,6 +296,7 @@
   gap: 5px;
   font-size: 0.58rem;
   text-align: center;
+  box-shadow: 0 8px 20px rgba(52, 34, 24, 0.14);
 }
 
 .actions {
@@ -234,6 +326,10 @@
 
   .cardContent {
     padding: 32px 26px 22px;
+  }
+
+  .cardLongText .cardContent {
+    padding-top: 26px;
   }
 
   .photoModes {
