@@ -69,6 +69,30 @@
   padding: 0;
 }
 
+.photoModes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.photoModes button {
+  border: 1px solid #ded4c9;
+  border-radius: 999px;
+  padding: 9px 10px;
+  background: #fff;
+  color: #5d554e;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.photoModes .activeMode {
+  border-color: #d86f42;
+  background: #fff1e8;
+  color: #a94e2b;
+  font-weight: 700;
+}
+
 .settings {
   display: flex;
   flex-direction: column;
@@ -92,16 +116,26 @@
   box-shadow: 0 18px 50px rgba(87, 53, 36, 0.16);
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
 }
 
 .cardWithPhoto {
   color: #fff;
 }
 
+.photoContain {
+  background-size: contain;
+  background-color: #2a2521;
+}
+
 .overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(15, 13, 11, 0.28), rgba(15, 13, 11, 0.68));
+  background: linear-gradient(
+    180deg,
+    rgba(15, 13, 11, 0.24),
+    rgba(15, 13, 11, 0.72)
+  );
 }
 
 .cardContent {
@@ -112,6 +146,22 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 24px;
+}
+
+.mainContent {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.illustration {
+  width: 100%;
+  max-height: 48%;
+  object-fit: contain;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.55);
 }
 
 .quote {
@@ -184,6 +234,10 @@
 
   .cardContent {
     padding: 32px 26px 22px;
+  }
+
+  .photoModes {
+    grid-template-columns: 1fr;
   }
 
   .actions {
