@@ -23,6 +23,13 @@ const getDetailPreview = (detail = '') =>
     .replace(/\s+/g, ' ')
     .trim();
 
+const formatEpisodeDate = (date: string) =>
+  new Date(`${date}T00:00:00`).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
 const EpisodeHub: React.FC = () => {
   const params = useParams<{ episode: string }>();
   const meetupId = INSPIRE_PLANET_MEETUP_ID;
@@ -102,16 +109,16 @@ const EpisodeHub: React.FC = () => {
     );
   }
 
-  const theme = episode.theme || episode.meetup.default_theme || '';
-
   return (
     <main className={styles.page}>
       <header className={styles.hero}>
-        <p className={styles.eyebrow}>启发星球 · EP{episode.episode_number}</p>
-        <h1>{theme || episode.meetup.title}</h1>
-        {episode.date && <time dateTime={episode.date}>{episode.date}</time>}
+        <p className={styles.eyebrow}>每周线上分享</p>
+        <h1>启发星球 EP{episode.episode_number}</h1>
+        {episode.date && (
+          <time dateTime={episode.date}>{formatEpisodeDate(episode.date)}</time>
+        )}
         <p className={styles.intro}>
-          一场分享结束了，但一些话还在继续生长。这里收集本期周刊与星友们现场写下的回应。
+          大家从过去一周带来各自的碎片输入、启发与思考。这里收集本期周刊，以及分享结束后仍想留下的话。
         </p>
         <div className={styles.heroActions}>
           <Link to={createUrl} className={styles.primaryAction}>
@@ -127,7 +134,7 @@ const EpisodeHub: React.FC = () => {
         <div className={styles.sectionHeading}>
           <div>
             <p>本期周刊</p>
-            <h2 id="weekly-heading">从分享里带走的视角</h2>
+            <h2 id="weekly-heading">这一期，我们分享了什么</h2>
           </div>
           {weeklyCards.length > 0 && (
             <Link to={`/weekly-cards/${episodeNumber}`}>阅读完整周刊</Link>
@@ -161,7 +168,7 @@ const EpisodeHub: React.FC = () => {
         <div className={styles.sectionHeading}>
           <div>
             <p>本期回应墙 · {responses.length} 条</p>
-            <h2 id="responses-heading">此刻还留在大家心里的话</h2>
+            <h2 id="responses-heading">从这些片段继续生长</h2>
           </div>
           <Link to={createUrl}>我也写一句</Link>
         </div>
@@ -190,7 +197,7 @@ const EpisodeHub: React.FC = () => {
           <div className={styles.emptyWall}>
             <span>✦</span>
             <h3>这里正等着第一句话</h3>
-            <p>不必总结整场分享，只写下此刻最想留下的一句。</p>
+            <p>可以是一句话、一个片段，或刚刚冒出的新想法。</p>
             <Link to={createUrl} className={styles.primaryAction}>
               成为第一个回应的人
             </Link>
