@@ -1,4 +1,11 @@
-import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  ChangeEvent,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Alert, Button, CircularProgress, Switch } from '@mui/material';
 import html2canvas from 'html2canvas';
 import { QRCodeSVG } from 'qrcode.react';
@@ -23,6 +30,8 @@ const EpisodeCardCreate: React.FC = () => {
     searchParams.get('meetupId') || DEFAULT_INSPIRE_PLANET_MEETUP_ID
   );
   const previewRef = useRef<HTMLDivElement>(null);
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const quoteRef = useRef<HTMLDivElement>(null);
   const [episode, setEpisode] = useState<EpisodeCardContext | null>(null);
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
@@ -64,6 +73,56 @@ const EpisodeCardCreate: React.FC = () => {
       `${window.location.origin}/create-card?meetupId=${meetupId}&episode=${episodeNumber}`,
     [episodeNumber, meetupId]
   );
+
+  const displayText = text.trim() || '写下此刻值得留下的想法。';
+  const weightedLength =
+    Array.from(displayText).length +
+    Math.max(0, displayText.split('\n').length - 1) * 12;
+  const hasLongText = weightedLength > 125;
+
+  useLayoutEffect(() => {
+    const container = mainContentRef.current;
+    const quote = quoteRef.current;
+    if (!container || !quote) return;
+
+    let animationFrame = 0;
+
+    const fitText = () => {
+      const initialSize =
+        weightedLength > 180
+          ? 20
+          : weightedLength > 125
+            ? 24
+            : weightedLength > 72
+              ? 31
+              : 42;
+      const minimumSize = photo && photoMode === 'illustration' ? 12 : 14;
+      let fontSize = initialSize;
+
+      quote.style.fontSize = `${fontSize}px`;
+      quote.style.lineHeight = weightedLength > 180 ? '1.4' : '1.5';
+
+      while (
+        container.scrollHeight > container.clientHeight &&
+        fontSize > minimumSize
+      ) {
+        fontSize -= 1;
+        quote.style.fontSize = `${fontSize}px`;
+      }
+    };
+
+    animationFrame = window.requestAnimationFrame(fitText);
+    const observer = new ResizeObserver(() => {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(fitText);
+    });
+    observer.observe(container);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      observer.disconnect();
+    };
+  }, [displayText, weightedLength, photo, photoMode, showEpisodeInfo]);
 
   const handlePhoto = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -127,7 +186,7 @@ const EpisodeCardCreate: React.FC = () => {
         await navigator.share({
           files: [file],
           title: `启发星球 EP${episode?.episode_number}`,
-          text: '这是我从这次相遇里带走的一句话。',
+          text: '这是我想记录下来的一点启发。',
         });
       } else {
         saveImageDataUrl(canvas.toDataURL('image/png'), file.name);
@@ -168,27 +227,14 @@ const EpisodeCardCreate: React.FC = () => {
       })
     : '';
   const usesBackgroundPhoto = photo && photoMode !== 'illustration';
-  const displayText = text.trim() || '你想从这次相遇带走什么？';
-  const weightedLength =
-    Array.from(displayText).length +
-    Math.max(0, displayText.split('\n').length - 1) * 12;
-  const quoteSizeClass =
-    weightedLength > 180
-      ? styles.quoteXSmall
-      : weightedLength > 125
-        ? styles.quoteSmall
-        : weightedLength > 72
-          ? styles.quoteMedium
-          : styles.quoteLarge;
-  const hasLongText = weightedLength > 125;
 
   return (
     <main className={styles.page}>
       <section className={styles.editor}>
         <p className={styles.eyebrow}>启发星球 EP{episode.episode_number}</p>
-        <h1>这次相遇，你想带走什么？</h1>
+        <h1>你想记录下什么？</h1>
         <p className={styles.description}>
-          写下一句话、一段感受，或者一个接下来想做的行动。
+          无论是现场参与、听完回放，还是后来想到的，都可以写下来。
         </p>
 
         {error && <Alert severity="warning">{error}</Alert>}
@@ -197,12 +243,12 @@ const EpisodeCardCreate: React.FC = () => {
           value={text}
           maxLength={MAX_TEXT_LENGTH}
           onChange={(event) => setText(event.target.value)}
-          placeholder="不需要整理成完整答案，写下此刻想到的就好……"
+          placeholder="一句话、一段感受，或者一个接下来想做的行动……"
           className={styles.textarea}
           autoFocus
         />
         <div className={styles.counter}>
-          {text.length}/{MAX_TEXT_LENGTH} · 卡片会自动调整字号
+          {text.length}/{MAX_TEXT_LENGTH} · 卡片会根据可用空间自动缩放
         </div>
 
         <label className={styles.photoButton}>
@@ -250,7 +296,7 @@ const EpisodeCardCreate: React.FC = () => {
               checked={showEpisodeInfo}
               onChange={(_, value) => setShowEpisodeInfo(value)}
             />
-            显示本期信息
+            显示期次与主题
           </label>
           <p className={styles.qrNote}>
             邀请二维码会固定保留，让看到卡片的人也能写下自己的启发。
@@ -275,6 +321,7 @@ const EpisodeCardCreate: React.FC = () => {
           {usesBackgroundPhoto && <div className={styles.overlay} />}
           <div className={styles.cardContent}>
             <div
+              ref={mainContentRef}
               className={`${styles.mainContent} ${
                 photo && photoMode === 'illustration'
                   ? styles.mainContentWithIllustration
@@ -290,15 +337,14 @@ const EpisodeCardCreate: React.FC = () => {
                   }`}
                 />
               )}
-              <div className={`${styles.quote} ${quoteSizeClass}`}>
+              <div ref={quoteRef} className={styles.quote}>
                 {displayText}
               </div>
             </div>
             <div className={styles.cardFooter}>
               {showEpisodeInfo ? (
                 <div className={styles.episodeInfo}>
-                  <strong>启发星球 EP{episode.episode_number}</strong>
-                  <span>{cardTitle}</span>
+                  <strong>EP{episode.episode_number} · {cardTitle}</strong>
                   {dateLabel && <span>{dateLabel}</span>}
                 </div>
               ) : (
