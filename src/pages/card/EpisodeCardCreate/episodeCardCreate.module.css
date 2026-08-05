@@ -156,16 +156,6 @@
   box-shadow: 0 18px 50px rgba(87, 53, 36, 0.16);
 }
 
-.card::after {
-  content: '';
-  position: absolute;
-  inset: 14px;
-  z-index: 4;
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  border-radius: 20px;
-  pointer-events: none;
-}
-
 .cardWithPhoto {
   color: #fff;
   background: #1f1b18;
@@ -177,7 +167,7 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: brightness(0.92) saturate(0.96);
+  filter: brightness(0.96) saturate(0.98);
   transform: scale(1.01);
 }
 
@@ -190,24 +180,62 @@
 .overlay {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(180deg, rgba(8, 7, 6, 0.06) 0%, rgba(8, 7, 6, 0.05) 34%, rgba(8, 7, 6, 0.36) 72%, rgba(8, 7, 6, 0.56) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(8, 7, 6, 0.03) 0%,
+    rgba(8, 7, 6, 0.04) 40%,
+    rgba(8, 7, 6, 0.16) 72%,
+    rgba(8, 7, 6, 0.26) 100%
+  );
 }
 
 .cardContent {
   position: relative;
   z-index: 2;
   height: 100%;
-  padding: 36px 34px 26px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 18px;
 }
 
-.cardLongText .cardContent {
-  padding-top: 28px;
-  gap: 12px;
+.topMeta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brandChip {
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 250, 245, 0.86);
+  color: #8f4a2d;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  box-shadow: 0 8px 18px rgba(57, 37, 26, 0.08);
+}
+
+.cardWithPhoto .brandChip {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.topMetaRight {
+  max-width: 55%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  text-align: right;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: rgba(82, 62, 51, 0.88);
+}
+
+.cardWithPhoto .topMetaRight {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.28);
 }
 
 .mainContent {
@@ -215,24 +243,34 @@
   flex: 1 1 auto;
   overflow: hidden;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 14px;
+  align-items: center;
+  padding: 18px 86px 86px 0;
 }
 
-.cardWithPhoto .mainContent {
-  align-self: stretch;
-  padding: 22px 24px;
+.textPanel {
+  width: 100%;
+}
+
+.cardWithPhoto .textPanel {
+  width: min(100%, 88%);
+  padding: 20px 22px;
   border-radius: 24px;
-  background: linear-gradient(135deg, rgba(18, 15, 13, 0.58), rgba(18, 15, 13, 0.28));
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
-  backdrop-filter: blur(2px);
+  background: linear-gradient(
+    135deg,
+    rgba(18, 15, 13, 0.54),
+    rgba(18, 15, 13, 0.2)
+  );
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(1.5px);
+}
+
+.cardLongText .textPanel {
+  padding-bottom: 18px;
 }
 
 .quote {
   position: relative;
   min-height: 0;
-  flex: 0 1 auto;
   overflow: hidden;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -244,16 +282,16 @@
 }
 
 .cardWithPhoto .quote {
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.32);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.28);
 }
 
 .quote::before {
   content: '“';
   display: block;
   margin-bottom: -0.16em;
-  color: rgba(154, 73, 38, 0.36);
+  color: rgba(154, 73, 38, 0.3);
   font-family: Georgia, serif;
-  font-size: 1.55em;
+  font-size: 1.45em;
   font-weight: 400;
   line-height: 0.7;
 }
@@ -263,131 +301,49 @@
 }
 
 .cardWithPhoto .quote::before {
-  color: rgba(255, 255, 255, 0.48);
+  color: rgba(255, 255, 255, 0.44);
 }
 
 .byline {
-  flex: 0 0 auto;
-  align-self: flex-end;
+  margin-top: 16px;
   max-width: 70%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 650;
-  letter-spacing: 0.06em;
-  opacity: 0.78;
+  letter-spacing: 0.05em;
+  color: rgba(79, 58, 47, 0.82);
 }
 
 .cardWithPhoto .byline {
-  opacity: 0.88;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.28);
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.26);
 }
 
-.signatureBar {
-  flex: 0 0 auto;
-  min-height: 88px;
-  padding: 12px 14px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 16px;
-  border-radius: 20px;
-  background: rgba(255, 250, 245, 0.9);
-  color: #4a372d;
-  box-shadow: 0 12px 28px rgba(48, 31, 22, 0.12);
-}
-
-.cardWithPhoto .signatureBar {
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.episodeInfo {
-  min-width: 0;
+.qrCorner {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 0.76rem;
-  line-height: 1.35;
-}
-
-.episodeInfo strong {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  font-size: 0.88rem;
-}
-
-.episodeInfo span {
-  opacity: 0.72;
-}
-
-.episodeLabel {
-  width: fit-content;
-  padding: 3px 7px;
-  border-radius: 999px;
-  background: #f4dfd2;
-  color: #9d4f2f;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-
-.qrInline {
-  display: flex;
   align-items: center;
-  gap: 9px;
-  color: #4a403a;
+  gap: 5px;
+  padding: 8px 8px 6px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #4a372d;
+  box-shadow: 0 12px 28px rgba(48, 31, 22, 0.16);
 }
 
-.qrInline svg,
-.inviteBadge svg {
-  flex: 0 0 auto;
-  padding: 4px;
+.qrCorner svg {
   border-radius: 10px;
   background: #fff;
 }
 
-.qrInline span {
-  width: 56px;
-  font-size: 0.62rem;
-  line-height: 1.35;
-}
-
-.inviteBadge {
-  flex: 0 0 auto;
-  align-self: center;
-  width: fit-content;
-  max-width: 100%;
-  padding: 10px 12px 10px 16px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  border-radius: 999px;
-  background: rgba(255, 250, 245, 0.92);
-  color: #49372e;
-  box-shadow: 0 12px 30px rgba(48, 31, 22, 0.14);
-}
-
-.cardWithPhoto .inviteBadge {
-  background: rgba(255, 255, 255, 0.92);
-}
-
-.inviteCopy {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  text-align: right;
-}
-
-.inviteCopy strong {
-  font-size: 0.9rem;
-  letter-spacing: 0.08em;
-}
-
-.inviteCopy span {
-  font-size: 0.68rem;
-  opacity: 0.72;
+.qrCorner span {
+  font-size: 0.64rem;
+  line-height: 1.2;
 }
 
 .actions {
@@ -416,38 +372,36 @@
   }
 
   .cardContent {
-    padding: 28px 22px 20px;
-  }
-
-  .cardLongText .cardContent {
-    padding-top: 22px;
-  }
-
-  .cardWithPhoto .mainContent {
     padding: 18px;
+  }
+
+  .mainContent {
+    padding-right: 78px;
+    padding-bottom: 78px;
+  }
+
+  .cardWithPhoto .textPanel {
+    width: 100%;
+    padding: 18px;
+  }
+
+  .topMetaRight {
+    max-width: 48%;
+    font-size: 0.7rem;
   }
 
   .photoModes {
     grid-template-columns: 1fr;
   }
 
-  .signatureBar {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px;
-    padding: 10px 11px;
+  .qrCorner {
+    right: 16px;
+    bottom: 16px;
+    padding: 7px 7px 5px;
   }
 
-  .qrInline {
-    gap: 6px;
-  }
-
-  .qrInline span {
-    display: none;
-  }
-
-  .inviteBadge {
-    gap: 10px;
-    padding-left: 14px;
+  .qrCorner span {
+    font-size: 0.58rem;
   }
 
   .actions {
