@@ -46,7 +46,8 @@
   background: white;
 }
 
-.textarea:focus {
+.textarea:focus,
+.authorField input:focus {
   outline: 3px solid rgba(255, 127, 80, 0.2);
   border-color: #ff7f50;
 }
@@ -56,6 +57,33 @@
   text-align: right;
   color: #8d8379;
   font-size: 0.82rem;
+}
+
+.authorField {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 12px;
+  color: #514a44;
+  font-size: 0.92rem;
+}
+
+.authorField > span {
+  font-weight: 700;
+}
+
+.authorField input {
+  min-width: 0;
+  border: 1px solid #ded4c9;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  background: #fff;
+}
+
+.authorField small {
+  grid-column: 2;
+  color: #8d8379;
 }
 
 .photoButton,
@@ -189,6 +217,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  gap: 14px;
 }
 
 .cardWithPhoto .mainContent {
@@ -235,6 +264,24 @@
 
 .cardWithPhoto .quote::before {
   color: rgba(255, 255, 255, 0.48);
+}
+
+.byline {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  max-width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  opacity: 0.78;
+}
+
+.cardWithPhoto .byline {
+  opacity: 0.88;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.28);
 }
 
 .signatureBar {
