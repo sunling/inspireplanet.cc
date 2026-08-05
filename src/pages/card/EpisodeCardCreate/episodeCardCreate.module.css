@@ -132,7 +132,7 @@
   content: '';
   position: absolute;
   inset: 14px;
-  z-index: 3;
+  z-index: 4;
   border: 1px solid rgba(255, 255, 255, 0.34);
   border-radius: 20px;
   pointer-events: none;
@@ -140,7 +140,7 @@
 
 .cardWithPhoto {
   color: #fff;
-  background: #463a34;
+  background: #1f1b18;
 }
 
 .photoLayer {
@@ -149,41 +149,28 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: brightness(0.84) saturate(0.94) contrast(0.98);
-  transform: scale(1.015);
+  filter: brightness(0.92) saturate(0.96);
+  transform: scale(1.01);
 }
 
 .photoContain .photoLayer {
   background-size: contain;
-  filter: brightness(0.9) saturate(0.96);
   transform: none;
+  background-color: #211d1a;
 }
 
 .overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(20, 16, 13, 0.08),
-    rgba(20, 16, 13, 0.22) 48%,
-    rgba(20, 16, 13, 0.48)
-  );
-}
-
-.photoContain .overlay {
-  background: linear-gradient(
-    180deg,
-    rgba(20, 16, 13, 0.03),
-    rgba(20, 16, 13, 0.12) 55%,
-    rgba(20, 16, 13, 0.34)
-  );
+  background:
+    linear-gradient(180deg, rgba(8, 7, 6, 0.06) 0%, rgba(8, 7, 6, 0.05) 34%, rgba(8, 7, 6, 0.36) 72%, rgba(8, 7, 6, 0.56) 100%);
 }
 
 .cardContent {
   position: relative;
   z-index: 2;
   height: 100%;
-  padding: 40px 38px 28px;
+  padding: 36px 34px 26px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -191,7 +178,7 @@
 }
 
 .cardLongText .cardContent {
-  padding-top: 30px;
+  padding-top: 28px;
   gap: 12px;
 }
 
@@ -205,24 +192,12 @@
 }
 
 .cardWithPhoto .mainContent {
-  margin: 4px -4px 0;
-  padding: 18px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 22px;
-  background: linear-gradient(
-    145deg,
-    rgba(24, 19, 16, 0.28),
-    rgba(24, 19, 16, 0.42)
-  );
-  box-shadow: 0 14px 34px rgba(20, 14, 10, 0.12);
-}
-
-.photoContain .mainContent {
-  background: linear-gradient(
-    145deg,
-    rgba(24, 19, 16, 0.34),
-    rgba(24, 19, 16, 0.48)
-  );
+  align-self: stretch;
+  padding: 22px 24px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(18, 15, 13, 0.58), rgba(18, 15, 13, 0.28));
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(2px);
 }
 
 .quote {
@@ -237,7 +212,10 @@
   line-height: 1.5;
   letter-spacing: 0.02em;
   text-wrap: pretty;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.08);
+}
+
+.cardWithPhoto .quote {
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.32);
 }
 
 .quote::before {
@@ -256,33 +234,34 @@
 }
 
 .cardWithPhoto .quote::before {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.48);
 }
 
-.cardFooter {
+.signatureBar {
   flex: 0 0 auto;
-  min-height: 106px;
+  min-height: 88px;
+  padding: 12px 14px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 94px;
-  align-items: end;
-  gap: 20px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(96, 64, 45, 0.2);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  border-radius: 20px;
+  background: rgba(255, 250, 245, 0.9);
+  color: #4a372d;
+  box-shadow: 0 12px 28px rgba(48, 31, 22, 0.12);
 }
 
-.cardWithPhoto .cardFooter {
-  border-top-color: rgba(255, 255, 255, 0.28);
+.cardWithPhoto .signatureBar {
+  background: rgba(255, 255, 255, 0.9);
 }
 
-.episodeInfo,
-.brandBlock {
-  align-self: center;
+.episodeInfo {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  font-size: 0.78rem;
-  line-height: 1.42;
+  gap: 4px;
+  font-size: 0.76rem;
+  line-height: 1.35;
 }
 
 .episodeInfo strong {
@@ -290,32 +269,78 @@
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  letter-spacing: 0.02em;
+  font-size: 0.88rem;
 }
 
-.episodeInfo span,
-.brandBlock span {
-  opacity: 0.78;
+.episodeInfo span {
+  opacity: 0.72;
 }
 
-.brandBlock strong {
-  font-size: 0.9rem;
-  letter-spacing: 0.12em;
+.episodeLabel {
+  width: fit-content;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #f4dfd2;
+  color: #9d4f2f;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
-.qrBlock {
-  width: 94px;
-  padding: 8px;
-  border-radius: 14px;
+.qrInline {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #4a403a;
+}
+
+.qrInline svg,
+.inviteBadge svg {
+  flex: 0 0 auto;
+  padding: 4px;
+  border-radius: 10px;
   background: #fff;
-  color: #403a35;
+}
+
+.qrInline span {
+  width: 56px;
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+.inviteBadge {
+  flex: 0 0 auto;
+  align-self: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 10px 12px 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-radius: 999px;
+  background: rgba(255, 250, 245, 0.92);
+  color: #49372e;
+  box-shadow: 0 12px 30px rgba(48, 31, 22, 0.14);
+}
+
+.cardWithPhoto .inviteBadge {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.inviteCopy {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.58rem;
-  text-align: center;
-  box-shadow: 0 8px 20px rgba(52, 34, 24, 0.14);
+  gap: 3px;
+  text-align: right;
+}
+
+.inviteCopy strong {
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+}
+
+.inviteCopy span {
+  font-size: 0.68rem;
+  opacity: 0.72;
 }
 
 .actions {
@@ -344,24 +369,38 @@
   }
 
   .cardContent {
-    padding: 32px 26px 22px;
+    padding: 28px 22px 20px;
   }
 
   .cardLongText .cardContent {
-    padding-top: 24px;
+    padding-top: 22px;
+  }
+
+  .cardWithPhoto .mainContent {
+    padding: 18px;
   }
 
   .photoModes {
     grid-template-columns: 1fr;
   }
 
-  .cardFooter {
-    grid-template-columns: minmax(0, 1fr) 90px;
-    gap: 14px;
+  .signatureBar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 10px 11px;
   }
 
-  .qrBlock {
-    width: 90px;
+  .qrInline {
+    gap: 6px;
+  }
+
+  .qrInline span {
+    display: none;
+  }
+
+  .inviteBadge {
+    gap: 10px;
+    padding-left: 14px;
   }
 
   .actions {
