@@ -162,25 +162,26 @@
   position: relative;
   z-index: 1;
   height: 100%;
-  padding: 42px 38px 28px;
+  padding: 40px 38px 28px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 20px;
+  gap: 18px;
 }
 
 .cardLongText .cardContent {
-  padding-top: 34px;
-  gap: 14px;
+  padding-top: 30px;
+  gap: 12px;
 }
 
 .mainContent {
   min-height: 0;
-  flex: 1;
+  flex: 1 1 auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 22px;
+  gap: 18px;
 }
 
 .mainContentWithIllustration {
@@ -189,7 +190,9 @@
 
 .illustration {
   width: 100%;
-  max-height: 42%;
+  max-height: 38%;
+  min-height: 0;
+  flex: 0 1 auto;
   object-fit: contain;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.58);
@@ -197,15 +200,19 @@
 }
 
 .illustrationCompact {
-  max-height: 30%;
+  max-height: 22%;
 }
 
 .quote {
   position: relative;
   min-height: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  font-size: 42px;
   font-weight: 650;
+  line-height: 1.5;
   letter-spacing: 0.02em;
   text-wrap: pretty;
 }
@@ -216,34 +223,17 @@
   margin-bottom: -0.16em;
   color: rgba(154, 73, 38, 0.36);
   font-family: Georgia, serif;
-  font-size: 1.75em;
+  font-size: 1.55em;
   font-weight: 400;
   line-height: 0.7;
 }
 
+.cardLongText .quote::before {
+  display: none;
+}
+
 .cardWithPhoto .quote::before {
   color: rgba(255, 255, 255, 0.5);
-}
-
-.quoteLarge {
-  font-size: clamp(1.85rem, 4.8vw, 2.75rem);
-  line-height: 1.48;
-}
-
-.quoteMedium {
-  font-size: clamp(1.48rem, 3.8vw, 2.08rem);
-  line-height: 1.52;
-}
-
-.quoteSmall {
-  font-size: clamp(1.16rem, 3vw, 1.55rem);
-  line-height: 1.52;
-}
-
-.quoteXSmall {
-  font-size: clamp(0.98rem, 2.45vw, 1.25rem);
-  line-height: 1.48;
-  letter-spacing: 0.01em;
 }
 
 .cardFooter {
@@ -252,7 +242,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 18px;
-  padding-top: 14px;
+  padding-top: 12px;
   border-top: 1px solid rgba(96, 64, 45, 0.2);
 }
 
@@ -263,18 +253,22 @@
 .episodeInfo {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   line-height: 1.35;
 }
 
 .episodeInfo strong {
-  letter-spacing: 0.05em;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  letter-spacing: 0.02em;
 }
 
 .episodeInfo span {
-  opacity: 0.84;
+  opacity: 0.78;
 }
 
 .brandMark {
@@ -329,7 +323,7 @@
   }
 
   .cardLongText .cardContent {
-    padding-top: 26px;
+    padding-top: 24px;
   }
 
   .photoModes {
