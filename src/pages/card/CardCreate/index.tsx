@@ -107,11 +107,10 @@ const StandardCardCreate: React.FC = () => {
 
 const CreateCard: React.FC = () => {
   const [searchParams] = useSearchParams();
-  return searchParams.get('episodeId') ? (
-    <EpisodeCardCreate />
-  ) : (
-    <StandardCardCreate />
-  );
+  const hasEpisodeContext =
+    searchParams.has('episode') || searchParams.has('episodeId');
+
+  return hasEpisodeContext ? <EpisodeCardCreate /> : <StandardCardCreate />;
 };
 
 export default CreateCard;
