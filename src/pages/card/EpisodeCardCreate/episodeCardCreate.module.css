@@ -286,8 +286,9 @@
 
 .qrFloat {
   position: absolute;
-  right: 0;
-  bottom: 0;
+  right: -14px;
+  bottom: -14px;
+  z-index: 4;
   width: 70px;
   margin: 0;
   padding: 6px 6px 5px;
@@ -420,6 +421,8 @@
   }
 
   .qrFloat {
+    right: -10px;
+    bottom: -10px;
     width: 64px;
     padding: 5px 5px 4px;
   }
