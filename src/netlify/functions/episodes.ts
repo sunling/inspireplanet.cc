@@ -13,7 +13,7 @@ export interface MeetupEpisode {
   id?: number;
   meetup_id: number;
   episode_number: number;
-  date: string; // YYYY-MM-DD
+  date: string; // YYYY-MM-DD, empty when the episode is not persisted yet
   theme?: string;
   description?: string;
   created_at?: string;
@@ -41,6 +41,8 @@ export async function handler(
     switch (functionName) {
       case 'getById':
         return await handleGetById(event);
+      case 'getByMeetupEpisode':
+        return await handleGetByMeetupEpisode(event);
       case 'getByMeetupDate':
         return await handleGetByMeetupDate(event);
       case 'upsert':
@@ -75,6 +77,50 @@ async function handleGetById(event: NetlifyEvent): Promise<NetlifyResponse> {
   return createSuccessResponse({ episode: data });
 }
 
+async function handleGetByMeetupEpisode(
+  event: NetlifyEvent
+): Promise<NetlifyResponse> {
+  const { meetup_id, episode_number } = getDataFromEvent(event);
+  if (!meetup_id || !episode_number) {
+    return createErrorResponse('缺少活动或期数');
+  }
+
+  const { data: meetup, error: meetupError } = await supabase
+    .from('meetups')
+    .select('id, title, description, default_theme, cover')
+    .eq('id', meetup_id)
+    .maybeSingle();
+
+  if (meetupError) {
+    console.error('Get meetup for episode card error:', meetupError);
+    return createErrorResponse('查询活动失败', 500);
+  }
+  if (!meetup) return createErrorResponse('活动不存在', 404);
+
+  const { data: episode, error: episodeError } = await supabase
+    .from('meetup_episodes')
+    .select('*')
+    .eq('meetup_id', meetup_id)
+    .eq('episode_number', episode_number)
+    .maybeSingle();
+
+  if (episodeError) {
+    console.error('Get episode by number error:', episodeError);
+    return createErrorResponse('查询期次失败', 500);
+  }
+
+  return createSuccessResponse({
+    episode: {
+      ...(episode || {
+        meetup_id: Number(meetup_id),
+        episode_number: Number(episode_number),
+        date: '',
+      }),
+      meetup,
+    } as EpisodeCardContext,
+  });
+}
+
 // 获取某个循环活动在指定日期的期次信息
 async function handleGetByMeetupDate(
   event: NetlifyEvent
@@ -98,7 +144,6 @@ async function handleUpsert(event: NetlifyEvent): Promise<NetlifyResponse> {
   const userId = await getUserIdFromAuth(event);
   if (!userId) return createErrorResponse('请先登录', 401);
 
-  // 校验 organizer 权限
   const { data: user } = await supabase
     .from('users')
     .select('role')
