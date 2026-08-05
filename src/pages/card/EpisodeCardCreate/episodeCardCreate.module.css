@@ -145,27 +145,38 @@
 
 .photoLayer {
   position: absolute;
-  inset: -18px;
+  inset: 0;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: blur(8px) saturate(0.68) brightness(0.72);
-  transform: scale(1.05);
+  filter: brightness(0.84) saturate(0.94) contrast(0.98);
+  transform: scale(1.015);
 }
 
 .photoContain .photoLayer {
-  inset: 0;
   background-size: contain;
-  filter: saturate(0.72) brightness(0.66);
+  filter: brightness(0.9) saturate(0.96);
   transform: none;
 }
 
 .overlay {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(180deg, rgba(28, 22, 18, 0.42), rgba(28, 22, 18, 0.74)),
-    rgba(117, 78, 55, 0.14);
+  background: linear-gradient(
+    180deg,
+    rgba(20, 16, 13, 0.08),
+    rgba(20, 16, 13, 0.22) 48%,
+    rgba(20, 16, 13, 0.48)
+  );
+}
+
+.photoContain .overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(20, 16, 13, 0.03),
+    rgba(20, 16, 13, 0.12) 55%,
+    rgba(20, 16, 13, 0.34)
+  );
 }
 
 .cardContent {
@@ -191,6 +202,27 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.cardWithPhoto .mainContent {
+  margin: 4px -4px 0;
+  padding: 18px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  background: linear-gradient(
+    145deg,
+    rgba(24, 19, 16, 0.28),
+    rgba(24, 19, 16, 0.42)
+  );
+  box-shadow: 0 14px 34px rgba(20, 14, 10, 0.12);
+}
+
+.photoContain .mainContent {
+  background: linear-gradient(
+    145deg,
+    rgba(24, 19, 16, 0.34),
+    rgba(24, 19, 16, 0.48)
+  );
 }
 
 .quote {
