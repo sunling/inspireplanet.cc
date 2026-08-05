@@ -19,7 +19,7 @@ import styles from './episodeCardCreate.module.css';
 const MAX_TEXT_LENGTH = 240;
 const DEFAULT_INSPIRE_PLANET_MEETUP_ID = 39;
 
-type PhotoMode = 'cover' | 'contain' | 'illustration';
+type PhotoMode = 'soft' | 'contain';
 
 const EpisodeCardCreate: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -35,7 +35,7 @@ const EpisodeCardCreate: React.FC = () => {
   const [episode, setEpisode] = useState<EpisodeCardContext | null>(null);
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
-  const [photoMode, setPhotoMode] = useState<PhotoMode>('cover');
+  const [photoMode, setPhotoMode] = useState<PhotoMode>('soft');
   const [showEpisodeInfo, setShowEpisodeInfo] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -94,7 +94,6 @@ const EpisodeCardCreate: React.FC = () => {
             : weightedLength > 72
               ? 31
               : 42;
-      const minimumSize = photo && photoMode === 'illustration' ? 12 : 14;
       let fontSize = initialSize;
 
       quote.style.fontSize = `${fontSize}px`;
@@ -102,7 +101,7 @@ const EpisodeCardCreate: React.FC = () => {
 
       while (
         container.scrollHeight > container.clientHeight &&
-        fontSize > minimumSize
+        fontSize > 14
       ) {
         fontSize -= 1;
         quote.style.fontSize = `${fontSize}px`;
@@ -110,13 +109,7 @@ const EpisodeCardCreate: React.FC = () => {
     };
 
     const animationFrame = window.requestAnimationFrame(fitText);
-    const image = container.querySelector('img');
-    image?.addEventListener('load', fitText);
-
-    return () => {
-      window.cancelAnimationFrame(animationFrame);
-      image?.removeEventListener('load', fitText);
-    };
+    return () => window.cancelAnimationFrame(animationFrame);
   }, [displayText, weightedLength, photo, photoMode, showEpisodeInfo]);
 
   const handlePhoto = (event: ChangeEvent<HTMLInputElement>) => {
@@ -221,7 +214,6 @@ const EpisodeCardCreate: React.FC = () => {
         day: 'numeric',
       })
     : '';
-  const usesBackgroundPhoto = photo && photoMode !== 'illustration';
 
   return (
     <main className={styles.page}>
@@ -255,24 +247,17 @@ const EpisodeCardCreate: React.FC = () => {
             <div className={styles.photoModes} aria-label="照片展示方式">
               <button
                 type="button"
-                className={photoMode === 'cover' ? styles.activeMode : ''}
-                onClick={() => setPhotoMode('cover')}
+                className={photoMode === 'soft' ? styles.activeMode : ''}
+                onClick={() => setPhotoMode('soft')}
               >
-                铺满裁切
+                柔和底图
               </button>
               <button
                 type="button"
                 className={photoMode === 'contain' ? styles.activeMode : ''}
                 onClick={() => setPhotoMode('contain')}
               >
-                完整显示
-              </button>
-              <button
-                type="button"
-                className={photoMode === 'illustration' ? styles.activeMode : ''}
-                onClick={() => setPhotoMode('illustration')}
-              >
-                作为插图
+                完整底图
               </button>
             </div>
             <button
@@ -302,36 +287,19 @@ const EpisodeCardCreate: React.FC = () => {
       <section className={styles.previewSection}>
         <div
           ref={previewRef}
-          className={`${styles.card} ${
-            usesBackgroundPhoto ? styles.cardWithPhoto : ''
-          } ${photoMode === 'contain' ? styles.photoContain : ''} ${
-            hasLongText ? styles.cardLongText : ''
-          }`}
-          style={
-            usesBackgroundPhoto
-              ? { backgroundImage: `url(${photo})` }
-              : undefined
-          }
+          className={`${styles.card} ${photo ? styles.cardWithPhoto : ''} ${
+            photoMode === 'contain' ? styles.photoContain : ''
+          } ${hasLongText ? styles.cardLongText : ''}`}
         >
-          {usesBackgroundPhoto && <div className={styles.overlay} />}
-          <div className={styles.cardContent}>
+          {photo && (
             <div
-              ref={mainContentRef}
-              className={`${styles.mainContent} ${
-                photo && photoMode === 'illustration'
-                  ? styles.mainContentWithIllustration
-                  : ''
-              }`}
-            >
-              {photo && photoMode === 'illustration' && (
-                <img
-                  src={photo}
-                  alt="用户选择的插图"
-                  className={`${styles.illustration} ${
-                    hasLongText ? styles.illustrationCompact : ''
-                  }`}
-                />
-              )}
+              className={styles.photoLayer}
+              style={{ backgroundImage: `url(${photo})` }}
+            />
+          )}
+          {photo && <div className={styles.overlay} />}
+          <div className={styles.cardContent}>
+            <div ref={mainContentRef} className={styles.mainContent}>
               <div ref={quoteRef} className={styles.quote}>
                 {displayText}
               </div>
@@ -343,7 +311,10 @@ const EpisodeCardCreate: React.FC = () => {
                   {dateLabel && <span>{dateLabel}</span>}
                 </div>
               ) : (
-                <div className={styles.brandMark}>启发星球</div>
+                <div className={styles.brandBlock}>
+                  <strong>启发星球</strong>
+                  <span>记录启发，也邀请更多人写下自己的想法</span>
+                </div>
               )}
               <div className={styles.qrBlock}>
                 <QRCodeSVG value={shareUrl} size={74} bgColor="#ffffff" />
