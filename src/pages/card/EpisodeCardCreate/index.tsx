@@ -292,10 +292,10 @@ const EpisodeCardCreate: React.FC = () => {
               checked={showEpisodeInfo}
               onChange={(_, value) => setShowEpisodeInfo(value)}
             />
-            显示期次与主题
+            顶部显示期次与主题
           </label>
           <p className={styles.qrNote}>
-            邀请二维码会固定保留，让看到卡片的人也能写下自己的启发。
+            二维码会固定保留在卡片角落，让看到卡片的人也能继续写下自己的启发。
           </p>
         </div>
       </section>
@@ -315,34 +315,31 @@ const EpisodeCardCreate: React.FC = () => {
           )}
           {photo && <div className={styles.overlay} />}
           <div className={styles.cardContent}>
-            <div ref={mainContentRef} className={styles.mainContent}>
-              <div ref={quoteRef} className={styles.quote}>
-                {displayText}
+            <div className={styles.topMeta}>
+              <div className={styles.brandChip}>
+                {showEpisodeInfo ? `启发星球 EP${episode.episode_number}` : '启发星球'}
               </div>
-              <div className={styles.byline}>— {displayAuthor}</div>
-            </div>
-
-            {showEpisodeInfo ? (
-              <div className={styles.signatureBar}>
-                <div className={styles.episodeInfo}>
-                  <span className={styles.episodeLabel}>EP{episode.episode_number}</span>
-                  <strong>{cardTitle}</strong>
+              {showEpisodeInfo && (
+                <div className={styles.topMetaRight}>
+                  <span>{cardTitle}</span>
                   {dateLabel && <span>{dateLabel}</span>}
                 </div>
-                <div className={styles.qrInline}>
-                  <QRCodeSVG value={shareUrl} size={58} bgColor="#ffffff" />
-                  <span>扫码写下你的启发</span>
+              )}
+            </div>
+
+            <div ref={mainContentRef} className={styles.mainContent}>
+              <div className={styles.textPanel}>
+                <div ref={quoteRef} className={styles.quote}>
+                  {displayText}
                 </div>
+                <div className={styles.byline}>— {displayAuthor}</div>
               </div>
-            ) : (
-              <div className={styles.inviteBadge}>
-                <div className={styles.inviteCopy}>
-                  <strong>启发星球</strong>
-                  <span>也写下你的这一刻</span>
-                </div>
-                <QRCodeSVG value={shareUrl} size={58} bgColor="#ffffff" />
-              </div>
-            )}
+            </div>
+
+            <div className={styles.qrCorner}>
+              <QRCodeSVG value={shareUrl} size={56} bgColor="#ffffff" />
+              <span>扫码回应</span>
+            </div>
           </div>
         </div>
 
