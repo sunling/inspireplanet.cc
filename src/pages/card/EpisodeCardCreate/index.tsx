@@ -6,12 +6,19 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Alert, Button, CircularProgress, Switch } from '@mui/material';
+import {
+  Alert,
+  Button,
+  Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  Switch,
+} from '@mui/material';
 import html2canvas from 'html2canvas';
 import { QRCodeSVG } from 'qrcode.react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
-import { episodesApi } from '@/netlify/config';
+import { episodeResponsesApi, episodesApi } from '@/netlify/config';
 import { EpisodeCardContext } from '@/netlify/functions/episodes';
 import { getUserName } from '@/utils';
 import { saveImageDataUrl } from '@/utils/share';
@@ -24,9 +31,12 @@ const DEFAULT_INSPIRE_PLANET_MEETUP_ID = 39;
 type PhotoMode = 'cover' | 'contain';
 
 const EpisodeCardCreate: React.FC = () => {
+  const params = useParams<{ episode: string }>();
   const [searchParams] = useSearchParams();
   const episodeNumber = Number(
-    searchParams.get('episode') || searchParams.get('episodeId')
+    params.episode ||
+      searchParams.get('episode') ||
+      searchParams.get('episodeId')
   );
   const meetupId = Number(
     searchParams.get('meetupId') || DEFAULT_INSPIRE_PLANET_MEETUP_ID
@@ -40,8 +50,17 @@ const EpisodeCardCreate: React.FC = () => {
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoMode, setPhotoMode] = useState<PhotoMode>('cover');
   const [showEpisodeInfo, setShowEpisodeInfo] = useState(true);
+  const [publishConsent, setPublishConsent] = useState(false);
+  const [website, setWebsite] = useState('');
+  const [publishedResponseId, setPublishedResponseId] = useState<number | null>(
+    null
+  );
+  const [publishedResponseDate, setPublishedResponseDate] = useState<
+    string | null
+  >(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,12 +91,25 @@ const EpisodeCardCreate: React.FC = () => {
   }, [episodeNumber, meetupId]);
 
   const shareUrl = useMemo(
-    () =>
-      `${window.location.origin}/create-card?meetupId=${meetupId}&episode=${episodeNumber}`,
-    [episodeNumber, meetupId]
+    () => `${window.location.origin}/episodes/${episodeNumber}/respond`,
+    [episodeNumber]
   );
 
-  const displayText = text.trim() || '写下此刻值得留下的想法。';
+  const episodeDate = episode?.date
+    ? new Date(`${episode.date}T00:00:00`).toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : '';
+  const responseDate = new Date(
+    publishedResponseDate || Date.now()
+  ).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const displayText = text.trim() || '写下此刻还留在心里的片段。';
   const displayAuthor = author.trim() || '匿名';
   const weightedLength =
     Array.from(displayText).length +
@@ -108,10 +140,7 @@ const EpisodeCardCreate: React.FC = () => {
       quote.style.lineHeight =
         weightedLength > 300 ? '1.32' : weightedLength > 180 ? '1.4' : '1.5';
 
-      while (
-        container.scrollHeight > container.clientHeight &&
-        fontSize > 10
-      ) {
+      while (container.scrollHeight > container.clientHeight && fontSize > 10) {
         fontSize -= 1;
         quote.style.fontSize = `${fontSize}px`;
       }
@@ -197,6 +226,33 @@ const EpisodeCardCreate: React.FC = () => {
     }
   };
 
+  const handlePublish = async () => {
+    if (!text.trim() || !publishConsent || publishedResponseId) return;
+
+    setIsPublishing(true);
+    setError(null);
+    try {
+      const response = await episodeResponsesApi.create({
+        meetup_id: meetupId,
+        episode_number: episodeNumber,
+        content: text,
+        author,
+        publish_consent: publishConsent,
+        website,
+      });
+
+      if (!response.success || !response.data?.response) {
+        throw new Error(response.error || '发布失败，请稍后再试');
+      }
+      setPublishedResponseId(response.data.response.id);
+      setPublishedResponseDate(response.data.response.created_at);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '发布失败，请稍后再试');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className={styles.state}>
@@ -218,10 +274,15 @@ const EpisodeCardCreate: React.FC = () => {
   return (
     <main className={styles.page}>
       <section className={styles.editor}>
-        <p className={styles.eyebrow}>启发星球 EP{episode.episode_number}</p>
-        <h1>你想记录下什么？</h1>
+        <div className={styles.episodeContext}>
+          <Link to={`/episodes/${episodeNumber}`}>
+            启发星球 EP{episode.episode_number}
+          </Link>
+          <span>回应日期：{responseDate} · 约 2 分钟</span>
+        </div>
+        <h1>刚才有什么留在你心里？</h1>
         <p className={styles.description}>
-          无论是现场参与、听完回放，还是后来想到的，都可以写下来。
+          可以是一句话、一个碎片、一点启发，或者刚刚冒出的新想法。不必总结整场分享。
         </p>
 
         {error && <Alert severity="warning">{error}</Alert>}
@@ -230,12 +291,13 @@ const EpisodeCardCreate: React.FC = () => {
           value={text}
           maxLength={MAX_TEXT_LENGTH}
           onChange={(event) => setText(event.target.value)}
-          placeholder="一句话、一段感受，或者一个接下来想做的行动……"
+          placeholder="哪句话触动了你？你想到了什么？或者接下来想试着做什么？"
           className={styles.textarea}
+          disabled={Boolean(publishedResponseId)}
           autoFocus
         />
         <div className={styles.counter}>
-          {text.length}/{MAX_TEXT_LENGTH} · 卡片会根据可用空间自动缩放
+          {text.length}/{MAX_TEXT_LENGTH}
         </div>
 
         <label className={styles.authorField}>
@@ -246,57 +308,123 @@ const EpisodeCardCreate: React.FC = () => {
             maxLength={MAX_AUTHOR_LENGTH}
             onChange={(event) => setAuthor(event.target.value)}
             placeholder="你的名字或昵称"
+            disabled={Boolean(publishedResponseId)}
           />
-          <small>留空时显示“匿名”</small>
+          <small>可以留空，卡片会显示“匿名”</small>
         </label>
 
-        <label className={styles.photoButton}>
-          ＋ 添加一张照片（可选）
-          <input type="file" accept="image/*" onChange={handlePhoto} hidden />
+        <label className={styles.honeypot} aria-hidden="true">
+          请勿填写
+          <input
+            type="text"
+            value={website}
+            onChange={(event) => setWebsite(event.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+          />
         </label>
-        {photo && (
-          <>
-            <div className={styles.photoModes} aria-label="照片展示方式">
-              <button
-                type="button"
-                className={photoMode === 'cover' ? styles.activeMode : ''}
-                onClick={() => setPhotoMode('cover')}
+
+        <div className={styles.publishPanel}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={publishConsent}
+                onChange={(_, value) => setPublishConsent(value)}
+                disabled={Boolean(publishedResponseId)}
+              />
+            }
+            label="我愿意将这段文字和署名公开到本期回应墙"
+          />
+          <small>勾选后，文字和署名会直接出现在本期页面。</small>
+          <Button
+            variant="contained"
+            size="large"
+            disabled={
+              !text.trim() ||
+              !publishConsent ||
+              isPublishing ||
+              Boolean(publishedResponseId)
+            }
+            onClick={handlePublish}
+          >
+            {isPublishing
+              ? '正在发布…'
+              : publishedResponseId
+                ? '已发布到回应墙'
+                : '发布到本期回应墙'}
+          </Button>
+          {publishedResponseId && (
+            <Alert severity="success">
+              你的回应已经出现在 EP{episode.episode_number} 回应墙。{' '}
+              <Link
+                to={`/episodes/${episodeNumber}#responses`}
+                className={styles.inlineLink}
               >
-                铺满画面
-              </button>
-              <button
-                type="button"
-                className={photoMode === 'contain' ? styles.activeMode : ''}
-                onClick={() => setPhotoMode('contain')}
-              >
-                完整显示
-              </button>
-            </div>
-            <button
-              type="button"
-              className={styles.removePhoto}
-              onClick={() => setPhoto(null)}
+                去看看大家写了什么
+              </Link>
+            </Alert>
+          )}
+          {!publishedResponseId && (
+            <Link
+              to={`/episodes/${episodeNumber}#responses`}
+              className={styles.wallLink}
             >
-              移除照片
-            </button>
-          </>
-        )}
+              先看看本期回应墙
+            </Link>
+          )}
+        </div>
 
-        <div className={styles.settings}>
+        <div className={styles.cardSettings}>
+          <div className={styles.settingsHeading}>
+            <strong>卡片设置</strong>
+            <span>均为可选</span>
+          </div>
+          <label className={styles.photoButton}>
+            ＋ 添加一张照片
+            <input type="file" accept="image/*" onChange={handlePhoto} hidden />
+          </label>
+          {photo && (
+            <>
+              <div className={styles.photoModes} aria-label="照片展示方式">
+                <button
+                  type="button"
+                  className={photoMode === 'cover' ? styles.activeMode : ''}
+                  onClick={() => setPhotoMode('cover')}
+                >
+                  铺满画面
+                </button>
+                <button
+                  type="button"
+                  className={photoMode === 'contain' ? styles.activeMode : ''}
+                  onClick={() => setPhotoMode('contain')}
+                >
+                  完整显示
+                </button>
+              </div>
+              <button
+                type="button"
+                className={styles.removePhoto}
+                onClick={() => setPhoto(null)}
+              >
+                移除照片
+              </button>
+            </>
+          )}
           <label>
             <Switch
               checked={showEpisodeInfo}
               onChange={(_, value) => setShowEpisodeInfo(value)}
             />
-            顶部显示期次
+            显示期数、分享日期和回应日期
           </label>
-          <p className={styles.qrNote}>
-            二维码固定在卡片右下角，作为邀请其他人继续表达的回应印章。
-          </p>
         </div>
       </section>
 
       <section className={styles.previewSection}>
+        <div className={styles.previewHeading}>
+          <strong>卡片预览</strong>
+          <span>边写边生成</span>
+        </div>
         <div
           ref={previewRef}
           className={`${styles.card} ${photo ? styles.cardWithPhoto : ''} ${
@@ -321,10 +449,18 @@ const EpisodeCardCreate: React.FC = () => {
 
           <div className={styles.cardContent}>
             <div className={styles.topMeta}>
-              <div className={styles.brandChip}>
-                {showEpisodeInfo
-                  ? `启发星球 EP${episode.episode_number}`
-                  : '启发星球'}
+              <div className={styles.episodeMeta}>
+                <div className={styles.brandChip}>
+                  {showEpisodeInfo
+                    ? `启发星球 EP${episode.episode_number}`
+                    : '启发星球'}
+                </div>
+                {showEpisodeInfo && (
+                  <div className={styles.episodeDetails}>
+                    {episodeDate && <span>分享日期 · {episodeDate}</span>}
+                    <span>回应日期 · {responseDate}</span>
+                  </div>
+                )}
               </div>
               <div className={styles.expressionCue}>真实 · 自由 · 不必完整</div>
             </div>
@@ -363,7 +499,9 @@ const EpisodeCardCreate: React.FC = () => {
             保存图片
           </Button>
         </div>
-        <p className={styles.privacy}>照片只在你的浏览器中处理，不会自动上传。</p>
+        <p className={styles.privacy}>
+          照片只在你的浏览器中处理；二维码会邀请朋友也来写一句。
+        </p>
       </section>
     </main>
   );

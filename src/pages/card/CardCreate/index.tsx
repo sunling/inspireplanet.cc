@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 
 import { CardItem } from '../../../netlify/types';
@@ -8,7 +8,6 @@ import { useGlobalSnackbar } from '@/context/app';
 import { getUserId } from '@/utils/user';
 import { gradientOptions } from '@/constants/gradient';
 import EditForm, { EditFormRef } from '../components/EditForm';
-import EpisodeCardCreate from '../EpisodeCardCreate';
 import { getUserName } from '../../../utils';
 import { isMobileBrowser, saveImageDataUrl } from '@/utils/share';
 
@@ -105,12 +104,6 @@ const StandardCardCreate: React.FC = () => {
   );
 };
 
-const CreateCard: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const hasEpisodeContext =
-    searchParams.has('episode') || searchParams.has('episodeId');
-
-  return hasEpisodeContext ? <EpisodeCardCreate /> : <StandardCardCreate />;
-};
+const CreateCard: React.FC = () => <StandardCardCreate />;
 
 export default CreateCard;

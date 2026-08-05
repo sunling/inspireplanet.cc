@@ -18,6 +18,7 @@ export { default as workshopApi } from '../services/workshop';
 export { default as contactApi } from '../services/contact';
 export { default as surveyApi } from '../services/survey';
 export { default as episodesApi } from '../services/episodes';
+export { default as episodeResponsesApi } from '../services/episodeResponses';
 export { default as speakerSignupsApi } from '../services/speakerSignups';
 export { default as communityQrApi } from '../services/communityQr';
 export { default as submissionsApi } from '../services/submissions';
