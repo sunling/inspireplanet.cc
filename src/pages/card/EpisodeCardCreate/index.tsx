@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import html2canvas from 'html2canvas';
 import { QRCodeSVG } from 'qrcode.react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { episodeResponsesApi, episodesApi } from '@/netlify/config';
 import { EpisodeCardContext } from '@/netlify/functions/episodes';
@@ -31,9 +31,12 @@ const DEFAULT_INSPIRE_PLANET_MEETUP_ID = 39;
 type PhotoMode = 'cover' | 'contain';
 
 const EpisodeCardCreate: React.FC = () => {
+  const params = useParams<{ episode: string }>();
   const [searchParams] = useSearchParams();
   const episodeNumber = Number(
-    searchParams.get('episode') || searchParams.get('episodeId')
+    params.episode ||
+      searchParams.get('episode') ||
+      searchParams.get('episodeId')
   );
   const meetupId = Number(
     searchParams.get('meetupId') || DEFAULT_INSPIRE_PLANET_MEETUP_ID
@@ -85,10 +88,18 @@ const EpisodeCardCreate: React.FC = () => {
   }, [episodeNumber, meetupId]);
 
   const shareUrl = useMemo(
-    () =>
-      `${window.location.origin}/create-card?meetupId=${meetupId}&episode=${episodeNumber}`,
-    [episodeNumber, meetupId]
+    () => `${window.location.origin}/episodes/${episodeNumber}/respond`,
+    [episodeNumber]
   );
+
+  const episodeDate = episode?.date
+    ? new Date(`${episode.date}T00:00:00`).toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : '';
+  const episodeTheme = episode?.theme || episode?.meetup.default_theme || '';
 
   const displayText = text.trim() || '写下此刻值得留下的想法。';
   const displayAuthor = author.trim() || '匿名';
@@ -254,11 +265,23 @@ const EpisodeCardCreate: React.FC = () => {
   return (
     <main className={styles.page}>
       <section className={styles.editor}>
-        <p className={styles.eyebrow}>启发星球 EP{episode.episode_number}</p>
-        <h1>你想记录下什么？</h1>
+        <div className={styles.episodeContext}>
+          <Link to={`/episodes/${episodeNumber}`}>
+            启发星球 EP{episode.episode_number}
+          </Link>
+          <span>约 2 分钟</span>
+        </div>
+        <h1>写下一句，留在本期</h1>
         <p className={styles.description}>
-          不必完整。写下一句此刻还留在你心里的话，和本期星友彼此照亮。
+          不必总结整场分享，只写此刻还留在你心里的话。
         </p>
+
+        {episodeTheme && (
+          <p className={styles.theme}>
+            <span>本期主题</span>
+            {episodeTheme}
+          </p>
+        )}
 
         {error && <Alert severity="warning">{error}</Alert>}
 
@@ -272,7 +295,7 @@ const EpisodeCardCreate: React.FC = () => {
           autoFocus
         />
         <div className={styles.counter}>
-          {text.length}/{MAX_TEXT_LENGTH} · 卡片会根据可用空间自动缩放
+          {text.length}/{MAX_TEXT_LENGTH}
         </div>
 
         <label className={styles.authorField}>
@@ -285,7 +308,7 @@ const EpisodeCardCreate: React.FC = () => {
             placeholder="你的名字或昵称"
             disabled={Boolean(publishedResponseId)}
           />
-          <small>留空时显示“匿名”</small>
+          <small>可以留空，卡片会显示“匿名”</small>
         </label>
 
         <label className={styles.honeypot} aria-hidden="true">
@@ -310,7 +333,7 @@ const EpisodeCardCreate: React.FC = () => {
             }
             label="我愿意将这段文字和署名公开到本期回应墙"
           />
-          <small>公开后，任何访问本期页面的人都可以看到。</small>
+          <small>勾选后，文字和署名会直接出现在本期页面。</small>
           <Button
             variant="contained"
             size="large"
@@ -332,7 +355,7 @@ const EpisodeCardCreate: React.FC = () => {
             <Alert severity="success">
               你的回应已经出现在 EP{episode.episode_number} 回应墙。{' '}
               <Link
-                to={`/episode/${meetupId}/${episodeNumber}#responses`}
+                to={`/episodes/${episodeNumber}#responses`}
                 className={styles.inlineLink}
               >
                 去看看大家写了什么
@@ -341,7 +364,7 @@ const EpisodeCardCreate: React.FC = () => {
           )}
           {!publishedResponseId && (
             <Link
-              to={`/episode/${meetupId}/${episodeNumber}#responses`}
+              to={`/episodes/${episodeNumber}#responses`}
               className={styles.wallLink}
             >
               先看看本期回应墙
@@ -349,53 +372,57 @@ const EpisodeCardCreate: React.FC = () => {
           )}
         </div>
 
-        <label className={styles.photoButton}>
-          ＋ 添加一张照片（可选）
-          <input type="file" accept="image/*" onChange={handlePhoto} hidden />
-        </label>
-        {photo && (
-          <>
-            <div className={styles.photoModes} aria-label="照片展示方式">
+        <div className={styles.cardSettings}>
+          <div className={styles.settingsHeading}>
+            <strong>卡片设置</strong>
+            <span>均为可选</span>
+          </div>
+          <label className={styles.photoButton}>
+            ＋ 添加一张照片
+            <input type="file" accept="image/*" onChange={handlePhoto} hidden />
+          </label>
+          {photo && (
+            <>
+              <div className={styles.photoModes} aria-label="照片展示方式">
+                <button
+                  type="button"
+                  className={photoMode === 'cover' ? styles.activeMode : ''}
+                  onClick={() => setPhotoMode('cover')}
+                >
+                  铺满画面
+                </button>
+                <button
+                  type="button"
+                  className={photoMode === 'contain' ? styles.activeMode : ''}
+                  onClick={() => setPhotoMode('contain')}
+                >
+                  完整显示
+                </button>
+              </div>
               <button
                 type="button"
-                className={photoMode === 'cover' ? styles.activeMode : ''}
-                onClick={() => setPhotoMode('cover')}
+                className={styles.removePhoto}
+                onClick={() => setPhoto(null)}
               >
-                铺满画面
+                移除照片
               </button>
-              <button
-                type="button"
-                className={photoMode === 'contain' ? styles.activeMode : ''}
-                onClick={() => setPhotoMode('contain')}
-              >
-                完整显示
-              </button>
-            </div>
-            <button
-              type="button"
-              className={styles.removePhoto}
-              onClick={() => setPhoto(null)}
-            >
-              移除照片
-            </button>
-          </>
-        )}
-
-        <div className={styles.settings}>
+            </>
+          )}
           <label>
             <Switch
               checked={showEpisodeInfo}
               onChange={(_, value) => setShowEpisodeInfo(value)}
             />
-            顶部显示期次
+            显示本期主题、日期和期数
           </label>
-          <p className={styles.qrNote}>
-            二维码固定在卡片右下角，作为邀请其他人继续表达的回应印章。
-          </p>
         </div>
       </section>
 
       <section className={styles.previewSection}>
+        <div className={styles.previewHeading}>
+          <strong>卡片预览</strong>
+          <span>边写边生成</span>
+        </div>
         <div
           ref={previewRef}
           className={`${styles.card} ${photo ? styles.cardWithPhoto : ''} ${
@@ -420,10 +447,18 @@ const EpisodeCardCreate: React.FC = () => {
 
           <div className={styles.cardContent}>
             <div className={styles.topMeta}>
-              <div className={styles.brandChip}>
-                {showEpisodeInfo
-                  ? `启发星球 EP${episode.episode_number}`
-                  : '启发星球'}
+              <div className={styles.episodeMeta}>
+                <div className={styles.brandChip}>
+                  {showEpisodeInfo
+                    ? `启发星球 EP${episode.episode_number}`
+                    : '启发星球'}
+                </div>
+                {showEpisodeInfo && (episodeTheme || episodeDate) && (
+                  <div className={styles.episodeDetails}>
+                    {episodeTheme && <strong>{episodeTheme}</strong>}
+                    {episodeDate && <span>{episodeDate}</span>}
+                  </div>
+                )}
               </div>
               <div className={styles.expressionCue}>真实 · 自由 · 不必完整</div>
             </div>
@@ -463,7 +498,7 @@ const EpisodeCardCreate: React.FC = () => {
           </Button>
         </div>
         <p className={styles.privacy}>
-          照片只在你的浏览器中处理，不会自动上传。
+          照片只在你的浏览器中处理；二维码会邀请朋友也来写一句。
         </p>
       </section>
     </main>

@@ -170,7 +170,7 @@ const Home: React.FC = () => {
             )}
             <div className={styles['weekly-author']}>分享者 · {card.name}</div>
             <Link
-              to={`/episode/39/${getEpisodeNumberFromLabel(card.episode)}`}
+              to={`/episodes/${getEpisodeNumberFromLabel(card.episode)}`}
               className={styles['weekly-link']}
             >
               进入本期页面 <ChevronRight fontSize="inherit" />
@@ -183,7 +183,7 @@ const Home: React.FC = () => {
 
   const latestEpisodeNumber = getEpisodeNumberFromLabel(cards[0]?.episode);
   const latestCreateUrl = latestEpisodeNumber
-    ? `/create-card?meetupId=39&episode=${latestEpisodeNumber}`
+    ? `/episodes/${latestEpisodeNumber}/respond`
     : '/weekly-cards';
 
   const entryPoints: EntryPoint[] = [
@@ -347,7 +347,7 @@ const Home: React.FC = () => {
           <div className={styles['view-all-container']}>
             {latestEpisodeNumber > 0 && (
               <Link
-                to={`/episode/39/${latestEpisodeNumber}`}
+                to={`/episodes/${latestEpisodeNumber}`}
                 className={styles['view-all-button']}
               >
                 进入本期页面 <ChevronRight fontSize="inherit" />

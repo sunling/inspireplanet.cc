@@ -618,7 +618,7 @@ const WeeklyCards: React.FC = () => {
 
         const episodeNumber = Number(card?.episode?.match(/\d+/)?.[0] || 0);
         const targetUrl = episodeNumber
-          ? `${window.location.origin}/episode/39/${episodeNumber}`
+          ? `${window.location.origin}/episodes/${episodeNumber}`
           : window.location.href;
 
         await (window as any).QRCode.toCanvas(qrCanvas, targetUrl, {
@@ -736,9 +736,9 @@ const WeeklyCards: React.FC = () => {
         {activeEpisodeNumber > 0 && (
           <nav className={styles.episodeJourney} aria-label="本期参与入口">
             <span>EP{activeEpisodeNumber} 不只是一份周刊</span>
-            <Link to={`/episode/39/${activeEpisodeNumber}`}>看本期回应墙</Link>
+            <Link to={`/episodes/${activeEpisodeNumber}`}>看本期回应墙</Link>
             <Link
-              to={`/create-card?meetupId=39&episode=${activeEpisodeNumber}`}
+              to={`/episodes/${activeEpisodeNumber}/respond`}
               className={styles.episodeJourneyPrimary}
             >
               写下我的一句

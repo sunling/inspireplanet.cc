@@ -12,6 +12,8 @@ import { EpisodeResponse } from '@/netlify/functions/episodeResponses';
 import { WeeklyCard } from '@/netlify/services/weeklyCards';
 import styles from './episodeHub.module.css';
 
+const INSPIRE_PLANET_MEETUP_ID = 39;
+
 const getDetailPreview = (detail = '') =>
   detail
     .replace(/<[^>]*>/g, ' ')
@@ -22,8 +24,8 @@ const getDetailPreview = (detail = '') =>
     .trim();
 
 const EpisodeHub: React.FC = () => {
-  const params = useParams<{ meetupId: string; episode: string }>();
-  const meetupId = Number(params.meetupId);
+  const params = useParams<{ episode: string }>();
+  const meetupId = INSPIRE_PLANET_MEETUP_ID;
   const episodeNumber = Number(params.episode);
   const [episode, setEpisode] = useState<EpisodeCardContext | null>(null);
   const [responses, setResponses] = useState<EpisodeResponse[]>([]);
@@ -32,8 +34,8 @@ const EpisodeHub: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const createUrl = useMemo(
-    () => `/create-card?meetupId=${meetupId}&episode=${episodeNumber}`,
-    [meetupId, episodeNumber]
+    () => `/episodes/${episodeNumber}/respond`,
+    [episodeNumber]
   );
 
   useEffect(() => {

@@ -3,6 +3,7 @@ import {
   createBrowserRouter,
   Navigate,
   useLocation,
+  useParams,
   useSearchParams,
 } from 'react-router-dom';
 
@@ -158,14 +159,29 @@ const WritingEditor = lazy(() => import('../pages/writing/WritingEditor'));
 const WritingDetail = lazy(() => import('../pages/writing/WritingDetail'));
 const WritingAdmin = lazy(() => import('../pages/writing/WritingAdmin'));
 const EpisodeHub = lazy(() => import('../pages/episode/EpisodeHub'));
+const EpisodeCardCreate = lazy(() => import('../pages/card/EpisodeCardCreate'));
 
 const CardCreateRoute: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const hasEpisodeContext =
-    searchParams.has('episode') || searchParams.has('episodeId');
+  const episode = searchParams.get('episode') || searchParams.get('episodeId');
   const page = createLazyRoute(<CreateCard />);
 
-  return hasEpisodeContext ? page : <ProtectedRoute>{page}</ProtectedRoute>;
+  if (episode) {
+    return <Navigate to={`/episodes/${episode}/respond`} replace />;
+  }
+
+  return <ProtectedRoute>{page}</ProtectedRoute>;
+};
+
+const LegacyEpisodeRoute: React.FC = () => {
+  const { episode } = useParams<{ episode: string }>();
+  const location = useLocation();
+
+  return episode ? (
+    <Navigate to={`/episodes/${episode}${location.hash}`} replace />
+  ) : (
+    <Navigate to="/404" replace />
+  );
 };
 
 // 创建路由器
@@ -222,8 +238,16 @@ const router = createBrowserRouter(
           element: createLazyRoute(<WeeklyCards />),
         },
         {
-          path: 'episode/:meetupId/:episode',
+          path: 'episodes/:episode',
           element: createLazyRoute(<EpisodeHub />),
+        },
+        {
+          path: 'episodes/:episode/respond',
+          element: createLazyRoute(<EpisodeCardCreate />),
+        },
+        {
+          path: 'episode/:meetupId/:episode',
+          element: <LegacyEpisodeRoute />,
         },
         { path: 'card-detail', element: createLazyRoute(<CardDetail />) },
         {
