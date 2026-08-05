@@ -71,27 +71,6 @@
   color: #6f675f;
 }
 
-.theme {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin: 2px 0 4px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  color: #5b4438;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  background: #fff4e8;
-}
-
-.theme span {
-  flex-shrink: 0;
-  color: #b45b35;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
 .textarea {
   min-height: 136px;
   border: 1px solid #ded4c9;
@@ -384,12 +363,6 @@
   color: rgba(82, 62, 51, 0.76);
   font-size: 0.7rem;
   line-height: 1.35;
-}
-
-.episodeDetails strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .episodeDetails span {
