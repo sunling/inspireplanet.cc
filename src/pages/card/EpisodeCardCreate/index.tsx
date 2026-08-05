@@ -318,6 +318,7 @@ const EpisodeCardCreate: React.FC = () => {
             </>
           )}
           {photo && <div className={styles.overlay} />}
+
           <div className={styles.cardContent}>
             <div className={styles.topMeta}>
               <div className={styles.brandChip}>
@@ -330,16 +331,17 @@ const EpisodeCardCreate: React.FC = () => {
 
             <div ref={mainContentRef} className={styles.mainContent}>
               <div className={styles.textPanel}>
-                <div className={styles.qrFloat}>
-                  <QRCodeSVG value={shareUrl} size={54} bgColor="#ffffff" />
-                  <span>扫码回应</span>
-                </div>
                 <div ref={quoteRef} className={styles.quote}>
                   {displayText}
                 </div>
                 <div className={styles.byline}>— {displayAuthor}</div>
               </div>
             </div>
+          </div>
+
+          <div className={styles.qrFloat}>
+            <QRCodeSVG value={shareUrl} size={54} bgColor="#ffffff" />
+            <span>扫码回应</span>
           </div>
         </div>
 
