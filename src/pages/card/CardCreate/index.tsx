@@ -12,21 +12,14 @@ import EpisodeCardCreate from '../EpisodeCardCreate';
 import { getUserName } from '../../../utils';
 import { isMobileBrowser, saveImageDataUrl } from '@/utils/share';
 
-const CreateCard: React.FC = () => {
-  const [searchParams] = useSearchParams();
+const StandardCardCreate: React.FC = () => {
   const navigate = useNavigate();
   const showSnackbar = useGlobalSnackbar();
   const editFormRef = useRef<EditFormRef>(null);
 
-  if (searchParams.get('episodeId')) {
-    return <EpisodeCardCreate />;
-  }
-
-  // 初始卡片数据
   const getInitialCardData = (): CardItem => {
     const randomIndex = Math.floor(Math.random() * gradientOptions.length);
     const randomGradient = gradientOptions[randomIndex];
-
     const creator = getUserName() || '';
 
     return {
@@ -46,7 +39,6 @@ const CreateCard: React.FC = () => {
   const [initialCardData, setInitialCardData] =
     useState<CardItem>(getInitialCardData());
 
-  // 处理表单提交
   const handleSubmit = async (
     cardData: CardItem,
     imageData?: { customImage?: string; selectedSearchImage?: string }
@@ -59,14 +51,12 @@ const CreateCard: React.FC = () => {
       user_id: getUserId(),
     };
 
-    // 调用API提交卡片
     const response = await cardsApi.create(cardToSubmit);
 
     if (response.success) {
       showSnackbar.success(
         cardToSubmit.is_private ? '私密卡片已保存！' : '卡片提交成功！'
       );
-      // 重置表单
       setInitialCardData(getInitialCardData());
       setTimeout(
         () => navigate(cardToSubmit.is_private ? '/my-cards' : '/cards'),
@@ -77,20 +67,17 @@ const CreateCard: React.FC = () => {
     }
   };
 
-  // 下载卡片图片
   const handleDownload = async () => {
     const previewElement = editFormRef.current?.getPreviewElement();
     if (!previewElement) return;
 
-    // 找到预览中的卡片元素
     const cardElement = previewElement.querySelector('.card');
     if (!cardElement) {
       throw new Error('未找到卡片元素');
     }
 
-    // 配置html2canvas选项
     const canvas = await html2canvas(cardElement as HTMLElement, {
-      scale: 2, // 提高清晰度
+      scale: 2,
       useCORS: true,
       allowTaint: true,
       logging: false,
@@ -115,6 +102,15 @@ const CreateCard: React.FC = () => {
       onSubmit={handleSubmit}
       onDownload={handleDownload}
     />
+  );
+};
+
+const CreateCard: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  return searchParams.get('episodeId') ? (
+    <EpisodeCardCreate />
+  ) : (
+    <StandardCardCreate />
   );
 };
 
