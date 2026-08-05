@@ -99,9 +99,7 @@ const EpisodeCardCreate: React.FC = () => {
         day: 'numeric',
       })
     : '';
-  const episodeTheme = episode?.theme || episode?.meetup.default_theme || '';
-
-  const displayText = text.trim() || '写下此刻值得留下的想法。';
+  const displayText = text.trim() || '写下此刻还留在心里的片段。';
   const displayAuthor = author.trim() || '匿名';
   const weightedLength =
     Array.from(displayText).length +
@@ -271,17 +269,10 @@ const EpisodeCardCreate: React.FC = () => {
           </Link>
           <span>约 2 分钟</span>
         </div>
-        <h1>写下一句，留在本期</h1>
+        <h1>刚才有什么留在你心里？</h1>
         <p className={styles.description}>
-          不必总结整场分享，只写此刻还留在你心里的话。
+          可以是一句话、一个碎片、一点启发，或者刚刚冒出的新想法。不必总结整场分享。
         </p>
-
-        {episodeTheme && (
-          <p className={styles.theme}>
-            <span>本期主题</span>
-            {episodeTheme}
-          </p>
-        )}
 
         {error && <Alert severity="warning">{error}</Alert>}
 
@@ -289,7 +280,7 @@ const EpisodeCardCreate: React.FC = () => {
           value={text}
           maxLength={MAX_TEXT_LENGTH}
           onChange={(event) => setText(event.target.value)}
-          placeholder="一句话、一段感受，或者一个接下来想做的行动……"
+          placeholder="哪句话触动了你？你想到了什么？或者接下来想试着做什么？"
           className={styles.textarea}
           disabled={Boolean(publishedResponseId)}
           autoFocus
@@ -413,7 +404,7 @@ const EpisodeCardCreate: React.FC = () => {
               checked={showEpisodeInfo}
               onChange={(_, value) => setShowEpisodeInfo(value)}
             />
-            显示本期主题、日期和期数
+            显示期数和日期
           </label>
         </div>
       </section>
@@ -453,10 +444,9 @@ const EpisodeCardCreate: React.FC = () => {
                     ? `启发星球 EP${episode.episode_number}`
                     : '启发星球'}
                 </div>
-                {showEpisodeInfo && (episodeTheme || episodeDate) && (
+                {showEpisodeInfo && episodeDate && (
                   <div className={styles.episodeDetails}>
-                    {episodeTheme && <strong>{episodeTheme}</strong>}
-                    {episodeDate && <span>{episodeDate}</span>}
+                    <span>{episodeDate}</span>
                   </div>
                 )}
               </div>
