@@ -13,10 +13,12 @@ import { useSearchParams } from 'react-router-dom';
 
 import { episodesApi } from '@/netlify/config';
 import { EpisodeCardContext } from '@/netlify/functions/episodes';
+import { getUserName } from '@/utils';
 import { saveImageDataUrl } from '@/utils/share';
 import styles from './episodeCardCreate.module.css';
 
 const MAX_TEXT_LENGTH = 240;
+const MAX_AUTHOR_LENGTH = 24;
 const DEFAULT_INSPIRE_PLANET_MEETUP_ID = 39;
 
 type PhotoMode = 'cover' | 'contain';
@@ -34,6 +36,7 @@ const EpisodeCardCreate: React.FC = () => {
   const quoteRef = useRef<HTMLDivElement>(null);
   const [episode, setEpisode] = useState<EpisodeCardContext | null>(null);
   const [text, setText] = useState('');
+  const [author, setAuthor] = useState(() => getUserName() || '');
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoMode, setPhotoMode] = useState<PhotoMode>('cover');
   const [showEpisodeInfo, setShowEpisodeInfo] = useState(true);
@@ -75,6 +78,7 @@ const EpisodeCardCreate: React.FC = () => {
   );
 
   const displayText = text.trim() || '写下此刻值得留下的想法。';
+  const displayAuthor = author.trim() || '匿名';
   const weightedLength =
     Array.from(displayText).length +
     Math.max(0, displayText.split('\n').length - 1) * 12;
@@ -110,7 +114,7 @@ const EpisodeCardCreate: React.FC = () => {
 
     const animationFrame = window.requestAnimationFrame(fitText);
     return () => window.cancelAnimationFrame(animationFrame);
-  }, [displayText, weightedLength, photo, photoMode, showEpisodeInfo]);
+  }, [displayText, weightedLength, photo, photoMode, showEpisodeInfo, author]);
 
   const handlePhoto = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -174,7 +178,7 @@ const EpisodeCardCreate: React.FC = () => {
         await navigator.share({
           files: [file],
           title: `启发星球 EP${episode?.episode_number}`,
-          text: '这是我想记录下来的一点启发。',
+          text: `这是 ${displayAuthor} 想记录下来的一点启发。`,
         });
       } else {
         saveImageDataUrl(canvas.toDataURL('image/png'), file.name);
@@ -237,6 +241,18 @@ const EpisodeCardCreate: React.FC = () => {
         <div className={styles.counter}>
           {text.length}/{MAX_TEXT_LENGTH} · 卡片会根据可用空间自动缩放
         </div>
+
+        <label className={styles.authorField}>
+          <span>署名</span>
+          <input
+            type="text"
+            value={author}
+            maxLength={MAX_AUTHOR_LENGTH}
+            onChange={(event) => setAuthor(event.target.value)}
+            placeholder="你的名字或昵称"
+          />
+          <small>留空时显示“匿名”</small>
+        </label>
 
         <label className={styles.photoButton}>
           ＋ 添加一张照片（可选）
@@ -303,6 +319,7 @@ const EpisodeCardCreate: React.FC = () => {
               <div ref={quoteRef} className={styles.quote}>
                 {displayText}
               </div>
+              <div className={styles.byline}>— {displayAuthor}</div>
             </div>
 
             {showEpisodeInfo ? (
