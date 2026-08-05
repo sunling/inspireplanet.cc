@@ -9,6 +9,16 @@ export const episodesApi = {
     return http.get('/episodes', 'getById', { id });
   },
 
+  getByMeetupEpisode: async (
+    meetup_id: number,
+    episode_number: number
+  ): Promise<ApiResponse<{ episode: EpisodeCardContext }>> => {
+    return http.get('/episodes', 'getByMeetupEpisode', {
+      meetup_id,
+      episode_number,
+    });
+  },
+
   getByMeetupDate: async (
     meetup_id: number,
     date: string
