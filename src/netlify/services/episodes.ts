@@ -1,8 +1,14 @@
 import { ApiResponse } from '../types/http';
 import { http } from '../config/http';
-import { MeetupEpisode } from '../functions/episodes';
+import { EpisodeCardContext, MeetupEpisode } from '../functions/episodes';
 
 export const episodesApi = {
+  getById: async (
+    id: number
+  ): Promise<ApiResponse<{ episode: EpisodeCardContext }>> => {
+    return http.get('/episodes', 'getById', { id });
+  },
+
   getByMeetupDate: async (
     meetup_id: number,
     date: string
