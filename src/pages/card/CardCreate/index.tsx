@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 
 import { CardItem } from '../../../netlify/types';
@@ -8,20 +8,26 @@ import { useGlobalSnackbar } from '@/context/app';
 import { getUserId } from '@/utils/user';
 import { gradientOptions } from '@/constants/gradient';
 import EditForm, { EditFormRef } from '../components/EditForm';
+import EpisodeCardCreate from '../EpisodeCardCreate';
 import { getUserName } from '../../../utils';
 import { isMobileBrowser, saveImageDataUrl } from '@/utils/share';
 
 const CreateCard: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const showSnackbar = useGlobalSnackbar();
   const editFormRef = useRef<EditFormRef>(null);
+
+  if (searchParams.get('episodeId')) {
+    return <EpisodeCardCreate />;
+  }
 
   // 初始卡片数据
   const getInitialCardData = (): CardItem => {
     const randomIndex = Math.floor(Math.random() * gradientOptions.length);
     const randomGradient = gradientOptions[randomIndex];
 
-    let creator = getUserName() || '';
+    const creator = getUserName() || '';
 
     return {
       id: '',
