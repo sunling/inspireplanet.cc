@@ -17,7 +17,7 @@ import { getUserName } from '@/utils';
 import { saveImageDataUrl } from '@/utils/share';
 import styles from './episodeCardCreate.module.css';
 
-const MAX_TEXT_LENGTH = 240;
+const MAX_TEXT_LENGTH = 500;
 const MAX_AUTHOR_LENGTH = 24;
 const DEFAULT_INSPIRE_PLANET_MEETUP_ID = 39;
 
@@ -82,7 +82,7 @@ const EpisodeCardCreate: React.FC = () => {
   const weightedLength =
     Array.from(displayText).length +
     Math.max(0, displayText.split('\n').length - 1) * 12;
-  const hasLongText = weightedLength > 125;
+  const hasLongText = weightedLength > 180;
 
   useLayoutEffect(() => {
     const container = mainContentRef.current;
@@ -91,21 +91,26 @@ const EpisodeCardCreate: React.FC = () => {
 
     const fitText = () => {
       const initialSize =
-        weightedLength > 180
-          ? 20
-          : weightedLength > 125
-            ? 24
-            : weightedLength > 72
-              ? 31
-              : 42;
+        weightedLength > 420
+          ? 13
+          : weightedLength > 300
+            ? 15
+            : weightedLength > 180
+              ? 18
+              : weightedLength > 110
+                ? 24
+                : weightedLength > 72
+                  ? 31
+                  : 42;
       let fontSize = initialSize;
 
       quote.style.fontSize = `${fontSize}px`;
-      quote.style.lineHeight = weightedLength > 180 ? '1.4' : '1.5';
+      quote.style.lineHeight =
+        weightedLength > 300 ? '1.32' : weightedLength > 180 ? '1.4' : '1.5';
 
       while (
         container.scrollHeight > container.clientHeight &&
-        fontSize > 14
+        fontSize > 10
       ) {
         fontSize -= 1;
         quote.style.fontSize = `${fontSize}px`;
@@ -210,15 +215,6 @@ const EpisodeCardCreate: React.FC = () => {
 
   if (!episode) return null;
 
-  const cardTitle = episode.theme || episode.meetup.title;
-  const dateLabel = episode.date
-    ? new Date(`${episode.date}T00:00:00`).toLocaleDateString('zh-CN', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : '';
-
   return (
     <main className={styles.page}>
       <section className={styles.editor}>
@@ -292,10 +288,10 @@ const EpisodeCardCreate: React.FC = () => {
               checked={showEpisodeInfo}
               onChange={(_, value) => setShowEpisodeInfo(value)}
             />
-            顶部显示期次与主题
+            顶部显示期次
           </label>
           <p className={styles.qrNote}>
-            二维码会固定保留在卡片角落，让看到卡片的人也能继续写下自己的启发。
+            二维码会融入正文排版，让看到卡片的人也能继续写下自己的启发。
           </p>
         </div>
       </section>
@@ -317,28 +313,24 @@ const EpisodeCardCreate: React.FC = () => {
           <div className={styles.cardContent}>
             <div className={styles.topMeta}>
               <div className={styles.brandChip}>
-                {showEpisodeInfo ? `启发星球 EP${episode.episode_number}` : '启发星球'}
+                {showEpisodeInfo
+                  ? `启发星球 EP${episode.episode_number}`
+                  : '启发星球'}
               </div>
-              {showEpisodeInfo && (
-                <div className={styles.topMetaRight}>
-                  <span>{cardTitle}</span>
-                  {dateLabel && <span>{dateLabel}</span>}
-                </div>
-              )}
+              <div className={styles.expressionCue}>真实 · 自由 · 不必完整</div>
             </div>
 
             <div ref={mainContentRef} className={styles.mainContent}>
               <div className={styles.textPanel}>
+                <div className={styles.qrFloat}>
+                  <QRCodeSVG value={shareUrl} size={54} bgColor="#ffffff" />
+                  <span>扫码回应</span>
+                </div>
                 <div ref={quoteRef} className={styles.quote}>
                   {displayText}
                 </div>
                 <div className={styles.byline}>— {displayAuthor}</div>
               </div>
-            </div>
-
-            <div className={styles.qrCorner}>
-              <QRCodeSVG value={shareUrl} size={56} bgColor="#ffffff" />
-              <span>扫码回应</span>
             </div>
           </div>
         </div>
