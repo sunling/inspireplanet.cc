@@ -85,8 +85,6 @@ const EpisodeCardCreate: React.FC = () => {
     const quote = quoteRef.current;
     if (!container || !quote) return;
 
-    let animationFrame = 0;
-
     const fitText = () => {
       const initialSize =
         weightedLength > 180
@@ -111,16 +109,13 @@ const EpisodeCardCreate: React.FC = () => {
       }
     };
 
-    animationFrame = window.requestAnimationFrame(fitText);
-    const observer = new ResizeObserver(() => {
-      window.cancelAnimationFrame(animationFrame);
-      animationFrame = window.requestAnimationFrame(fitText);
-    });
-    observer.observe(container);
+    const animationFrame = window.requestAnimationFrame(fitText);
+    const image = container.querySelector('img');
+    image?.addEventListener('load', fitText);
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
-      observer.disconnect();
+      image?.removeEventListener('load', fitText);
     };
   }, [displayText, weightedLength, photo, photoMode, showEpisodeInfo]);
 
