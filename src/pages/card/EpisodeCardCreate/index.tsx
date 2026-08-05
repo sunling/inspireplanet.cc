@@ -291,7 +291,7 @@ const EpisodeCardCreate: React.FC = () => {
             顶部显示期次
           </label>
           <p className={styles.qrNote}>
-            二维码会融入正文排版，让看到卡片的人也能继续写下自己的启发。
+            二维码固定在卡片右下角，作为邀请其他人继续表达的回应印章。
           </p>
         </div>
       </section>
@@ -304,10 +304,18 @@ const EpisodeCardCreate: React.FC = () => {
           } ${hasLongText ? styles.cardLongText : ''}`}
         >
           {photo && (
-            <div
-              className={styles.photoLayer}
-              style={{ backgroundImage: `url(${photo})` }}
-            />
+            <>
+              <div
+                className={styles.photoLayer}
+                style={{ backgroundImage: `url(${photo})` }}
+              />
+              {photoMode === 'contain' && (
+                <div
+                  className={styles.photoForeground}
+                  style={{ backgroundImage: `url(${photo})` }}
+                />
+              )}
+            </>
           )}
           {photo && <div className={styles.overlay} />}
           <div className={styles.cardContent}>
