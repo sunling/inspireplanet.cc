@@ -71,7 +71,7 @@
 
 .photoModes {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
 }
 
@@ -121,19 +121,18 @@
   aspect-ratio: 4 / 5;
   overflow: hidden;
   border-radius: 28px;
+  color: #4c3529;
   background:
     radial-gradient(circle at 18% 15%, rgba(255, 255, 255, 0.72), transparent 28%),
     linear-gradient(145deg, #fff4dc, #f7c8aa 55%, #df8c6a);
   box-shadow: 0 18px 50px rgba(87, 53, 36, 0.16);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
 }
 
 .card::after {
   content: '';
   position: absolute;
   inset: 14px;
+  z-index: 3;
   border: 1px solid rgba(255, 255, 255, 0.34);
   border-radius: 20px;
   pointer-events: none;
@@ -141,26 +140,37 @@
 
 .cardWithPhoto {
   color: #fff;
+  background: #463a34;
 }
 
-.photoContain {
+.photoLayer {
+  position: absolute;
+  inset: -18px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(8px) saturate(0.68) brightness(0.72);
+  transform: scale(1.05);
+}
+
+.photoContain .photoLayer {
+  inset: 0;
   background-size: contain;
-  background-color: #2a2521;
+  filter: saturate(0.72) brightness(0.66);
+  transform: none;
 }
 
 .overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(15, 13, 11, 0.22),
-    rgba(15, 13, 11, 0.76)
-  );
+  background:
+    linear-gradient(180deg, rgba(28, 22, 18, 0.42), rgba(28, 22, 18, 0.74)),
+    rgba(117, 78, 55, 0.14);
 }
 
 .cardContent {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   height: 100%;
   padding: 40px 38px 28px;
   display: flex;
@@ -181,26 +191,6 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 18px;
-}
-
-.mainContentWithIllustration {
-  justify-content: flex-start;
-}
-
-.illustration {
-  width: 100%;
-  max-height: 38%;
-  min-height: 0;
-  flex: 0 1 auto;
-  object-fit: contain;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.58);
-  box-shadow: 0 12px 28px rgba(54, 36, 26, 0.14);
-}
-
-.illustrationCompact {
-  max-height: 22%;
 }
 
 .quote {
@@ -215,6 +205,7 @@
   line-height: 1.5;
   letter-spacing: 0.02em;
   text-wrap: pretty;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.08);
 }
 
 .quote::before {
@@ -238,10 +229,11 @@
 
 .cardFooter {
   flex: 0 0 auto;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 18px;
+  min-height: 106px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 94px;
+  align-items: end;
+  gap: 20px;
   padding-top: 12px;
   border-top: 1px solid rgba(96, 64, 45, 0.2);
 }
@@ -250,13 +242,15 @@
   border-top-color: rgba(255, 255, 255, 0.28);
 }
 
-.episodeInfo {
+.episodeInfo,
+.brandBlock {
+  align-self: center;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-width: 0;
+  gap: 5px;
   font-size: 0.78rem;
-  line-height: 1.35;
+  line-height: 1.42;
 }
 
 .episodeInfo strong {
@@ -267,19 +261,18 @@
   letter-spacing: 0.02em;
 }
 
-.episodeInfo span {
+.episodeInfo span,
+.brandBlock span {
   opacity: 0.78;
 }
 
-.brandMark {
-  font-size: 0.78rem;
-  font-weight: 700;
+.brandBlock strong {
+  font-size: 0.9rem;
   letter-spacing: 0.12em;
-  opacity: 0.8;
 }
 
 .qrBlock {
-  flex: 0 0 94px;
+  width: 94px;
   padding: 8px;
   border-radius: 14px;
   background: #fff;
@@ -328,6 +321,15 @@
 
   .photoModes {
     grid-template-columns: 1fr;
+  }
+
+  .cardFooter {
+    grid-template-columns: minmax(0, 1fr) 90px;
+    gap: 14px;
+  }
+
+  .qrBlock {
+    width: 90px;
   }
 
   .actions {
