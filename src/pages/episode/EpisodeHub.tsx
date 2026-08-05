@@ -184,7 +184,9 @@ const EpisodeHub: React.FC = () => {
                 <footer>
                   <strong>{response.author}</strong>
                   <time dateTime={response.created_at}>
+                    回应于{' '}
                     {new Date(response.created_at).toLocaleDateString('zh-CN', {
+                      year: 'numeric',
                       month: 'long',
                       day: 'numeric',
                     })}
