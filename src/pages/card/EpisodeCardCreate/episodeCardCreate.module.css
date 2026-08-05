@@ -237,6 +237,7 @@
 }
 
 .mainContent {
+  position: relative;
   min-height: 0;
   flex: 1 1 auto;
   overflow: hidden;
@@ -267,15 +268,23 @@
 }
 
 .qrFloat {
-  float: right;
+  position: absolute;
+  right: 0;
+  bottom: 0;
   width: 70px;
-  margin: 0 0 10px 16px;
+  margin: 0;
   padding: 6px 6px 5px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.95);
   color: #4a372d;
   text-align: center;
   box-shadow: 0 10px 24px rgba(48, 31, 22, 0.14);
+}
+
+.cardLongText .qrFloat {
+  position: static;
+  float: right;
+  margin: 0 0 10px 16px;
 }
 
 .qrFloat svg {
@@ -394,8 +403,11 @@
 
   .qrFloat {
     width: 64px;
-    margin-left: 12px;
     padding: 5px 5px 4px;
+  }
+
+  .cardLongText .qrFloat {
+    margin-left: 12px;
   }
 
   .qrFloat span {
