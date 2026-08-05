@@ -6,12 +6,19 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Alert, Button, CircularProgress, Switch } from '@mui/material';
+import {
+  Alert,
+  Button,
+  Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  Switch,
+} from '@mui/material';
 import html2canvas from 'html2canvas';
 import { QRCodeSVG } from 'qrcode.react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
-import { episodesApi } from '@/netlify/config';
+import { episodeResponsesApi, episodesApi } from '@/netlify/config';
 import { EpisodeCardContext } from '@/netlify/functions/episodes';
 import { getUserName } from '@/utils';
 import { saveImageDataUrl } from '@/utils/share';
@@ -40,8 +47,14 @@ const EpisodeCardCreate: React.FC = () => {
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoMode, setPhotoMode] = useState<PhotoMode>('cover');
   const [showEpisodeInfo, setShowEpisodeInfo] = useState(true);
+  const [publishConsent, setPublishConsent] = useState(false);
+  const [website, setWebsite] = useState('');
+  const [publishedResponseId, setPublishedResponseId] = useState<number | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -108,10 +121,7 @@ const EpisodeCardCreate: React.FC = () => {
       quote.style.lineHeight =
         weightedLength > 300 ? '1.32' : weightedLength > 180 ? '1.4' : '1.5';
 
-      while (
-        container.scrollHeight > container.clientHeight &&
-        fontSize > 10
-      ) {
+      while (container.scrollHeight > container.clientHeight && fontSize > 10) {
         fontSize -= 1;
         quote.style.fontSize = `${fontSize}px`;
       }
@@ -197,6 +207,32 @@ const EpisodeCardCreate: React.FC = () => {
     }
   };
 
+  const handlePublish = async () => {
+    if (!text.trim() || !publishConsent || publishedResponseId) return;
+
+    setIsPublishing(true);
+    setError(null);
+    try {
+      const response = await episodeResponsesApi.create({
+        meetup_id: meetupId,
+        episode_number: episodeNumber,
+        content: text,
+        author,
+        publish_consent: publishConsent,
+        website,
+      });
+
+      if (!response.success || !response.data?.response) {
+        throw new Error(response.error || '发布失败，请稍后再试');
+      }
+      setPublishedResponseId(response.data.response.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '发布失败，请稍后再试');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className={styles.state}>
@@ -221,7 +257,7 @@ const EpisodeCardCreate: React.FC = () => {
         <p className={styles.eyebrow}>启发星球 EP{episode.episode_number}</p>
         <h1>你想记录下什么？</h1>
         <p className={styles.description}>
-          无论是现场参与、听完回放，还是后来想到的，都可以写下来。
+          不必完整。写下一句此刻还留在你心里的话，和本期星友彼此照亮。
         </p>
 
         {error && <Alert severity="warning">{error}</Alert>}
@@ -232,6 +268,7 @@ const EpisodeCardCreate: React.FC = () => {
           onChange={(event) => setText(event.target.value)}
           placeholder="一句话、一段感受，或者一个接下来想做的行动……"
           className={styles.textarea}
+          disabled={Boolean(publishedResponseId)}
           autoFocus
         />
         <div className={styles.counter}>
@@ -246,9 +283,71 @@ const EpisodeCardCreate: React.FC = () => {
             maxLength={MAX_AUTHOR_LENGTH}
             onChange={(event) => setAuthor(event.target.value)}
             placeholder="你的名字或昵称"
+            disabled={Boolean(publishedResponseId)}
           />
           <small>留空时显示“匿名”</small>
         </label>
+
+        <label className={styles.honeypot} aria-hidden="true">
+          请勿填写
+          <input
+            type="text"
+            value={website}
+            onChange={(event) => setWebsite(event.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+          />
+        </label>
+
+        <div className={styles.publishPanel}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={publishConsent}
+                onChange={(_, value) => setPublishConsent(value)}
+                disabled={Boolean(publishedResponseId)}
+              />
+            }
+            label="我愿意将这段文字和署名公开到本期回应墙"
+          />
+          <small>公开后，任何访问本期页面的人都可以看到。</small>
+          <Button
+            variant="contained"
+            size="large"
+            disabled={
+              !text.trim() ||
+              !publishConsent ||
+              isPublishing ||
+              Boolean(publishedResponseId)
+            }
+            onClick={handlePublish}
+          >
+            {isPublishing
+              ? '正在发布…'
+              : publishedResponseId
+                ? '已发布到回应墙'
+                : '发布到本期回应墙'}
+          </Button>
+          {publishedResponseId && (
+            <Alert severity="success">
+              你的回应已经出现在 EP{episode.episode_number} 回应墙。{' '}
+              <Link
+                to={`/episode/${meetupId}/${episodeNumber}#responses`}
+                className={styles.inlineLink}
+              >
+                去看看大家写了什么
+              </Link>
+            </Alert>
+          )}
+          {!publishedResponseId && (
+            <Link
+              to={`/episode/${meetupId}/${episodeNumber}#responses`}
+              className={styles.wallLink}
+            >
+              先看看本期回应墙
+            </Link>
+          )}
+        </div>
 
         <label className={styles.photoButton}>
           ＋ 添加一张照片（可选）
@@ -363,7 +462,9 @@ const EpisodeCardCreate: React.FC = () => {
             保存图片
           </Button>
         </div>
-        <p className={styles.privacy}>照片只在你的浏览器中处理，不会自动上传。</p>
+        <p className={styles.privacy}>
+          照片只在你的浏览器中处理，不会自动上传。
+        </p>
       </section>
     </main>
   );

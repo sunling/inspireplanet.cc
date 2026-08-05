@@ -1,5 +1,10 @@
 import React, { Suspense, lazy, useState, useEffect } from 'react';
-import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
+import {
+  createBrowserRouter,
+  Navigate,
+  useLocation,
+  useSearchParams,
+} from 'react-router-dom';
 
 // 导入主组件和工具组件
 import App from '../App';
@@ -152,6 +157,16 @@ const WritingCircle = lazy(() => import('../pages/writing/WritingCircle'));
 const WritingEditor = lazy(() => import('../pages/writing/WritingEditor'));
 const WritingDetail = lazy(() => import('../pages/writing/WritingDetail'));
 const WritingAdmin = lazy(() => import('../pages/writing/WritingAdmin'));
+const EpisodeHub = lazy(() => import('../pages/episode/EpisodeHub'));
+
+const CardCreateRoute: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const hasEpisodeContext =
+    searchParams.has('episode') || searchParams.has('episodeId');
+  const page = createLazyRoute(<CreateCard />);
+
+  return hasEpisodeContext ? page : <ProtectedRoute>{page}</ProtectedRoute>;
+};
 
 // 创建路由器
 const router = createBrowserRouter(
@@ -206,6 +221,10 @@ const router = createBrowserRouter(
           path: 'weekly-cards/:episode',
           element: createLazyRoute(<WeeklyCards />),
         },
+        {
+          path: 'episode/:meetupId/:episode',
+          element: createLazyRoute(<EpisodeHub />),
+        },
         { path: 'card-detail', element: createLazyRoute(<CardDetail />) },
         {
           path: 'meetup-detail',
@@ -223,8 +242,9 @@ const router = createBrowserRouter(
         { path: 'act-signup', element: createLazyRoute(<ActSignup />) },
         { path: '404', element: createLazyRoute(<NotFound />) },
 
+        // 专属期次入口公开；通用卡片创建仍需登录
+        { path: 'create-card', element: <CardCreateRoute /> },
         // 受保护路由
-        { path: 'create-card', element: createProtectedRoute(<CreateCard />) },
         { path: 'my-cards', element: createProtectedRoute(<MyCards />) },
         { path: 'card-edit/:id', element: createProtectedRoute(<CardEdit />) },
         {

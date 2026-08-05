@@ -616,9 +616,9 @@ const WeeklyCards: React.FC = () => {
         qrContainer.style.border = `1px solid ${qrPanelStyles.borderColor}`;
         qrContainer.style.boxShadow = '0 10px 28px rgba(15, 23, 42, 0.12)';
 
-        const episodeStr = card?.episode ? card.episode.toLowerCase() : '';
-        const targetUrl = episodeStr
-          ? `${window.location.origin}/weekly-cards/${episodeStr}`
+        const episodeNumber = Number(card?.episode?.match(/\d+/)?.[0] || 0);
+        const targetUrl = episodeNumber
+          ? `${window.location.origin}/episode/39/${episodeNumber}`
           : window.location.href;
 
         await (window as any).QRCode.toCanvas(qrCanvas, targetUrl, {
@@ -712,6 +712,12 @@ const WeeklyCards: React.FC = () => {
         parseInt(a.replace(/\D/g, '') || '0')
     );
 
+  const activeEpisodeNumber = Number(
+    (episodeFromPath || (!showAll ? cards[0]?.episode : ''))?.match(
+      /\d+/
+    )?.[0] || 0
+  );
+
   return (
     <Box
       sx={{
@@ -726,6 +732,19 @@ const WeeklyCards: React.FC = () => {
           <h1>启发星球周刊</h1>
           <span>从每周真实的分享里，收藏一句话，也带走一个新的视角。</span>
         </header>
+
+        {activeEpisodeNumber > 0 && (
+          <nav className={styles.episodeJourney} aria-label="本期参与入口">
+            <span>EP{activeEpisodeNumber} 不只是一份周刊</span>
+            <Link to={`/episode/39/${activeEpisodeNumber}`}>看本期回应墙</Link>
+            <Link
+              to={`/create-card?meetupId=39&episode=${activeEpisodeNumber}`}
+              className={styles.episodeJourneyPrimary}
+            >
+              写下我的一句
+            </Link>
+          </nav>
+        )}
 
         <Paper
           elevation={0}

@@ -81,9 +81,67 @@
   background: #fff;
 }
 
+.textarea:disabled,
+.authorField input:disabled {
+  background: #f8f3ee;
+  color: #514a44;
+  opacity: 1;
+}
+
 .authorField small {
   grid-column: 2;
   color: #8d8379;
+}
+
+.honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.publishPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid #eadfd4;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.publishPanel :global(.MuiFormControlLabel-root) {
+  align-items: flex-start;
+  margin: 0;
+}
+
+.publishPanel :global(.MuiCheckbox-root) {
+  padding: 2px 8px 2px 0;
+  color: #d86f42;
+}
+
+.publishPanel small {
+  padding-left: 32px;
+  color: #8d8379;
+  line-height: 1.5;
+}
+
+.wallLink,
+.inlineLink {
+  color: #a94e2b;
+  font-weight: 650;
+}
+
+.wallLink {
+  align-self: center;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.wallLink:hover,
+.inlineLink:hover {
+  text-decoration: underline;
 }
 
 .photoButton,
@@ -151,7 +209,11 @@
   border-radius: 28px;
   color: #4c3529;
   background:
-    radial-gradient(circle at 18% 15%, rgba(255, 255, 255, 0.72), transparent 28%),
+    radial-gradient(
+      circle at 18% 15%,
+      rgba(255, 255, 255, 0.72),
+      transparent 28%
+    ),
     linear-gradient(145deg, #fff4dc, #f7c8aa 55%, #df8c6a);
   box-shadow: 0 18px 50px rgba(87, 53, 36, 0.16);
 }

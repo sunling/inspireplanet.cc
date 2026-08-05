@@ -53,6 +53,9 @@ const getDetailPreview = (detail = '') =>
     .replace(/\s+/g, ' ')
     .trim();
 
+const getEpisodeNumberFromLabel = (episode = '') =>
+  Number(episode.match(/\d+/)?.[0] || 0);
+
 const Home: React.FC = () => {
   const [cards, setCards] = useState<WeeklyCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -166,8 +169,11 @@ const Home: React.FC = () => {
               </p>
             )}
             <div className={styles['weekly-author']}>分享者 · {card.name}</div>
-            <Link to="/weekly-cards" className={styles['weekly-link']}>
-              阅读这期周刊 <ChevronRight fontSize="inherit" />
+            <Link
+              to={`/episode/39/${getEpisodeNumberFromLabel(card.episode)}`}
+              className={styles['weekly-link']}
+            >
+              进入本期页面 <ChevronRight fontSize="inherit" />
             </Link>
           </article>
         ))}
@@ -175,13 +181,20 @@ const Home: React.FC = () => {
     );
   };
 
+  const latestEpisodeNumber = getEpisodeNumberFromLabel(cards[0]?.episode);
+  const latestCreateUrl = latestEpisodeNumber
+    ? `/create-card?meetupId=39&episode=${latestEpisodeNumber}`
+    : '/weekly-cards';
+
   const entryPoints: EntryPoint[] = [
     {
-      eyebrow: '创作',
-      title: '创建卡片',
-      description: '记录一句触动你的话，让当下的启发留下来。',
-      label: '开始创建卡片',
-      to: '/create-card',
+      eyebrow: '回应',
+      title: '写下本期一句',
+      description: '分享结束后，留下此刻还在你心里的一句话。',
+      label: latestEpisodeNumber
+        ? `回应 EP${latestEpisodeNumber}`
+        : '看看本期内容',
+      to: latestCreateUrl,
     },
     {
       eyebrow: '相遇',
@@ -332,15 +345,19 @@ const Home: React.FC = () => {
             {renderWeeklyCards()}
           </div>
           <div className={styles['view-all-container']}>
-            <Link
-              to="/weekly-cards"
-              className={styles['view-all-button']}
-            >
+            {latestEpisodeNumber > 0 && (
+              <Link
+                to={`/episode/39/${latestEpisodeNumber}`}
+                className={styles['view-all-button']}
+              >
+                进入本期页面 <ChevronRight fontSize="inherit" />
+              </Link>
+            )}
+            <Link to="/weekly-cards" className={styles['view-all-button']}>
               查看全部往期周刊 <ChevronRight fontSize="inherit" />
             </Link>
           </div>
         </section>
-
       </Container>
 
       <aside
