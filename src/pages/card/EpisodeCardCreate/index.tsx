@@ -55,6 +55,9 @@ const EpisodeCardCreate: React.FC = () => {
   const [publishedResponseId, setPublishedResponseId] = useState<number | null>(
     null
   );
+  const [publishedResponseDate, setPublishedResponseDate] = useState<
+    string | null
+  >(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -99,6 +102,13 @@ const EpisodeCardCreate: React.FC = () => {
         day: 'numeric',
       })
     : '';
+  const responseDate = new Date(
+    publishedResponseDate || Date.now()
+  ).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
   const displayText = text.trim() || '写下此刻还留在心里的片段。';
   const displayAuthor = author.trim() || '匿名';
   const weightedLength =
@@ -235,6 +245,7 @@ const EpisodeCardCreate: React.FC = () => {
         throw new Error(response.error || '发布失败，请稍后再试');
       }
       setPublishedResponseId(response.data.response.id);
+      setPublishedResponseDate(response.data.response.created_at);
     } catch (err) {
       setError(err instanceof Error ? err.message : '发布失败，请稍后再试');
     } finally {
@@ -267,7 +278,7 @@ const EpisodeCardCreate: React.FC = () => {
           <Link to={`/episodes/${episodeNumber}`}>
             启发星球 EP{episode.episode_number}
           </Link>
-          <span>约 2 分钟</span>
+          <span>回应日期：{responseDate} · 约 2 分钟</span>
         </div>
         <h1>刚才有什么留在你心里？</h1>
         <p className={styles.description}>
@@ -404,7 +415,7 @@ const EpisodeCardCreate: React.FC = () => {
               checked={showEpisodeInfo}
               onChange={(_, value) => setShowEpisodeInfo(value)}
             />
-            显示期数和日期
+            显示期数、分享日期和回应日期
           </label>
         </div>
       </section>
@@ -444,9 +455,10 @@ const EpisodeCardCreate: React.FC = () => {
                     ? `启发星球 EP${episode.episode_number}`
                     : '启发星球'}
                 </div>
-                {showEpisodeInfo && episodeDate && (
+                {showEpisodeInfo && (
                   <div className={styles.episodeDetails}>
-                    <span>{episodeDate}</span>
+                    {episodeDate && <span>分享日期 · {episodeDate}</span>}
+                    <span>回应日期 · {responseDate}</span>
                   </div>
                 )}
               </div>
