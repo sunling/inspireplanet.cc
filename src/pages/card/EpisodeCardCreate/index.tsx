@@ -9,7 +9,7 @@ import { EpisodeCardContext } from '@/netlify/functions/episodes';
 import { saveImageDataUrl } from '@/utils/share';
 import styles from './episodeCardCreate.module.css';
 
-const MAX_TEXT_LENGTH = 180;
+const MAX_TEXT_LENGTH = 240;
 const DEFAULT_INSPIRE_PLANET_MEETUP_ID = 39;
 
 type PhotoMode = 'cover' | 'contain' | 'illustration';
@@ -28,7 +28,6 @@ const EpisodeCardCreate: React.FC = () => {
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoMode, setPhotoMode] = useState<PhotoMode>('cover');
   const [showEpisodeInfo, setShowEpisodeInfo] = useState(true);
-  const [showQrCode, setShowQrCode] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -169,6 +168,19 @@ const EpisodeCardCreate: React.FC = () => {
       })
     : '';
   const usesBackgroundPhoto = photo && photoMode !== 'illustration';
+  const displayText = text.trim() || '你想从这次相遇带走什么？';
+  const weightedLength =
+    Array.from(displayText).length +
+    Math.max(0, displayText.split('\n').length - 1) * 12;
+  const quoteSizeClass =
+    weightedLength > 180
+      ? styles.quoteXSmall
+      : weightedLength > 125
+        ? styles.quoteSmall
+        : weightedLength > 72
+          ? styles.quoteMedium
+          : styles.quoteLarge;
+  const hasLongText = weightedLength > 125;
 
   return (
     <main className={styles.page}>
@@ -190,7 +202,7 @@ const EpisodeCardCreate: React.FC = () => {
           autoFocus
         />
         <div className={styles.counter}>
-          {text.length}/{MAX_TEXT_LENGTH}
+          {text.length}/{MAX_TEXT_LENGTH} · 卡片会自动调整字号
         </div>
 
         <label className={styles.photoButton}>
@@ -240,13 +252,9 @@ const EpisodeCardCreate: React.FC = () => {
             />
             显示本期信息
           </label>
-          <label>
-            <Switch
-              checked={showQrCode}
-              onChange={(_, value) => setShowQrCode(value)}
-            />
-            显示邀请二维码
-          </label>
+          <p className={styles.qrNote}>
+            邀请二维码会固定保留，让看到卡片的人也能写下自己的启发。
+          </p>
         </div>
       </section>
 
@@ -255,7 +263,9 @@ const EpisodeCardCreate: React.FC = () => {
           ref={previewRef}
           className={`${styles.card} ${
             usesBackgroundPhoto ? styles.cardWithPhoto : ''
-          } ${photoMode === 'contain' ? styles.photoContain : ''}`}
+          } ${photoMode === 'contain' ? styles.photoContain : ''} ${
+            hasLongText ? styles.cardLongText : ''
+          }`}
           style={
             usesBackgroundPhoto
               ? { backgroundImage: `url(${photo})` }
@@ -264,32 +274,40 @@ const EpisodeCardCreate: React.FC = () => {
         >
           {usesBackgroundPhoto && <div className={styles.overlay} />}
           <div className={styles.cardContent}>
-            <div className={styles.mainContent}>
+            <div
+              className={`${styles.mainContent} ${
+                photo && photoMode === 'illustration'
+                  ? styles.mainContentWithIllustration
+                  : ''
+              }`}
+            >
               {photo && photoMode === 'illustration' && (
                 <img
                   src={photo}
                   alt="用户选择的插图"
-                  className={styles.illustration}
+                  className={`${styles.illustration} ${
+                    hasLongText ? styles.illustrationCompact : ''
+                  }`}
                 />
               )}
-              <div className={styles.quote}>
-                {text.trim() || '你想从这次相遇带走什么？'}
+              <div className={`${styles.quote} ${quoteSizeClass}`}>
+                {displayText}
               </div>
             </div>
             <div className={styles.cardFooter}>
-              {showEpisodeInfo && (
+              {showEpisodeInfo ? (
                 <div className={styles.episodeInfo}>
                   <strong>启发星球 EP{episode.episode_number}</strong>
                   <span>{cardTitle}</span>
                   {dateLabel && <span>{dateLabel}</span>}
                 </div>
+              ) : (
+                <div className={styles.brandMark}>启发星球</div>
               )}
-              {showQrCode && (
-                <div className={styles.qrBlock}>
-                  <QRCodeSVG value={shareUrl} size={74} bgColor="#ffffff" />
-                  <span>扫码写下你的启发</span>
-                </div>
-              )}
+              <div className={styles.qrBlock}>
+                <QRCodeSVG value={shareUrl} size={74} bgColor="#ffffff" />
+                <span>扫码写下你的启发</span>
+              </div>
             </div>
           </div>
         </div>
