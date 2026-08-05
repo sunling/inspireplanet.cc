@@ -19,7 +19,7 @@ import styles from './episodeCardCreate.module.css';
 const MAX_TEXT_LENGTH = 240;
 const DEFAULT_INSPIRE_PLANET_MEETUP_ID = 39;
 
-type PhotoMode = 'soft' | 'contain';
+type PhotoMode = 'cover' | 'contain';
 
 const EpisodeCardCreate: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -35,7 +35,7 @@ const EpisodeCardCreate: React.FC = () => {
   const [episode, setEpisode] = useState<EpisodeCardContext | null>(null);
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
-  const [photoMode, setPhotoMode] = useState<PhotoMode>('soft');
+  const [photoMode, setPhotoMode] = useState<PhotoMode>('cover');
   const [showEpisodeInfo, setShowEpisodeInfo] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -247,17 +247,17 @@ const EpisodeCardCreate: React.FC = () => {
             <div className={styles.photoModes} aria-label="照片展示方式">
               <button
                 type="button"
-                className={photoMode === 'soft' ? styles.activeMode : ''}
-                onClick={() => setPhotoMode('soft')}
+                className={photoMode === 'cover' ? styles.activeMode : ''}
+                onClick={() => setPhotoMode('cover')}
               >
-                柔和底图
+                铺满画面
               </button>
               <button
                 type="button"
                 className={photoMode === 'contain' ? styles.activeMode : ''}
                 onClick={() => setPhotoMode('contain')}
               >
-                完整底图
+                完整显示
               </button>
             </div>
             <button
@@ -304,23 +304,28 @@ const EpisodeCardCreate: React.FC = () => {
                 {displayText}
               </div>
             </div>
-            <div className={styles.cardFooter}>
-              {showEpisodeInfo ? (
+
+            {showEpisodeInfo ? (
+              <div className={styles.signatureBar}>
                 <div className={styles.episodeInfo}>
-                  <strong>EP{episode.episode_number} · {cardTitle}</strong>
+                  <span className={styles.episodeLabel}>EP{episode.episode_number}</span>
+                  <strong>{cardTitle}</strong>
                   {dateLabel && <span>{dateLabel}</span>}
                 </div>
-              ) : (
-                <div className={styles.brandBlock}>
-                  <strong>启发星球</strong>
-                  <span>记录启发，也邀请更多人写下自己的想法</span>
+                <div className={styles.qrInline}>
+                  <QRCodeSVG value={shareUrl} size={58} bgColor="#ffffff" />
+                  <span>扫码写下你的启发</span>
                 </div>
-              )}
-              <div className={styles.qrBlock}>
-                <QRCodeSVG value={shareUrl} size={74} bgColor="#ffffff" />
-                <span>扫码写下你的启发</span>
               </div>
-            </div>
+            ) : (
+              <div className={styles.inviteBadge}>
+                <div className={styles.inviteCopy}>
+                  <strong>启发星球</strong>
+                  <span>也写下你的这一刻</span>
+                </div>
+                <QRCodeSVG value={shareUrl} size={58} bgColor="#ffffff" />
+              </div>
+            )}
           </div>
         </div>
 
