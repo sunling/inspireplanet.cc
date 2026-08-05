@@ -10,14 +10,23 @@ import { saveImageDataUrl } from '@/utils/share';
 import styles from './episodeCardCreate.module.css';
 
 const MAX_TEXT_LENGTH = 180;
+const DEFAULT_INSPIRE_PLANET_MEETUP_ID = 39;
+
+type PhotoMode = 'cover' | 'contain' | 'illustration';
 
 const EpisodeCardCreate: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const episodeId = Number(searchParams.get('episodeId'));
+  const episodeNumber = Number(
+    searchParams.get('episode') || searchParams.get('episodeId')
+  );
+  const meetupId = Number(
+    searchParams.get('meetupId') || DEFAULT_INSPIRE_PLANET_MEETUP_ID
+  );
   const previewRef = useRef<HTMLDivElement>(null);
   const [episode, setEpisode] = useState<EpisodeCardContext | null>(null);
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
+  const [photoMode, setPhotoMode] = useState<PhotoMode>('cover');
   const [showEpisodeInfo, setShowEpisodeInfo] = useState(true);
   const [showQrCode, setShowQrCode] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,14 +35,17 @@ const EpisodeCardCreate: React.FC = () => {
 
   useEffect(() => {
     const loadEpisode = async () => {
-      if (!episodeId) {
-        setError('缺少有效的期次信息');
+      if (!episodeNumber || !meetupId) {
+        setError('缺少有效的活动或期数信息');
         setIsLoading(false);
         return;
       }
 
       try {
-        const response = await episodesApi.getById(episodeId);
+        const response = await episodesApi.getByMeetupEpisode(
+          meetupId,
+          episodeNumber
+        );
         if (!response.success || !response.data?.episode) {
           throw new Error(response.error || '无法读取本期活动');
         }
@@ -46,11 +58,12 @@ const EpisodeCardCreate: React.FC = () => {
     };
 
     loadEpisode();
-  }, [episodeId]);
+  }, [episodeNumber, meetupId]);
 
   const shareUrl = useMemo(
-    () => `${window.location.origin}/create-card?episodeId=${episodeId}`,
-    [episodeId]
+    () =>
+      `${window.location.origin}/create-card?meetupId=${meetupId}&episode=${episodeNumber}`,
+    [episodeNumber, meetupId]
   );
 
   const handlePhoto = (event: ChangeEvent<HTMLInputElement>) => {
@@ -115,7 +128,7 @@ const EpisodeCardCreate: React.FC = () => {
         await navigator.share({
           files: [file],
           title: `启发星球 EP${episode?.episode_number}`,
-          text: '这是我从这一期带走的一句话。',
+          text: '这是我从这次相遇里带走的一句话。',
         });
       } else {
         saveImageDataUrl(canvas.toDataURL('image/png'), file.name);
@@ -131,27 +144,37 @@ const EpisodeCardCreate: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className={styles.state}><CircularProgress /></div>
+      <div className={styles.state}>
+        <CircularProgress />
+      </div>
     );
   }
 
   if (error && !episode) {
-    return <div className={styles.state}><Alert severity="error">{error}</Alert></div>;
+    return (
+      <div className={styles.state}>
+        <Alert severity="error">{error}</Alert>
+      </div>
+    );
   }
 
   if (!episode) return null;
 
   const cardTitle = episode.theme || episode.meetup.title;
-  const dateLabel = new Date(`${episode.date}T00:00:00`).toLocaleDateString(
-    'zh-CN',
-    { year: 'numeric', month: 'long', day: 'numeric' }
-  );
+  const dateLabel = episode.date
+    ? new Date(`${episode.date}T00:00:00`).toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : '';
+  const usesBackgroundPhoto = photo && photoMode !== 'illustration';
 
   return (
     <main className={styles.page}>
       <section className={styles.editor}>
         <p className={styles.eyebrow}>启发星球 EP{episode.episode_number}</p>
-        <h1>今晚，你想带走什么？</h1>
+        <h1>这次相遇，你想带走什么？</h1>
         <p className={styles.description}>
           写下一句话、一段感受，或者一个接下来想做的行动。
         </p>
@@ -166,39 +189,99 @@ const EpisodeCardCreate: React.FC = () => {
           className={styles.textarea}
           autoFocus
         />
-        <div className={styles.counter}>{text.length}/{MAX_TEXT_LENGTH}</div>
+        <div className={styles.counter}>
+          {text.length}/{MAX_TEXT_LENGTH}
+        </div>
 
         <label className={styles.photoButton}>
           ＋ 添加一张照片（可选）
           <input type="file" accept="image/*" onChange={handlePhoto} hidden />
         </label>
         {photo && (
-          <button className={styles.removePhoto} onClick={() => setPhoto(null)}>
-            移除照片
-          </button>
+          <>
+            <div className={styles.photoModes} aria-label="照片展示方式">
+              <button
+                type="button"
+                className={photoMode === 'cover' ? styles.activeMode : ''}
+                onClick={() => setPhotoMode('cover')}
+              >
+                铺满裁切
+              </button>
+              <button
+                type="button"
+                className={photoMode === 'contain' ? styles.activeMode : ''}
+                onClick={() => setPhotoMode('contain')}
+              >
+                完整显示
+              </button>
+              <button
+                type="button"
+                className={photoMode === 'illustration' ? styles.activeMode : ''}
+                onClick={() => setPhotoMode('illustration')}
+              >
+                作为插图
+              </button>
+            </div>
+            <button
+              type="button"
+              className={styles.removePhoto}
+              onClick={() => setPhoto(null)}
+            >
+              移除照片
+            </button>
+          </>
         )}
 
         <div className={styles.settings}>
-          <label><Switch checked={showEpisodeInfo} onChange={(_, value) => setShowEpisodeInfo(value)} />显示本期信息</label>
-          <label><Switch checked={showQrCode} onChange={(_, value) => setShowQrCode(value)} />显示邀请二维码</label>
+          <label>
+            <Switch
+              checked={showEpisodeInfo}
+              onChange={(_, value) => setShowEpisodeInfo(value)}
+            />
+            显示本期信息
+          </label>
+          <label>
+            <Switch
+              checked={showQrCode}
+              onChange={(_, value) => setShowQrCode(value)}
+            />
+            显示邀请二维码
+          </label>
         </div>
       </section>
 
       <section className={styles.previewSection}>
         <div
           ref={previewRef}
-          className={`${styles.card} ${photo ? styles.cardWithPhoto : ''}`}
-          style={photo ? { backgroundImage: `url(${photo})` } : undefined}
+          className={`${styles.card} ${
+            usesBackgroundPhoto ? styles.cardWithPhoto : ''
+          } ${photoMode === 'contain' ? styles.photoContain : ''}`}
+          style={
+            usesBackgroundPhoto
+              ? { backgroundImage: `url(${photo})` }
+              : undefined
+          }
         >
-          {photo && <div className={styles.overlay} />}
+          {usesBackgroundPhoto && <div className={styles.overlay} />}
           <div className={styles.cardContent}>
-            <div className={styles.quote}>{text.trim() || '你想从今晚带走什么？'}</div>
+            <div className={styles.mainContent}>
+              {photo && photoMode === 'illustration' && (
+                <img
+                  src={photo}
+                  alt="用户选择的插图"
+                  className={styles.illustration}
+                />
+              )}
+              <div className={styles.quote}>
+                {text.trim() || '你想从这次相遇带走什么？'}
+              </div>
+            </div>
             <div className={styles.cardFooter}>
               {showEpisodeInfo && (
                 <div className={styles.episodeInfo}>
                   <strong>启发星球 EP{episode.episode_number}</strong>
                   <span>{cardTitle}</span>
-                  <span>{dateLabel}</span>
+                  {dateLabel && <span>{dateLabel}</span>}
                 </div>
               )}
               {showQrCode && (
@@ -212,10 +295,20 @@ const EpisodeCardCreate: React.FC = () => {
         </div>
 
         <div className={styles.actions}>
-          <Button variant="contained" size="large" disabled={!text.trim() || isExporting} onClick={handleShare}>
+          <Button
+            variant="contained"
+            size="large"
+            disabled={!text.trim() || isExporting}
+            onClick={handleShare}
+          >
             {isExporting ? '正在生成…' : '生成并分享'}
           </Button>
-          <Button variant="outlined" size="large" disabled={!text.trim() || isExporting} onClick={handleDownload}>
+          <Button
+            variant="outlined"
+            size="large"
+            disabled={!text.trim() || isExporting}
+            onClick={handleDownload}
+          >
             保存图片
           </Button>
         </div>
