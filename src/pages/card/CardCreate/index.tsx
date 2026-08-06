@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 
 import { CardItem } from '../../../netlify/types';
-import { cardsApi } from '../../../netlify/config';
+import { cardsApi, imagesApi } from '../../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
 import { getUserId } from '@/utils/user';
 import { gradientOptions } from '@/constants/gradient';
 import EditForm, { EditFormRef } from '../components/EditForm';
 import { getUserName } from '../../../utils';
 import { isMobileBrowser, saveImageDataUrl } from '@/utils/share';
+import { uploadCardImage } from '../uploadCardImage';
 
 const StandardCardCreate: React.FC = () => {
   const navigate = useNavigate();
@@ -42,10 +43,15 @@ const StandardCardCreate: React.FC = () => {
     cardData: CardItem,
     imageData?: { customImage?: string; selectedSearchImage?: string }
   ) => {
+    const uploadedImageUrl = await uploadCardImage(
+      imageData?.customImage,
+      Boolean(cardData.is_private),
+      imagesApi.upload
+    );
     const cardToSubmit = {
       ...cardData,
       created: new Date().toISOString(),
-      upload: imageData?.customImage,
+      upload: uploadedImageUrl,
       image_path: imageData?.selectedSearchImage,
       user_id: getUserId(),
     };

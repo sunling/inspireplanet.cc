@@ -5,7 +5,7 @@ import { http } from '../config/http';
 export const imagesApi = {
   upload: async (
     base64Image: string,
-    purpose: 'writing' | 'general' = 'general'
+    purpose: 'writing' | 'card' | 'general' = 'general'
   ): Promise<ApiResponse<{ url: string }>> => {
     return http.post<{ url: string }>('/uploadImage', 'upload', {
       base64Image,

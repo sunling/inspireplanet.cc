@@ -9,6 +9,7 @@ import {
   getFunctionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
+import { isPersistableCardImageUrl } from '../validation/cardImages';
 
 // 内存缓存
 interface Cache {
@@ -91,6 +92,9 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
     if (!cardData.title || !cardData.quote || !cardData.detail) {
       return createErrorResponse('缺少必填字段');
+    }
+    if (!isPersistableCardImageUrl(cardData.upload)) {
+      return createErrorResponse('本地图片必须先上传到图片仓库');
     }
 
     const record = {
@@ -313,6 +317,13 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
     if (String(currentUserId) !== String(existingCard.user_id)) {
       return createErrorResponse('没有权限修改此卡片', 403);
+    }
+
+    if (
+      cardData.upload !== existingCard.upload &&
+      !isPersistableCardImageUrl(cardData.upload)
+    ) {
+      return createErrorResponse('本地图片必须先上传到图片仓库');
     }
 
     const updateData = {
