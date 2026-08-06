@@ -150,13 +150,17 @@ const EditForm = forwardRef<EditFormRef, EditFormProps>(
         showSnackbar.error('请上传有效的图片文件');
         return;
       }
+      if (file.size > 4 * 1024 * 1024) {
+        showSnackbar.error('图片请控制在 4MB 以内');
+        return;
+      }
 
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setCustomImage(result);
         setSelectedSearchImage('');
-        setFileStatus(`已上传: ${file.name}`);
+        setFileStatus(`已选择: ${file.name}`);
       };
       reader.onerror = () => {
         showSnackbar.error('图片读取失败');
@@ -281,7 +285,9 @@ const EditForm = forwardRef<EditFormRef, EditFormProps>(
           selectedSearchImage,
         });
       } catch (error) {
-        showSnackbar.error('提交失败，请稍后重试');
+        showSnackbar.error(
+          error instanceof Error ? error.message : '提交失败，请稍后重试'
+        );
       } finally {
         setIsSubmitting(false);
       }
@@ -592,6 +598,15 @@ const EditForm = forwardRef<EditFormRef, EditFormProps>(
                       {fileStatus && (
                         <Typography variant="caption" color="text.secondary">
                           {fileStatus}
+                        </Typography>
+                      )}
+                      {cardData.is_private && customImage && (
+                        <Typography
+                          variant="caption"
+                          color="warning.main"
+                          sx={{ display: 'block', mt: 0.5 }}
+                        >
+                          私密卡片暂不支持本地图片，因为图片仓库是公开的
                         </Typography>
                       )}
                     </FormControl>
