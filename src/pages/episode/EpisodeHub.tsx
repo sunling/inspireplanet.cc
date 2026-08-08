@@ -50,6 +50,7 @@ const EpisodeHub: React.FC = () => {
     null
   );
   const [shareError, setShareError] = useState<string | null>(null);
+  const [sharePreview, setSharePreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const exportCardRef = useRef<HTMLDivElement>(null);
   const exportMainRef = useRef<HTMLDivElement>(null);
@@ -153,10 +154,15 @@ const EpisodeHub: React.FC = () => {
         backgroundColor: null,
         logging: false,
       });
-      saveImageDataUrl(
-        canvas.toDataURL('image/png'),
-        `inspire-planet-${episodeYear || 'episode'}-ep${episodeNumber}-response-${response.id}.png`
-      );
+      const imageDataUrl = canvas.toDataURL('image/png');
+      if (/MicroMessenger/i.test(navigator.userAgent)) {
+        setSharePreview(imageDataUrl);
+      } else {
+        saveImageDataUrl(
+          imageDataUrl,
+          `inspire-planet-${episodeYear || 'episode'}-ep${episodeNumber}-response-${response.id}.png`
+        );
+      }
     } catch {
       setShareError('分享图片生成失败，请稍后再试');
     } finally {
@@ -379,6 +385,37 @@ const EpisodeHub: React.FC = () => {
               <QRCodeSVG value={shareUrl} size={54} bgColor="#ffffff" />
               <span>扫码回应</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {sharePreview && (
+        <div
+          className={styles.sharePreviewBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="share-preview-title"
+          onClick={() => setSharePreview(null)}
+        >
+          <div
+            className={styles.sharePreviewDialog}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className={styles.sharePreviewHeading}>
+              <div>
+                <strong id="share-preview-title">分享这张回应卡片</strong>
+                <span>长按图片，选择“发送给朋友”或“保存图片”</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSharePreview(null)}
+                aria-label="关闭分享图片"
+              >
+                ×
+              </button>
+            </div>
+            <img src={sharePreview} alt={`${episodeLabel} 回应分享卡片`} />
+            <p>如果没有出现菜单，请长按图片约 1 秒后再试。</p>
           </div>
         </div>
       )}
