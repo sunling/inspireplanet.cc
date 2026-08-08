@@ -234,12 +234,55 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   color: #83736a;
   font-size: 0.8rem;
 }
 
+.responseCard footer > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .responseCard footer strong {
   color: #5b4438;
+}
+
+.shareResponse {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border: 1px solid rgba(169, 78, 43, 0.35);
+  border-radius: 999px;
+  color: #8f4528;
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.shareResponse:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.shareResponse:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.exportStage {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: 480px;
+  height: 600px;
+  pointer-events: none;
+}
+
+.exportStage > div {
+  width: 480px;
+  height: 600px;
 }
 
 .emptyWall {

@@ -170,7 +170,7 @@ const Home: React.FC = () => {
             )}
             <div className={styles['weekly-author']}>分享者 · {card.name}</div>
             <Link
-              to={`/episodes/${getEpisodeNumberFromLabel(card.episode)}`}
+              to={`/episodes/${new Date(card.created).getFullYear()}/${getEpisodeNumberFromLabel(card.episode)}`}
               className={styles['weekly-link']}
             >
               进入本期页面 <ChevronRight fontSize="inherit" />
@@ -182,8 +182,11 @@ const Home: React.FC = () => {
   };
 
   const latestEpisodeNumber = getEpisodeNumberFromLabel(cards[0]?.episode);
+  const latestEpisodeYear = cards[0]?.created
+    ? new Date(cards[0].created).getFullYear()
+    : new Date().getFullYear();
   const latestCreateUrl = latestEpisodeNumber
-    ? `/episodes/${latestEpisodeNumber}/respond`
+    ? `/episodes/${latestEpisodeYear}/${latestEpisodeNumber}/respond`
     : '/weekly-cards';
 
   const entryPoints: EntryPoint[] = [

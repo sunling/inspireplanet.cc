@@ -31,7 +31,7 @@ const DEFAULT_INSPIRE_PLANET_MEETUP_ID = 39;
 type PhotoMode = 'cover' | 'contain';
 
 const EpisodeCardCreate: React.FC = () => {
-  const params = useParams<{ episode: string }>();
+  const params = useParams<{ year?: string; episode: string }>();
   const [searchParams] = useSearchParams();
   const episodeNumber = Number(
     params.episode ||
@@ -41,6 +41,7 @@ const EpisodeCardCreate: React.FC = () => {
   const meetupId = Number(
     searchParams.get('meetupId') || DEFAULT_INSPIRE_PLANET_MEETUP_ID
   );
+  const routeYear = params.year ? Number(params.year) : null;
   const previewRef = useRef<HTMLDivElement>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
   const quoteRef = useRef<HTMLDivElement>(null);
@@ -79,7 +80,14 @@ const EpisodeCardCreate: React.FC = () => {
         if (!response.success || !response.data?.episode) {
           throw new Error(response.error || '无法读取本期活动');
         }
-        setEpisode(response.data.episode);
+        const loadedEpisode = response.data.episode;
+        const loadedYear = loadedEpisode.date
+          ? new Date(`${loadedEpisode.date}T00:00:00`).getFullYear()
+          : null;
+        if (routeYear && loadedYear && routeYear !== loadedYear) {
+          throw new Error(`${routeYear} 年没有找到 EP${episodeNumber}`);
+        }
+        setEpisode(loadedEpisode);
       } catch (err) {
         setError(err instanceof Error ? err.message : '无法读取本期活动');
       } finally {
@@ -88,11 +96,12 @@ const EpisodeCardCreate: React.FC = () => {
     };
 
     loadEpisode();
-  }, [episodeNumber, meetupId]);
+  }, [episodeNumber, meetupId, routeYear]);
 
   const shareUrl = useMemo(
-    () => `${window.location.origin}/episodes/${episodeNumber}/respond`,
-    [episodeNumber]
+    () =>
+      `${window.location.origin}/episodes/${routeYear ? `${routeYear}/` : ''}${episodeNumber}/respond`,
+    [episodeNumber, routeYear]
   );
 
   const episodeDate = episode?.date
@@ -102,6 +111,10 @@ const EpisodeCardCreate: React.FC = () => {
         day: 'numeric',
       })
     : '';
+  const episodeYear = episode?.date
+    ? new Date(`${episode.date}T00:00:00`).getFullYear()
+    : null;
+  const episodeLabel = `${episodeYear ? `${episodeYear} · ` : ''}EP${episode?.episode_number}`;
   const responseDate = new Date(
     publishedResponseDate || Date.now()
   ).toLocaleDateString('zh-CN', {
@@ -188,7 +201,7 @@ const EpisodeCardCreate: React.FC = () => {
       if (!canvas) return;
       saveImageDataUrl(
         canvas.toDataURL('image/png'),
-        `inspire-planet-ep${episode?.episode_number}-${Date.now()}.png`
+        `inspire-planet-${episodeYear || 'episode'}-ep${episode?.episode_number}-${Date.now()}.png`
       );
     } finally {
       setIsExporting(false);
@@ -211,7 +224,7 @@ const EpisodeCardCreate: React.FC = () => {
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: `启发星球 EP${episode?.episode_number}`,
+          title: `启发星球 ${episodeLabel}`,
           text: `这是 ${displayAuthor} 想记录下来的一点启发。`,
         });
       } else {
@@ -275,8 +288,10 @@ const EpisodeCardCreate: React.FC = () => {
     <main className={styles.page}>
       <section className={styles.editor}>
         <div className={styles.episodeContext}>
-          <Link to={`/episodes/${episodeNumber}`}>
-            启发星球 EP{episode.episode_number}
+          <Link
+            to={`/episodes/${routeYear ? `${routeYear}/` : ''}${episodeNumber}`}
+          >
+            启发星球 {episodeLabel}
           </Link>
           <span>回应日期：{responseDate} · 约 2 分钟</span>
         </div>
@@ -355,9 +370,9 @@ const EpisodeCardCreate: React.FC = () => {
           </Button>
           {publishedResponseId && (
             <Alert severity="success">
-              你的回应已经出现在 EP{episode.episode_number} 回应墙。{' '}
+              你的回应已经出现在 {episodeLabel} 回应墙。{' '}
               <Link
-                to={`/episodes/${episodeNumber}#responses`}
+                to={`/episodes/${routeYear ? `${routeYear}/` : ''}${episodeNumber}#responses`}
                 className={styles.inlineLink}
               >
                 去看看大家写了什么
@@ -366,7 +381,7 @@ const EpisodeCardCreate: React.FC = () => {
           )}
           {!publishedResponseId && (
             <Link
-              to={`/episodes/${episodeNumber}#responses`}
+              to={`/episodes/${routeYear ? `${routeYear}/` : ''}${episodeNumber}#responses`}
               className={styles.wallLink}
             >
               先看看本期回应墙
@@ -451,9 +466,7 @@ const EpisodeCardCreate: React.FC = () => {
             <div className={styles.topMeta}>
               <div className={styles.episodeMeta}>
                 <div className={styles.brandChip}>
-                  {showEpisodeInfo
-                    ? `启发星球 EP${episode.episode_number}`
-                    : '启发星球'}
+                  {showEpisodeInfo ? `启发星球 ${episodeLabel}` : '启发星球'}
                 </div>
                 {showEpisodeInfo && (
                   <div className={styles.episodeDetails}>

@@ -238,6 +238,14 @@ const router = createBrowserRouter(
           element: createLazyRoute(<WeeklyCards />),
         },
         {
+          path: 'episodes/:year/:episode',
+          element: createLazyRoute(<EpisodeHub />),
+        },
+        {
+          path: 'episodes/:year/:episode/respond',
+          element: createLazyRoute(<EpisodeCardCreate />),
+        },
+        {
           path: 'episodes/:episode',
           element: createLazyRoute(<EpisodeHub />),
         },

@@ -1,5 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, CircularProgress } from '@mui/material';
+import html2canvas from 'html2canvas';
+import { QRCodeSVG } from 'qrcode.react';
 import { Link, useParams } from 'react-router-dom';
 
 import {
@@ -10,6 +12,8 @@ import {
 import { EpisodeCardContext } from '@/netlify/functions/episodes';
 import { EpisodeResponse } from '@/netlify/functions/episodeResponses';
 import { WeeklyCard } from '@/netlify/services/weeklyCards';
+import { saveImageDataUrl } from '@/utils/share';
+import cardStyles from '../card/EpisodeCardCreate/episodeCardCreate.module.css';
 import styles from './episodeHub.module.css';
 
 const INSPIRE_PLANET_MEETUP_ID = 39;
@@ -30,19 +34,31 @@ const formatEpisodeDate = (date: string) =>
     day: 'numeric',
   });
 
+const getEpisodeYear = (date: string) =>
+  date ? new Date(`${date}T00:00:00`).getFullYear() : null;
+
 const EpisodeHub: React.FC = () => {
-  const params = useParams<{ episode: string }>();
+  const params = useParams<{ year?: string; episode: string }>();
   const meetupId = INSPIRE_PLANET_MEETUP_ID;
   const episodeNumber = Number(params.episode);
+  const routeYear = params.year ? Number(params.year) : null;
   const [episode, setEpisode] = useState<EpisodeCardContext | null>(null);
   const [responses, setResponses] = useState<EpisodeResponse[]>([]);
   const [weeklyCards, setWeeklyCards] = useState<WeeklyCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [exportingResponseId, setExportingResponseId] = useState<number | null>(
+    null
+  );
+  const [shareError, setShareError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const exportCardRef = useRef<HTMLDivElement>(null);
+  const exportMainRef = useRef<HTMLDivElement>(null);
+  const exportQuoteRef = useRef<HTMLDivElement>(null);
 
   const createUrl = useMemo(
-    () => `/episodes/${episodeNumber}/respond`,
-    [episodeNumber]
+    () =>
+      `/episodes/${routeYear ? `${routeYear}/` : ''}${episodeNumber}/respond`,
+    [episodeNumber, routeYear]
   );
 
   useEffect(() => {
@@ -65,7 +81,12 @@ const EpisodeHub: React.FC = () => {
           throw new Error(episodeResult.error || '无法读取本期活动');
         }
 
-        setEpisode(episodeResult.data.episode);
+        const loadedEpisode = episodeResult.data.episode;
+        const loadedYear = getEpisodeYear(loadedEpisode.date);
+        if (routeYear && loadedYear && routeYear !== loadedYear) {
+          throw new Error(`${routeYear} 年没有找到 EP${episodeNumber}`);
+        }
+        setEpisode(loadedEpisode);
         if (responsesResult.success) {
           setResponses(responsesResult.data?.responses || []);
         }
@@ -80,7 +101,7 @@ const EpisodeHub: React.FC = () => {
     };
 
     loadEpisodeHub();
-  }, [meetupId, episodeNumber]);
+  }, [meetupId, episodeNumber, routeYear]);
 
   useEffect(() => {
     if (!isLoading && window.location.hash === '#responses') {
@@ -92,6 +113,56 @@ const EpisodeHub: React.FC = () => {
       });
     }
   }, [isLoading]);
+
+  const episodeYear = getEpisodeYear(episode?.date || '');
+  const episodeLabel = `${episodeYear ? `${episodeYear} · ` : ''}EP${episode?.episode_number}`;
+  const exportingResponse = responses.find(
+    (response) => response.id === exportingResponseId
+  );
+  const shareUrl = `${window.location.origin}${createUrl}`;
+
+  const handleShareResponse = async (response: EpisodeResponse) => {
+    setExportingResponseId(response.id);
+    setShareError(null);
+    try {
+      await new Promise<void>((resolve) =>
+        window.requestAnimationFrame(() =>
+          window.requestAnimationFrame(() => resolve())
+        )
+      );
+      const card = exportCardRef.current;
+      const mainContent = exportMainRef.current;
+      const quote = exportQuoteRef.current;
+      if (!card || !mainContent || !quote) {
+        throw new Error('分享卡片尚未准备好');
+      }
+
+      let fontSize = Number.parseFloat(quote.style.fontSize);
+      while (
+        mainContent.scrollHeight > mainContent.clientHeight &&
+        fontSize > 10
+      ) {
+        fontSize -= 1;
+        quote.style.fontSize = `${fontSize}px`;
+      }
+
+      const canvas = await html2canvas(card, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+      });
+      saveImageDataUrl(
+        canvas.toDataURL('image/png'),
+        `inspire-planet-${episodeYear || 'episode'}-ep${episodeNumber}-response-${response.id}.png`
+      );
+    } catch {
+      setShareError('分享图片生成失败，请稍后再试');
+    } finally {
+      setExportingResponseId(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -113,7 +184,7 @@ const EpisodeHub: React.FC = () => {
     <main className={styles.page}>
       <header className={styles.hero}>
         <p className={styles.eyebrow}>每周线上分享</p>
-        <h1>启发星球 EP{episode.episode_number}</h1>
+        <h1>启发星球 {episodeLabel}</h1>
         {episode.date && (
           <time dateTime={episode.date}>{formatEpisodeDate(episode.date)}</time>
         )}
@@ -173,24 +244,47 @@ const EpisodeHub: React.FC = () => {
           <Link to={createUrl}>我也写一句</Link>
         </div>
 
+        {shareError && <Alert severity="warning">{shareError}</Alert>}
+
         {responses.length > 0 ? (
           <div className={styles.responseGrid}>
             {responses.map((response, index) => (
-              <article className={styles.responseCard} key={response.id}>
+              <article
+                className={styles.responseCard}
+                id={`response-${response.id}`}
+                key={response.id}
+              >
                 <span className={styles.responseNumber}>
-                  {String(index + 1).padStart(2, '0')}
+                  {episodeLabel} · {String(index + 1).padStart(2, '0')}
                 </span>
                 <blockquote>{response.content}</blockquote>
                 <footer>
-                  <strong>{response.author}</strong>
-                  <time dateTime={response.created_at}>
-                    回应于{' '}
-                    {new Date(response.created_at).toLocaleDateString('zh-CN', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </time>
+                  <div>
+                    <strong>{response.author}</strong>
+                    <time dateTime={response.created_at}>
+                      回应于{' '}
+                      {new Date(response.created_at).toLocaleDateString(
+                        'zh-CN',
+                        {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        }
+                      )}
+                    </time>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.shareResponse}
+                    onClick={() => handleShareResponse(response)}
+                    disabled={exportingResponseId !== null}
+                    data-html2canvas-ignore="true"
+                    aria-label={`分享${response.author}的回应`}
+                  >
+                    {exportingResponseId === response.id
+                      ? '生成中…'
+                      : '分享回应'}
+                  </button>
                 </footer>
               </article>
             ))}
@@ -206,6 +300,88 @@ const EpisodeHub: React.FC = () => {
           </div>
         )}
       </section>
+
+      {exportingResponse && (
+        <div className={styles.exportStage} aria-hidden="true">
+          <div
+            ref={exportCardRef}
+            className={`${cardStyles.card} ${
+              Array.from(exportingResponse.content).length > 180
+                ? cardStyles.cardLongText
+                : ''
+            }`}
+          >
+            <div className={cardStyles.cardContent}>
+              <div className={cardStyles.topMeta}>
+                <div className={cardStyles.episodeMeta}>
+                  <div className={cardStyles.brandChip}>
+                    启发星球 {episodeLabel}
+                  </div>
+                  <div className={cardStyles.episodeDetails}>
+                    {episode.date && (
+                      <span>分享日期 · {formatEpisodeDate(episode.date)}</span>
+                    )}
+                    <span>
+                      回应日期 ·{' '}
+                      {new Date(
+                        exportingResponse.created_at
+                      ).toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                </div>
+                <div className={cardStyles.expressionCue}>
+                  真实 · 自由 · 不必完整
+                </div>
+              </div>
+
+              <div ref={exportMainRef} className={cardStyles.mainContent}>
+                <div className={cardStyles.textPanel}>
+                  <div
+                    ref={exportQuoteRef}
+                    className={cardStyles.quote}
+                    style={{
+                      fontSize:
+                        Array.from(exportingResponse.content).length > 420
+                          ? 13
+                          : Array.from(exportingResponse.content).length > 300
+                            ? 15
+                            : Array.from(exportingResponse.content).length > 180
+                              ? 18
+                              : Array.from(exportingResponse.content).length >
+                                  110
+                                ? 24
+                                : Array.from(exportingResponse.content).length >
+                                    72
+                                  ? 31
+                                  : 42,
+                      lineHeight:
+                        Array.from(exportingResponse.content).length > 300
+                          ? 1.32
+                          : Array.from(exportingResponse.content).length > 180
+                            ? 1.4
+                            : 1.5,
+                    }}
+                  >
+                    {exportingResponse.content}
+                  </div>
+                  <div className={cardStyles.byline}>
+                    — {exportingResponse.author}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={cardStyles.qrFloat}>
+              <QRCodeSVG value={shareUrl} size={54} bgColor="#ffffff" />
+              <span>扫码回应</span>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

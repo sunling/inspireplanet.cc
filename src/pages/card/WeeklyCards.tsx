@@ -717,6 +717,8 @@ const WeeklyCards: React.FC = () => {
       /\d+/
     )?.[0] || 0
   );
+  const activeEpisodeYear = getBeijingYear(cards[0]?.created);
+  const activeEpisodePath = `${activeEpisodeYear ? `${activeEpisodeYear}/` : ''}${activeEpisodeNumber}`;
 
   return (
     <Box
@@ -736,9 +738,9 @@ const WeeklyCards: React.FC = () => {
         {activeEpisodeNumber > 0 && (
           <nav className={styles.episodeJourney} aria-label="本期参与入口">
             <span>EP{activeEpisodeNumber} 不只是一份周刊</span>
-            <Link to={`/episodes/${activeEpisodeNumber}`}>看本期回应墙</Link>
+            <Link to={`/episodes/${activeEpisodePath}`}>看本期回应墙</Link>
             <Link
-              to={`/episodes/${activeEpisodeNumber}/respond`}
+              to={`/episodes/${activeEpisodePath}/respond`}
               className={styles.episodeJourneyPrimary}
             >
               写下我的一句
