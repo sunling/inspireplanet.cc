@@ -383,7 +383,7 @@ const EpisodeHub: React.FC = () => {
 
             <div className={cardStyles.qrFloat}>
               <QRCodeSVG value={shareUrl} size={54} bgColor="#ffffff" />
-              <span>扫码回应</span>
+              <span>扫码回应本期</span>
             </div>
           </div>
         </div>

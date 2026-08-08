@@ -62,6 +62,7 @@ const EpisodeCardCreate: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [sharePreview, setSharePreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -213,6 +214,11 @@ const EpisodeCardCreate: React.FC = () => {
     try {
       const canvas = await renderCanvas();
       if (!canvas) return;
+      const imageDataUrl = canvas.toDataURL('image/png');
+      if (/MicroMessenger/i.test(navigator.userAgent)) {
+        setSharePreview(imageDataUrl);
+        return;
+      }
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, 'image/png')
       );
@@ -490,7 +496,7 @@ const EpisodeCardCreate: React.FC = () => {
 
           <div className={styles.qrFloat}>
             <QRCodeSVG value={shareUrl} size={54} bgColor="#ffffff" />
-            <span>扫码回应</span>
+            <span>扫码回应本期</span>
           </div>
         </div>
 
@@ -516,6 +522,37 @@ const EpisodeCardCreate: React.FC = () => {
           照片只在你的浏览器中处理；二维码会邀请朋友也来写一句。
         </p>
       </section>
+
+      {sharePreview && (
+        <div
+          className={styles.sharePreviewBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="share-preview-title"
+          onClick={() => setSharePreview(null)}
+        >
+          <div
+            className={styles.sharePreviewDialog}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className={styles.sharePreviewHeading}>
+              <div>
+                <strong id="share-preview-title">分享这张回应卡片</strong>
+                <span>长按图片，选择“发送给朋友”或“保存图片”</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSharePreview(null)}
+                aria-label="关闭分享图片"
+              >
+                ×
+              </button>
+            </div>
+            <img src={sharePreview} alt={`${episodeLabel} 回应分享卡片`} />
+            <p>如果没有出现菜单，请长按图片约 1 秒后再试。</p>
+          </div>
+        </div>
+      )}
     </main>
   );
 };
