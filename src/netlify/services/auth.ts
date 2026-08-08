@@ -8,6 +8,35 @@ function isEmailNotConfirmed(message?: string): boolean {
   return Boolean(message?.toLowerCase().includes('email not confirmed'));
 }
 
+export function getSignUpErrorResponse(error: {
+  code?: string;
+  message?: string;
+  status?: number;
+}): Pick<ApiResponse<never>, 'statusCode' | 'error'> {
+  const message = error.message?.toLowerCase() || '';
+
+  if (
+    error.status === 429 ||
+    error.code === 'over_email_send_rate_limit' ||
+    message.includes('email rate limit') ||
+    message.includes('only request this after')
+  ) {
+    return {
+      statusCode: 429,
+      error: '注册邮件发送过于频繁，请稍后再试；你也可以使用 Google 账号登录',
+    };
+  }
+
+  if (message.includes('already registered')) {
+    return { statusCode: 409, error: '该邮箱已被注册' };
+  }
+
+  return {
+    statusCode: error.status || 400,
+    error: error.message || '注册失败，请稍后重试',
+  };
+}
+
 async function getProfile(email: string): Promise<UserInfo | null> {
   const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', {
     email,
@@ -47,9 +76,10 @@ export const authApi = {
     email: string;
     password: string;
   }): Promise<ApiResponse<{ user: UserInfo; token: string }>> => {
+    const email = data.email.trim().toLowerCase();
     const { error: signUpError, data: authData } =
       await supabaseAuth.auth.signUp({
-        email: data.email,
+        email,
         password: data.password,
         options: {
           data: { name: data.name },
@@ -58,10 +88,7 @@ export const authApi = {
       });
 
     if (signUpError) {
-      const msg = signUpError.message.includes('already registered')
-        ? '该邮箱已被注册'
-        : signUpError.message;
-      return { success: false, statusCode: 409, error: msg };
+      return { success: false, ...getSignUpErrorResponse(signUpError) };
     }
 
     if (authData.user && authData.user.identities?.length === 0) {
@@ -77,14 +104,14 @@ export const authApi = {
       '/auth',
       'register',
       {
-        email: data.email,
+        email,
         name: data.name,
       }
     );
 
     const token = authData.session?.access_token || '';
     const user: UserInfo = profileRes.data?.user || {
-      email: data.email,
+      email,
       name: data.name,
     };
 
