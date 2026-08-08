@@ -283,6 +283,7 @@
 .exportStage > div {
   width: 480px;
   height: 600px;
+  border-radius: 0;
 }
 
 .sharePreviewBackdrop {
@@ -351,7 +352,6 @@
 .sharePreviewDialog img {
   display: block;
   width: 100%;
-  border-radius: 18px;
   background: rgba(76, 53, 41, 0.14);
   box-shadow: 0 12px 34px rgba(87, 53, 36, 0.18);
   -webkit-touch-callout: default;

@@ -186,13 +186,20 @@ const EpisodeCardCreate: React.FC = () => {
 
   const renderCanvas = async () => {
     if (!previewRef.current || !text.trim()) return null;
-    return html2canvas(previewRef.current, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: null,
-      logging: false,
-    });
+    const preview = previewRef.current;
+    const previousBorderRadius = preview.style.borderRadius;
+    preview.style.borderRadius = '0';
+    try {
+      return await html2canvas(preview, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+      });
+    } finally {
+      preview.style.borderRadius = previousBorderRadius;
+    }
   };
 
   const handleDownload = async () => {
