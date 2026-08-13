@@ -22,6 +22,14 @@ import {
   normalizeTemplateSnapshot,
   WRITING_POST_SELECT,
 } from '../utils/writing';
+import { getOrCreateAnonymousAlias } from '../utils/writingAnonymousAlias';
+
+async function mapPost(row: any, currentUserId?: string | null) {
+  const alias = row.is_anonymous
+    ? await getOrCreateAnonymousAlias(String(row.user_id))
+    : null;
+  return mapWritingPost(row, currentUserId, alias);
+}
 
 class RequestError extends Error {
   constructor(
@@ -485,8 +493,8 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
   if (error) return createErrorResponse('获取书写列表失败', 500);
 
   return createSuccessResponse({
-    records: (data || []).map((row) =>
-      mapWritingPost(row, currentUser?.id || null)
+    records: await Promise.all(
+      (data || []).map((row) => mapPost(row, currentUser?.id || null))
     ),
     total: count || 0,
     page,
@@ -520,7 +528,7 @@ async function handleGetById(event: NetlifyEvent): Promise<NetlifyResponse> {
   }
 
   return createSuccessResponse({
-    post: mapWritingPost(row, currentUser?.id || null),
+    post: await mapPost(row, currentUser?.id || null),
   });
 }
 
@@ -590,7 +598,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   }
   const row = await fetchWritingRow(String(postId));
   return createSuccessResponse(
-    { post: mapWritingPost(row, currentUser.id) },
+    { post: await mapPost(row, currentUser.id) },
     201
   );
 }
@@ -670,7 +678,7 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     throw new RequestError(message, 500);
   }
   const row = await fetchWritingRow(id);
-  return createSuccessResponse({ post: mapWritingPost(row, currentUser.id) });
+  return createSuccessResponse({ post: await mapPost(row, currentUser.id) });
 }
 
 async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {

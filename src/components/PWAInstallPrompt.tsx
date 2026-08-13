@@ -35,7 +35,11 @@ const PWAInstallPrompt: React.FC = () => {
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
 
+  // 本地开发不展示安装提示；PWA 安装流程只在生产环境启用。
+  const isDevelopment = import.meta.env.DEV;
+
   useEffect(() => {
+    if (isDevelopment) return;
     // 检查是否是iOS设备
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
     setIsIOS(isIOSDevice);
@@ -76,7 +80,7 @@ const PWAInstallPrompt: React.FC = () => {
         handleBeforeInstallPrompt
       );
     };
-  }, []);
+  }, [isDevelopment]);
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
@@ -98,7 +102,7 @@ const PWAInstallPrompt: React.FC = () => {
     localStorage.setItem('pwa-prompt-shown', 'true');
   };
 
-  if (isStandalone) {
+  if (isDevelopment || isStandalone) {
     return null;
   }
 

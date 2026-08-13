@@ -91,7 +91,8 @@ export function normalizeTemplateSnapshot(value: any) {
 
 export function mapWritingPost(
   row: any,
-  currentUserId?: string | null
+  currentUserId?: string | null,
+  anonymousAlias?: string | null
 ): WritingPost {
   const author = Array.isArray(row.author) ? row.author[0] : row.author;
   const topicLinks = Array.isArray(row.topic_links) ? row.topic_links : [];
@@ -133,7 +134,9 @@ export function mapWritingPost(
             ? String(author.id)
             : String(row.user_id || ''),
       name: isAnonymous
-        ? '匿名书写者'
+        ? anonymousAlias
+          ? `佚名 · ${anonymousAlias}`
+          : '佚名'
         : author?.name || author?.username || '匿名用户',
       username: isAnonymous ? null : author?.username || null,
     },

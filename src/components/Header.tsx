@@ -28,6 +28,7 @@ import {
   AccountCircle,
   Logout,
   Lock,
+  AutoStoriesOutlined,
 } from '@mui/icons-material';
 import { notificationsApi } from '../netlify/config';
 import { isOrganizer } from '../utils/user';
@@ -605,6 +606,14 @@ const Header: React.FC<HeaderProps> = ({
                     <AccountCircle fontSize="small" />
                   </Badge>
                   通知
+                </MenuItem>
+                <MenuItem
+                  component={Link}
+                  to="/my-ebook"
+                  onClick={() => setUserMenuAnchor(null)}
+                >
+                  <AutoStoriesOutlined fontSize="small" sx={{ mr: 1 }} />
+                  我的电子书
                 </MenuItem>
                 <MenuItem
                   component={Link}

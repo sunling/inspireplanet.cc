@@ -141,6 +141,7 @@ const PeopleDirectory = lazy(() => import('../pages/people/Directory'));
 const MyConnections = lazy(() => import('../pages/connections/MyConnections'));
 const Profile = lazy(() => import('../pages/user/Profile'));
 const Notifications = lazy(() => import('../pages/user/Notifications'));
+const PersonalEbook = lazy(() => import('../pages/user/PersonalEbook'));
 const SurveyList = lazy(() => import('../pages/survey/SurveyList'));
 const SurveyDetail = lazy(() => import('../pages/survey/SurveyDetail'));
 const SurveyEdit = lazy(() => import('../pages/survey/SurveyEdit'));
@@ -310,6 +311,10 @@ const router = createBrowserRouter(
           element: createProtectedRoute(<MyConnections />),
         },
         { path: 'profile', element: createProtectedRoute(<Profile />) },
+        {
+          path: 'my-ebook',
+          element: createProtectedRoute(<PersonalEbook />),
+        },
         {
           path: 'notifications',
           element: createProtectedRoute(<Notifications />),
