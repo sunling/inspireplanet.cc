@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Alert,
@@ -86,6 +86,8 @@ const WritingCircle: React.FC = () => {
   const [posts, setPosts] = useState<WritingPost[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [minePage, setMinePage] = useState(1);
   const [error, setError] = useState('');
   const [topicsExpanded, setTopicsExpanded] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
@@ -96,6 +98,7 @@ const WritingCircle: React.FC = () => {
   const [groupsError, setGroupsError] = useState('');
   const [groupsExpanded, setGroupsExpanded] = useState(false);
   const [partners, setPartners] = useState<WritingPartner[]>([]);
+  const mineLoadMoreRef = useRef<HTMLDivElement>(null);
 
   const scope =
     searchParams.get('scope') === 'mine'
@@ -159,6 +162,7 @@ const WritingCircle: React.FC = () => {
   }, [retryCount]);
 
   useEffect(() => {
+    if (scope === 'mine') return;
     let active = true;
     setLoading(true);
     setError('');
@@ -206,7 +210,92 @@ const WritingCircle: React.FC = () => {
     topicId,
   ]);
 
+  useEffect(() => {
+    if (scope === 'mine') setMinePage(1);
+  }, [creator, dateFrom, dateTo, groupId, scope, sort, topicId]);
+
+  useEffect(() => {
+    if (scope !== 'mine') return;
+    let active = true;
+    if (minePage === 1) {
+      setLoading(true);
+      setPosts([]);
+    } else {
+      setLoadingMore(true);
+    }
+    setError('');
+
+    writingsApi
+      .list({
+        scope: 'mine',
+        group_id: groupId || undefined,
+        topic_ids: topicId ? [topicId] : undefined,
+        sort,
+        page: minePage,
+        page_size: PAGE_SIZE,
+        creator: creator || undefined,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
+      })
+      .then((response) => {
+        if (!active) return;
+        if (!response.success) {
+          setError(response.error || '加载书写失败');
+          return;
+        }
+        const records = response.data?.records || [];
+        setPosts((current) => {
+          if (minePage === 1) return records;
+          const existingIds = new Set(current.map((post) => post.id));
+          return [
+            ...current,
+            ...records.filter((post) => !existingIds.has(post.id)),
+          ];
+        });
+        setTotal(response.data?.total || 0);
+      })
+      .catch(() => {
+        if (active) setError('加载书写失败，请稍后重试');
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+        setLoadingMore(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    creator,
+    dateFrom,
+    dateTo,
+    groupId,
+    minePage,
+    retryCount,
+    scope,
+    sort,
+    topicId,
+  ]);
+
+  useEffect(() => {
+    if (scope !== 'mine' || loading || loadingMore || posts.length >= total) {
+      return;
+    }
+    const target = mineLoadMoreRef.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setMinePage((current) => current + 1);
+      },
+      { rootMargin: '240px 0px' }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loading, loadingMore, posts.length, scope, total]);
+
   const updateParams = (updates: Record<string, string | null>) => {
+    if (updates.page === null) setMinePage(1);
     const next = new URLSearchParams(searchParams);
     Object.entries(updates).forEach(([key, value]) => {
       if (!value) next.delete(key);
@@ -934,7 +1023,17 @@ const WritingCircle: React.FC = () => {
               </Box>
             )}
 
-            {totalPages > 1 && (
+            {scope === 'mine' && posts.length < total && (
+              <Box
+                ref={mineLoadMoreRef}
+                sx={{ display: 'flex', justifyContent: 'center', py: 4 }}
+                aria-live="polite"
+              >
+                {loadingMore && <Loading message="正在加载更多书写..." />}
+              </Box>
+            )}
+
+            {scope !== 'mine' && totalPages > 1 && (
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 5 }}>
                 <Pagination
                   page={page}

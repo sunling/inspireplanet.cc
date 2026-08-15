@@ -1,3 +1,5 @@
+import { WritingEditorMode, WritingRichContent } from './writing';
+
 export type EbookSource = 'card' | 'writing' | 'response';
 
 export interface EbookTopic {
@@ -11,6 +13,8 @@ export interface EbookChapter {
   title: string;
   summary: string;
   content: string;
+  editor_mode?: WritingEditorMode;
+  rich_content?: WritingRichContent | null;
   created_at: string;
   topics: EbookTopic[];
   image_urls: string[];

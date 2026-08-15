@@ -1,5 +1,11 @@
 export type WritingVisibility = 'public' | 'private' | 'group';
 export type WritingStatus = 'published' | 'hidden';
+export type WritingEditorMode = 'basic' | 'rich';
+export interface WritingRichContent {
+  type: 'doc';
+  content?: unknown[];
+  [key: string]: unknown;
+}
 export type WritingGroupMemberStatus = 'pending' | 'approved' | 'rejected';
 
 export interface WritingGroup {
@@ -78,6 +84,8 @@ export interface WritingPost {
   user_id: string;
   title?: string | null;
   body: string;
+  editor_mode: WritingEditorMode;
+  body_rich?: WritingRichContent | null;
   image_urls: string[];
   template_id?: string | null;
   template_snapshot?: WritingTemplateSnapshot | null;
@@ -125,6 +133,8 @@ export interface WritingAnswerInput {
 export interface CreateWritingRequest {
   title?: string;
   body: string;
+  editor_mode?: WritingEditorMode;
+  body_rich?: WritingRichContent | null;
   image_urls?: string[];
   template_id?: string | null;
   template_answers?: WritingAnswerInput[];

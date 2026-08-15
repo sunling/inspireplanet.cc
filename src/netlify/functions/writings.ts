@@ -5,6 +5,8 @@ import {
   NetlifyEvent,
   NetlifyResponse,
   WritingAnswerInput,
+  WritingEditorMode,
+  WritingRichContent,
   WritingTemplateSnapshot,
   WritingVisibility,
 } from '../types';
@@ -51,6 +53,8 @@ interface ExistingWriting {
 interface PreparedWriting {
   title: string;
   body: string;
+  editor_mode: WritingEditorMode;
+  body_rich: WritingRichContent | null;
   template_id: string | null;
   template_snapshot: WritingTemplateSnapshot | null;
   visibility: WritingVisibility;
@@ -59,6 +63,27 @@ interface PreparedWriting {
   image_urls: string[];
   is_anonymous: boolean;
   group_id: string | null;
+}
+
+function normalizeRichContent(
+  mode: WritingEditorMode,
+  value: unknown
+): WritingRichContent | null {
+  if (mode !== 'rich') return null;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new RequestError('富文本内容格式无效');
+  }
+  const content = value as Record<string, unknown>;
+  if (
+    content.type !== 'doc' ||
+    (content.content !== undefined && !Array.isArray(content.content))
+  ) {
+    throw new RequestError('富文本内容格式无效');
+  }
+  if (JSON.stringify(content).length > 200000) {
+    throw new RequestError('富文本内容过大');
+  }
+  return content as WritingRichContent;
 }
 
 export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
@@ -242,6 +267,9 @@ async function prepareWriting(
 ): Promise<PreparedWriting> {
   const title = String(payload.title || '').trim();
   const body = String(payload.body || '').trim();
+  const editor_mode: WritingEditorMode =
+    payload.editor_mode === 'rich' ? 'rich' : 'basic';
+  const body_rich = normalizeRichContent(editor_mode, payload.body_rich);
   if (title.length > 80) throw new RequestError('标题不能超过 80 个字');
   if (body.length > 20000) throw new RequestError('正文不能超过 20000 个字');
 
@@ -295,6 +323,8 @@ async function prepareWriting(
   return {
     title,
     body,
+    editor_mode,
+    body_rich,
     template_id,
     template_snapshot,
     visibility,
@@ -563,6 +593,8 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       visibility: writing.visibility,
       is_anonymous: writing.is_anonymous,
       group_id: writing.group_id ? Number(writing.group_id) : null,
+      editor_mode: writing.editor_mode,
+      body_rich: writing.body_rich,
     })
     .eq('id', postId)
     .eq('user_id', currentUser.id);
@@ -652,6 +684,8 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
       visibility: writing.visibility,
       is_anonymous: writing.is_anonymous,
       group_id: writing.group_id ? Number(writing.group_id) : null,
+      editor_mode: writing.editor_mode,
+      body_rich: writing.body_rich,
     })
     .eq('id', id)
     .eq('user_id', currentUser.id);
