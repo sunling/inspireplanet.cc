@@ -705,6 +705,16 @@ const WeeklyCards: React.FC = () => {
         parseInt(a.replace(/\D/g, '') || '0')
     );
 
+  const featuredCard = cards[0];
+  const featuredEpisode = featuredCard?.episode || episodeFromPath || '';
+  const featuredEpisodeNumber = featuredEpisode.replace(/\D/g, '');
+  const featuredYear = featuredCard?.created
+    ? getBeijingYear(featuredCard.created)
+    : String(new Date().getFullYear());
+  const responseWallUrl = featuredEpisodeNumber
+    ? `https://inspireplanet.cc/episodes/${featuredYear}/${featuredEpisodeNumber}`
+    : 'https://inspireplanet.cc/episodes/2026/32';
+
   return (
     <Box
       sx={{
@@ -718,6 +728,19 @@ const WeeklyCards: React.FC = () => {
           <p>星友分享</p>
           <h1>启发星球周刊</h1>
           <span>从每周真实的分享里，收藏一句话，也带走一个新的视角。</span>
+          {!loading && featuredEpisode && (
+            <div className={styles.headerActions}>
+              <span className={styles.episodePrompt}>
+                {featuredEpisode.toUpperCase()} 不只是一份周刊
+              </span>
+              <a className={styles.responseWallLink} href={responseWallUrl}>
+                看本期回应墙
+              </a>
+              <Link className={styles.writeButton} to="/create-card">
+                写下我的一句
+              </Link>
+            </div>
+          )}
         </header>
 
         <Paper
@@ -849,8 +872,7 @@ const WeeklyCards: React.FC = () => {
                                   position: 'relative',
                                   display: 'flex',
                                   flexDirection: 'column',
-                                  border:
-                                    '1px solid rgba(255, 255, 255, 0.28)',
+                                  border: '1px solid rgba(255, 255, 255, 0.28)',
                                   boxShadow:
                                     '0 8px 24px rgba(75, 55, 42, 0.08)',
                                   transition:

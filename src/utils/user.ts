@@ -79,7 +79,9 @@ export const syncUserAuthFromSession = async (): Promise<UserInfo | null> => {
   if (!session?.access_token || !session.user.email) return null;
 
   const currentUser = getUserInfo();
-  if (currentUser?.name || currentUser?.username) {
+  const hasCachedIdentity = Boolean(currentUser?.name || currentUser?.username);
+  const hasCachedRole = currentUser?.role !== undefined;
+  if (hasCachedIdentity && hasCachedRole) {
     setUserAuth(session.access_token, currentUser);
     return currentUser;
   }
@@ -88,21 +90,12 @@ export const syncUserAuthFromSession = async (): Promise<UserInfo | null> => {
     const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', {
       email: session.user.email,
     });
-    const user =
-      res.data?.user ||
-      ({
-        email: session.user.email,
-        name: session.user.user_metadata?.name || '',
-      } as UserInfo);
+    const user = res.success ? res.data?.user : null;
+    if (!user) return res.statusCode === 401 ? null : currentUser;
     setUserAuth(session.access_token, user);
     return user;
   } catch {
-    const user = {
-      email: session.user.email,
-      name: session.user.user_metadata?.name || '',
-    } as UserInfo;
-    setUserAuth(session.access_token, user);
-    return user;
+    return currentUser;
   }
 };
 

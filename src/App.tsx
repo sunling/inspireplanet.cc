@@ -54,7 +54,9 @@ const App: React.FC = () => {
 
         if (syncedUser || isUserLoggedIn()) {
           setIsAuthenticated(true);
-          setUserName(syncedUser?.name || syncedUser?.username || getUserName() || '用户');
+          setUserName(
+            syncedUser?.name || syncedUser?.username || getUserName() || '用户'
+          );
         } else {
           setIsAuthenticated(false);
           setUserName('');

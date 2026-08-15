@@ -30,12 +30,14 @@ import {
   Pagination,
   Divider,
   useMediaQuery,
+  ListItemText,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
   ArrowBack,
   CalendarTodayOutlined,
   EmailOutlined,
+  GroupAddOutlined,
 } from '@mui/icons-material';
 import {
   meetupsApi,
@@ -59,6 +61,7 @@ import { Survey } from '../../netlify/types/survey';
 import StatsCard from '../../components/StatsCard';
 import TextCollapse from '../../components/TextCollapse';
 import { parseSurveyAnswers } from '../../utils/meetup';
+import { ParticipantWritingGroup } from '../../netlify/services/participants';
 
 const MeetupParticipants: React.FC = () => {
   const navigate = useNavigate();
@@ -84,6 +87,13 @@ const MeetupParticipants: React.FC = () => {
   // 审批操作loading状态 - 分开管理通过和拒绝
   const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
   const [rejectingIds, setRejectingIds] = useState<Set<string>>(new Set());
+  const [showGroupDialog, setShowGroupDialog] = useState(false);
+  const [writingGroups, setWritingGroups] = useState<ParticipantWritingGroup[]>(
+    []
+  );
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const [addingToGroup, setAddingToGroup] = useState(false);
 
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1);
@@ -418,6 +428,52 @@ const MeetupParticipants: React.FC = () => {
     setSelectedParticipants([]);
   };
 
+  const openGroupDialog = async () => {
+    setShowGroupDialog(true);
+    if (writingGroups.length > 0) return;
+    setGroupsLoading(true);
+    try {
+      const response = await participantsApi.getWritingGroups();
+      if (response.success && response.data) {
+        setWritingGroups(response.data.groups);
+        if (response.data.groups.length === 1)
+          setSelectedGroupId(response.data.groups[0].id);
+      } else {
+        showSnackbar.error(response.error || '加载讨论组失败');
+      }
+    } catch (error) {
+      console.error('加载讨论组失败:', error);
+      showSnackbar.error('加载讨论组失败');
+    } finally {
+      setGroupsLoading(false);
+    }
+  };
+
+  const addParticipantsToGroup = async () => {
+    if (!meetupId || !selectedGroupId) return;
+    setAddingToGroup(true);
+    try {
+      const response = await participantsApi.addToWritingGroup(
+        Number(meetupId),
+        Number(selectedGroupId)
+      );
+      if (response.success && response.data) {
+        const { added_count, existing_count, skipped_count } = response.data;
+        showSnackbar.success(
+          `同步完成：新增 ${added_count} 人，已有 ${existing_count} 人，未绑定账号 ${skipped_count} 人`
+        );
+        setShowGroupDialog(false);
+      } else {
+        showSnackbar.error(response.error || '添加到讨论组失败');
+      }
+    } catch (error) {
+      console.error('添加到讨论组失败:', error);
+      showSnackbar.error('添加到讨论组失败');
+    } finally {
+      setAddingToGroup(false);
+    }
+  };
+
   if (!meetup && !isLoading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -517,6 +573,16 @@ const MeetupParticipants: React.FC = () => {
             </Button>
           </Box>
         )}
+
+        {/* 返回按钮 */}
+        <Button
+          variant="contained"
+          startIcon={<GroupAddOutlined />}
+          onClick={openGroupDialog}
+          disabled={!meetup || stats.confirmed === 0}
+        >
+          一键加入讨论组
+        </Button>
 
         {/* 返回按钮 */}
         <Button
@@ -1119,6 +1185,65 @@ const MeetupParticipants: React.FC = () => {
           <Button onClick={() => setShowConfirmDialog(false)}>取消</Button>
           <Button variant="contained" color="error" onClick={rejectSelected}>
             确认拒绝
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={showGroupDialog}
+        onClose={() => !addingToGroup && setShowGroupDialog(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>将活动报名人员加入讨论组</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            将同步本活动所有已报名且绑定了站内账号的人员，不受当前分页或筛选影响。已有成员不会重复添加。
+          </Typography>
+          {groupsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress size={28} />
+            </Box>
+          ) : writingGroups.length === 0 ? (
+            <Alert severity="info">
+              暂无启用中的讨论组，请先在书写管理中创建。
+            </Alert>
+          ) : (
+            <FormControl fullWidth>
+              <InputLabel id="participant-writing-group-label">
+                选择讨论组
+              </InputLabel>
+              <Select
+                labelId="participant-writing-group-label"
+                label="选择讨论组"
+                value={selectedGroupId}
+                onChange={(event) => setSelectedGroupId(event.target.value)}
+              >
+                {writingGroups.map((group) => (
+                  <MenuItem key={group.id} value={group.id}>
+                    <ListItemText
+                      primary={group.name}
+                      secondary={group.description}
+                    />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setShowGroupDialog(false)}
+            disabled={addingToGroup}
+          >
+            取消
+          </Button>
+          <Button
+            variant="contained"
+            onClick={addParticipantsToGroup}
+            disabled={!selectedGroupId || groupsLoading || addingToGroup}
+          >
+            {addingToGroup ? '正在同步…' : '确认加入'}
           </Button>
         </DialogActions>
       </Dialog>
