@@ -10,6 +10,8 @@ export const WRITING_POST_SELECT = `
   user_id,
   title,
   body,
+  editor_mode,
+  body_rich,
   image_urls,
   template_id,
   template_snapshot,
@@ -99,12 +101,19 @@ export function mapWritingPost(
   const isOwner =
     Boolean(currentUserId) && String(row.user_id) === String(currentUserId);
   const isAnonymous = Boolean(row.is_anonymous);
+  const hasRichContent =
+    row.editor_mode === 'rich' &&
+    row.body_rich &&
+    typeof row.body_rich === 'object' &&
+    row.body_rich.type === 'doc';
 
   return {
     id: String(row.id),
     user_id: isAnonymous && !isOwner ? '' : String(row.user_id || ''),
     title: row.title || null,
     body: row.body || '',
+    editor_mode: hasRichContent ? 'rich' : 'basic',
+    body_rich: hasRichContent ? row.body_rich : null,
     image_urls: Array.isArray(row.image_urls)
       ? row.image_urls.filter((url: unknown) => typeof url === 'string')
       : [],

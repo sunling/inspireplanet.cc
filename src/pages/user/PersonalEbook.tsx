@@ -1,12 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Alert,
   Box,
   Button,
   Chip,
+  CircularProgress,
   Container,
+  Dialog,
+  DialogContent,
   Divider,
+  IconButton,
   Paper,
   Stack,
   ToggleButton,
@@ -18,6 +22,7 @@ import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
+import CloseIcon from '@mui/icons-material/Close';
 import Loading from '../../components/Loading';
 import Empty from '../../components/Empty';
 import { ebookApi } from '../../netlify/config';
@@ -27,6 +32,8 @@ import {
 } from '../../netlify/types';
 import { buildEbookSections, buildEbookTxt, EbookOrder } from './ebook';
 import styles from './PersonalEbook.module.css';
+import RichTextRenderer from '../../components/rich-text/RichTextRenderer';
+import EbookPrintDocument, { EBOOK_PRINT_CSS } from './EbookPrintDocument';
 
 const SOURCE_META: Record<EbookSource, { label: string; color: string }> = {
   card: { label: '金句卡片', color: '#b25e3d' },
@@ -51,6 +58,9 @@ const PersonalEbook: React.FC = () => {
     'writing',
     'response',
   ]);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+  const printSourceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -89,6 +99,40 @@ const PersonalEbook: React.FC = () => {
     anchor.download = `${ebook?.owner.name || '我的'}启发之书.txt`;
     anchor.click();
     URL.revokeObjectURL(url);
+  };
+
+  const downloadPdf = async () => {
+    if (!ebook || !printSourceRef.current || visibleCount === 0) return;
+    setGeneratingPdf(true);
+    const previousOutput = document.querySelector('.ebook-native-print-output');
+    previousOutput?.remove();
+    const output = document.createElement('div');
+    output.className = 'ebook-native-print-output';
+    output.innerHTML = `<style>${EBOOK_PRINT_CSS}</style>${printSourceRef.current.innerHTML}`;
+    document.body.appendChild(output);
+
+    try {
+      await Promise.all(
+        Array.from(output.querySelectorAll('img')).map(
+          (image) =>
+            new Promise<void>((resolve) => {
+              if (image.complete) resolve();
+              else {
+                image.onload = () => resolve();
+                image.onerror = () => resolve();
+              }
+            })
+        )
+      );
+      document.body.classList.add('ebook-printing');
+      window.print();
+    } catch {
+      setError('PDF 排版失败，请刷新后重试');
+    } finally {
+      document.body.classList.remove('ebook-printing');
+      output.remove();
+      setGeneratingPdf(false);
+    }
   };
 
   if (loading)
@@ -204,9 +248,17 @@ const PersonalEbook: React.FC = () => {
               <Button
                 variant="outlined"
                 startIcon={<PrintOutlinedIcon />}
-                onClick={() => window.print()}
+                onClick={downloadPdf}
+                disabled={visibleCount === 0 || generatingPdf}
               >
-                打印 / PDF
+                {generatingPdf ? (
+                  <>
+                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                    正在排版
+                  </>
+                ) : (
+                  '下载 PDF'
+                )}
               </Button>
             </Stack>
           </Stack>
@@ -298,14 +350,35 @@ const PersonalEbook: React.FC = () => {
                       >
                         {chapter.title}
                       </Typography>
-                      {chapter.image_urls.map((url) => (
-                        <img
-                          className={styles.image}
-                          src={url}
-                          alt=""
-                          key={url}
-                        />
-                      ))}
+                      {chapter.image_urls.length > 0 && (
+                        <Box className={styles.images}>
+                          {chapter.image_urls.map((url) => {
+                            const size =
+                              chapter.image_urls.length <= 1
+                                ? 400
+                                : chapter.image_urls.length <= 4
+                                  ? 280
+                                  : 180;
+                            return (
+                              <Box
+                                component="button"
+                                key={url}
+                                type="button"
+                                className={styles.imageButton}
+                                onClick={() => setPreviewImage(url)}
+                                aria-label="预览电子书图片"
+                              >
+                                <img
+                                  className={styles.image}
+                                  src={url}
+                                  alt=""
+                                  style={{ width: size, height: size }}
+                                />
+                              </Box>
+                            );
+                          })}
+                        </Box>
+                      )}
                       {chapter.response_items?.length ? (
                         chapter.response_items.map((item, index) => (
                           <Box
@@ -320,6 +393,13 @@ const PersonalEbook: React.FC = () => {
                             </Typography>
                           </Box>
                         ))
+                      ) : chapter.source === 'writing' &&
+                        chapter.editor_mode === 'rich' &&
+                        chapter.rich_content ? (
+                        <RichTextRenderer
+                          content={chapter.rich_content}
+                          className={styles.richContent}
+                        />
                       ) : (
                         <Typography
                           className={`${styles.content} ${chapter.source === 'card' ? styles.quote : ''}`}
@@ -344,6 +424,33 @@ const PersonalEbook: React.FC = () => {
             </main>
           </Box>
         )}
+        {ebook && (
+          <Box ref={printSourceRef} className={styles.printSource}>
+            <EbookPrintDocument ebook={ebook} sections={sections} />
+          </Box>
+        )}
+        <Dialog
+          open={Boolean(previewImage)}
+          onClose={() => setPreviewImage('')}
+          maxWidth="lg"
+          fullWidth
+        >
+          <IconButton
+            aria-label="关闭图片预览"
+            onClick={() => setPreviewImage('')}
+            sx={{ position: 'absolute', right: 8, top: 8, zIndex: 1 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <DialogContent sx={{ p: 2, textAlign: 'center' }}>
+            <Box
+              component="img"
+              src={previewImage}
+              alt="电子书图片预览"
+              sx={{ maxWidth: '100%', maxHeight: '82vh', objectFit: 'contain' }}
+            />
+          </DialogContent>
+        </Dialog>
       </Container>
     </Box>
   );

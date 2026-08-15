@@ -1,0 +1,86 @@
+.editor,
+.rendered {
+  color: #292522;
+  font-size: 1rem;
+  line-height: 2;
+  overflow-wrap: anywhere;
+}
+
+.editor {
+  min-height: 240px;
+  padding: 18px 20px;
+  outline: none;
+}
+
+.editor p:first-child,
+.rendered p:first-child {
+  margin-top: 0;
+}
+.editor p:last-child,
+.rendered p:last-child {
+  margin-bottom: 0;
+}
+.editor h2,
+.rendered h2 {
+  font-size: 1.55rem;
+  margin: 1.5em 0 0.6em;
+  line-height: 1.4;
+}
+.editor h3,
+.rendered h3 {
+  font-size: 1.25rem;
+  margin: 1.35em 0 0.5em;
+  line-height: 1.5;
+}
+.editor blockquote,
+.rendered blockquote {
+  border-left: 3px solid #b14f2b;
+  color: #6b625b;
+  margin: 1.25em 0;
+  padding-left: 1em;
+}
+.editor pre,
+.rendered pre {
+  background: #2e2a27;
+  border-radius: 8px;
+  color: #f8f5f2;
+  overflow-x: auto;
+  padding: 14px 16px;
+}
+.editor code,
+.rendered code {
+  background: #eee9e4;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 0.15em 0.35em;
+}
+.editor pre code,
+.rendered pre code {
+  background: transparent;
+  padding: 0;
+}
+.editor a,
+.rendered a {
+  color: #a84928;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.editor hr,
+.rendered hr {
+  border: 0;
+  border-top: 1px solid #ddd5ce;
+  margin: 2em 0;
+}
+.editor ul,
+.editor ol,
+.rendered ul,
+.rendered ol {
+  padding-left: 1.6em;
+}
+.editor p.is-editor-empty:first-child::before {
+  color: #9b938c;
+  content: '自由地写下观察；输入 #话题 可以创建自己的话题。';
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

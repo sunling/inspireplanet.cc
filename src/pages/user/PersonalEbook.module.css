@@ -112,23 +112,65 @@
   line-height: 2;
   color: #434943;
 }
+.richContent {
+  color: #434943;
+  font-size: 1.04rem;
+}
 .quote {
   border-left: 3px solid #c27554;
   padding-left: 22px;
   font-family: Georgia, 'Noto Serif SC', serif;
 }
+.images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 22px 0;
+}
+.imageButton {
+  appearance: none;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  cursor: zoom-in;
+  display: block;
+  padding: 0;
+}
+.imageButton:focus-visible {
+  outline: 3px solid #b25e3d;
+  outline-offset: 3px;
+}
 .image {
-  width: 100%;
-  max-height: 520px;
+  display: block;
+  max-width: 400px;
+  max-height: 400px;
   object-fit: cover;
   border-radius: 12px;
-  margin: 22px 0;
 }
 .response {
   border-radius: 12px;
   background: #f7f3eb;
   padding: 18px 20px;
   margin: 12px 0;
+}
+
+.printSource {
+  position: fixed;
+  left: -100000px;
+  top: 0;
+  width: 210mm;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+:global(.ebook-native-print-output) {
+  position: fixed;
+  left: -100000px;
+  top: 0;
+}
+
+:global(body.ebook-printing .ebook-native-print-output) {
+  position: static;
 }
 
 @media (max-width: 800px) {
@@ -154,6 +196,21 @@
 }
 
 @media print {
+  :global(body.ebook-printing #root) {
+    display: none !important;
+  }
+  :global(body.ebook-printing .ebook-native-print-output) {
+    display: block !important;
+    box-sizing: border-box;
+    padding: 16px !important;
+    background: #fffdf8 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  :global(body.ebook-printing .ebook-native-print-output *) {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
   .page {
     background: #fff;
     padding: 0;

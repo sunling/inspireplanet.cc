@@ -35,6 +35,7 @@ import { writingInteractionsApi, writingsApi } from '../../netlify/config';
 import { formatDate, formatLocalDateTime } from '../../utils/date';
 import { useGlobalSnackbar } from '../../context/app';
 import HighlightedText from '../../components/writing/HighlightedText';
+import RichTextRenderer from '../../components/rich-text/RichTextRenderer';
 import { isUserLoggedIn } from '../../utils/user';
 import { downloadCard, isMobileBrowser } from '../../utils/share';
 
@@ -144,7 +145,7 @@ const WritingDetail: React.FC = () => {
     setDownloading(true);
     try {
       const isMobile = isMobileBrowser();
-      const safeTitle = (post.title || '一则自我观察')
+      const safeTitle = (post.title || '一则思考')
         .replace(/[\\/:*?"<>|]/g, '-')
         .slice(0, 40);
       const success = await downloadCard(
@@ -567,7 +568,7 @@ const WritingDetail: React.FC = () => {
                     text={
                       post.title ||
                       post.template_snapshot?.template_name ||
-                      '一则自我观察'
+                      '一则思考'
                     }
                   />
                 </Typography>
@@ -651,9 +652,13 @@ const WritingDetail: React.FC = () => {
               <>
                 <Divider />
                 <Box>
-                  <Typography sx={{ whiteSpace: 'pre-wrap', lineHeight: 2 }}>
-                    <HighlightedText text={post.body} hideHashtags />
-                  </Typography>
+                  {post.editor_mode === 'rich' && post.body_rich ? (
+                    <RichTextRenderer content={post.body_rich} />
+                  ) : (
+                    <Typography sx={{ whiteSpace: 'pre-wrap', lineHeight: 2 }}>
+                      <HighlightedText text={post.body} hideHashtags />
+                    </Typography>
+                  )}
                 </Box>
               </>
             )}
@@ -830,7 +835,7 @@ const WritingDetail: React.FC = () => {
                 text={
                   post.title ||
                   post.template_snapshot?.template_name ||
-                  '一则自我观察'
+                  '一则思考'
                 }
               />
             </Typography>
@@ -855,13 +860,25 @@ const WritingDetail: React.FC = () => {
                   </Typography>
                 </Box>
               ))}
-            {post.body.trim() && (
-              <Typography
-                sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.9, fontSize: 15 }}
-              >
-                <HighlightedText text={post.body} hideHashtags />
-              </Typography>
-            )}
+            {post.body.trim() &&
+              (post.editor_mode === 'rich' && post.body_rich ? (
+                <RichTextRenderer
+                  content={post.body_rich}
+                  sx={{
+                    fontSize: 15,
+                    lineHeight: 1.9,
+                    '& h2': { fontSize: 22 },
+                    '& h3': { fontSize: 18 },
+                    '& pre': { fontSize: 12, lineHeight: 1.6 },
+                  }}
+                />
+              ) : (
+                <Typography
+                  sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.9, fontSize: 15 }}
+                >
+                  <HighlightedText text={post.body} hideHashtags />
+                </Typography>
+              ))}
             {post.image_urls.length > 0 && (
               <Box
                 sx={{

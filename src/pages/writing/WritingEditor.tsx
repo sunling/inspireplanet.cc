@@ -18,6 +18,8 @@ import {
   Stack,
   Switch,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
@@ -25,7 +27,9 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import Loading from '../../components/Loading';
 import {
   CreateWritingRequest,
+  WritingEditorMode,
   WritingGroup,
+  WritingRichContent,
   WritingTemplate,
   WritingTemplatePrompt,
   WritingTopic,
@@ -41,6 +45,8 @@ import {
 import { useGlobalSnackbar } from '../../context/app';
 import { extractHashtags } from '../../utils/hashtags';
 import TopicChip from '../../components/writing/TopicChip';
+import RichTextEditor from '../../components/writing/RichTextEditor';
+import { plainTextToRichContent } from '../../components/rich-text/config';
 
 const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const MAX_WRITING_IMAGES = 9;
@@ -97,6 +103,8 @@ const WritingEditor: React.FC = () => {
   const [groups, setGroups] = useState<WritingGroup[]>([]);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [editorMode, setEditorMode] = useState<WritingEditorMode>('basic');
+  const [richBody, setRichBody] = useState<WritingRichContent | null>(null);
   const [templateId, setTemplateId] = useState('');
   const [promptFields, setPromptFields] = useState<WritingTemplatePrompt[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -159,6 +167,8 @@ const WritingEditor: React.FC = () => {
           }
           setTitle(post.title || '');
           setBody(post.body || '');
+          setEditorMode(post.editor_mode || 'basic');
+          setRichBody(post.body_rich || null);
           setTemplateId(post.template_id || '');
           setVisibility(post.visibility);
           setGroupId(post.group_id || '');
@@ -234,6 +244,23 @@ const WritingEditor: React.FC = () => {
     setPromptFields(nextTemplate?.prompts || []);
     setAnswers({});
     setHistoricalTemplateName('');
+  };
+
+  const handleEditorModeChange = (nextMode: WritingEditorMode | null) => {
+    if (!nextMode || nextMode === editorMode) return;
+    if (
+      nextMode === 'basic' &&
+      richBody &&
+      !window.confirm(
+        '切换到普通模式会移除富文本格式，但正文文字会保留。继续吗？'
+      )
+    ) {
+      return;
+    }
+    if (nextMode === 'rich') {
+      setRichBody(richBody || plainTextToRichContent(body));
+    }
+    setEditorMode(nextMode);
   };
 
   const toggleTopic = (topicId: string) => {
@@ -335,6 +362,10 @@ const WritingEditor: React.FC = () => {
       showSnackbar.warning('每篇书写最多添加 5 个自定义 #话题');
       return;
     }
+    if (body.length > 20000) {
+      showSnackbar.warning('正文不能超过 20000 个字');
+      return;
+    }
     if (uploadingImages) {
       showSnackbar.warning('请等待图片上传完成');
       return;
@@ -346,6 +377,8 @@ const WritingEditor: React.FC = () => {
     const payload: CreateWritingRequest = {
       title,
       body,
+      editor_mode: editorMode,
+      body_rich: editorMode === 'rich' ? richBody : null,
       image_urls: imageUrls,
       template_id: templateId || null,
       template_answers: promptFields.map((prompt) => ({
@@ -384,7 +417,7 @@ const WritingEditor: React.FC = () => {
         <Stack direction="row" justifyContent="space-between" sx={{ mb: 3 }}>
           <Box>
             <Typography variant="h4" component="h1" fontWeight={800}>
-              {isEditing ? '继续整理这次观察' : '记录一次自我观察'}
+              {isEditing ? '继续整理这次思考' : '记录一次思考'}
             </Typography>
             <Typography color="text.secondary" sx={{ mt: 1 }}>
               不急着得出结论，先诚实地写下此刻看见的东西。
@@ -487,19 +520,55 @@ const WritingEditor: React.FC = () => {
               )}
 
               <Box>
-                <Box sx={{ position: 'relative' }}>
-                  <TextField
-                    label="正文"
-                    placeholder="自由地写下观察；输入 #话题 可以创建自己的话题。"
-                    value={body}
-                    onChange={(event) => setBody(event.target.value)}
-                    multiline
-                    minRows={8}
-                    slotProps={{ htmlInput: { maxLength: 20000 } }}
-                    fullWidth
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  alignItems={{ xs: 'flex-start', sm: 'center' }}
+                  justifyContent="space-between"
+                  gap={1}
+                  sx={{ mb: 1.5 }}
+                >
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      正文
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      默认使用普通模式；需要排版时可切换高级模式
+                    </Typography>
+                  </Box>
+                  <ToggleButtonGroup
+                    exclusive
+                    size="small"
+                    value={editorMode}
+                    onChange={(_, value) => handleEditorModeChange(value)}
+                    aria-label="正文编辑模式"
+                  >
+                    <ToggleButton value="basic">普通模式</ToggleButton>
+                    <ToggleButton value="rich">高级模式</ToggleButton>
+                  </ToggleButtonGroup>
+                </Stack>
+                {editorMode === 'rich' ? (
+                  <RichTextEditor
+                    content={richBody || plainTextToRichContent(body)}
+                    onChange={(content, plainText) => {
+                      setRichBody(content);
+                      setBody(plainText);
+                    }}
                   />
-                  <CharacterCount current={body.length} max={20000} />
-                </Box>
+                ) : (
+                  <Box sx={{ position: 'relative' }}>
+                    <TextField
+                      label="正文"
+                      placeholder="自由地写下观察；输入 #话题 可以创建自己的话题。"
+                      value={body}
+                      onChange={(event) => setBody(event.target.value)}
+                      multiline
+                      minRows={8}
+                      slotProps={{ htmlInput: { maxLength: 20000 } }}
+                      fullWidth
+                    />
+                    <CharacterCount current={body.length} max={20000} />
+                  </Box>
+                )}
                 <Typography
                   variant="caption"
                   color="text.secondary"
