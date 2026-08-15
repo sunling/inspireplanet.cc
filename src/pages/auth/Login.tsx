@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
@@ -67,6 +67,7 @@ const Login: React.FC = () => {
     password?: string;
   }>({});
   const [loading, setLoading] = useState(false);
+  const submitInFlight = useRef(false);
   const [success, setSuccess] = useState('');
 
   // 切换登录/注册模式
@@ -128,6 +129,9 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // State updates are asynchronous, so a ref is needed to block rapid double submits.
+    if (submitInFlight.current) return;
+
     // 清除之前的成功消息
     setSuccess('');
 
@@ -141,6 +145,7 @@ const Login: React.FC = () => {
       return;
     }
 
+    submitInFlight.current = true;
     setLoading(true);
 
     try {
@@ -182,6 +187,7 @@ const Login: React.FC = () => {
       console.error('认证错误:', error);
       showSnackbar.error(error.message || '网络错误，请检查网络连接后重试');
     } finally {
+      submitInFlight.current = false;
       setLoading(false);
     }
   };

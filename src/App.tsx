@@ -77,7 +77,7 @@ const App: React.FC = () => {
   // 注册Service Worker并检查更新
   useEffect(() => {
     const registerServiceWorker = async () => {
-      if ('serviceWorker' in navigator) {
+      if ('serviceWorker' in navigator && import.meta.env.PROD) {
         try {
           const swRegistration =
             await navigator.serviceWorker.register('/sw.js');
@@ -123,7 +123,19 @@ const App: React.FC = () => {
       }
     };
 
-    registerServiceWorker();
+    if (import.meta.env.DEV && 'serviceWorker' in navigator) {
+      // 开发环境不启用 PWA 缓存，避免旧 Service Worker 干扰本地请求。
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) =>
+          Promise.all(registrations.map((item) => item.unregister()))
+        )
+        .catch((error) =>
+          console.warn('清理开发环境 Service Worker 失败:', error)
+        );
+    } else {
+      registerServiceWorker();
+    }
   }, []);
 
   // 处理更新

@@ -1,0 +1,706 @@
+.page {
+  min-height: calc(100vh - 64px);
+  padding: 28px 20px 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 410px) minmax(320px, 480px);
+  justify-content: center;
+  align-items: start;
+  gap: 32px;
+  background:
+    radial-gradient(
+      circle at 76% 12%,
+      rgba(244, 185, 148, 0.18),
+      transparent 30%
+    ),
+    #fffaf5;
+}
+
+.editor,
+.previewSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editor {
+  padding: 24px;
+  border: 1px solid #eadfd4;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 16px 42px rgba(91, 58, 42, 0.08);
+}
+
+.episodeContext,
+.previewHeading,
+.settingsHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.episodeContext a {
+  color: #d86f42;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+}
+
+.episodeContext a:hover {
+  text-decoration: underline;
+}
+
+.episodeContext span,
+.previewHeading span,
+.settingsHeading span {
+  color: #94877d;
+  font-size: 0.8rem;
+}
+
+.editor h1 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.9rem, 4vw, 2.55rem);
+  font-weight: 650;
+  line-height: 1.12;
+}
+
+.description,
+.privacy {
+  margin: 0;
+  color: #6f675f;
+}
+
+.textarea {
+  min-height: 136px;
+  border: 1px solid #ded4c9;
+  border-radius: 16px;
+  padding: 15px 16px;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.65;
+  resize: vertical;
+  background: white;
+}
+
+.textarea:focus,
+.authorField input:focus {
+  outline: 3px solid rgba(255, 127, 80, 0.2);
+  border-color: #ff7f50;
+}
+
+.counter {
+  margin-top: -7px;
+  text-align: right;
+  color: #8d8379;
+  font-size: 0.82rem;
+}
+
+.authorField {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 12px;
+  color: #514a44;
+  font-size: 0.92rem;
+}
+
+.authorField > span {
+  font-weight: 700;
+}
+
+.authorField input {
+  min-width: 0;
+  border: 1px solid #ded4c9;
+  border-radius: 12px;
+  padding: 9px 11px;
+  font: inherit;
+  background: #fff;
+}
+
+.textarea:disabled,
+.authorField input:disabled {
+  background: #f8f3ee;
+  color: #514a44;
+  opacity: 1;
+}
+
+.authorField small {
+  grid-column: 2;
+  color: #8d8379;
+}
+
+.honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.publishPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #eadfd4;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.publishPanel :global(.MuiFormControlLabel-root) {
+  align-items: flex-start;
+  margin: 0;
+}
+
+.publishPanel :global(.MuiCheckbox-root) {
+  padding: 2px 8px 2px 0;
+  color: #d86f42;
+}
+
+.publishPanel :global(.MuiCheckbox-root.Mui-checked) {
+  color: #d86f42;
+}
+
+.publishPanel small {
+  padding-left: 32px;
+  color: #8d8379;
+  line-height: 1.5;
+}
+
+.publishPanel :global(.MuiButton-root) {
+  margin-top: 2px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.publishPanel :global(.MuiButton-contained:not(.Mui-disabled)) {
+  background: #e56f45;
+  color: #fff;
+}
+
+.publishPanel :global(.MuiButton-contained:not(.Mui-disabled):hover) {
+  background: #ca5c36;
+}
+
+.wallLink,
+.inlineLink {
+  color: #a94e2b;
+  font-weight: 650;
+}
+
+.wallLink {
+  align-self: center;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.wallLink:hover,
+.inlineLink:hover {
+  text-decoration: underline;
+}
+
+.photoButton,
+.removePhoto {
+  width: fit-content;
+  border: 0;
+  background: transparent;
+  color: #b85f39;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.photoModes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.photoModes button {
+  border: 1px solid #ded4c9;
+  border-radius: 999px;
+  padding: 9px 10px;
+  background: #fff;
+  color: #5d554e;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.photoModes .activeMode {
+  border-color: #d86f42;
+  background: #fff1e8;
+  color: #a94e2b;
+  font-weight: 700;
+}
+
+.cardSettings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #eadfd4;
+  border-radius: 16px;
+  background: #fffaf6;
+}
+
+.cardSettings label {
+  display: flex;
+  align-items: center;
+  color: #514a44;
+}
+
+.settingsHeading strong,
+.previewHeading strong {
+  color: #514a44;
+  font-size: 0.9rem;
+}
+
+.previewSection {
+  position: sticky;
+  top: 82px;
+}
+
+.previewHeading {
+  min-height: 24px;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 28px;
+  color: #4c3529;
+  background:
+    radial-gradient(
+      circle at 18% 15%,
+      rgba(255, 255, 255, 0.72),
+      transparent 28%
+    ),
+    linear-gradient(145deg, #fff4dc, #f7c8aa 55%, #df8c6a);
+  box-shadow: 0 18px 50px rgba(87, 53, 36, 0.16);
+}
+
+.cardWithPhoto {
+  color: #fff;
+  background: #1f1b18;
+}
+
+.photoLayer,
+.photoForeground {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.photoLayer {
+  z-index: 0;
+  background-size: cover;
+  filter: brightness(0.96) saturate(0.98);
+  transform: scale(1.01);
+}
+
+.photoContain .photoLayer {
+  inset: -18px;
+  background-size: cover;
+  filter: blur(18px) brightness(0.72) saturate(0.9);
+  transform: scale(1.1);
+}
+
+.photoForeground {
+  z-index: 1;
+  background-size: contain;
+  filter: brightness(0.96) saturate(0.98);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 7, 6, 0.03) 0%,
+    rgba(8, 7, 6, 0.04) 40%,
+    rgba(8, 7, 6, 0.16) 72%,
+    rgba(8, 7, 6, 0.26) 100%
+  );
+}
+
+.cardContent {
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+.topMeta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.episodeMeta {
+  display: flex;
+  min-width: 0;
+  max-width: 64%;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.episodeDetails {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  color: rgba(82, 62, 51, 0.76);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.episodeDetails span {
+  font-size: 0.64rem;
+}
+
+.cardWithPhoto .episodeDetails {
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.28);
+}
+
+.brandChip {
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 250, 245, 0.86);
+  color: #8f4a2d;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  box-shadow: 0 8px 18px rgba(57, 37, 26, 0.08);
+}
+
+.cardWithPhoto .brandChip {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.expressionCue {
+  max-width: 58%;
+  padding-top: 4px;
+  text-align: right;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  color: rgba(82, 62, 51, 0.72);
+}
+
+.cardWithPhoto .expressionCue {
+  color: rgba(255, 255, 255, 0.86);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.28);
+}
+
+.mainContent {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  padding: 18px 0 0;
+}
+
+.textPanel {
+  width: 100%;
+}
+
+.cardWithPhoto .textPanel {
+  width: 100%;
+  padding: 20px 22px;
+  border-radius: 24px;
+  background: linear-gradient(
+    135deg,
+    rgba(18, 15, 13, 0.54),
+    rgba(18, 15, 13, 0.2)
+  );
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(1.5px);
+}
+
+.cardLongText .textPanel {
+  padding-bottom: 86px;
+}
+
+.cardWithPhoto.cardLongText .textPanel {
+  padding-bottom: 94px;
+}
+
+.qrFloat {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 4;
+  box-sizing: border-box;
+  width: 70px;
+  margin: 0;
+  padding: 6px 6px 5px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #4a372d;
+  text-align: center;
+  box-shadow: 0 10px 24px rgba(48, 31, 22, 0.14);
+}
+
+.qrFloat svg {
+  display: block;
+  margin: 0 auto;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.qrFloat span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.58rem;
+  line-height: 1.15;
+}
+
+.quote {
+  position: relative;
+  min-height: 0;
+  overflow: visible;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 42px;
+  font-weight: 650;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  text-wrap: pretty;
+}
+
+.cardWithPhoto .quote {
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.28);
+}
+
+.quote::before {
+  content: '“';
+  display: block;
+  margin-bottom: -0.16em;
+  color: rgba(154, 73, 38, 0.3);
+  font-family: Georgia, serif;
+  font-size: 1.45em;
+  font-weight: 400;
+  line-height: 0.7;
+}
+
+.cardLongText .quote::before {
+  display: none;
+}
+
+.cardWithPhoto .quote::before {
+  color: rgba(255, 255, 255, 0.44);
+}
+
+.byline {
+  margin-top: 16px;
+  max-width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.92rem;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  color: rgba(79, 58, 47, 0.82);
+}
+
+.cardWithPhoto .byline {
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.26);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.actions :global(.MuiButton-root) {
+  min-height: 44px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.privacy {
+  font-size: 0.8rem;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.state {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.sharePreviewBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(35, 25, 20, 0.78);
+  backdrop-filter: blur(5px);
+}
+
+.sharePreviewDialog {
+  width: min(430px, 100%);
+  max-height: calc(100vh - 36px);
+  padding: 16px;
+  overflow-y: auto;
+  border-radius: 22px;
+  background: #fffaf5;
+  box-shadow: 0 24px 80px rgba(22, 14, 10, 0.35);
+}
+
+.sharePreviewHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.sharePreviewHeading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sharePreviewHeading strong {
+  color: #4c3529;
+  font-size: 1.05rem;
+}
+
+.sharePreviewHeading span,
+.sharePreviewDialog p {
+  color: #76675e;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.sharePreviewHeading button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #6c574c;
+  background: #f2e8df;
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.sharePreviewDialog img {
+  display: block;
+  width: 100%;
+  background: rgba(76, 53, 41, 0.14);
+  box-shadow: 0 12px 34px rgba(87, 53, 36, 0.18);
+  -webkit-touch-callout: default;
+  user-select: auto;
+}
+
+.sharePreviewDialog p {
+  margin: 12px 0 0;
+  text-align: center;
+}
+
+@media (max-width: 820px) {
+  .page {
+    grid-template-columns: 1fr;
+    padding: 16px 14px 36px;
+    gap: 24px;
+  }
+
+  .editor {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .editor h1 {
+    font-size: 2rem;
+  }
+
+  .textarea {
+    min-height: 128px;
+  }
+
+  .previewSection {
+    position: static;
+    width: min(100%, 520px);
+    margin: 0 auto;
+  }
+
+  .cardContent {
+    padding: 18px;
+  }
+
+  .mainContent {
+    padding-top: 14px;
+  }
+
+  .cardWithPhoto .textPanel {
+    padding: 18px;
+  }
+
+  .cardLongText .textPanel {
+    padding-bottom: 80px;
+  }
+
+  .cardWithPhoto.cardLongText .textPanel {
+    padding-bottom: 88px;
+  }
+
+  .expressionCue {
+    max-width: 52%;
+    font-size: 0.68rem;
+  }
+
+  .photoModes {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .qrFloat {
+    right: 14px;
+    bottom: 14px;
+    width: 64px;
+    padding: 5px 5px 4px;
+  }
+
+  .qrFloat span {
+    font-size: 0.54rem;
+  }
+
+  .actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .actions {
+    grid-template-columns: 1fr;
+  }
+
+  .episodeContext span {
+    display: none;
+  }
+}

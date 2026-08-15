@@ -3,24 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 
 import { CardItem } from '../../../netlify/types';
-import { cardsApi } from '../../../netlify/config';
+import { cardsApi, imagesApi } from '../../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
 import { getUserId } from '@/utils/user';
 import { gradientOptions } from '@/constants/gradient';
 import EditForm, { EditFormRef } from '../components/EditForm';
 import { getUserName } from '../../../utils';
+import { isMobileBrowser, saveImageDataUrl } from '@/utils/share';
+import { uploadCardImage } from '../uploadCardImage';
 
-const CreateCard: React.FC = () => {
+const StandardCardCreate: React.FC = () => {
   const navigate = useNavigate();
   const showSnackbar = useGlobalSnackbar();
   const editFormRef = useRef<EditFormRef>(null);
 
-  // 初始卡片数据
   const getInitialCardData = (): CardItem => {
     const randomIndex = Math.floor(Math.random() * gradientOptions.length);
     const randomGradient = gradientOptions[randomIndex];
-
-    let creator = getUserName() || '';
+    const creator = getUserName() || '';
 
     return {
       id: '',
@@ -39,27 +39,29 @@ const CreateCard: React.FC = () => {
   const [initialCardData, setInitialCardData] =
     useState<CardItem>(getInitialCardData());
 
-  // 处理表单提交
   const handleSubmit = async (
     cardData: CardItem,
     imageData?: { customImage?: string; selectedSearchImage?: string }
   ) => {
+    const uploadedImageUrl = await uploadCardImage(
+      imageData?.customImage,
+      Boolean(cardData.is_private),
+      imagesApi.upload
+    );
     const cardToSubmit = {
       ...cardData,
       created: new Date().toISOString(),
-      upload: imageData?.customImage,
+      upload: uploadedImageUrl,
       image_path: imageData?.selectedSearchImage,
       user_id: getUserId(),
     };
 
-    // 调用API提交卡片
     const response = await cardsApi.create(cardToSubmit);
 
     if (response.success) {
       showSnackbar.success(
         cardToSubmit.is_private ? '私密卡片已保存！' : '卡片提交成功！'
       );
-      // 重置表单
       setInitialCardData(getInitialCardData());
       setTimeout(
         () => navigate(cardToSubmit.is_private ? '/my-cards' : '/cards'),
@@ -70,37 +72,27 @@ const CreateCard: React.FC = () => {
     }
   };
 
-  // 下载卡片图片
   const handleDownload = async () => {
     const previewElement = editFormRef.current?.getPreviewElement();
     if (!previewElement) return;
 
-    // 找到预览中的卡片元素
     const cardElement = previewElement.querySelector('.card');
     if (!cardElement) {
       throw new Error('未找到卡片元素');
     }
 
-    // 配置html2canvas选项
     const canvas = await html2canvas(cardElement as HTMLElement, {
-      scale: 2, // 提高清晰度
+      scale: 2,
       useCORS: true,
       allowTaint: true,
       logging: false,
     });
 
-    // 创建下载链接
-    const link = document.createElement('a');
     const fileName = `inspire-card-${Date.now()}.png`;
-    link.download = fileName;
-    link.href = canvas.toDataURL('image/png');
-
-    // 触发下载
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    showSnackbar.success('卡片下载成功');
+    saveImageDataUrl(canvas.toDataURL('image/png'), fileName);
+    showSnackbar.success(
+      isMobileBrowser() ? '图片已生成，请长按保存到相册' : '卡片下载成功'
+    );
   };
 
   return (
@@ -117,5 +109,7 @@ const CreateCard: React.FC = () => {
     />
   );
 };
+
+const CreateCard: React.FC = () => <StandardCardCreate />;
 
 export default CreateCard;

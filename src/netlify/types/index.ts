@@ -2,6 +2,7 @@ export * from './http';
 export * from './survey';
 export * from './rsvp';
 export * from './writing';
+export * from './ebook';
 
 // 卡片数据接口 - 统一所有卡片相关的类型
 export interface CardItem {

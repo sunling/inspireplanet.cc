@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
-import { downloadCard as utilsDownloadCard } from '@/utils/share';
+import {
+  downloadCard as utilsDownloadCard,
+  isMobileBrowser,
+} from '@/utils/share';
 
 import {
   Box,
@@ -145,7 +148,9 @@ const CardDetail: React.FC = () => {
       );
 
       if (success) {
-        showSnackbar.success('图片下载成功！');
+        showSnackbar.success(
+          isMobileBrowser() ? '图片已生成，请长按保存到相册' : '图片下载成功！'
+        );
       } else {
         showSnackbar.error('图片下载失败，请稍后重试');
       }
@@ -525,7 +530,6 @@ const CardDetail: React.FC = () => {
                 </Button>
               </DialogActions>
             </Dialog>
-
           </>
         )}
       </Container>

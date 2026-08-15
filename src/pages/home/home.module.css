@@ -394,6 +394,8 @@
   margin-top: 1.75rem;
   display: flex;
   justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
 }
 
 .view-all-button {

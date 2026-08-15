@@ -13,11 +13,21 @@ export interface MeetupEpisode {
   id?: number;
   meetup_id: number;
   episode_number: number;
-  date: string; // YYYY-MM-DD
+  date: string; // YYYY-MM-DD, empty when the episode is not persisted yet
   theme?: string;
   description?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface EpisodeCardContext extends MeetupEpisode {
+  meetup: {
+    id: number;
+    title: string;
+    description?: string;
+    default_theme?: string;
+    cover?: string;
+  };
 }
 
 export async function handler(
@@ -29,6 +39,10 @@ export async function handler(
   try {
     const functionName = getFunctionNameFromEvent(event);
     switch (functionName) {
+      case 'getById':
+        return await handleGetById(event);
+      case 'getByMeetupEpisode':
+        return await handleGetByMeetupEpisode(event);
       case 'getByMeetupDate':
         return await handleGetByMeetupDate(event);
       case 'upsert':
@@ -40,6 +54,71 @@ export async function handler(
     console.error('Episodes handler error:', error);
     return createErrorResponse('服务器内部错误', 500);
   }
+}
+
+async function handleGetById(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const { id } = getDataFromEvent(event);
+  if (!id) return createErrorResponse('缺少期次ID');
+
+  const { data, error } = await supabase
+    .from('meetup_episodes')
+    .select(
+      '*, meetup:meetups!meetup_episodes_meetup_id_fkey(id, title, description, default_theme, cover)'
+    )
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Get episode by id error:', error);
+    return createErrorResponse('查询失败', 500);
+  }
+  if (!data) return createErrorResponse('期次不存在', 404);
+
+  return createSuccessResponse({ episode: data });
+}
+
+async function handleGetByMeetupEpisode(
+  event: NetlifyEvent
+): Promise<NetlifyResponse> {
+  const { meetup_id, episode_number } = getDataFromEvent(event);
+  if (!meetup_id || !episode_number) {
+    return createErrorResponse('缺少活动或期数');
+  }
+
+  const { data: meetup, error: meetupError } = await supabase
+    .from('meetups')
+    .select('id, title, description, default_theme, cover')
+    .eq('id', meetup_id)
+    .maybeSingle();
+
+  if (meetupError) {
+    console.error('Get meetup for episode card error:', meetupError);
+    return createErrorResponse('查询活动失败', 500);
+  }
+  if (!meetup) return createErrorResponse('活动不存在', 404);
+
+  const { data: episode, error: episodeError } = await supabase
+    .from('meetup_episodes')
+    .select('*')
+    .eq('meetup_id', meetup_id)
+    .eq('episode_number', episode_number)
+    .maybeSingle();
+
+  if (episodeError) {
+    console.error('Get episode by number error:', episodeError);
+    return createErrorResponse('查询期次失败', 500);
+  }
+
+  return createSuccessResponse({
+    episode: {
+      ...(episode || {
+        meetup_id: Number(meetup_id),
+        episode_number: Number(episode_number),
+        date: '',
+      }),
+      meetup,
+    } as EpisodeCardContext,
+  });
 }
 
 // 获取某个循环活动在指定日期的期次信息
@@ -65,7 +144,6 @@ async function handleUpsert(event: NetlifyEvent): Promise<NetlifyResponse> {
   const userId = await getUserIdFromAuth(event);
   if (!userId) return createErrorResponse('请先登录', 401);
 
-  // 校验 organizer 权限
   const { data: user } = await supabase
     .from('users')
     .select('role')

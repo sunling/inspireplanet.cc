@@ -15,3 +15,6 @@ dist/
 .DS_Store
 
 .nvmrc
+
+# User-generated images are stored in inspireplanet-assets
+/user_uploads/

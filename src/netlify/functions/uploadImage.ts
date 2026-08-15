@@ -10,7 +10,7 @@ import {
 
 export interface ImageUploadRequest {
   base64Image: string;
-  purpose?: 'writing' | 'general';
+  purpose?: 'writing' | 'card' | 'general';
 }
 
 export interface ImageUploadResponse {
@@ -95,7 +95,12 @@ async function handleUpload(event: NetlifyEvent): Promise<NetlifyResponse> {
     const timestamp: number = Date.now();
     const randomString: string = Math.random().toString(36).substring(2, 8);
     const extension = imageType === 'jpeg' ? 'jpg' : imageType;
-    const folder = requestBody.purpose === 'writing' ? 'writing' : 'general';
+    const folder =
+      requestBody.purpose === 'writing'
+        ? 'writing'
+        : requestBody.purpose === 'card'
+          ? 'card'
+          : 'general';
     const filename: string = `user_uploads/${folder}/user_${currentUser.id}_${timestamp}_${randomString}.${extension}`;
 
     const url: string = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${filename}`;

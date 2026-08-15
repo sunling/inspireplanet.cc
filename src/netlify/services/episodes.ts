@@ -1,8 +1,24 @@
 import { ApiResponse } from '../types/http';
 import { http } from '../config/http';
-import { MeetupEpisode } from '../functions/episodes';
+import { EpisodeCardContext, MeetupEpisode } from '../functions/episodes';
 
 export const episodesApi = {
+  getById: async (
+    id: number
+  ): Promise<ApiResponse<{ episode: EpisodeCardContext }>> => {
+    return http.get('/episodes', 'getById', { id });
+  },
+
+  getByMeetupEpisode: async (
+    meetup_id: number,
+    episode_number: number
+  ): Promise<ApiResponse<{ episode: EpisodeCardContext }>> => {
+    return http.get('/episodes', 'getByMeetupEpisode', {
+      meetup_id,
+      episode_number,
+    });
+  },
+
   getByMeetupDate: async (
     meetup_id: number,
     date: string

@@ -19,7 +19,11 @@ import DownloadIcon from '@mui/icons-material/Download';
 import useResponsive from '@/hooks/useResponsive';
 
 import { getFontColorForGradient, gradientClasses } from '@/constants/gradient';
-import { loadQRCodeLibrary } from '@/utils/share';
+import {
+  isMobileBrowser,
+  loadQRCodeLibrary,
+  saveImageDataUrl,
+} from '@/utils/share';
 
 import { weeklyCardsApi } from '../../netlify/config';
 import { useGlobalSnackbar } from '@/context/app';
@@ -612,9 +616,9 @@ const WeeklyCards: React.FC = () => {
         qrContainer.style.border = `1px solid ${qrPanelStyles.borderColor}`;
         qrContainer.style.boxShadow = '0 10px 28px rgba(15, 23, 42, 0.12)';
 
-        const episodeStr = card?.episode ? card.episode.toLowerCase() : '';
-        const targetUrl = episodeStr
-          ? `${window.location.origin}/weekly-cards/${episodeStr}`
+        const episodeNumber = Number(card?.episode?.match(/\d+/)?.[0] || 0);
+        const targetUrl = episodeNumber
+          ? `${window.location.origin}/episodes/${episodeNumber}`
           : window.location.href;
 
         await (window as any).QRCode.toCanvas(qrCanvas, targetUrl, {
@@ -654,10 +658,13 @@ const WeeklyCards: React.FC = () => {
         windowHeight: finalExportHeight,
       });
 
-      const link = document.createElement('a');
-      link.download = `weekly-card-${card_id}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      saveImageDataUrl(
+        canvas.toDataURL('image/png'),
+        `weekly-card-${card_id}.png`
+      );
+      showSnackbar.success(
+        isMobileBrowser() ? '图片已生成，请长按保存到相册' : '周刊卡片已下载'
+      );
     } catch (error) {
       if (error instanceof Error) {
         alert(`下载失败: ${error.message}`);
@@ -705,15 +712,13 @@ const WeeklyCards: React.FC = () => {
         parseInt(a.replace(/\D/g, '') || '0')
     );
 
-  const featuredCard = cards[0];
-  const featuredEpisode = featuredCard?.episode || episodeFromPath || '';
-  const featuredEpisodeNumber = featuredEpisode.replace(/\D/g, '');
-  const featuredYear = featuredCard?.created
-    ? getBeijingYear(featuredCard.created)
-    : String(new Date().getFullYear());
-  const responseWallUrl = featuredEpisodeNumber
-    ? `https://inspireplanet.cc/episodes/${featuredYear}/${featuredEpisodeNumber}`
-    : 'https://inspireplanet.cc/episodes/2026/32';
+  const activeEpisodeNumber = Number(
+    (episodeFromPath || (!showAll ? cards[0]?.episode : ''))?.match(
+      /\d+/
+    )?.[0] || 0
+  );
+  const activeEpisodeYear = getBeijingYear(cards[0]?.created);
+  const activeEpisodePath = `${activeEpisodeYear ? `${activeEpisodeYear}/` : ''}${activeEpisodeNumber}`;
 
   return (
     <Box
@@ -728,20 +733,21 @@ const WeeklyCards: React.FC = () => {
           <p>星友分享</p>
           <h1>启发星球周刊</h1>
           <span>从每周真实的分享里，收藏一句话，也带走一个新的视角。</span>
-          {!loading && featuredEpisode && (
-            <div className={styles.headerActions}>
-              <span className={styles.episodePrompt}>
-                {featuredEpisode.toUpperCase()} 不只是一份周刊
-              </span>
-              <a className={styles.responseWallLink} href={responseWallUrl}>
-                看本期回应墙
-              </a>
-              <Link className={styles.writeButton} to="/create-card">
-                写下我的一句
-              </Link>
-            </div>
-          )}
+       
         </header>
+
+        {activeEpisodeNumber > 0 && (
+          <nav className={styles.episodeJourney} aria-label="本期参与入口">
+            <span>EP{activeEpisodeNumber} 不只是一份周刊</span>
+            <Link to={`/episodes/${activeEpisodePath}`}>看本期回应墙</Link>
+            <Link
+              to={`/episodes/${activeEpisodePath}/respond`}
+              className={styles.episodeJourneyPrimary}
+            >
+              写下我的一句
+            </Link>
+          </nav>
+        )}
 
         <Paper
           elevation={0}

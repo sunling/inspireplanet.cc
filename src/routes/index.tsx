@@ -1,5 +1,11 @@
 import React, { Suspense, lazy, useState, useEffect } from 'react';
-import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
+import {
+  createBrowserRouter,
+  Navigate,
+  useLocation,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 
 // 导入主组件和工具组件
 import App from '../App';
@@ -135,6 +141,7 @@ const PeopleDirectory = lazy(() => import('../pages/people/Directory'));
 const MyConnections = lazy(() => import('../pages/connections/MyConnections'));
 const Profile = lazy(() => import('../pages/user/Profile'));
 const Notifications = lazy(() => import('../pages/user/Notifications'));
+const PersonalEbook = lazy(() => import('../pages/user/PersonalEbook'));
 const SurveyList = lazy(() => import('../pages/survey/SurveyList'));
 const SurveyDetail = lazy(() => import('../pages/survey/SurveyDetail'));
 const SurveyEdit = lazy(() => import('../pages/survey/SurveyEdit'));
@@ -152,6 +159,31 @@ const WritingCircle = lazy(() => import('../pages/writing/WritingCircle'));
 const WritingEditor = lazy(() => import('../pages/writing/WritingEditor'));
 const WritingDetail = lazy(() => import('../pages/writing/WritingDetail'));
 const WritingAdmin = lazy(() => import('../pages/writing/WritingAdmin'));
+const EpisodeHub = lazy(() => import('../pages/episode/EpisodeHub'));
+const EpisodeCardCreate = lazy(() => import('../pages/card/EpisodeCardCreate'));
+
+const CardCreateRoute: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const episode = searchParams.get('episode') || searchParams.get('episodeId');
+  const page = createLazyRoute(<CreateCard />);
+
+  if (episode) {
+    return <Navigate to={`/episodes/${episode}/respond`} replace />;
+  }
+
+  return <ProtectedRoute>{page}</ProtectedRoute>;
+};
+
+const LegacyEpisodeRoute: React.FC = () => {
+  const { episode } = useParams<{ episode: string }>();
+  const location = useLocation();
+
+  return episode ? (
+    <Navigate to={`/episodes/${episode}${location.hash}`} replace />
+  ) : (
+    <Navigate to="/404" replace />
+  );
+};
 
 // 创建路由器
 const router = createBrowserRouter(
@@ -206,6 +238,26 @@ const router = createBrowserRouter(
           path: 'weekly-cards/:episode',
           element: createLazyRoute(<WeeklyCards />),
         },
+        {
+          path: 'episodes/:year/:episode',
+          element: createLazyRoute(<EpisodeHub />),
+        },
+        {
+          path: 'episodes/:year/:episode/respond',
+          element: createLazyRoute(<EpisodeCardCreate />),
+        },
+        {
+          path: 'episodes/:episode',
+          element: createLazyRoute(<EpisodeHub />),
+        },
+        {
+          path: 'episodes/:episode/respond',
+          element: createLazyRoute(<EpisodeCardCreate />),
+        },
+        {
+          path: 'episode/:meetupId/:episode',
+          element: <LegacyEpisodeRoute />,
+        },
         { path: 'card-detail', element: createLazyRoute(<CardDetail />) },
         {
           path: 'meetup-detail',
@@ -223,8 +275,9 @@ const router = createBrowserRouter(
         { path: 'act-signup', element: createLazyRoute(<ActSignup />) },
         { path: '404', element: createLazyRoute(<NotFound />) },
 
+        // 专属期次入口公开；通用卡片创建仍需登录
+        { path: 'create-card', element: <CardCreateRoute /> },
         // 受保护路由
-        { path: 'create-card', element: createProtectedRoute(<CreateCard />) },
         { path: 'my-cards', element: createProtectedRoute(<MyCards />) },
         { path: 'card-edit/:id', element: createProtectedRoute(<CardEdit />) },
         {
@@ -258,6 +311,10 @@ const router = createBrowserRouter(
           element: createProtectedRoute(<MyConnections />),
         },
         { path: 'profile', element: createProtectedRoute(<Profile />) },
+        {
+          path: 'my-ebook',
+          element: createProtectedRoute(<PersonalEbook />),
+        },
         {
           path: 'notifications',
           element: createProtectedRoute(<Notifications />),
