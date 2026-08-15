@@ -4,15 +4,21 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
-  getUserIdFromAuth,
   getFunctionNameFromEvent,
   getDataFromEvent,
+  getAuthenticatedUser,
 } from '../utils/server';
 import { sendRSVPConfirmEmail, sendRSVPRejectEmail } from '../utils/email';
 import { RSVPStatus, ApprovalStatus } from '../types/rsvp';
 
 export interface ParticipantAction {
-  functionName: 'confirm' | 'batchConfirm' | 'batchReject' | 'getParticipants';
+  functionName:
+    | 'confirm'
+    | 'batchConfirm'
+    | 'batchReject'
+    | 'getParticipants'
+    | 'getWritingGroups'
+    | 'addToWritingGroup';
 }
 
 export async function handler(event: NetlifyEvent, context: any) {
@@ -30,6 +36,10 @@ export async function handler(event: NetlifyEvent, context: any) {
         return await handleBatchReject(event);
       case 'getParticipants':
         return await handleGetParticipants(event);
+      case 'getWritingGroups':
+        return await handleGetWritingGroups(event);
+      case 'addToWritingGroup':
+        return await handleAddToWritingGroup(event);
       default:
         return createErrorResponse('无效的操作类型');
     }
@@ -37,6 +47,118 @@ export async function handler(event: NetlifyEvent, context: any) {
     console.error('Participants Handler error:', error);
     return createErrorResponse('服务器内部错误', 500);
   }
+}
+
+async function requireOrganizer(event: NetlifyEvent) {
+  const user = await getAuthenticatedUser(event);
+  if (!user) return { error: createErrorResponse('未授权', 401) };
+  if (user.role !== 'organizer')
+    return { error: createErrorResponse('需要管理员权限', 403) };
+  return { user };
+}
+
+async function handleGetWritingGroups(event: NetlifyEvent) {
+  const auth = await requireOrganizer(event);
+  if (auth.error) return auth.error;
+
+  const { data, error } = await supabase
+    .from('writing_groups')
+    .select('id, name, description')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+  if (error) return createErrorResponse('获取讨论组失败', 500);
+
+  return createSuccessResponse({
+    groups: (data || []).map((group) => ({
+      ...group,
+      id: String(group.id),
+    })),
+  });
+}
+
+async function handleAddToWritingGroup(event: NetlifyEvent) {
+  const auth = await requireOrganizer(event);
+  if (auth.error) return auth.error;
+
+  const requestData = getDataFromEvent(event);
+  const meetupId = Number(requestData.meetup_id);
+  const groupId = Number(requestData.group_id);
+  if (!Number.isInteger(meetupId) || meetupId <= 0)
+    return createErrorResponse('活动ID不合法');
+  if (!Number.isInteger(groupId) || groupId <= 0)
+    return createErrorResponse('讨论组ID不合法');
+
+  const [{ data: meetup }, { data: group }] = await Promise.all([
+    supabase.from('meetups').select('id').eq('id', meetupId).maybeSingle(),
+    supabase
+      .from('writing_groups')
+      .select('id, name')
+      .eq('id', groupId)
+      .eq('is_active', true)
+      .maybeSingle(),
+  ]);
+  if (!meetup) return createErrorResponse('活动不存在', 404);
+  if (!group) return createErrorResponse('讨论组不存在或已停用', 404);
+
+  const { data: rsvps, error: rsvpError } = await supabase
+    .from('meetup_rsvps')
+    .select('user_id')
+    .eq('meetup_id', meetupId)
+    .eq('status', RSVPStatus.CONFIRMED);
+  if (rsvpError) return createErrorResponse('获取活动报名人员失败', 500);
+
+  const validUserIds = (rsvps || [])
+    .map((row) => Number(row.user_id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  const userIds = Array.from(new Set(validUserIds));
+  const skippedCount = (rsvps || []).length - validUserIds.length;
+  if (userIds.length === 0) {
+    return createSuccessResponse({
+      message: '没有可加入讨论组的站内用户',
+      added_count: 0,
+      existing_count: 0,
+      skipped_count: skippedCount,
+    });
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from('writing_group_members')
+    .select('user_id, status')
+    .eq('group_id', groupId)
+    .in('user_id', userIds);
+  if (existingError) return createErrorResponse('检查讨论组成员失败', 500);
+
+  const approvedIds = new Set(
+    (existing || [])
+      .filter((member) => member.status === 'approved')
+      .map((member) => Number(member.user_id))
+  );
+  const rows = userIds
+    .filter((userId) => !approvedIds.has(userId))
+    .map((userId) => ({
+      group_id: groupId,
+      user_id: userId,
+      status: 'approved',
+      reviewed_at: new Date().toISOString(),
+      reviewed_by: Number(auth.user.id),
+    }));
+
+  if (rows.length > 0) {
+    const { error } = await supabase
+      .from('writing_group_members')
+      .upsert(rows, { onConflict: 'group_id,user_id' });
+    if (error) {
+      console.error('Add meetup participants to writing group error:', error);
+      return createErrorResponse('添加讨论组成员失败', 500);
+    }
+  }
+
+  return createSuccessResponse({
+    message: `已将活动报名人员同步到「${group.name}」`,
+    added_count: rows.length,
+    existing_count: approvedIds.size,
+    skipped_count: skippedCount,
+  });
 }
 
 async function handleBatchReject(event: NetlifyEvent) {

@@ -30,7 +30,7 @@ import {
   Lock,
   AutoStoriesOutlined,
 } from '@mui/icons-material';
-import { notificationsApi } from '../netlify/config';
+import { notificationsApi, weeklyCardsApi } from '../netlify/config';
 import { isOrganizer } from '../utils/user';
 
 interface HeaderProps {
@@ -74,9 +74,15 @@ const Header: React.FC<HeaderProps> = ({
   const [cardsMenuAnchor, setCardsMenuAnchor] = useState<HTMLElement | null>(
     null
   );
+  const [weeklyMenuAnchor, setWeeklyMenuAnchor] = useState<HTMLElement | null>(
+    null
+  );
   const [writingMenuAnchor, setWritingMenuAnchor] =
     useState<HTMLElement | null>(null);
   const [unread, setUnread] = useState(0);
+  const [latestResponseWallHref, setLatestResponseWallHref] = useState<
+    string | null
+  >(null);
 
   // 路由和响应式
   const navigate = useNavigate();
@@ -104,6 +110,40 @@ const Header: React.FC<HeaderProps> = ({
     loadUnreadNotifications();
   }, [location.pathname]);
 
+  useEffect(() => {
+    let active = true;
+    const loadLatestResponseWallHref = async () => {
+      try {
+        const response = await weeklyCardsApi.getLatest();
+        const latestCard = response.data?.records?.[0];
+        const episodeNumber = latestCard?.episode?.replace(/\D/g, '');
+        const createdAt = latestCard?.created
+          ? new Date(latestCard.created)
+          : null;
+        if (
+          !active ||
+          !episodeNumber ||
+          !createdAt ||
+          Number.isNaN(createdAt.getTime())
+        )
+          return;
+        const year = new Intl.DateTimeFormat('en-US', {
+          year: 'numeric',
+          timeZone: 'Asia/Shanghai',
+        }).format(createdAt);
+        setLatestResponseWallHref(
+          `https://inspireplanet.cc/episodes/${year}/${episodeNumber}`
+        );
+      } catch (error) {
+        console.error('加载最新一期回应墙地址失败:', error);
+      }
+    };
+    loadLatestResponseWallHref();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   // 判断当前路由是否匹配
   const isActiveRoute = (path?: string): boolean => {
     if (!path) return false;
@@ -124,15 +164,17 @@ const Header: React.FC<HeaderProps> = ({
   const topNavItems: NavItem[] = [
     { path: '/', label: '首页', icon: <Home fontSize="small" /> },
     {
-      path: '/weekly-cards',
-      label: '启发周刊',
-      icon: <CardMembership fontSize="small" />,
-    },
-    {
       path: '/clarify-together',
       label: '对话实验',
       icon: <Forum fontSize="small" />,
     },
+  ];
+
+  const weeklyMenuItems: NavItem[] = [
+    { path: '/weekly-cards', label: '阅读启发周刊' },
+    ...(latestResponseWallHref
+      ? [{ href: latestResponseWallHref, label: '查看最新回应墙' }]
+      : []),
   ];
 
   const writingMenuItems: NavItem[] = [
@@ -171,6 +213,13 @@ const Header: React.FC<HeaderProps> = ({
 
   // 下拉菜单配置
   const dropdownMenus: DropdownMenu[] = [
+    {
+      label: '启发周刊',
+      icon: <CardMembership fontSize="small" />,
+      items: weeklyMenuItems,
+      anchor: weeklyMenuAnchor,
+      setAnchor: setWeeklyMenuAnchor,
+    },
     {
       label: '书写圈子',
       icon: <EditNote fontSize="small" />,
@@ -242,8 +291,6 @@ const Header: React.FC<HeaderProps> = ({
               key={item.href}
               component="a"
               href={item.href}
-              target="_blank"
-              rel="noopener noreferrer"
               onClick={() => menu.setAnchor(null)}
             >
               <ListItemText primary={item.label} sx={{ pl: 1 }} />
@@ -275,8 +322,6 @@ const Header: React.FC<HeaderProps> = ({
             startIcon={item.icon}
             component="a"
             href={item.href}
-            target="_blank"
-            rel="noopener noreferrer"
             sx={{
               marginLeft: 1,
               display: { xs: 'none', md: 'flex' },
@@ -360,8 +405,6 @@ const Header: React.FC<HeaderProps> = ({
             key={item.href}
             component="a"
             href={item.href}
-            target="_blank"
-            rel="noopener noreferrer"
             onClick={handleMenuClick}
             sx={{
               pl: 5,
@@ -416,8 +459,6 @@ const Header: React.FC<HeaderProps> = ({
                 key={item.href}
                 component="a"
                 href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
                 onClick={handleMenuClick}
                 sx={{
                   color: 'grey',
@@ -452,6 +493,11 @@ const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* 移动端菜单组 */}
+          {renderMobileMenuItemGroup(
+            '启发周刊',
+            <CardMembership fontSize="small" />,
+            weeklyMenuItems
+          )}
           {renderMobileMenuItemGroup(
             '书写圈子',
             <EditNote fontSize="small" />,

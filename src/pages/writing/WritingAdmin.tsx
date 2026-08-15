@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   Container,
   Dialog,
   DialogActions,
@@ -52,6 +53,7 @@ const WritingAdmin: React.FC = () => {
   const [pairUserBId, setPairUserBId] = useState('');
   const [editor, setEditor] = useState<Editor>(null);
   const [saving, setSaving] = useState(false);
+  const [memberGroup, setMemberGroup] = useState<WritingGroup | null>(null);
 
   const load = () =>
     writingAdminApi
@@ -268,9 +270,9 @@ const WritingAdmin: React.FC = () => {
                 {groups.map((group) => (
                   <Stack
                     key={group.id}
-                    direction="row"
+                    direction={{ xs: 'column', sm: 'row' }}
                     justifyContent="space-between"
-                    alignItems="center"
+                    alignItems={{ xs: 'stretch', sm: 'center' }}
                     sx={{ p: 2, bgcolor: '#faf8f5', borderRadius: 2 }}
                   >
                     <Box>
@@ -278,12 +280,33 @@ const WritingAdmin: React.FC = () => {
                       <Typography variant="body2" color="text.secondary">
                         {group.description || '暂无说明'}
                       </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block', mt: 0.5 }}
+                      >
+                        {
+                          members.filter(
+                            (member) =>
+                              member.group_id === group.id &&
+                              member.status === 'approved'
+                          ).length
+                        }{' '}
+                        位正式成员
+                      </Typography>
                     </Box>
-                    <Button
-                      onClick={() => setEditor({ kind: 'group', value: group })}
-                    >
-                      编辑
-                    </Button>
+                    <Stack direction="row" spacing={1}>
+                      <Button onClick={() => setMemberGroup(group)}>
+                        查看成员
+                      </Button>
+                      <Button
+                        onClick={() =>
+                          setEditor({ kind: 'group', value: group })
+                        }
+                      >
+                        编辑
+                      </Button>
+                    </Stack>
                   </Stack>
                 ))}
               </Stack>
@@ -544,6 +567,92 @@ const WritingAdmin: React.FC = () => {
             >
               保存
             </Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+          open={Boolean(memberGroup)}
+          onClose={() => setMemberGroup(null)}
+          fullWidth
+          maxWidth="sm"
+        >
+          <DialogTitle>{memberGroup?.name} · 讨论组成员</DialogTitle>
+          <DialogContent>
+            {memberGroup &&
+            members.some((member) => member.group_id === memberGroup.id) ? (
+              <Stack spacing={1.25} sx={{ pt: 1 }}>
+                {members
+                  .filter((member) => member.group_id === memberGroup.id)
+                  .sort((a, b) => {
+                    const order = { approved: 0, pending: 1, rejected: 2 };
+                    return order[a.status] - order[b.status];
+                  })
+                  .map((member) => {
+                    const status = {
+                      approved: {
+                        label: '正式成员',
+                        color: 'success' as const,
+                      },
+                      pending: {
+                        label: '待审核',
+                        color: 'warning' as const,
+                      },
+                      rejected: {
+                        label: '已拒绝',
+                        color: 'default' as const,
+                      },
+                    }[member.status];
+                    return (
+                      <Paper
+                        key={member.id}
+                        variant="outlined"
+                        sx={{ p: 1.5, borderRadius: 2 }}
+                      >
+                        <Stack
+                          direction={{ xs: 'column', sm: 'row' }}
+                          alignItems={{ xs: 'flex-start', sm: 'center' }}
+                          justifyContent="space-between"
+                          spacing={1}
+                        >
+                          <Box>
+                            <Typography fontWeight={700}>
+                              {member.user.name || '未命名用户'}
+                            </Typography>
+                            {member.user.username && (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                @{member.user.username}
+                              </Typography>
+                            )}
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              加入申请：
+                              {new Date(member.applied_at).toLocaleDateString(
+                                'zh-CN'
+                              )}
+                            </Typography>
+                          </Box>
+                          <Chip
+                            label={status.label}
+                            color={status.color}
+                            size="small"
+                          />
+                        </Stack>
+                      </Paper>
+                    );
+                  })}
+              </Stack>
+            ) : (
+              <Alert severity="info" sx={{ mt: 1 }}>
+                该讨论组暂无成员
+              </Alert>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setMemberGroup(null)}>关闭</Button>
           </DialogActions>
         </Dialog>
       </Container>

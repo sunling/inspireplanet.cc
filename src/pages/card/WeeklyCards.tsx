@@ -733,6 +733,7 @@ const WeeklyCards: React.FC = () => {
           <p>星友分享</p>
           <h1>启发星球周刊</h1>
           <span>从每周真实的分享里，收藏一句话，也带走一个新的视角。</span>
+       
         </header>
 
         {activeEpisodeNumber > 0 && (
