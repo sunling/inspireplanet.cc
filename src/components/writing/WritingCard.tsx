@@ -29,7 +29,7 @@ function getPreview(post: WritingPost): string {
 const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
   const preview = getPreview(post);
   const title =
-    post.title || post.template_snapshot?.template_name || '一则自我观察';
+    post.title || post.template_snapshot?.template_name || '一则思考';
   const templateItems =
     post.template_snapshot?.items.filter((item) => item.answer.trim()) || [];
 

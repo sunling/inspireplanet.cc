@@ -420,7 +420,7 @@ const WritingCircle: React.FC = () => {
                 color="text.secondary"
                 sx={{ maxWidth: 680 }}
               >
-                用话题和书写模板记录自我观察，让零散的感受慢慢成为可以回看的成长轨迹。
+                用话题和书写模板记录思考，让零散的感受慢慢成为可以回看的成长轨迹。
               </Typography>
             </Box>
             <Stack
@@ -903,7 +903,7 @@ const WritingCircle: React.FC = () => {
                     ? '搭子暂时还没有公开书写'
                     : '还没有公开书写'
               }
-              description="从一次真实的自我观察开始吧"
+              description="从一次真实的思考开始吧"
             />
           </Paper>
         ) : (

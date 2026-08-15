@@ -145,7 +145,7 @@ const WritingDetail: React.FC = () => {
     setDownloading(true);
     try {
       const isMobile = isMobileBrowser();
-      const safeTitle = (post.title || '一则自我观察')
+      const safeTitle = (post.title || '一则思考')
         .replace(/[\\/:*?"<>|]/g, '-')
         .slice(0, 40);
       const success = await downloadCard(
@@ -568,7 +568,7 @@ const WritingDetail: React.FC = () => {
                     text={
                       post.title ||
                       post.template_snapshot?.template_name ||
-                      '一则自我观察'
+                      '一则思考'
                     }
                   />
                 </Typography>
@@ -835,7 +835,7 @@ const WritingDetail: React.FC = () => {
                 text={
                   post.title ||
                   post.template_snapshot?.template_name ||
-                  '一则自我观察'
+                  '一则思考'
                 }
               />
             </Typography>
