@@ -40,6 +40,65 @@ export interface InitDownloadConfig {
   getFileName?: () => string;
 }
 
+function rasterizeTextElement(element: HTMLElement): void {
+  const text = element.innerText;
+  if (!text) return;
+
+  const style = window.getComputedStyle(element);
+  const width = element.clientWidth;
+  const fontSize = Number.parseFloat(style.fontSize) || 16;
+  const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 1.5;
+  if (!width) return;
+
+  const measureCanvas = document.createElement('canvas');
+  const measureContext = measureCanvas.getContext('2d');
+  if (!measureContext) return;
+  measureContext.font = style.font;
+
+  const lines: string[] = [];
+  text.split('\n').forEach((paragraph) => {
+    if (!paragraph) {
+      lines.push('');
+      return;
+    }
+    let line = '';
+    Array.from(paragraph).forEach((character) => {
+      const candidate = line + character;
+      if (line && measureContext.measureText(candidate).width > width) {
+        lines.push(line);
+        line = character;
+      } else {
+        line = candidate;
+      }
+    });
+    lines.push(line);
+  });
+
+  const scale = 2;
+  const height = Math.max(lineHeight, lines.length * lineHeight);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.ceil(width * scale);
+  canvas.height = Math.ceil(height * scale);
+  const context = canvas.getContext('2d');
+  if (!context) return;
+  context.scale(scale, scale);
+  context.font = style.font;
+  context.fillStyle = style.color;
+  context.textBaseline = 'top';
+  context.textAlign = style.textAlign === 'center' ? 'center' : 'left';
+  const x = style.textAlign === 'center' ? width / 2 : 0;
+  lines.forEach((line, index) => {
+    context.fillText(line, x, index * lineHeight);
+  });
+
+  const image = document.createElement('img');
+  image.src = canvas.toDataURL('image/png');
+  image.alt = text;
+  image.style.cssText = `display:block;width:${width}px;height:${height}px`;
+  element.replaceChildren(image);
+  element.style.lineHeight = '0';
+}
+
 export function isMobileBrowser(): boolean {
   const { userAgent, maxTouchPoints } = window.navigator;
   return (
@@ -230,7 +289,8 @@ export async function loadQRCodeLibrary(): Promise<boolean> {
 export async function downloadCard(
   element: HTMLElement | null | undefined,
   filenamePrefix?: string,
-  onImageReady?: (imageDataUrl: string) => void
+  onImageReady?: (imageDataUrl: string) => void,
+  rasterizeText = false
 ): Promise<boolean> {
   if (!element) {
     console.error('找不到要下载的卡片元素');
@@ -248,6 +308,14 @@ export async function downloadCard(
   }
 
   try {
+    // html2canvas measures text using the currently loaded font metrics. On
+    // slower mobile browsers a fallback font may still be in use here, which
+    // makes its measured line boxes differ from the final rendered card and
+    // can cause Chinese text to overlap in the exported image.
+    if (document.fonts?.ready) {
+      await document.fonts.ready;
+    }
+
     // 创建一个沙箱容器用于干净捕获
     const sandbox = document.createElement('div');
     sandbox.style.position = 'fixed';
@@ -321,6 +389,22 @@ export async function downloadCard(
       )
     );
 
+    // Give the cloned card two layout/paint cycles after fonts and images are
+    // ready before reading its dimensions. One frame is not sufficient on
+    // WebKit when a web font changes line wrapping.
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+    );
+
+    if (rasterizeText) {
+      clone
+        .querySelectorAll<HTMLElement>('[data-download-text]')
+        .forEach(rasterizeTextElement);
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve())
+      );
+    }
+
     // 使用html2canvas捕获
     const maxCanvasArea = 15_000_000;
     const captureScale = Math.min(
@@ -329,7 +413,7 @@ export async function downloadCard(
         maxCanvasArea / Math.max(1, clone.offsetWidth * clone.offsetHeight)
       )
     );
-    const canvas = await (window as Window).html2canvas(clone, {
+    const captureOptions = {
       scale: captureScale,
       logging: false,
       useCORS: true,
@@ -339,7 +423,9 @@ export async function downloadCard(
       removeContainer: true,
       width: clone.offsetWidth,
       height: clone.offsetHeight,
-    });
+    };
+
+    const canvas = await (window as Window).html2canvas(clone, captureOptions);
 
     // 微信内置浏览器会忽略 a[download]。调用方可以接收成图并展示，
     // 让用户直接长按保存到相册。

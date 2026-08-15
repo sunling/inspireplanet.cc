@@ -122,7 +122,7 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
                 whiteSpace: 'pre-wrap',
                 display: '-webkit-box',
                 WebkitBoxOrient: 'vertical',
-                WebkitLineClamp: 5,
+                WebkitLineClamp: post.image_urls.length === 0 ? 18 : 5,
                 overflow: 'hidden',
                 minHeight: 100,
                 mb: 2,

@@ -95,7 +95,19 @@ class SupabaseClientSingleton {
 
       SupabaseClientSingleton.instance = createClient(
         env.SUPABASE_URL,
-        env.SUPABASE_ANON_KEY
+        env.SUPABASE_ANON_KEY,
+        {
+          auth: {
+            // This client is used by Netlify Functions. Some shared function
+            // modules are also imported by the browser for runtime constants,
+            // so it must never compete with the browser auth client for the
+            // default GoTrue storage key.
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+            storageKey: 'inspireplanet-server-auth',
+          },
+        }
       );
     }
 
@@ -103,8 +115,22 @@ class SupabaseClientSingleton {
   }
 }
 
-// 导出单例实例
-export const supabase = SupabaseClientSingleton.getInstance();
+const browserServerClientGuard = new Proxy({} as SupabaseClient, {
+  get() {
+    throw new Error(
+      'The server Supabase client cannot be used in the browser. Call the corresponding Netlify Function instead.'
+    );
+  },
+});
+
+// Some frontend modules import shared runtime constants from Netlify Function
+// files. Those imports must not initialize a second GoTrue client in the
+// browser. The real client is created only while running on the server; the
+// guard makes accidental browser-side database access fail clearly.
+export const supabase =
+  typeof window === 'undefined'
+    ? SupabaseClientSingleton.getInstance()
+    : browserServerClientGuard;
 
 // 导出类型
 export type { SupabaseClient };

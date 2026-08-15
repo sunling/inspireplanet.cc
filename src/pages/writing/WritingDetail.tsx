@@ -38,11 +38,18 @@ import HighlightedText from '../../components/writing/HighlightedText';
 import RichTextRenderer from '../../components/rich-text/RichTextRenderer';
 import { isUserLoggedIn } from '../../utils/user';
 import { downloadCard, isMobileBrowser } from '../../utils/share';
+import { tokenizeHashtags } from '../../utils/hashtags';
 
 interface PendingCommentDeletion {
   id: string;
   removedIds: string[];
 }
+
+const withoutHashtags = (text: string) =>
+  tokenizeHashtags(text)
+    .filter((token) => !token.isHashtag)
+    .map((token) => token.text)
+    .join('');
 
 const WritingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -151,7 +158,8 @@ const WritingDetail: React.FC = () => {
       const success = await downloadCard(
         downloadCardRef.current,
         `书写-${safeTitle}`,
-        isMobile ? setDownloadImage : undefined
+        isMobile ? setDownloadImage : undefined,
+        true
       );
       if (!success) showSnackbar.error('生成书写图片失败，请稍后重试');
       else if (!isMobile) showSnackbar.success('书写图片已下载');
@@ -823,62 +831,73 @@ const WritingDetail: React.FC = () => {
             }}
           >
             <Typography
+              data-download-text
               sx={{ color: '#678078', fontSize: 13, fontWeight: 700, mb: 2 }}
             >
               启发星球 · 书写圈子
             </Typography>
             <Typography
+              data-download-text
               component="h1"
-              sx={{ fontSize: 26, lineHeight: 1.4, fontWeight: 750, mb: 1.5 }}
+              sx={{
+                fontSize: 26,
+                lineHeight: '37px',
+                fontWeight: 750,
+                mb: 1.5,
+                overflowWrap: 'anywhere',
+                letterSpacing: 0,
+              }}
             >
-              <HighlightedText
-                text={
-                  post.title ||
-                  post.template_snapshot?.template_name ||
-                  '一则思考'
-                }
-              />
+              {post.title ||
+                post.template_snapshot?.template_name ||
+                '一则思考'}
             </Typography>
-            <Typography sx={{ color: '#766f69', fontSize: 13, mb: 3 }}>
+            <Typography
+              data-download-text
+              sx={{ color: '#766f69', fontSize: 13, mb: 3 }}
+            >
               {post.author.name} · {formatLocalDateTime(post.created_at)}
             </Typography>
             {post.template_snapshot?.items
               .filter((item) => item.answer.trim())
               .map((item) => (
                 <Box key={item.key} sx={{ mb: 2.5 }}>
-                  <Typography sx={{ fontSize: 14, fontWeight: 700, mb: 0.75 }}>
+                  <Typography
+                    data-download-text
+                    sx={{ fontSize: 14, fontWeight: 700, mb: 0.75 }}
+                  >
                     {item.prompt}
                   </Typography>
                   <Typography
+                    data-download-text
                     sx={{
                       whiteSpace: 'pre-wrap',
-                      lineHeight: 1.8,
+                      lineHeight: '27px',
                       fontSize: 15,
+                      overflowWrap: 'anywhere',
+                      letterSpacing: 0,
                     }}
                   >
-                    <HighlightedText text={item.answer} />
+                    {item.answer}
                   </Typography>
                 </Box>
               ))}
-            {post.body.trim() &&
-              (post.editor_mode === 'rich' && post.body_rich ? (
-                <RichTextRenderer
-                  content={post.body_rich}
-                  sx={{
-                    fontSize: 15,
-                    lineHeight: 1.9,
-                    '& h2': { fontSize: 22 },
-                    '& h3': { fontSize: 18 },
-                    '& pre': { fontSize: 12, lineHeight: 1.6 },
-                  }}
-                />
-              ) : (
-                <Typography
-                  sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.9, fontSize: 15 }}
-                >
-                  <HighlightedText text={post.body} hideHashtags />
-                </Typography>
-              ))}
+            {post.body.trim() && (
+              <Typography
+                data-download-text
+                sx={{
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: '29px',
+                  fontSize: 15,
+                  fontWeight: 400,
+                  fontStyle: 'normal',
+                  overflowWrap: 'anywhere',
+                  letterSpacing: 0,
+                }}
+              >
+                {withoutHashtags(post.body)}
+              </Typography>
+            )}
             {post.image_urls.length > 0 && (
               <Box
                 sx={{
@@ -909,6 +928,7 @@ const WritingDetail: React.FC = () => {
               </Box>
             )}
             <Typography
+              data-download-text
               sx={{
                 position: 'absolute',
                 left: 34,
