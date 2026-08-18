@@ -33,6 +33,7 @@ import {
 import { buildEbookSections, buildEbookTxt, EbookOrder } from './ebook';
 import styles from './PersonalEbook.module.css';
 import RichTextRenderer from '../../components/rich-text/RichTextRenderer';
+import HighlightedText from '../../components/writing/HighlightedText';
 import EbookPrintDocument, { EBOOK_PRINT_CSS } from './EbookPrintDocument';
 
 const SOURCE_META: Record<EbookSource, { label: string; color: string }> = {
@@ -46,6 +47,10 @@ const formatDate = (value: string) =>
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
   }).format(new Date(value));
 
 const PersonalEbook: React.FC = () => {
@@ -393,19 +398,65 @@ const PersonalEbook: React.FC = () => {
                             </Typography>
                           </Box>
                         ))
-                      ) : chapter.source === 'writing' &&
-                        chapter.editor_mode === 'rich' &&
-                        chapter.rich_content ? (
-                        <RichTextRenderer
-                          content={chapter.rich_content}
-                          className={styles.richContent}
-                        />
                       ) : (
-                        <Typography
-                          className={`${styles.content} ${chapter.source === 'card' ? styles.quote : ''}`}
-                        >
-                          {chapter.content}
-                        </Typography>
+                        <>
+                          {chapter.template_snapshot?.items.some((item) =>
+                            item.answer.trim()
+                          ) && (
+                            <Stack
+                              spacing={2}
+                              sx={{
+                                mb:
+                                  chapter.content.trim() ||
+                                  (chapter.source === 'writing' &&
+                                    chapter.editor_mode === 'rich' &&
+                                    chapter.rich_content)
+                                    ? 3
+                                    : 0,
+                              }}
+                            >
+                              {chapter.template_snapshot.items
+                                .filter((item) => item.answer.trim())
+                                .map((item) => (
+                                  <Box
+                                    className={styles.response}
+                                    key={`${chapter.id}-${item.key}`}
+                                  >
+                                    <Typography
+                                      variant="subtitle2"
+                                      fontWeight={700}
+                                    >
+                                      {item.prompt}
+                                    </Typography>
+                                    <Typography className={styles.content}>
+                                      <HighlightedText text={item.answer} />
+                                    </Typography>
+                                  </Box>
+                                ))}
+                            </Stack>
+                          )}
+                          {chapter.source === 'writing' &&
+                          chapter.editor_mode === 'rich' &&
+                          chapter.rich_content ? (
+                            <RichTextRenderer
+                              content={chapter.rich_content}
+                              className={styles.richContent}
+                            />
+                          ) : chapter.content.trim() ? (
+                            <Typography
+                              className={`${styles.content} ${chapter.source === 'card' ? styles.quote : ''}`}
+                            >
+                              {chapter.source === 'writing' ? (
+                                <HighlightedText
+                                  text={chapter.content}
+                                  hideHashtags
+                                />
+                              ) : (
+                                chapter.content
+                              )}
+                            </Typography>
+                          ) : null}
+                        </>
                       )}
                       {chapter.detail_url && (
                         <Button

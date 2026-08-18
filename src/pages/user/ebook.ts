@@ -12,6 +12,10 @@ const txtDateFormatter = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
 });
 
 export function buildEbookTxt(
@@ -25,11 +29,23 @@ export function buildEbookTxt(
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
     .map((chapter) => {
-      const content = chapter.response_items?.length
-        ? chapter.response_items
-            .map((item) => `${item.question}\n${item.answer || '—'}`)
-            .join('\n\n')
-        : chapter.content;
+      let content: string;
+      if (chapter.response_items?.length) {
+        content = chapter.response_items
+          .map((item) => `${item.question}\n${item.answer || '—'}`)
+          .join('\n\n');
+      } else {
+        const parts: string[] = [];
+        if (chapter.template_snapshot?.items.length) {
+          parts.push(
+            ...chapter.template_snapshot.items
+              .filter((item) => item.answer.trim())
+              .map((item) => `${item.prompt}\n${item.answer}`)
+          );
+        }
+        if (chapter.content.trim()) parts.push(chapter.content.trim());
+        content = parts.join('\n\n');
+      }
       return `日期：${txtDateFormatter.format(new Date(chapter.created_at))}\n内容：\n${content.trim()}`;
     })
     .join('\n\n--------------------\n\n');
