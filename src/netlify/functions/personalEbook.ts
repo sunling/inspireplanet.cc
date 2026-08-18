@@ -8,6 +8,7 @@ import {
   getFunctionNameFromEvent,
   handleOptionsRequest,
 } from '../utils/server';
+import { normalizeTemplateSnapshot } from '../utils/writing';
 
 const asText = (value: unknown): string => {
   if (Array.isArray(value)) return value.map(asText).filter(Boolean).join('、');
@@ -55,7 +56,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         .from('writing_posts')
         .select(
           `
-          id, title, body, editor_mode, body_rich, image_urls, created_at,
+          id, title, body, editor_mode, body_rich, image_urls, template_snapshot, created_at,
           topic_links:writing_post_topics(topic:writing_topics(id, name))
         `
         )
@@ -144,34 +145,42 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     );
 
     const writingChapters: EbookChapter[] = (writingsResult.data || []).map(
-      (post: any) => ({
-        id: `writing-${post.id}`,
-        source: 'writing',
-        title: post.title || '一则书写',
-        summary: excerpt(post.body || ''),
-        content: post.body || '',
-        editor_mode:
+      (post: any) => {
+        const hasRichContent =
           post.editor_mode === 'rich' &&
           post.body_rich &&
           typeof post.body_rich === 'object' &&
-          post.body_rich.type === 'doc'
-            ? 'rich'
-            : 'basic',
-        rich_content:
-          post.editor_mode === 'rich' &&
-          post.body_rich &&
-          typeof post.body_rich === 'object' &&
-          post.body_rich.type === 'doc'
-            ? post.body_rich
-            : null,
-        created_at: post.created_at,
-        topics: (post.topic_links || [])
-          .map((link: any) => link?.topic)
-          .filter(Boolean)
-          .map((topic: any) => ({ id: String(topic.id), name: topic.name })),
-        image_urls: Array.isArray(post.image_urls) ? post.image_urls : [],
-        detail_url: `/writing-circle/${post.id}`,
-      })
+          post.body_rich.type === 'doc';
+        const template_snapshot = normalizeTemplateSnapshot(
+          post.template_snapshot
+        );
+        const templateAnswers = (template_snapshot?.items || [])
+          .filter((item: { key: string; prompt: string; answer: string }) =>
+            item.answer.trim()
+          )
+          .map(
+            (item: { key: string; prompt: string; answer: string }) =>
+              item.answer
+          )
+          .join(' ');
+        return {
+          id: `writing-${post.id}`,
+          source: 'writing' as const,
+          title: post.title || template_snapshot?.template_name || '一则书写',
+          summary: excerpt(templateAnswers || post.body || ''),
+          content: post.body || '',
+          editor_mode: hasRichContent ? 'rich' : 'basic',
+          rich_content: hasRichContent ? post.body_rich : null,
+          template_snapshot,
+          created_at: post.created_at,
+          topics: (post.topic_links || [])
+            .map((link: any) => link?.topic)
+            .filter(Boolean)
+            .map((topic: any) => ({ id: String(topic.id), name: topic.name })),
+          image_urls: Array.isArray(post.image_urls) ? post.image_urls : [],
+          detail_url: `/writing-circle/${post.id}`,
+        };
+      }
     );
 
     const responseChapters: EbookChapter[] = submissions

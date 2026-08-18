@@ -66,6 +66,10 @@ const formatPrintDate = (value: string) =>
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
   }).format(new Date(value));
 
 const getImageSize = (count: number) =>
@@ -84,19 +88,30 @@ const ChapterContent: React.FC<{ chapter: EbookChapter }> = ({ chapter }) => {
       </>
     );
   }
-  if (
-    chapter.source === 'writing' &&
-    chapter.editor_mode === 'rich' &&
-    chapter.rich_content
-  ) {
-    return (
-      <RichTextRenderer
-        content={chapter.rich_content}
-        className="ebook-print-content"
-      />
-    );
-  }
-  return <div className="ebook-print-content">{chapter.content}</div>;
+  const templateItems =
+    chapter.template_snapshot?.items.filter((item) => item.answer.trim()) || [];
+  const hasBody = chapter.content.trim().length > 0;
+  return (
+    <>
+      {templateItems.length > 0 &&
+        templateItems.map((item) => (
+          <div className="ebook-print-response" key={item.key}>
+            <strong>{item.prompt}</strong>
+            <div className="ebook-print-content">{item.answer}</div>
+          </div>
+        ))}
+      {chapter.source === 'writing' &&
+      chapter.editor_mode === 'rich' &&
+      chapter.rich_content ? (
+        <RichTextRenderer
+          content={chapter.rich_content}
+          className="ebook-print-content"
+        />
+      ) : hasBody ? (
+        <div className="ebook-print-content">{chapter.content}</div>
+      ) : null}
+    </>
+  );
 };
 
 interface Props {
