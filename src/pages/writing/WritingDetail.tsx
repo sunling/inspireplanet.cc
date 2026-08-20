@@ -26,7 +26,6 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded';
 import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
-import CloseIcon from '@mui/icons-material/Close';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import Loading from '../../components/Loading';
@@ -39,6 +38,7 @@ import RichTextRenderer from '../../components/rich-text/RichTextRenderer';
 import { isUserLoggedIn } from '../../utils/user';
 import { downloadCard, isMobileBrowser } from '../../utils/share';
 import { tokenizeHashtags } from '../../utils/hashtags';
+import ImagePreviewDialog from '../../components/ImagePreviewDialog';
 
 interface PendingCommentDeletion {
   id: string;
@@ -68,7 +68,7 @@ const WritingDetail: React.FC = () => {
   const [interactionInputFocused, setInteractionInputFocused] = useState(false);
   const [interactionLoading, setInteractionLoading] = useState(true);
   const [resonanceLoading, setResonanceLoading] = useState(false);
-  const [previewImage, setPreviewImage] = useState('');
+  const [previewImageIndex, setPreviewImageIndex] = useState(-1);
   const [downloadImage, setDownloadImage] = useState('');
   const [downloading, setDownloading] = useState(false);
   const interactionInputRef = useRef<HTMLInputElement>(null);
@@ -699,7 +699,7 @@ const WritingDetail: React.FC = () => {
                     key={`${imageUrl}-${index}`}
                     component="button"
                     type="button"
-                    onClick={() => setPreviewImage(imageUrl)}
+                    onClick={() => setPreviewImageIndex(index)}
                     aria-label={`查看第 ${index + 1} 张配图`}
                     sx={{
                       display: 'block',
@@ -1273,46 +1273,13 @@ const WritingDetail: React.FC = () => {
           </Button>
         </Box>
       </Dialog>
-      <Dialog
-        open={Boolean(previewImage)}
-        onClose={() => setPreviewImage('')}
-        maxWidth={false}
-        slotProps={{
-          paper: {
-            sx: {
-              m: { xs: 1, sm: 3 },
-              bgcolor: 'transparent',
-              boxShadow: 'none',
-              overflow: 'visible',
-            },
-          },
-          backdrop: { sx: { bgcolor: 'rgba(0, 0, 0, 0.88)' } },
-        }}
-      >
-        <IconButton
-          aria-label="关闭图片预览"
-          onClick={() => setPreviewImage('')}
-          sx={{
-            position: 'absolute',
-            right: 0,
-            top: -48,
-            color: '#fff',
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
-        <Box
-          component="img"
-          src={previewImage}
-          alt="书写配图预览"
-          sx={{
-            display: 'block',
-            maxWidth: 'min(94vw, 1200px)',
-            maxHeight: '88vh',
-            objectFit: 'contain',
-          }}
-        />
-      </Dialog>
+      <ImagePreviewDialog
+        images={post?.image_urls || []}
+        index={previewImageIndex}
+        onIndexChange={setPreviewImageIndex}
+        onClose={() => setPreviewImageIndex(-1)}
+        alt="书写配图预览"
+      />
     </Box>
   );
 };
