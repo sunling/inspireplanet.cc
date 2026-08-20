@@ -7,8 +7,6 @@ import {
   Chip,
   CircularProgress,
   Container,
-  Dialog,
-  DialogContent,
   Divider,
   IconButton,
   Paper,
@@ -22,7 +20,6 @@ import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
-import CloseIcon from '@mui/icons-material/Close';
 import Loading from '../../components/Loading';
 import Empty from '../../components/Empty';
 import { ebookApi } from '../../netlify/config';
@@ -35,6 +32,7 @@ import styles from './PersonalEbook.module.css';
 import RichTextRenderer from '../../components/rich-text/RichTextRenderer';
 import HighlightedText from '../../components/writing/HighlightedText';
 import EbookPrintDocument, { EBOOK_PRINT_CSS } from './EbookPrintDocument';
+import ImagePreviewDialog from '../../components/ImagePreviewDialog';
 
 const SOURCE_META: Record<EbookSource, { label: string; color: string }> = {
   card: { label: '金句卡片', color: '#b25e3d' },
@@ -64,7 +62,8 @@ const PersonalEbook: React.FC = () => {
     'response',
   ]);
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [previewImage, setPreviewImage] = useState('');
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [previewImageIndex, setPreviewImageIndex] = useState(-1);
   const printSourceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -357,7 +356,7 @@ const PersonalEbook: React.FC = () => {
                       </Typography>
                       {chapter.image_urls.length > 0 && (
                         <Box className={styles.images}>
-                          {chapter.image_urls.map((url) => {
+                          {chapter.image_urls.map((url, imageIndex) => {
                             const size =
                               chapter.image_urls.length <= 1
                                 ? 400
@@ -370,7 +369,10 @@ const PersonalEbook: React.FC = () => {
                                 key={url}
                                 type="button"
                                 className={styles.imageButton}
-                                onClick={() => setPreviewImage(url)}
+                                onClick={() => {
+                                  setPreviewImages(chapter.image_urls);
+                                  setPreviewImageIndex(imageIndex);
+                                }}
                                 aria-label="预览电子书图片"
                               >
                                 <img
@@ -480,28 +482,16 @@ const PersonalEbook: React.FC = () => {
             <EbookPrintDocument ebook={ebook} sections={sections} />
           </Box>
         )}
-        <Dialog
-          open={Boolean(previewImage)}
-          onClose={() => setPreviewImage('')}
-          maxWidth="lg"
-          fullWidth
-        >
-          <IconButton
-            aria-label="关闭图片预览"
-            onClick={() => setPreviewImage('')}
-            sx={{ position: 'absolute', right: 8, top: 8, zIndex: 1 }}
-          >
-            <CloseIcon />
-          </IconButton>
-          <DialogContent sx={{ p: 2, textAlign: 'center' }}>
-            <Box
-              component="img"
-              src={previewImage}
-              alt="电子书图片预览"
-              sx={{ maxWidth: '100%', maxHeight: '82vh', objectFit: 'contain' }}
-            />
-          </DialogContent>
-        </Dialog>
+        <ImagePreviewDialog
+          images={previewImages}
+          index={previewImageIndex}
+          onIndexChange={setPreviewImageIndex}
+          onClose={() => {
+            setPreviewImageIndex(-1);
+            setPreviewImages([]);
+          }}
+          alt="电子书图片预览"
+        />
       </Container>
     </Box>
   );
