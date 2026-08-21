@@ -3,11 +3,17 @@ import { http } from '../netlify/config/http';
 import { supabaseAuth } from '../database/supabaseAuth';
 
 const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+let hasValidatedSession = false;
+
+export const markUserSessionInvalid = () => {
+  hasValidatedSession = false;
+};
 
 export const setUserAuth = (token: string, userInfo: UserInfo) => {
   localStorage.setItem('authToken', token);
   localStorage.setItem('userInfo', JSON.stringify(userInfo));
   localStorage.setItem('loginTime', String(Date.now()));
+  hasValidatedSession = true;
 };
 
 const isSessionExpired = (): boolean => {
@@ -22,19 +28,15 @@ export const checkAndClearExpiredSession = (): boolean => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userInfo');
     localStorage.removeItem('loginTime');
+    markUserSessionInvalid();
     return true;
   }
   return false;
 };
 
-export const getAuthToken = (): string | null => {
-  checkAndClearExpiredSession();
-  return localStorage.getItem('authToken');
-};
-
 export const isUserLoggedIn = (): boolean => {
   checkAndClearExpiredSession();
-  return Boolean(localStorage.getItem('authToken'));
+  return hasValidatedSession;
 };
 
 export const getUserId = (): string | null => {
@@ -76,22 +78,35 @@ export const syncUserAuthFromSession = async (): Promise<UserInfo | null> => {
     data: { session },
   } = await supabaseAuth.auth.getSession();
 
-  if (!session?.access_token || !session.user.email) return null;
-
-  const currentUser = getUserInfo();
-  const hasCachedIdentity = Boolean(currentUser?.name || currentUser?.username);
-  const hasCachedRole = currentUser?.role !== undefined;
-  if (hasCachedIdentity && hasCachedRole) {
-    setUserAuth(session.access_token, currentUser);
-    return currentUser;
+  if (!session?.access_token || !session.user.email) {
+    markUserSessionInvalid();
+    return null;
   }
 
+  const { data: validatedData, error: validationError } =
+    await supabaseAuth.auth.getUser(session.access_token);
+  if (validationError || !validatedData.user) {
+    markUserSessionInvalid();
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('userInfo');
+    localStorage.removeItem('loginTime');
+    await supabaseAuth.auth.signOut({ scope: 'local' });
+    return null;
+  }
+
+  hasValidatedSession = true;
+  const currentUser = getUserInfo();
   try {
     const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', {
       email: session.user.email,
     });
     const user = res.success ? res.data?.user : null;
-    if (!user) return res.statusCode === 401 ? null : currentUser;
+    if (!user && res.statusCode === 401) {
+      markUserSessionInvalid();
+      return null;
+    }
+    if (!user) return currentUser;
     setUserAuth(session.access_token, user);
     return user;
   } catch {
@@ -103,6 +118,7 @@ export const logoutUser = async () => {
   localStorage.removeItem('authToken');
   localStorage.removeItem('userInfo');
   localStorage.removeItem('loginTime');
+  markUserSessionInvalid();
   await supabaseAuth.auth.signOut();
 };
 

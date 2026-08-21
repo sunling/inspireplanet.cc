@@ -34,8 +34,8 @@ import { writingInteractionsApi, writingsApi } from '../../netlify/config';
 import { formatDate, formatLocalDateTime } from '../../utils/date';
 import { useGlobalSnackbar } from '../../context/app';
 import HighlightedText from '../../components/writing/HighlightedText';
+import { useAuth } from '../../context/auth';
 import RichTextRenderer from '../../components/rich-text/RichTextRenderer';
-import { isUserLoggedIn } from '../../utils/user';
 import { downloadCard, isMobileBrowser } from '../../utils/share';
 import { tokenizeHashtags } from '../../utils/hashtags';
 import ImagePreviewDialog from '../../components/ImagePreviewDialog';
@@ -52,6 +52,7 @@ const withoutHashtags = (text: string) =>
     .join('');
 
 const WritingDetail: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const showSnackbar = useGlobalSnackbar();
@@ -171,7 +172,7 @@ const WritingDetail: React.FC = () => {
   };
 
   const requireLogin = () => {
-    if (isUserLoggedIn()) return true;
+    if (isAuthenticated) return true;
     navigate(`/login?redirect=${encodeURIComponent(`/writing-circle/${id}`)}`);
     return false;
   };

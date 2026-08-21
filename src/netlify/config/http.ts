@@ -19,6 +19,7 @@ class HttpClient {
   private baseURL: string;
   private defaultHeaders: Record<string, string>;
   private defaultTimeout: number;
+  private authInvalidationPromise: Promise<void> | null = null;
 
   constructor(config: HttpClientConfig = {}) {
     // 根据环境确定baseURL，允许外部配置覆盖
@@ -55,6 +56,36 @@ class HttpClient {
       console.error('Error accessing localStorage:', error);
       return null;
     }
+  }
+
+  // 被服务端拒绝的访问令牌必须从两层存储中同时清除。若只清除 authToken，
+  // Supabase 会话仍然存在，登录页会立即将用户判断为已登录并跳回原页面，
+  // 随后再次触发 401。同一页面的并发失败请求共用一次会话失效操作。
+  private invalidateAuthSession(): Promise<void> {
+    if (this.authInvalidationPromise) return this.authInvalidationPromise;
+
+    this.authInvalidationPromise = (async () => {
+      try {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userToken');
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('loginTime');
+      } catch (error) {
+        console.error('Error clearing auth data:', error);
+      }
+
+      try {
+        await supabaseAuth.auth.signOut({ scope: 'local' });
+      } catch (error) {
+        // 本地认证缓存已经清除，因此即使注销失败，也不能保留无效的登录状态
+        // 或阻止页面跳转到登录页。
+        console.error('Error clearing Supabase auth session:', error);
+      }
+    })().finally(() => {
+      this.authInvalidationPromise = null;
+    });
+
+    return this.authInvalidationPromise;
   }
 
   // 构建完整URL
@@ -100,7 +131,9 @@ class HttpClient {
   }
 
   // 请求拦截器
-  private async requestInterceptor(config: RequestConfig): Promise<RequestConfig> {
+  private async requestInterceptor(
+    config: RequestConfig
+  ): Promise<RequestConfig> {
     const token = await this.getAuthToken();
     if (token) {
       config.headers = {
@@ -134,20 +167,14 @@ class HttpClient {
     if (!response.ok) {
       // 处理401未授权错误
       if (response.status === 401) {
-        // 清除本地存储的认证信息
-        try {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('userInfo');
-        } catch (e) {
-          console.error('Error clearing auth data:', e);
-        }
+        await this.invalidateAuthSession();
 
         // 跳转到登录页面
-        const currentPath = window.location.pathname;
+        const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
         const loginPath = '/login';
 
         // 避免在登录页面重复跳转
-        if (currentPath !== loginPath) {
+        if (window.location.pathname !== loginPath) {
           window.location.href = `${loginPath}?redirect=${encodeURIComponent(currentPath)}`;
         }
 
@@ -205,7 +232,7 @@ class HttpClient {
   // 通用请求方法
   async request<T = any>(
     moduleName: string,
-    config: RequestConfig = { functionName: 'get' }
+    config: RequestConfig = {}
   ): Promise<ApiResponse<T>> {
     try {
       // 合并默认配置和用户配置
