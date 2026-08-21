@@ -88,25 +88,23 @@ const ImagePreviewDialog: React.FC<ImagePreviewDialogProps> = ({
           sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
         />
       )}
-      {images.length > 1 && (
-        <>
-          <IconButton
-            aria-label="上一张图片"
-            disabled={!hasPrevious}
-            onClick={() => onIndexChange(index - 1)}
-            sx={navigationButtonSx('left')}
-          >
-            <ChevronLeftIcon fontSize="large" />
-          </IconButton>
-          <IconButton
-            aria-label="下一张图片"
-            disabled={!hasNext}
-            onClick={() => onIndexChange(index + 1)}
-            sx={navigationButtonSx('right')}
-          >
-            <ChevronRightIcon fontSize="large" />
-          </IconButton>
-        </>
+      {hasPrevious && (
+        <IconButton
+          aria-label="上一张图片"
+          onClick={() => onIndexChange(index - 1)}
+          sx={navigationButtonSx('left')}
+        >
+          <ChevronLeftIcon fontSize="large" />
+        </IconButton>
+      )}
+      {hasNext && (
+        <IconButton
+          aria-label="下一张图片"
+          onClick={() => onIndexChange(index + 1)}
+          sx={navigationButtonSx('right')}
+        >
+          <ChevronRightIcon fontSize="large" />
+        </IconButton>
       )}
     </Dialog>
   );
@@ -124,7 +122,6 @@ const navigationButtonSx = (side: 'left' | 'right') => ({
     bgcolor: 'rgba(0, 0, 0, 0.62)',
     transform: 'translateY(-50%)',
   },
-  '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.3)' },
 });
 
 export default ImagePreviewDialog;
