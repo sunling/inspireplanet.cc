@@ -46,8 +46,8 @@ import {
   writingsApi,
   writingTopicsApi,
 } from '../../netlify/config';
-import { isOrganizer, isUserLoggedIn } from '../../utils/user';
 import { useGlobalSnackbar } from '../../context/app';
+import { useAuth } from '../../context/auth';
 
 const PAGE_SIZE = 9;
 
@@ -79,6 +79,7 @@ function formatTimelineDate(value: string): string {
 }
 
 const WritingCircle: React.FC = () => {
+  const { isAuthenticated, isAuthLoading, user } = useAuth();
   const navigate = useNavigate();
   const snackbar = useGlobalSnackbar();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -150,7 +151,7 @@ const WritingCircle: React.FC = () => {
       .finally(() => {
         if (active) setGroupsLoading(false);
       });
-    if (isUserLoggedIn()) {
+    if (!isAuthLoading && isAuthenticated) {
       writingGroupsApi.myPartners().then((response) => {
         if (active && response.success)
           setPartners(response.data?.partners || []);
@@ -159,7 +160,7 @@ const WritingCircle: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [retryCount]);
+  }, [isAuthenticated, isAuthLoading, retryCount]);
 
   useEffect(() => {
     if (scope === 'mine') return;
@@ -305,7 +306,7 @@ const WritingCircle: React.FC = () => {
   };
 
   const handleScopeChange = (_event: React.SyntheticEvent, value: string) => {
-    if ((value === 'mine' || value === 'partners') && !isUserLoggedIn()) {
+    if ((value === 'mine' || value === 'partners') && !isAuthenticated) {
       navigate(
         `/login?redirect=${encodeURIComponent(`/writing-circle?scope=${value}`)}`
       );
@@ -323,7 +324,7 @@ const WritingCircle: React.FC = () => {
   };
 
   const applyToGroup = async (groupId: string) => {
-    if (!isUserLoggedIn()) {
+    if (!isAuthenticated) {
       navigate(`/login?redirect=${encodeURIComponent('/writing-circle')}`);
       return;
     }
@@ -337,7 +338,7 @@ const WritingCircle: React.FC = () => {
   };
 
   const handleCreate = () => {
-    if (!isUserLoggedIn()) {
+    if (!isAuthenticated) {
       navigate(`/login?redirect=${encodeURIComponent('/writing-circle/new')}`);
       return;
     }
@@ -1085,7 +1086,7 @@ const WritingCircle: React.FC = () => {
             >
               开始书写
             </Button>
-            {isOrganizer() && (
+            {user?.role === 'organizer' && (
               <Button
                 variant="outlined"
                 startIcon={<AdminPanelSettingsIcon />}

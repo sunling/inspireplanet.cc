@@ -12,7 +12,7 @@ import App from '../App';
 import Error from '../components/ErrorCard/index';
 import Loading from '../components/Loading/index';
 import MyMeetups from '../pages/user/MyMeetups';
-import { isUserLoggedIn, isOrganizer } from '../utils/user';
+import { AuthProvider, useAuth } from '../context/auth';
 
 // 错误边界组件
 const ErrorBoundary: React.FC<{ children?: React.ReactNode }> = ({
@@ -49,9 +49,11 @@ const ErrorBoundary: React.FC<{ children?: React.ReactNode }> = ({
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const isAuthenticated = isUserLoggedIn();
+  const { isAuthenticated, isAuthLoading } = useAuth();
   const location = useLocation();
   const redirect = `${location.pathname}${location.search}${location.hash}`;
+
+  if (isAuthLoading) return <Loading message="正在验证登录状态..." />;
 
   return isAuthenticated ? (
     <>{children}</>
@@ -64,10 +66,12 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 const OrganizerProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const isAuthenticated = isUserLoggedIn();
-  const userIsOrganizer = isOrganizer();
+  const { isAuthenticated, isAuthLoading, user } = useAuth();
+  const userIsOrganizer = user?.role === 'organizer';
   const location = useLocation();
   const redirect = `${location.pathname}${location.search}${location.hash}`;
+
+  if (isAuthLoading) return <Loading message="正在验证登录状态..." />;
 
   if (!isAuthenticated) {
     return (
@@ -190,7 +194,11 @@ const router = createBrowserRouter(
   [
     {
       path: '/',
-      element: <App />,
+      element: (
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      ),
       errorElement: <ErrorBoundary />,
       children: [
         // 公开路由
