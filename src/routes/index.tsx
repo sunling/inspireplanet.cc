@@ -111,11 +111,13 @@ const Home = lazy(() => import('../pages/home/Home'));
 const About = lazy(() => import('../pages/introduce/About'));
 const Contact = lazy(() => import('../pages/introduce/Contact'));
 const Contribution = lazy(() => import('../pages/contribute/Contribution'));
-const ClarifyTogether = lazy(() => import('../pages/dialogue/ClarifyTogether'));
-const ParticipantSignup = lazy(
-  () => import('../pages/dialogue/ParticipantSignup')
-);
 const DialoguePoster = lazy(() => import('../pages/dialogue/DialoguePoster'));
+const QuestionRoundtable = lazy(
+  () => import('../pages/roundtable/QuestionRoundtable')
+);
+const RoundtableAdmin = lazy(
+  () => import('../pages/roundtable/RoundtableAdmin')
+);
 const CommunityJoin = lazy(() => import('../pages/community/CommunityJoin'));
 const CommunityQrAdmin = lazy(
   () => import('../pages/community/CommunityQrAdmin')
@@ -207,17 +209,18 @@ const router = createBrowserRouter(
         { path: 'home', element: createLazyRoute(<Home />) },
         { path: 'contact', element: createLazyRoute(<Contact />) },
         { path: 'contribute', element: createLazyRoute(<Contribution />) },
+        { path: 'questions', element: createLazyRoute(<QuestionRoundtable />) },
         {
           path: 'clarify-together',
-          element: createLazyRoute(<ClarifyTogether />),
+          element: <Navigate to="/questions" replace />,
         },
         {
           path: 'clarify-together/participant',
-          element: createLazyRoute(<ParticipantSignup />),
+          element: <Navigate to="/questions#submit-question" replace />,
         },
         {
           path: 'clarify-together/poster',
-          element: createLazyRoute(<DialoguePoster />),
+          element: <Navigate to="/page-poster" replace />,
         },
         {
           path: 'page-poster',
@@ -355,6 +358,10 @@ const router = createBrowserRouter(
         {
           path: 'admin/writing-circle',
           element: createOrganizerProtectedRoute(<WritingAdmin />),
+        },
+        {
+          path: 'admin/question-roundtable',
+          element: createOrganizerProtectedRoute(<RoundtableAdmin />),
         },
 
         // 404路由
