@@ -1,0 +1,170 @@
+.page {
+  width: min(100% - 2rem, 1100px);
+  margin: 0 auto;
+  padding: 4rem 0 7rem;
+  color: #292724;
+}
+.header {
+  display: flex;
+  gap: 2rem;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+.header > div {
+  max-width: 720px;
+}
+.header span {
+  color: #c95837;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+.header h1 {
+  margin: 0.6rem 0;
+  font-family: var(--font-serif);
+  font-size: clamp(2.7rem, 6vw, 4.6rem);
+}
+.header p {
+  margin: 0;
+  color: #6b645d;
+  line-height: 1.7;
+}
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.4rem;
+}
+.filters button {
+  display: flex;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #d8cec5;
+  border-radius: 999px;
+  background: white;
+  color: #625b54;
+  cursor: pointer;
+}
+.filters button span {
+  display: grid;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #eee8e1;
+  font-size: 0.75rem;
+}
+.filters .activeFilter {
+  border-color: #c95837;
+  background: #c95837;
+  color: white;
+}
+.filters .activeFilter span {
+  background: rgba(255, 255, 255, 0.22);
+}
+.list {
+  display: grid;
+  gap: 1rem;
+}
+.card {
+  padding: clamp(1.4rem, 3vw, 2rem);
+  border: 1px solid #ded4ca;
+  border-radius: 1rem;
+  background: #fff;
+}
+.cardHeading {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  color: #746c65;
+  font-size: 0.87rem;
+}
+.cardHeading > div {
+  display: flex;
+  gap: 0.8rem;
+}
+.cardHeading span {
+  color: #c95837;
+  font-weight: 700;
+}
+.cardHeading a {
+  color: #5b6e69;
+}
+.card h2 {
+  margin: 1.2rem 0 0.8rem;
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
+  line-height: 1.45;
+}
+.context {
+  color: #5f5852;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+.card dl {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1.4rem 0;
+  padding: 1rem;
+  border-radius: 0.7rem;
+  background: #faf7f2;
+}
+.card dl div {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 1rem;
+}
+.card dt {
+  color: #817870;
+  font-size: 0.85rem;
+}
+.card dd {
+  margin: 0;
+  line-height: 1.55;
+}
+.controls {
+  display: grid;
+  grid-template-columns: 150px minmax(220px, 1fr) auto;
+  gap: 0.8rem;
+  align-items: center;
+}
+.controls :global(.MuiButton-contained) {
+  background: #c95837;
+}
+.loading {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 2rem 0;
+  color: #6b645d;
+}
+.empty {
+  padding: 3rem;
+  border: 1px dashed #d8cec5;
+  border-radius: 1rem;
+  text-align: center;
+}
+@media (max-width: 720px) {
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .cardHeading {
+    flex-direction: column;
+  }
+  .cardHeading > div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .card dl div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+  .controls {
+    grid-template-columns: 1fr;
+  }
+}

@@ -164,8 +164,8 @@ const Header: React.FC<HeaderProps> = ({
   const topNavItems: NavItem[] = [
     { path: '/', label: '首页', icon: <Home fontSize="small" /> },
     {
-      path: '/clarify-together',
-      label: '对话实验',
+      path: '/questions',
+      label: '问题圆桌',
       icon: <Forum fontSize="small" />,
     },
   ];
@@ -194,6 +194,10 @@ const Header: React.FC<HeaderProps> = ({
     if (isOrganizer()) {
       baseItems.push({ path: '/create-meetup', label: '创建活动' });
       baseItems.push({ path: '/meetup-participants-list', label: '报名管理' });
+      baseItems.push({
+        path: '/admin/question-roundtable',
+        label: '问题圆桌管理',
+      });
     }
 
     return baseItems;
