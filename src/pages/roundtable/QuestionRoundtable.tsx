@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Button,
@@ -33,9 +33,36 @@ const createInitialForm = (sessionDate?: string): FormState => ({
   boundaries: '',
   availableDates: sessionDate ? [sessionDate] : [],
   otherAvailability: '',
-  publicConsent: false,
   website: '',
 });
+
+const questionStarters = [
+  '我没想明白的是……',
+  '如果……会怎么样？',
+  '我不同意的一点是……',
+  '我想请有经验的人聊聊……',
+];
+
+const SUPPORTED_QUESTIONS_KEY = 'roundtable-supported-questions';
+const SUPPORTER_TOKEN_KEY = 'roundtable-supporter-token';
+
+const readSupportedQuestionIds = () => {
+  try {
+    return new Set<string>(
+      JSON.parse(localStorage.getItem(SUPPORTED_QUESTIONS_KEY) || '[]')
+    );
+  } catch {
+    return new Set<string>();
+  }
+};
+
+const getSupporterToken = () => {
+  const current = localStorage.getItem(SUPPORTER_TOKEN_KEY);
+  if (current) return current;
+  const token = crypto.randomUUID();
+  localStorage.setItem(SUPPORTER_TOKEN_KEY, token);
+  return token;
+};
 
 const processSteps = [
   {
@@ -107,6 +134,12 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [supportingId, setSupportingId] = useState<string | null>(null);
+  const [supportError, setSupportError] = useState('');
+  const [supportedQuestionIds, setSupportedQuestionIds] = useState(
+    readSupportedQuestionIds
+  );
+  const questionInputRef = useRef<HTMLInputElement>(null);
   const saturdayOptions = useMemo(getUpcomingSaturdayOptions, []);
   const submitSectionId = embedded
     ? 'meetup-submit-question'
@@ -151,15 +184,6 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
     event.preventDefault();
     setSubmitError('');
     setSubmitted(false);
-    if (!form.availableDates.length && !form.otherAvailability.trim()) {
-      setSubmitError('请选择一个可以参加的场次，或填写其他方便时间。');
-      return;
-    }
-    if (!form.publicConsent) {
-      setSubmitError('请确认你了解称呼、问题和背景会在提交后公开。');
-      return;
-    }
-
     setSubmitting(true);
     try {
       const response = await roundtableQuestionsApi.create(form);
@@ -181,6 +205,51 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
     }
   };
 
+  const startWith = (starter: string) => {
+    update('question', form.question.trim() ? form.question : starter);
+    window.setTimeout(() => {
+      questionInputRef.current?.focus();
+      questionInputRef.current?.setSelectionRange(
+        starter.length - 1,
+        starter.length - 1
+      );
+    });
+  };
+
+  const supportQuestion = async (id: string) => {
+    if (supportedQuestionIds.has(id) || supportingId) return;
+    setSupportingId(id);
+    setSupportError('');
+    try {
+      const response = await roundtableQuestionsApi.support(
+        id,
+        getSupporterToken()
+      );
+      if (!response.success || !response.data) {
+        throw new Error(response.error || '暂时无法支持');
+      }
+      setQuestions((current) =>
+        current.map((question) =>
+          question.id === id
+            ? { ...question, supportCount: response.data!.supportCount }
+            : question
+        )
+      );
+      setSupportedQuestionIds((current) => {
+        const next = new Set(current).add(id);
+        localStorage.setItem(
+          SUPPORTED_QUESTIONS_KEY,
+          JSON.stringify([...next])
+        );
+        return next;
+      });
+    } catch (error) {
+      setSupportError(error instanceof Error ? error.message : '暂时无法支持');
+    } finally {
+      setSupportingId(null);
+    }
+  };
+
   return (
     <Root className={`${styles.page} ${embedded ? styles.embedded : ''}`}>
       <section className={styles.hero}>
@@ -190,14 +259,14 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
               ? `${sessionLabel || '本期活动'} · 真实场景圆桌`
               : '启发星球 · 真实场景圆桌'}
           </span>
-          <h1>带着一个正在发生的情境来</h1>
+          <h1>把没想明白的那一点带来</h1>
           <p className={styles.lead}>
             {embedded
-              ? '不需要先把它想明白。写下你正在经历的具体情境，我们会在本期活动的最后 20 分钟，选择一个场景一起展开。'
-              : '不需要先把它想明白。写下你正在经历的具体情境，我们会在每次启发星球的最后 20 分钟，选择一个场景一起展开。'}
+              ? '一句话也可以，默认匿名。我们会在本期活动的最后 20 分钟，从大家共同关心的问题里选择一个一起展开。'
+              : '一句话也可以，默认匿名。我们会在每次启发星球的最后 20 分钟，从大家共同关心的问题里选择一个一起展开。'}
           </p>
           <a className={styles.primaryLink} href={`#${submitSectionId}`}>
-            提交我的场景 <span aria-hidden="true">↓</span>
+            写下一个问题 <span aria-hidden="true">↓</span>
           </a>
         </div>
         <aside className={styles.principle}>
@@ -215,10 +284,177 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
                 fgColor="#334a46"
                 level="M"
               />
-              <span>扫码提交本期场景</span>
+              <span>扫码，一句话提问</span>
             </div>
           )}
         </aside>
+      </section>
+
+      <section
+        className={styles.submitSection}
+        id={submitSectionId}
+        aria-labelledby="submit-title"
+      >
+        <div className={styles.formIntro}>
+          <span className={styles.eyebrow}>30 秒提问</span>
+          <h2 id="submit-title">一句话就够了</h2>
+          <p>只需要写下问题。默认匿名；背景、称呼和联系方式都可以之后再补。</p>
+          <div className={styles.afterSubmit}>
+            <strong>提交之后</strong>
+            <span>问题会进入下方问题池</span>
+            <span>大家可以点“我也想问”</span>
+            <span>共同关心的问题会优先进入圆桌</span>
+          </div>
+        </div>
+
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <TextField
+            inputRef={questionInputRef}
+            required
+            multiline
+            minRows={4}
+            label="此刻，你最想和大家讨论什么？"
+            placeholder="半句话也可以，先写下来……"
+            helperText={`唯一必填项 · ${
+              form.name.trim()
+                ? '将以你的称呼公开在问题池'
+                : '将匿名公开在问题池'
+            }`}
+            value={form.question}
+            inputProps={{ minLength: 5, maxLength: 500 }}
+            onChange={(event) => update('question', event.target.value)}
+          />
+
+          <div className={styles.starters} aria-label="问题开头参考">
+            <span>不知道怎么说？点一个开头</span>
+            <div>
+              {questionStarters.map((starter) => (
+                <button
+                  type="button"
+                  key={starter}
+                  onClick={() => startWith(starter)}
+                >
+                  {starter}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {sessionDate && (
+            <div className={styles.sessionNotice}>
+              <span>提交到本期</span>
+              <strong>{sessionLabel || sessionDate}</strong>
+            </div>
+          )}
+
+          <details className={styles.optionalDetails}>
+            <summary>愿意多说一点？补充背景或留下联系方式（选填）</summary>
+            <div className={styles.optionalFields}>
+              <TextField
+                multiline
+                minRows={4}
+                label="可以说说当下的情境吗？"
+                helperText="为什么它此刻重要？你试过什么？真正卡住的地方是什么？这段会公开。"
+                value={form.context}
+                inputProps={{ maxLength: 5000 }}
+                onChange={(event) => update('context', event.target.value)}
+              />
+
+              <div className={styles.twoColumns}>
+                <TextField
+                  label="公开称呼（选填）"
+                  helperText="留空就是“匿名星友”"
+                  value={form.name}
+                  inputProps={{ maxLength: 80 }}
+                  onChange={(event) => update('name', event.target.value)}
+                />
+                <TextField
+                  type="email"
+                  label="联系邮箱（选填，不公开）"
+                  helperText="愿意参加圆桌时再留下"
+                  value={form.email}
+                  inputProps={{ maxLength: 320 }}
+                  onChange={(event) => update('email', event.target.value)}
+                />
+              </div>
+
+              {!sessionDate && (
+                <fieldset className={styles.availability}>
+                  <legend>如果愿意参加，哪些场次方便？（选填）</legend>
+                  <p>启发星球固定在北京时间周六早上 8 点进行，可以多选。</p>
+                  <div>
+                    {saturdayOptions.map((option) => (
+                      <FormControlLabel
+                        key={option.value}
+                        control={
+                          <Checkbox
+                            checked={form.availableDates.includes(option.value)}
+                            onChange={() => toggleDate(option.value)}
+                          />
+                        }
+                        label={option.label}
+                      />
+                    ))}
+                  </div>
+                  <TextField
+                    fullWidth
+                    label="其他方便时间（选填）"
+                    value={form.otherAvailability}
+                    inputProps={{ maxLength: 500 }}
+                    onChange={(event) =>
+                      update('otherAvailability', event.target.value)
+                    }
+                  />
+                </fieldset>
+              )}
+
+              <TextField
+                multiline
+                minRows={3}
+                label="不希望在现场被询问或公开的内容（选填）"
+                helperText="例如人名、公司、家庭信息或其他私人经历。这里的内容只对组织者可见。"
+                value={form.boundaries}
+                inputProps={{ maxLength: 2000 }}
+                onChange={(event) => update('boundaries', event.target.value)}
+              />
+            </div>
+          </details>
+
+          <div className={styles.honeypot} aria-hidden="true">
+            <label>
+              Website
+              <input
+                tabIndex={-1}
+                autoComplete="off"
+                value={form.website}
+                onChange={(event) => update('website', event.target.value)}
+              />
+            </label>
+          </div>
+
+          {submitError && <Alert severity="error">{submitError}</Alert>}
+          {submitted && (
+            <Alert severity="success">
+              已经收到。问题不需要完美，我们会帮你把它带到圆桌上。
+            </Alert>
+          )}
+          <div className={styles.submitActions}>
+            <Button
+              className={styles.submitButton}
+              type="submit"
+              variant="contained"
+              size="large"
+              disabled={submitting}
+            >
+              {submitting
+                ? '正在提交…'
+                : form.name.trim()
+                  ? `以 ${form.name.trim()} 提交`
+                  : '匿名提交问题'}
+            </Button>
+            <span>问题和填写的背景会公开；邮箱与边界说明不会公开。</span>
+          </div>
+        </form>
       </section>
 
       <section className={styles.process} aria-labelledby="process-title">
@@ -241,151 +477,6 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
       </section>
 
       <section
-        className={styles.submitSection}
-        id={submitSectionId}
-        aria-labelledby="submit-title"
-      >
-        <div className={styles.formIntro}>
-          <span className={styles.eyebrow}>提交场景</span>
-          <h2 id="submit-title">从你此刻知道的部分开始</h2>
-          <p>
-            称呼、问题和背景会直接出现在下方的场景池。邮箱
-            {sessionDate ? '' : '、可参加时间'}
-            和你不希望被触碰的内容只对组织者可见。
-          </p>
-        </div>
-
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.twoColumns}>
-            <TextField
-              required
-              label="希望我们怎样称呼你？"
-              value={form.name}
-              inputProps={{ maxLength: 80 }}
-              onChange={(event) => update('name', event.target.value)}
-            />
-            <TextField
-              required
-              type="email"
-              label="联系邮箱（不会公开）"
-              value={form.email}
-              inputProps={{ maxLength: 320 }}
-              onChange={(event) => update('email', event.target.value)}
-            />
-          </div>
-
-          <TextField
-            required
-            multiline
-            minRows={3}
-            label="你现在最想一起看清楚的问题是什么？"
-            helperText="尽量从一个具体、正在发生的问题开始。"
-            value={form.question}
-            inputProps={{ minLength: 5, maxLength: 500 }}
-            onChange={(event) => update('question', event.target.value)}
-          />
-
-          <TextField
-            required
-            multiline
-            minRows={6}
-            label="可以说说当下的情境吗？"
-            helperText="为什么它此刻重要？你试过什么？真正卡住的地方是什么？"
-            value={form.context}
-            inputProps={{ minLength: 10, maxLength: 5000 }}
-            onChange={(event) => update('context', event.target.value)}
-          />
-
-          {sessionDate ? (
-            <div className={styles.sessionNotice}>
-              <span>提交到本期</span>
-              <strong>{sessionLabel || sessionDate}</strong>
-            </div>
-          ) : (
-            <fieldset className={styles.availability}>
-              <legend>未来哪些场次你可以参加？</legend>
-              <p>启发星球固定在北京时间周六早上 8 点进行，可以多选。</p>
-              <div>
-                {saturdayOptions.map((option) => (
-                  <FormControlLabel
-                    key={option.value}
-                    control={
-                      <Checkbox
-                        checked={form.availableDates.includes(option.value)}
-                        onChange={() => toggleDate(option.value)}
-                      />
-                    }
-                    label={option.label}
-                  />
-                ))}
-              </div>
-              <TextField
-                fullWidth
-                label="其他方便时间（选填）"
-                value={form.otherAvailability}
-                inputProps={{ maxLength: 500 }}
-                onChange={(event) =>
-                  update('otherAvailability', event.target.value)
-                }
-              />
-            </fieldset>
-          )}
-
-          <TextField
-            multiline
-            minRows={3}
-            label="有没有不希望在现场被询问或公开的内容？（选填）"
-            helperText="例如具体人名、公司、家庭信息或其他私人经历。这里的内容不会公开。"
-            value={form.boundaries}
-            inputProps={{ maxLength: 2000 }}
-            onChange={(event) => update('boundaries', event.target.value)}
-          />
-
-          <div className={styles.honeypot} aria-hidden="true">
-            <label>
-              Website
-              <input
-                tabIndex={-1}
-                autoComplete="off"
-                value={form.website}
-                onChange={(event) => update('website', event.target.value)}
-              />
-            </label>
-          </div>
-
-          <FormControlLabel
-            className={styles.consent}
-            control={
-              <Checkbox
-                required
-                checked={form.publicConsent}
-                onChange={(event) =>
-                  update('publicConsent', event.target.checked)
-                }
-              />
-            }
-            label={`我了解：我的称呼、问题和背景会在提交后直接公开；联系方式${sessionDate ? '' : '、可参加时间'}和边界说明不会公开。`}
-          />
-
-          {submitError && <Alert severity="error">{submitError}</Alert>}
-          {submitted && (
-            <Alert severity="success">
-              场景已经收到，也已经出现在场景池里。我们会通过邮箱联系适合在近期展开的场景提交者。
-            </Alert>
-          )}
-          <Button
-            className={styles.submitButton}
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={submitting}
-          >
-            {submitting ? '正在提交…' : '提交并公开场景'}
-          </Button>
-        </form>
-      </section>
-
-      <section
         className={styles.questionPool}
         id={questionPoolId}
         aria-labelledby="pool-title"
@@ -395,10 +486,14 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
             <span>正在发生的场景</span>
             <h2 id="pool-title">{embedded ? '本期场景' : '场景池'}</h2>
           </div>
-          <p>
-            这些问题不需要成熟、宏大或正确。它们只是一个人当下真实站立的地方。
-          </p>
+          <p>不必重复组织一个相似的问题。看到共同的困惑，点一下“我也想问”。</p>
         </div>
+
+        {supportError && (
+          <Alert severity="error" className={styles.supportError}>
+            {supportError}
+          </Alert>
+        )}
 
         {loading ? (
           <div className={styles.loading}>
@@ -430,14 +525,31 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
                   </time>
                 </div>
                 <h3>{item.question}</h3>
-                <p>{item.context}</p>
+                {item.context && <p>{item.context}</p>}
                 <footer>
-                  <span className={`${styles.status} ${styles[item.status]}`}>
-                    {statusLabels[item.status]}
-                  </span>
-                  {item.status === 'scheduled' && item.scheduledSession && (
-                    <span>{item.scheduledSession}</span>
-                  )}
+                  <div>
+                    <span className={`${styles.status} ${styles[item.status]}`}>
+                      {statusLabels[item.status]}
+                    </span>
+                    {item.status === 'scheduled' && item.scheduledSession && (
+                      <span>{item.scheduledSession}</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.supportButton}
+                    aria-pressed={supportedQuestionIds.has(item.id)}
+                    disabled={
+                      supportedQuestionIds.has(item.id) ||
+                      supportingId === item.id
+                    }
+                    onClick={() => supportQuestion(item.id)}
+                  >
+                    {supportedQuestionIds.has(item.id)
+                      ? '你也想问'
+                      : '我也想问'}
+                    {item.supportCount > 0 && <span>{item.supportCount}</span>}
+                  </button>
                 </footer>
               </article>
             ))}

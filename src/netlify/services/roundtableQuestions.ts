@@ -16,10 +16,11 @@ export interface PublicRoundtableQuestion {
   status: RoundtableQuestionStatus;
   scheduledSession: string | null;
   createdAt: string;
+  supportCount: number;
 }
 
 export interface AdminRoundtableQuestion extends PublicRoundtableQuestion {
-  email: string;
+  email: string | null;
   boundaries: string;
   availableDates: string[];
   otherAvailability: string;
@@ -34,7 +35,6 @@ export interface CreateRoundtableQuestionInput {
   boundaries: string;
   availableDates: string[];
   otherAvailability: string;
-  publicConsent: boolean;
   website?: string;
 }
 
@@ -52,6 +52,13 @@ export const roundtableQuestionsApi = {
     input: CreateRoundtableQuestionInput
   ): Promise<ApiResponse<{ question: PublicRoundtableQuestion | null }>> =>
     http.post('/roundtableQuestions', 'create', input),
+
+  support: (
+    id: string,
+    supporterToken: string
+  ): Promise<
+    ApiResponse<{ supportCount: number; alreadySupported: boolean }>
+  > => http.post('/roundtableQuestions', 'support', { id, supporterToken }),
 
   listAdmin: (): Promise<
     ApiResponse<{ questions: AdminRoundtableQuestion[] }>

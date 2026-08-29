@@ -54,9 +54,9 @@ const mapQuestion = (row: Record<string, any>) => ({
   status: row.status,
   scheduledSession: row.scheduled_session || null,
   createdAt: row.created_at,
-  ...(row.email
+  ...('email' in row
     ? {
-        email: row.email,
+        email: row.email || null,
         boundaries: row.boundaries || '',
         availableDates: row.available_dates || [],
         otherAvailability: row.other_availability || '',
@@ -77,6 +77,8 @@ export async function handler(
         return await handleListPublic(event);
       case 'create':
         return await handleCreate(event);
+      case 'support':
+        return await handleSupport(event);
       case 'listAdmin':
         return await handleListAdmin(event);
       case 'update':
@@ -112,7 +114,9 @@ async function handleListPublic(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('读取问题失败，请稍后再试', 500);
   }
 
-  return createSuccessResponse({ questions: (data || []).map(mapQuestion) });
+  return createSuccessResponse({
+    questions: await attachSupportCounts(data || []),
+  });
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
@@ -127,10 +131,6 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
   const validation = validateRoundtableQuestionInput(input);
   if (!validation.ok) return createErrorResponse(validation.error);
-  if (input.publicConsent !== true) {
-    return createErrorResponse('请确认你了解哪些内容会直接公开。');
-  }
-
   const fingerprint = getClientFingerprint(event);
   if (fingerprint) {
     const windowStart = new Date(
@@ -173,7 +173,60 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   }
 
   await sendSubmissionNotification(value, String(created.id));
-  return createSuccessResponse({ question: mapQuestion(created) }, 201);
+  return createSuccessResponse(
+    { question: { ...mapQuestion(created), supportCount: 0 } },
+    201
+  );
+}
+
+async function handleSupport(event: NetlifyEvent): Promise<NetlifyResponse> {
+  if (event.httpMethod !== 'POST') {
+    return createErrorResponse('请求方式不支持', 405);
+  }
+
+  const input = getDataFromEvent(event);
+  const id = String(input.id || '');
+  const supporterToken = String(input.supporterToken || '').trim();
+  if (!/^\d+$/.test(id) || !/^[a-zA-Z0-9-]{16,128}$/.test(supporterToken)) {
+    return createErrorResponse('支持参数无效');
+  }
+
+  const salt =
+    process.env.ROUNDTABLE_RATE_LIMIT_SALT ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    'inspire-planet-roundtable';
+  const supporterFingerprint = createHash('sha256')
+    .update(`${salt}:support:${supporterToken}`)
+    .digest('hex');
+  const { error } = await supabase.from('roundtable_question_supports').insert({
+    question_id: id,
+    supporter_fingerprint: supporterFingerprint,
+  });
+
+  const alreadySupported = error?.code === '23505';
+  if (error && !alreadySupported) {
+    console.error('[roundtableQuestions] Support error:', error);
+    return createErrorResponse(
+      error.code === '23503'
+        ? '这个问题已经不存在了'
+        : '暂时无法支持，请稍后再试',
+      error.code === '23503' ? 404 : 500
+    );
+  }
+
+  const { count, error: countError } = await supabase
+    .from('roundtable_question_supports')
+    .select('id', { count: 'exact', head: true })
+    .eq('question_id', id);
+  if (countError) {
+    console.error('[roundtableQuestions] Support count error:', countError);
+    return createErrorResponse('暂时无法读取支持数，请稍后再试', 500);
+  }
+
+  return createSuccessResponse({
+    supportCount: count || 0,
+    alreadySupported,
+  });
 }
 
 async function handleListAdmin(event: NetlifyEvent): Promise<NetlifyResponse> {
@@ -194,7 +247,9 @@ async function handleListAdmin(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('读取问题管理列表失败', 500);
   }
 
-  return createSuccessResponse({ questions: (data || []).map(mapQuestion) });
+  return createSuccessResponse({
+    questions: await attachSupportCounts(data || []),
+  });
 }
 
 async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
@@ -234,7 +289,32 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('更新失败，请稍后再试', 500);
   }
 
-  return createSuccessResponse({ question: mapQuestion(data) });
+  const [question] = await attachSupportCounts([data]);
+  return createSuccessResponse({ question });
+}
+
+async function attachSupportCounts(rows: Array<Record<string, any>>) {
+  if (!rows.length) return [];
+
+  const ids = rows.map((row) => row.id);
+  const { data, error } = await supabase
+    .from('roundtable_question_supports')
+    .select('question_id')
+    .in('question_id', ids);
+  if (error) {
+    console.error('[roundtableQuestions] Support counts error:', error);
+    return rows.map((row) => ({ ...mapQuestion(row), supportCount: 0 }));
+  }
+
+  const counts = new Map<string, number>();
+  (data || []).forEach((support) => {
+    const id = String(support.question_id);
+    counts.set(id, (counts.get(id) || 0) + 1);
+  });
+  return rows.map((row) => ({
+    ...mapQuestion(row),
+    supportCount: counts.get(String(row.id)) || 0,
+  }));
 }
 
 async function sendSubmissionNotification(
@@ -258,12 +338,12 @@ async function sendSubmissionNotification(
     const { error } = await resend.emails.send({
       from: `启发星球 <${from}>`,
       to: recipients,
-      replyTo: input.email,
+      ...(input.email ? { replyTo: input.email } : {}),
       subject: `问题圆桌新提交｜${input.name}`,
       text: [
         `问题编号：${id}`,
         `称呼：${input.name}`,
-        `联系邮箱：${input.email}`,
+        `联系邮箱：${input.email || '未填写'}`,
         `问题：\n${input.question}`,
         `背景：\n${input.context}`,
         `不希望被触碰的内容：\n${input.boundaries || '未填写'}`,

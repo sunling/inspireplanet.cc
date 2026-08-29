@@ -36,7 +36,20 @@ describe('validateRoundtableQuestionInput', () => {
     }
   });
 
-  it('requires a real question and enough context', () => {
+  it('accepts a one-line anonymous question without contact details', () => {
+    const result = validateRoundtableQuestionInput({
+      question: '我为什么总是在真正开始之前停下来？',
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.name).toBe('匿名星友');
+      expect(result.value.email).toBeNull();
+      expect(result.value.context).toBe('');
+      expect(result.value.availableDates).toEqual([]);
+    }
+  });
+
+  it('requires a real question', () => {
     expect(
       validateRoundtableQuestionInput({
         ...validInput,
@@ -45,15 +58,14 @@ describe('validateRoundtableQuestionInput', () => {
     ).toEqual({ ok: false, error: '问题需为 5–500 个字。' });
   });
 
-  it('requires at least one available time', () => {
+  it('does not accept an untouched starter as a question', () => {
     expect(
       validateRoundtableQuestionInput({
-        ...validInput,
-        availableDates: [],
+        question: '我没想明白的是……',
       })
     ).toEqual({
       ok: false,
-      error: '请选择可参加的场次，或填写其他方便时间。',
+      error: '把省略号换成你真正想问的那一点。',
     });
   });
 
@@ -62,6 +74,7 @@ describe('validateRoundtableQuestionInput', () => {
       ...validInput,
       availableDates: ['next week'],
     });
-    expect(result.ok).toBe(false);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value.availableDates).toEqual([]);
   });
 });

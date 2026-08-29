@@ -5,6 +5,7 @@
   --accent-soft: #f5dfd3;
   --green: #334a46;
   min-height: 100vh;
+  overflow-x: clip;
   padding: 4.5rem max(1rem, calc((100vw - 1160px) / 2)) 7rem;
   background:
     radial-gradient(
@@ -100,6 +101,7 @@
 
 .embedded .submitSection {
   grid-template-columns: 1fr;
+  margin-top: 3rem;
   padding: clamp(1.4rem, 4vw, 2.3rem);
 }
 
@@ -122,6 +124,7 @@
 }
 
 .heroCopy {
+  min-width: 0;
   max-width: 760px;
 }
 .eyebrow,
@@ -141,6 +144,7 @@
   font-size: clamp(3.2rem, 7.5vw, 6.1rem);
   letter-spacing: -0.055em;
   line-height: 1.02;
+  overflow-wrap: anywhere;
 }
 .lead {
   max-width: 690px;
@@ -161,6 +165,7 @@
   text-decoration: none;
 }
 .principle {
+  min-width: 0;
   padding: 1.8rem;
   border-radius: 1.1rem;
   background: var(--green);
@@ -229,6 +234,7 @@
   display: grid;
   grid-template-columns: minmax(250px, 0.7fr) minmax(0, 1.3fr);
   gap: clamp(2rem, 6vw, 5rem);
+  margin-top: 4rem;
   padding: clamp(2rem, 5vw, 4rem);
   border-radius: 1.5rem;
   background: #fff;
@@ -236,15 +242,63 @@
   scroll-margin-top: 5rem;
 }
 .formIntro {
+  min-width: 0;
   align-self: start;
 }
 .formIntro p {
   color: var(--muted);
   line-height: 1.8;
 }
+.afterSubmit {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 2rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid #e7ddd4;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.afterSubmit strong {
+  color: var(--ink);
+}
+.afterSubmit span::before {
+  margin-right: 0.55rem;
+  color: var(--accent);
+  content: '→';
+}
 .form {
   display: grid;
+  min-width: 0;
   gap: 1.25rem;
+}
+.starters {
+  display: grid;
+  gap: 0.65rem;
+}
+.starters > span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.starters > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.starters button {
+  max-width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #dfd4ca;
+  border-radius: 999px;
+  background: #fffaf5;
+  color: var(--green);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+}
+.starters button:hover,
+.starters button:focus-visible {
+  border-color: var(--accent);
+  outline: none;
 }
 .twoColumns {
   display: grid;
@@ -253,6 +307,9 @@
 }
 .form :global(.MuiOutlinedInput-root) {
   background: #fdfbf8;
+}
+.form :global(.MuiFormControl-root) {
+  min-width: 0;
 }
 .form :global(.Mui-focused .MuiOutlinedInput-notchedOutline) {
   border-color: var(--accent) !important;
@@ -276,8 +333,7 @@
   display: grid;
   margin-bottom: 1rem;
 }
-.availability :global(.MuiCheckbox-root.Mui-checked),
-.consent :global(.MuiCheckbox-root.Mui-checked) {
+.availability :global(.MuiCheckbox-root.Mui-checked) {
   color: var(--accent);
 }
 .sessionNotice {
@@ -298,19 +354,41 @@
   color: var(--accent);
   text-align: right;
 }
-.consent {
-  align-items: flex-start !important;
-  margin: 0 !important;
-  padding: 1rem;
-  border-radius: 0.7rem;
-  background: #fbf3ea;
+.optionalDetails {
+  min-width: 0;
+  border: 1px solid #e4d9cf;
+  border-radius: 0.75rem;
+  background: #fdfbf8;
 }
-.consent :global(.MuiFormControlLabel-label) {
-  padding-top: 0.45rem;
-  line-height: 1.6;
+.optionalDetails summary {
+  padding: 1rem 1.15rem;
+  color: var(--green);
+  cursor: pointer;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.optionalDetails[open] summary {
+  border-bottom: 1px solid #e4d9cf;
+}
+.optionalFields {
+  display: grid;
+  min-width: 0;
+  gap: 1.25rem;
+  padding: 1.2rem;
+}
+.submitActions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.submitActions > span {
+  max-width: 330px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
 }
 .submitButton {
-  justify-self: start;
+  flex-shrink: 0;
   min-width: 190px;
   border-radius: 999px !important;
   background: var(--accent) !important;
@@ -325,6 +403,7 @@
 }
 
 .questionPool {
+  min-width: 0;
   padding: 6rem 0 0;
   scroll-margin-top: 4rem;
 }
@@ -349,7 +428,8 @@
 .questionCard {
   display: flex;
   flex-direction: column;
-  min-height: 310px;
+  min-width: 0;
+  min-height: 280px;
   padding: clamp(1.4rem, 3vw, 2.1rem);
   border: 1px solid #dfd5cb;
   border-radius: 1rem;
@@ -382,12 +462,55 @@
 }
 .questionCard footer {
   display: flex;
-  gap: 0.8rem;
+  justify-content: space-between;
+  gap: 1rem;
   align-items: center;
   margin-top: auto;
   padding-top: 1.5rem;
   color: var(--muted);
   font-size: 0.84rem;
+}
+.questionCard footer > div {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+.supportError {
+  margin-bottom: 1.2rem;
+}
+.supportButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #dccfc3;
+  border-radius: 999px;
+  background: white;
+  color: var(--green);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.supportButton:hover:not(:disabled),
+.supportButton:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+.supportButton:disabled {
+  border-color: #d8e3dd;
+  background: #edf4f0;
+  color: #2f5a4d;
+  cursor: default;
+}
+.supportButton span {
+  min-width: 1.25rem;
+  padding: 0.08rem 0.32rem;
+  border-radius: 999px;
+  background: #eee8e1;
+  text-align: center;
 }
 .status {
   padding: 0.25rem 0.65rem;
@@ -432,6 +555,7 @@
     align-items: start;
   }
   .principle {
+    width: 100%;
     max-width: 420px;
     transform: none;
   }
@@ -458,7 +582,7 @@
     flex-direction: column;
   }
   .hero h1 {
-    font-size: 3.2rem;
+    font-size: clamp(2.55rem, 13vw, 3.2rem);
   }
   .twoColumns,
   .questionGrid {
@@ -466,6 +590,17 @@
   }
   .submitSection {
     padding: 1.3rem;
+  }
+  .submitActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .submitButton {
+    width: 100%;
+  }
+  .questionCard footer {
+    align-items: flex-start;
+    flex-direction: column;
   }
   .questionCard {
     min-height: 0;

@@ -265,15 +265,15 @@ const Home: React.FC = () => {
                 <span>{roundtableQuestionCount} 个场景正在等待展开</span>
               )}
             </div>
-            <h2>带着一个你正在经历的真实情境来</h2>
+            <h2>把没想明白的那一点带来</h2>
             <p>
-              不需要先把它想明白。先讲清发生了什么，再通过提问看见盲点，最后听听别人真正经历过什么。
+              一句话也可以，默认匿名。看到相似的困惑，也可以直接点“我也想问”。
             </p>
             <Link
               to="/questions#submit-question"
               className={styles['roundtable-button']}
             >
-              提交我的场景 <ChevronRight fontSize="inherit" />
+              写下一个问题 <ChevronRight fontSize="inherit" />
             </Link>
           </div>
           <ol className={styles['roundtable-steps']}>

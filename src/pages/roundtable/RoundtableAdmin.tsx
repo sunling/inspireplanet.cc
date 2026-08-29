@@ -17,7 +17,7 @@ const statusOptions: Array<{
   value: RoundtableQuestionStatus;
   label: string;
 }> = [
-  { value: 'open', label: '待联系' },
+  { value: 'open', label: '待展开' },
   { value: 'contacted', label: '已联系' },
   { value: 'scheduled', label: '已安排' },
   { value: 'completed', label: '已完成' },
@@ -137,7 +137,11 @@ const RoundtableAdmin: React.FC = () => {
               <div className={styles.cardHeading}>
                 <div>
                   <span>{item.name}</span>
-                  <a href={`mailto:${item.email}`}>{item.email}</a>
+                  {item.email ? (
+                    <a href={`mailto:${item.email}`}>{item.email}</a>
+                  ) : (
+                    <small>未留联系方式</small>
+                  )}
                 </div>
                 <time dateTime={item.createdAt}>
                   {new Intl.DateTimeFormat('zh-CN', {
@@ -148,7 +152,10 @@ const RoundtableAdmin: React.FC = () => {
               </div>
 
               <h2>{item.question}</h2>
-              <p className={styles.context}>{item.context}</p>
+              <small>{item.supportCount} 人也想问</small>
+              <p className={styles.context}>
+                {item.context || '提交者没有补充背景。'}
+              </p>
 
               <dl>
                 <div>
