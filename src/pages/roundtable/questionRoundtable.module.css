@@ -16,6 +16,102 @@
   color: var(--ink);
 }
 
+.embedded {
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.embedded .hero {
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  padding: 2.25rem;
+  border: 0;
+  border-radius: 1.25rem;
+  background: #334a46;
+  color: white;
+}
+
+.embedded .heroCopy {
+  max-width: none;
+}
+
+.embedded .hero h1 {
+  max-width: 560px;
+  font-size: clamp(2.35rem, 6vw, 4rem);
+}
+
+.embedded .lead {
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.embedded .principle {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: end;
+  padding: 0;
+  background: transparent;
+  transform: none;
+}
+
+.embedded .principleCopy > span {
+  color: #f0a788;
+}
+
+.embeddedQr {
+  display: grid;
+  flex-shrink: 0;
+  gap: 0.55rem;
+  justify-items: center;
+  padding: 0.65rem;
+  border-radius: 0.75rem;
+  background: white;
+  color: var(--green);
+}
+
+.embeddedQr svg {
+  display: block;
+}
+
+.embeddedQr span {
+  max-width: 112px;
+  font-size: 0.72rem;
+  font-weight: 750;
+  text-align: center;
+}
+
+.embedded .process {
+  padding: 3.5rem 0;
+}
+
+.embedded .process ol {
+  grid-template-columns: 1fr;
+}
+
+.embedded .process li {
+  min-height: 0;
+}
+
+.embedded .process h3 {
+  margin-top: 1rem;
+}
+
+.embedded .submitSection {
+  grid-template-columns: 1fr;
+  padding: clamp(1.4rem, 4vw, 2.3rem);
+}
+
+.embedded .questionPool {
+  padding-top: 4rem;
+}
+
+.embedded .poolHeading,
+.embedded .questionGrid {
+  grid-template-columns: 1fr;
+}
+
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(270px, 0.75fr);
@@ -30,7 +126,7 @@
 }
 .eyebrow,
 .sectionHeading > span,
-.principle > span {
+.principleCopy > span {
   display: block;
   margin-bottom: 0.85rem;
   color: var(--accent);
@@ -71,7 +167,7 @@
   color: white;
   transform: rotate(1.5deg);
 }
-.principle > span {
+.principleCopy > span {
   color: #f0a788;
 }
 .principle p {
@@ -183,6 +279,24 @@
 .availability :global(.MuiCheckbox-root.Mui-checked),
 .consent :global(.MuiCheckbox-root.Mui-checked) {
   color: var(--accent);
+}
+.sessionNotice {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  border: 1px solid #ead8ca;
+  border-radius: 0.7rem;
+  background: #fbf3ea;
+}
+.sessionNotice span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.sessionNotice strong {
+  color: var(--accent);
+  text-align: right;
 }
 .consent {
   align-items: flex-start !important;
@@ -338,6 +452,10 @@
   }
   .hero {
     padding-top: 1.5rem;
+  }
+  .embedded .principle {
+    align-items: start;
+    flex-direction: column;
   }
   .hero h1 {
     font-size: 3.2rem;

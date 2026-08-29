@@ -2,7 +2,11 @@ import { http } from '../config/http';
 import { ApiResponse } from '../types/http';
 
 export type RoundtableQuestionStatus =
-  'open' | 'contacted' | 'scheduled' | 'completed' | 'hidden';
+  | 'open'
+  | 'contacted'
+  | 'scheduled'
+  | 'completed'
+  | 'hidden';
 
 export interface PublicRoundtableQuestion {
   id: string;
@@ -35,9 +39,14 @@ export interface CreateRoundtableQuestionInput {
 }
 
 export const roundtableQuestionsApi = {
-  listPublic: (): Promise<
-    ApiResponse<{ questions: PublicRoundtableQuestion[] }>
-  > => http.get('/roundtableQuestions', 'listPublic'),
+  listPublic: (
+    sessionDate?: string
+  ): Promise<ApiResponse<{ questions: PublicRoundtableQuestion[] }>> =>
+    http.get(
+      '/roundtableQuestions',
+      'listPublic',
+      sessionDate ? { sessionDate } : undefined
+    ),
 
   create: (
     input: CreateRoundtableQuestionInput

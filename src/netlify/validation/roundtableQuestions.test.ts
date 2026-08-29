@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { validateRoundtableQuestionInput } from './roundtableQuestions';
+import {
+  normalizeRoundtableSessionDate,
+  validateRoundtableQuestionInput,
+} from './roundtableQuestions';
+
+describe('normalizeRoundtableSessionDate', () => {
+  it('keeps a valid activity date', () => {
+    expect(normalizeRoundtableSessionDate(' 2026-08-29 ')).toBe('2026-08-29');
+  });
+
+  it('rejects values that cannot be used to filter a session', () => {
+    expect(normalizeRoundtableSessionDate('2026/08/29')).toBeNull();
+    expect(normalizeRoundtableSessionDate(undefined)).toBeNull();
+  });
+});
 
 const validInput = {
   name: '小星',

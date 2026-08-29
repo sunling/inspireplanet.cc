@@ -9,9 +9,15 @@ export interface RoundtableQuestionInput {
 }
 
 type ValidationResult =
-  { ok: true; value: RoundtableQuestionInput } | { ok: false; error: string };
+  | { ok: true; value: RoundtableQuestionInput }
+  | { ok: false; error: string };
 
 const normalizeText = (value: unknown) => String(value || '').trim();
+
+export const normalizeRoundtableSessionDate = (value: unknown) => {
+  const date = normalizeText(value);
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+};
 
 export const validateRoundtableQuestionInput = (
   input: Record<string, unknown>

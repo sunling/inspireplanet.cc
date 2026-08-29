@@ -18,6 +18,7 @@ import {
 } from '../../utils/recurring';
 import dayjs from 'dayjs';
 import QuestionRenderer from '../../components/QuestionRenderer';
+import QuestionRoundtable from '../roundtable/QuestionRoundtable';
 
 import {
   Box,
@@ -964,6 +965,21 @@ const MeetupDetail: React.FC = () => {
                   如需取消或修改，请在微信群里知会下就行
                 </Typography>
               </Card>
+            )}
+
+            {/* 线上活动：把本期真实场景圆桌直接放进详情页 */}
+            {meetup.mode === 'online' && isUpcomingMeetup && (
+              <Box sx={{ mb: 4 }}>
+                <QuestionRoundtable
+                  embedded
+                  sessionDate={episode?.date || formattedDate}
+                  sessionLabel={
+                    meetup.is_recurring && episode
+                      ? `${meetup.title} EP${episode.episode_number} · ${episode.date}`
+                      : `${meetup.title} · ${formattedDate}`
+                  }
+                />
+              </Box>
             )}
 
             {/* 操作按钮 */}

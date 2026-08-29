@@ -7,6 +7,7 @@ import {
   FormControlLabel,
   TextField,
 } from '@mui/material';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 
 import { roundtableQuestionsApi } from '../../netlify/config';
 import {
@@ -18,24 +19,30 @@ import styles from './questionRoundtable.module.css';
 
 type FormState = CreateRoundtableQuestionInput;
 
-const initialForm: FormState = {
+interface QuestionRoundtableProps {
+  embedded?: boolean;
+  sessionDate?: string;
+  sessionLabel?: string;
+}
+
+const createInitialForm = (sessionDate?: string): FormState => ({
   name: '',
   email: '',
   question: '',
   context: '',
   boundaries: '',
-  availableDates: [],
+  availableDates: sessionDate ? [sessionDate] : [],
   otherAvailability: '',
   publicConsent: false,
   website: '',
-};
+});
 
 const processSteps = [
   {
     number: '01',
     title: '讲清情境',
     description:
-      '问题提交者用几分钟说说发生了什么、试过什么，以及真正卡住的地方。',
+      '场景提交者用几分钟说说发生了什么、试过什么，以及真正卡住的地方。',
   },
   {
     number: '02',
@@ -86,25 +93,38 @@ const getUpcomingSaturdayOptions = () => {
     .slice(0, 5);
 };
 
-const QuestionRoundtable: React.FC = () => {
+const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
+  embedded = false,
+  sessionDate,
+  sessionLabel,
+}) => {
   const [questions, setQuestions] = useState<PublicRoundtableQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [form, setForm] = useState<FormState>(initialForm);
+  const [form, setForm] = useState<FormState>(() =>
+    createInitialForm(sessionDate)
+  );
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const saturdayOptions = useMemo(getUpcomingSaturdayOptions, []);
+  const submitSectionId = embedded
+    ? 'meetup-submit-question'
+    : 'submit-question';
+  const questionPoolId = embedded ? 'meetup-question-pool' : 'question-pool';
+  const Root = embedded ? 'section' : 'main';
+  const submissionUrl = `${window.location.origin}${window.location.pathname}${window.location.search}#${submitSectionId}`;
 
   useEffect(() => {
     loadQuestions();
-  }, []);
+    setForm(createInitialForm(sessionDate));
+  }, [sessionDate]);
 
   const loadQuestions = async () => {
     setLoading(true);
     setLoadError('');
     try {
-      const response = await roundtableQuestionsApi.listPublic();
+      const response = await roundtableQuestionsApi.listPublic(sessionDate);
       if (!response.success) throw new Error(response.error || '读取失败');
       setQuestions(response.data?.questions || []);
     } catch (error) {
@@ -147,11 +167,11 @@ const QuestionRoundtable: React.FC = () => {
       if (response.data?.question) {
         setQuestions((current) => [response.data!.question!, ...current]);
       }
-      setForm(initialForm);
+      setForm(createInitialForm(sessionDate));
       setSubmitted(true);
       window.setTimeout(() => {
         document
-          .getElementById('question-pool')
+          .getElementById(questionPoolId)
           ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 80);
     } catch (error) {
@@ -162,29 +182,48 @@ const QuestionRoundtable: React.FC = () => {
   };
 
   return (
-    <main className={styles.page}>
+    <Root className={`${styles.page} ${embedded ? styles.embedded : ''}`}>
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
-          <span className={styles.eyebrow}>启发星球 · 问题圆桌</span>
-          <h1>带着一个真实的问题来</h1>
+          <span className={styles.eyebrow}>
+            {embedded
+              ? `${sessionLabel || '本期活动'} · 真实场景圆桌`
+              : '启发星球 · 真实场景圆桌'}
+          </span>
+          <h1>带着一个正在发生的情境来</h1>
           <p className={styles.lead}>
-            不需要先把它想明白。写下你正在经历的情境，我们会在每次启发星球的最后
-            20 分钟，选择一个问题一起展开。
+            {embedded
+              ? '不需要先把它想明白。写下你正在经历的具体情境，我们会在本期活动的最后 20 分钟，选择一个场景一起展开。'
+              : '不需要先把它想明白。写下你正在经历的具体情境，我们会在每次启发星球的最后 20 分钟，选择一个场景一起展开。'}
           </p>
-          <a className={styles.primaryLink} href="#submit-question">
-            提交我的问题 <span aria-hidden="true">↓</span>
+          <a className={styles.primaryLink} href={`#${submitSectionId}`}>
+            提交我的场景 <span aria-hidden="true">↓</span>
           </a>
         </div>
         <aside className={styles.principle}>
-          <span>我们的边界</span>
-          <p>先理解，再回应。</p>
-          <strong>分享经历，不提供建议。</strong>
+          <div className={styles.principleCopy}>
+            <span>我们的边界</span>
+            <p>先理解，再回应。</p>
+            <strong>分享经历，不提供建议。</strong>
+          </div>
+          {embedded && (
+            <div className={styles.embeddedQr}>
+              <QRCode
+                value={submissionUrl}
+                size={112}
+                bgColor="#ffffff"
+                fgColor="#334a46"
+                level="M"
+              />
+              <span>扫码提交本期场景</span>
+            </div>
+          )}
         </aside>
       </section>
 
       <section className={styles.process} aria-labelledby="process-title">
         <div className={styles.sectionHeading}>
-          <span>最后 20 分钟</span>
+          <span>{embedded ? '本期最后 20 分钟' : '每期最后 20 分钟'}</span>
           <h2 id="process-title">我们会怎样一起展开？</h2>
         </div>
         <ol>
@@ -197,20 +236,22 @@ const QuestionRoundtable: React.FC = () => {
           ))}
         </ol>
         <p className={styles.processNote}>
-          这不是专家咨询，也不追求现场找到统一答案。提问是为了理解，经历属于分享者自己，问题提交者可以判断什么对自己有用。
+          这不是专家咨询，也不追求现场找到统一答案。提问是为了理解，经历属于分享者自己，场景提交者可以判断什么对自己有用。
         </p>
       </section>
 
       <section
         className={styles.submitSection}
-        id="submit-question"
+        id={submitSectionId}
         aria-labelledby="submit-title"
       >
         <div className={styles.formIntro}>
-          <span className={styles.eyebrow}>提交问题</span>
+          <span className={styles.eyebrow}>提交场景</span>
           <h2 id="submit-title">从你此刻知道的部分开始</h2>
           <p>
-            称呼、问题和背景会直接出现在下方的问题池。邮箱、可参加时间和你不希望被触碰的内容只对组织者可见。
+            称呼、问题和背景会直接出现在下方的场景池。邮箱
+            {sessionDate ? '' : '、可参加时间'}
+            和你不希望被触碰的内容只对组织者可见。
           </p>
         </div>
 
@@ -255,33 +296,40 @@ const QuestionRoundtable: React.FC = () => {
             onChange={(event) => update('context', event.target.value)}
           />
 
-          <fieldset className={styles.availability}>
-            <legend>未来哪些场次你可以参加？</legend>
-            <p>启发星球固定在北京时间周六早上 8 点进行，可以多选。</p>
-            <div>
-              {saturdayOptions.map((option) => (
-                <FormControlLabel
-                  key={option.value}
-                  control={
-                    <Checkbox
-                      checked={form.availableDates.includes(option.value)}
-                      onChange={() => toggleDate(option.value)}
-                    />
-                  }
-                  label={option.label}
-                />
-              ))}
+          {sessionDate ? (
+            <div className={styles.sessionNotice}>
+              <span>提交到本期</span>
+              <strong>{sessionLabel || sessionDate}</strong>
             </div>
-            <TextField
-              fullWidth
-              label="其他方便时间（选填）"
-              value={form.otherAvailability}
-              inputProps={{ maxLength: 500 }}
-              onChange={(event) =>
-                update('otherAvailability', event.target.value)
-              }
-            />
-          </fieldset>
+          ) : (
+            <fieldset className={styles.availability}>
+              <legend>未来哪些场次你可以参加？</legend>
+              <p>启发星球固定在北京时间周六早上 8 点进行，可以多选。</p>
+              <div>
+                {saturdayOptions.map((option) => (
+                  <FormControlLabel
+                    key={option.value}
+                    control={
+                      <Checkbox
+                        checked={form.availableDates.includes(option.value)}
+                        onChange={() => toggleDate(option.value)}
+                      />
+                    }
+                    label={option.label}
+                  />
+                ))}
+              </div>
+              <TextField
+                fullWidth
+                label="其他方便时间（选填）"
+                value={form.otherAvailability}
+                inputProps={{ maxLength: 500 }}
+                onChange={(event) =>
+                  update('otherAvailability', event.target.value)
+                }
+              />
+            </fieldset>
+          )}
 
           <TextField
             multiline
@@ -316,13 +364,13 @@ const QuestionRoundtable: React.FC = () => {
                 }
               />
             }
-            label="我了解：我的称呼、问题和背景会在提交后直接公开；联系方式、可参加时间和边界说明不会公开。"
+            label={`我了解：我的称呼、问题和背景会在提交后直接公开；联系方式${sessionDate ? '' : '、可参加时间'}和边界说明不会公开。`}
           />
 
           {submitError && <Alert severity="error">{submitError}</Alert>}
           {submitted && (
             <Alert severity="success">
-              问题已经收到，也已经出现在问题池里。我们会通过邮箱联系适合在近期展开的问题提交者。
+              场景已经收到，也已经出现在场景池里。我们会通过邮箱联系适合在近期展开的场景提交者。
             </Alert>
           )}
           <Button
@@ -332,20 +380,20 @@ const QuestionRoundtable: React.FC = () => {
             size="large"
             disabled={submitting}
           >
-            {submitting ? '正在提交…' : '提交并公开问题'}
+            {submitting ? '正在提交…' : '提交并公开场景'}
           </Button>
         </form>
       </section>
 
       <section
         className={styles.questionPool}
-        id="question-pool"
+        id={questionPoolId}
         aria-labelledby="pool-title"
       >
         <div className={styles.poolHeading}>
           <div className={styles.sectionHeading}>
-            <span>正在发生的问题</span>
-            <h2 id="pool-title">问题池</h2>
+            <span>正在发生的场景</span>
+            <h2 id="pool-title">{embedded ? '本期场景' : '场景池'}</h2>
           </div>
           <p>
             这些问题不需要成熟、宏大或正确。它们只是一个人当下真实站立的地方。
@@ -396,12 +444,12 @@ const QuestionRoundtable: React.FC = () => {
           </div>
         ) : (
           <div className={styles.empty}>
-            <p>问题池还是空的。</p>
-            <a href="#submit-question">提交第一个真实问题</a>
+            <p>{embedded ? '本期还没有人提交场景。' : '场景池还是空的。'}</p>
+            <a href={`#${submitSectionId}`}>提交第一个真实场景</a>
           </div>
         )}
       </section>
-    </main>
+    </Root>
   );
 };
 

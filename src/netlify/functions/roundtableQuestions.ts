@@ -12,6 +12,7 @@ import {
   handleOptionsRequest,
 } from '../utils/server';
 import {
+  normalizeRoundtableSessionDate,
   RoundtableQuestionInput,
   validateRoundtableQuestionInput,
 } from '../validation/roundtableQuestions';
@@ -73,7 +74,7 @@ export async function handler(
   try {
     switch (getFunctionNameFromEvent(event)) {
       case 'listPublic':
-        return await handleListPublic();
+        return await handleListPublic(event);
       case 'create':
         return await handleCreate(event);
       case 'listAdmin':
@@ -89,13 +90,22 @@ export async function handler(
   }
 }
 
-async function handleListPublic(): Promise<NetlifyResponse> {
-  const { data, error } = await supabase
+async function handleListPublic(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const sessionDate = normalizeRoundtableSessionDate(
+    event.queryStringParameters?.sessionDate
+  );
+
+  let query = supabase
     .from('roundtable_questions')
     .select(PUBLIC_SELECT)
     .neq('status', 'hidden')
-    .order('created_at', { ascending: false })
-    .limit(100);
+    .order('created_at', { ascending: false });
+
+  if (sessionDate) {
+    query = query.contains('available_dates', [sessionDate]);
+  }
+
+  const { data, error } = await query.limit(100);
 
   if (error) {
     console.error('[roundtableQuestions] Public list error:', error);

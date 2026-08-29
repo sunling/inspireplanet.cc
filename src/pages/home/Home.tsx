@@ -7,7 +7,11 @@ import Empty from '@/components/Empty';
 import Loading from '@/components/Loading';
 import styles from './home.module.css';
 import ErrorCard from '@/components/ErrorCard';
-import { weeklyCardsApi, meetupsApi } from '../../netlify/config';
+import {
+  weeklyCardsApi,
+  meetupsApi,
+  roundtableQuestionsApi,
+} from '../../netlify/config';
 import { WeeklyCard } from '../../netlify/services/weeklyCards';
 import { Meetup } from '../../netlify/functions/meetup';
 import {
@@ -61,6 +65,7 @@ const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [upcomingMeetups, setUpcomingMeetups] = useState<UpcomingMeetup[]>([]);
+  const [roundtableQuestionCount, setRoundtableQuestionCount] = useState(0);
   const [showWechatQr, setShowWechatQr] = useState(false);
 
   // 加载最新卡片数据
@@ -117,10 +122,20 @@ const Home: React.FC = () => {
     }
   };
 
+  const fetchRoundtableQuestionCount = async () => {
+    try {
+      const response = await roundtableQuestionsApi.listPublic();
+      setRoundtableQuestionCount(response.data?.questions?.length || 0);
+    } catch {
+      // 首页数字只是辅助信息，读取失败时不影响主要内容。
+    }
+  };
+
   // 初始化和清理
   useEffect(() => {
     fetchLatestCards();
     fetchUpcomingMeetups();
+    fetchRoundtableQuestionCount();
   }, []);
 
   const renderWeeklyCards = () => {
@@ -207,13 +222,6 @@ const Home: React.FC = () => {
       to: '/activity-calendar',
     },
     {
-      eyebrow: '探索',
-      title: '对话实验',
-      description: '带着一个真实问题，一起把它说得更清楚。',
-      label: '了解对话实验',
-      to: '/clarify-together',
-    },
-    {
       eyebrow: '连接',
       title: '加入社群',
       description: '认识愿意真实分享、彼此启发的人。',
@@ -245,6 +253,54 @@ const Home: React.FC = () => {
           <h1 className={styles['hero-title']}>让具体的经历被听见</h1>
           <p className={styles['hero-desc']}>
             一个线上社群。真实，不评判，相信每个人具体的经历都有力量。
+          </p>
+        </section>
+
+        {/* 真实场景圆桌 */}
+        <section className={styles['roundtable-section']}>
+          <div className={styles['roundtable-main']}>
+            <div className={styles['roundtable-meta']}>
+              <span>启发星球 · 真实场景圆桌</span>
+              {roundtableQuestionCount > 0 && (
+                <span>{roundtableQuestionCount} 个场景正在等待展开</span>
+              )}
+            </div>
+            <h2>带着一个你正在经历的真实情境来</h2>
+            <p>
+              不需要先把它想明白。先讲清发生了什么，再通过提问看见盲点，最后听听别人真正经历过什么。
+            </p>
+            <Link
+              to="/questions#submit-question"
+              className={styles['roundtable-button']}
+            >
+              提交我的场景 <ChevronRight fontSize="inherit" />
+            </Link>
+          </div>
+          <ol className={styles['roundtable-steps']}>
+            <li>
+              <span>01</span>
+              <div>
+                <strong>讲清情境</strong>
+                <p>从具体、正在发生的部分开始。</p>
+              </div>
+            </li>
+            <li>
+              <span>02</span>
+              <div>
+                <strong>澄清提问</strong>
+                <p>问题只为了理解，不把对方引向答案。</p>
+              </div>
+            </li>
+            <li>
+              <span>03</span>
+              <div>
+                <strong>分享经历</strong>
+                <p>说自己做过什么，不告诉对方应该怎么做。</p>
+              </div>
+            </li>
+          </ol>
+          <p className={styles['roundtable-principle']}>
+            最难的往往是第三步：先放下建议，把自己的经历放在桌面上。
           </p>
         </section>
 
