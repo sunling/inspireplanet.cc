@@ -8,7 +8,11 @@ import {
   getDataFromEvent,
   getAuthenticatedUser,
 } from '../utils/server';
-import { sendRSVPConfirmEmail, sendRSVPRejectEmail } from '../utils/email';
+import {
+  sendCompletionCertificateEmail,
+  sendRSVPConfirmEmail,
+  sendRSVPRejectEmail,
+} from '../utils/email';
 import { RSVPStatus, ApprovalStatus } from '../types/rsvp';
 
 export interface ParticipantAction {
@@ -18,7 +22,8 @@ export interface ParticipantAction {
     | 'batchReject'
     | 'getParticipants'
     | 'getWritingGroups'
-    | 'addToWritingGroup';
+    | 'addToWritingGroup'
+    | 'sendCompletionCertificates';
 }
 
 export async function handler(event: NetlifyEvent, context: any) {
@@ -40,6 +45,8 @@ export async function handler(event: NetlifyEvent, context: any) {
         return await handleGetWritingGroups(event);
       case 'addToWritingGroup':
         return await handleAddToWritingGroup(event);
+      case 'sendCompletionCertificates':
+        return await handleSendCompletionCertificates(event);
       default:
         return createErrorResponse('无效的操作类型');
     }
@@ -47,6 +54,109 @@ export async function handler(event: NetlifyEvent, context: any) {
     console.error('Participants Handler error:', error);
     return createErrorResponse('服务器内部错误', 500);
   }
+}
+
+async function handleSendCompletionCertificates(event: NetlifyEvent) {
+  const auth = await requireOrganizer(event);
+  if (auth.error) return auth.error;
+
+  const input = getDataFromEvent(event);
+  const meetupId = Number(input.meetup_id);
+  const rsvpIds = Array.isArray(input.rsvp_ids)
+    ? Array.from(new Set(input.rsvp_ids.map(Number))).filter(Number.isInteger)
+    : [];
+  if (!Number.isInteger(meetupId) || meetupId <= 0 || rsvpIds.length === 0)
+    return createErrorResponse('请选择要发送证书的参与者');
+  if (
+    !input.start_date ||
+    !input.end_date ||
+    !input.completion_date ||
+    !String(input.activity_name || '').trim() ||
+    !String(input.completion_message || '').trim() ||
+    !String(input.organizer || '').trim() ||
+    !String(input.community || '').trim()
+  )
+    return createErrorResponse('请完整填写证书必填信息');
+  if (rsvpIds.length > 100)
+    return createErrorResponse('单次最多发送 100 份证书');
+
+  const [{ data: meetup }, { data: rsvps, error: rsvpError }] =
+    await Promise.all([
+      supabase
+        .from('meetups')
+        .select('id, title')
+        .eq('id', meetupId)
+        .maybeSingle(),
+      supabase
+        .from('meetup_rsvps')
+        .select('id, name, user_id, status')
+        .eq('meetup_id', meetupId)
+        .in('id', rsvpIds)
+        .eq('status', RSVPStatus.CONFIRMED),
+    ]);
+  if (!meetup) return createErrorResponse('活动不存在', 404);
+  if (rsvpError) return createErrorResponse('获取参与者失败', 500);
+
+  const userIds = (rsvps || []).map((row) => row.user_id).filter(Boolean);
+  const { data: users } = userIds.length
+    ? await supabase.from('users').select('id, email').in('id', userIds)
+    : { data: [] as any[] };
+  const emails = new Map(
+    (users || []).map((user) => [String(user.id), user.email])
+  );
+  const failures: Array<{ id: string; name: string; reason: string }> = [];
+  let sentCount = 0;
+
+  for (const rsvp of rsvps || []) {
+    const email = rsvp.user_id ? emails.get(String(rsvp.user_id)) : null;
+    if (!email) {
+      failures.push({
+        id: String(rsvp.id),
+        name: rsvp.name || '参与者',
+        reason: '未绑定邮箱',
+      });
+      continue;
+    }
+    try {
+      await sendCompletionCertificateEmail({
+        to: email,
+        activityName: String(input.activity_name).trim(),
+        participantName: rsvp.name || '参与者',
+        startDate: input.start_date,
+        endDate: input.end_date,
+        completionDate: input.completion_date,
+        completionMessage: String(input.completion_message).trim(),
+        reflection: String(input.reflection || '').trim() || undefined,
+        organizer: String(input.organizer).trim(),
+        community: String(input.community).trim(),
+        activityEdition:
+          String(input.activity_edition || '').trim() || undefined,
+        certificateNumber: input.certificate_prefix
+          ? `${String(input.certificate_prefix).trim()}-${rsvp.id}`
+          : undefined,
+        recordDays:
+          input.record_days === undefined ? null : Number(input.record_days),
+        recordCount:
+          input.record_count === undefined ? null : Number(input.record_count),
+      });
+      sentCount += 1;
+    } catch (error) {
+      failures.push({
+        id: String(rsvp.id),
+        name: rsvp.name || '参与者',
+        reason: error instanceof Error ? error.message : '发送失败',
+      });
+    }
+  }
+
+  const skippedCount = rsvpIds.length - (rsvps || []).length;
+  return createSuccessResponse({
+    requested_count: rsvpIds.length,
+    sent_count: sentCount,
+    failed_count: failures.length,
+    skipped_count: skippedCount,
+    failures,
+  });
 }
 
 async function requireOrganizer(event: NetlifyEvent) {
