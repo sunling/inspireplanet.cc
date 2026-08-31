@@ -38,6 +38,7 @@ import {
   CalendarTodayOutlined,
   EmailOutlined,
   GroupAddOutlined,
+  WorkspacePremiumOutlined,
 } from '@mui/icons-material';
 import {
   meetupsApi,
@@ -62,6 +63,11 @@ import StatsCard from '../../components/StatsCard';
 import TextCollapse from '../../components/TextCollapse';
 import { parseSurveyAnswers } from '../../utils/meetup';
 import { ParticipantWritingGroup } from '../../netlify/services/participants';
+import CompletionCertificatePreview from '../../components/CompletionCertificatePreview';
+import {
+  CompletionCertificateData,
+  DEFAULT_COMPLETION_MESSAGE,
+} from '../../utils/completionCertificate';
 
 const MeetupParticipants: React.FC = () => {
   const navigate = useNavigate();
@@ -94,6 +100,23 @@ const MeetupParticipants: React.FC = () => {
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [addingToGroup, setAddingToGroup] = useState(false);
+  const [showCertificateDialog, setShowCertificateDialog] = useState(false);
+  const [sendingCertificates, setSendingCertificates] = useState(false);
+  const today = new Date().toISOString().slice(0, 10);
+  const [certificateForm, setCertificateForm] = useState({
+    activityName: '',
+    startDate: today,
+    endDate: today,
+    completionDate: today,
+    completionMessage: DEFAULT_COMPLETION_MESSAGE,
+    reflection: '',
+    organizer: '抹茶',
+    community: '启发星球',
+    activityEdition: '',
+    certificatePrefix: '',
+    recordDays: '',
+    recordCount: '',
+  });
 
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1);
@@ -144,6 +167,14 @@ const MeetupParticipants: React.FC = () => {
       if (meetupResponse.success && meetupResponse.data?.meetups?.length) {
         const meetupData = meetupResponse.data.meetups[0];
         setMeetup(meetupData);
+        const activityDate = meetupData.datetime?.slice(0, 10) || today;
+        setCertificateForm((current) => ({
+          ...current,
+          activityName: meetupData.title || current.activityName,
+          startDate: activityDate,
+          endDate: activityDate,
+          organizer: meetupData.creator || current.organizer,
+        }));
 
         // 如果活动关联了问卷，加载问卷信息
         if (meetupData.survey_id) {
@@ -474,6 +505,96 @@ const MeetupParticipants: React.FC = () => {
     }
   };
 
+  const certificateParticipants = participants.filter(
+    (participant) =>
+      selectedParticipants.includes(participant.id) &&
+      participant.status === RSVPStatus.CONFIRMED
+  );
+
+  const openCertificateDialog = () => {
+    if (certificateParticipants.length === 0) {
+      showSnackbar.info('请先选择已报名的参与者');
+      return;
+    }
+    setShowCertificateDialog(true);
+  };
+
+  const sendCertificates = async () => {
+    if (!meetupId || certificateParticipants.length === 0) return;
+    setSendingCertificates(true);
+    try {
+      const response = await participantsApi.sendCompletionCertificates({
+        meetup_id: Number(meetupId),
+        rsvp_ids: certificateParticipants.map((participant) =>
+          Number(participant.id)
+        ),
+        activity_name: certificateForm.activityName,
+        start_date: certificateForm.startDate,
+        end_date: certificateForm.endDate,
+        completion_date: certificateForm.completionDate,
+        completion_message: certificateForm.completionMessage,
+        reflection: certificateForm.reflection || undefined,
+        organizer: certificateForm.organizer,
+        community: certificateForm.community,
+        activity_edition: certificateForm.activityEdition || undefined,
+        certificate_prefix: certificateForm.certificatePrefix || undefined,
+        record_days:
+          certificateForm.recordDays === ''
+            ? undefined
+            : Number(certificateForm.recordDays),
+        record_count:
+          certificateForm.recordCount === ''
+            ? undefined
+            : Number(certificateForm.recordCount),
+      });
+      if (!response.success || !response.data) {
+        showSnackbar.error(response.error || '证书发送失败');
+        return;
+      }
+      const result = response.data;
+      if (result.failed_count || result.skipped_count) {
+        showSnackbar.warning(
+          `已发送 ${result.sent_count} 份，${result.failed_count + result.skipped_count} 份未发送`
+        );
+      } else {
+        showSnackbar.success(
+          `已将 ${result.sent_count} 份结营证书发送到参与者邮箱`
+        );
+        setShowCertificateDialog(false);
+        setSelectedParticipants([]);
+      }
+    } catch (error) {
+      console.error('发送结营证书失败:', error);
+      showSnackbar.error('证书发送失败');
+    } finally {
+      setSendingCertificates(false);
+    }
+  };
+
+  const previewData: CompletionCertificateData = {
+    activityName: certificateForm.activityName || meetup?.title || '活动名称',
+    participantName: certificateParticipants[0]?.name || '参与者',
+    startDate: certificateForm.startDate,
+    endDate: certificateForm.endDate,
+    completionDate: certificateForm.completionDate,
+    completionMessage: certificateForm.completionMessage,
+    reflection: certificateForm.reflection,
+    organizer: certificateForm.organizer,
+    community: certificateForm.community,
+    activityEdition: certificateForm.activityEdition,
+    certificateNumber: certificateForm.certificatePrefix
+      ? `${certificateForm.certificatePrefix}-${certificateParticipants[0]?.id || '001'}`
+      : undefined,
+    recordDays:
+      certificateForm.recordDays === ''
+        ? null
+        : Number(certificateForm.recordDays),
+    recordCount:
+      certificateForm.recordCount === ''
+        ? null
+        : Number(certificateForm.recordCount),
+  };
+
   if (!meetup && !isLoading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -555,6 +676,14 @@ const MeetupParticipants: React.FC = () => {
         {/* 操作按钮 */}
         {selectedParticipants.length > 0 && (
           <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="contained"
+              startIcon={<WorkspacePremiumOutlined />}
+              onClick={openCertificateDialog}
+              disabled={certificateParticipants.length === 0}
+            >
+              生成结营证书 ({certificateParticipants.length})
+            </Button>
             <Button
               variant="contained"
               color="success"
@@ -1244,6 +1373,131 @@ const MeetupParticipants: React.FC = () => {
             disabled={!selectedGroupId || groupsLoading || addingToGroup}
           >
             {addingToGroup ? '正在同步…' : '确认加入'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={showCertificateDialog}
+        onClose={() => !sendingCertificates && setShowCertificateDialog(false)}
+        fullWidth
+        maxWidth="lg"
+      >
+        <DialogTitle>预览并发送结营证书</DialogTitle>
+        <DialogContent>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            当前预览第 1 位参与者；发送时会为已选的{' '}
+            {certificateParticipants.length} 人分别生成姓名和证书编号。
+          </Alert>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                md: 'minmax(280px, 0.8fr) minmax(480px, 1.4fr)',
+              },
+              gap: 3,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 1.5,
+                alignContent: 'start',
+              }}
+            >
+              {(
+                [
+                  ['activityName', '活动名称', 'text'],
+                  ['startDate', '参与开始日', 'date'],
+                  ['endDate', '参与结束日', 'date'],
+                  ['completionDate', '结营日期', 'date'],
+                  ['organizer', '活动发起人', 'text'],
+                  ['community', '平台 / 社区', 'text'],
+                  ['activityEdition', '活动期数（可选）', 'text'],
+                  ['certificatePrefix', '证书编号前缀（可选）', 'text'],
+                  ['recordDays', '累计记录天数（可选）', 'number'],
+                  ['recordCount', '累计记录篇数（可选）', 'number'],
+                ] as const
+              ).map(([key, label, type]) => (
+                <TextField
+                  key={key}
+                  label={label}
+                  type={type}
+                  value={certificateForm[key]}
+                  onChange={(event) =>
+                    setCertificateForm((current) => ({
+                      ...current,
+                      [key]: event.target.value,
+                    }))
+                  }
+                  InputLabelProps={
+                    type === 'date' ? { shrink: true } : undefined
+                  }
+                  fullWidth
+                  sx={
+                    key === 'activityName' || key === 'completionDate'
+                      ? { gridColumn: { xs: 'auto', sm: 'span 2' } }
+                      : undefined
+                  }
+                />
+              ))}
+              <TextField
+                label="一句结营文字"
+                value={certificateForm.completionMessage}
+                onChange={(event) =>
+                  setCertificateForm((current) => ({
+                    ...current,
+                    completionMessage: event.target.value,
+                  }))
+                }
+                required
+                multiline
+                sx={{ gridColumn: '1 / -1' }}
+              />
+              <TextField
+                label="留言 / 引语（可选）"
+                value={certificateForm.reflection}
+                onChange={(event) =>
+                  setCertificateForm((current) => ({
+                    ...current,
+                    reflection: event.target.value,
+                  }))
+                }
+                placeholder="原来，我是这样走过这个月的。"
+                multiline
+                sx={{ gridColumn: '1 / -1' }}
+              />
+            </Box>
+            <CompletionCertificatePreview data={previewData} />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setShowCertificateDialog(false)}
+            disabled={sendingCertificates}
+          >
+            取消
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<EmailOutlined />}
+            onClick={sendCertificates}
+            disabled={
+              sendingCertificates ||
+              !certificateForm.activityName.trim() ||
+              !certificateForm.startDate ||
+              !certificateForm.endDate ||
+              !certificateForm.completionDate ||
+              !certificateForm.completionMessage.trim() ||
+              !certificateForm.organizer.trim() ||
+              !certificateForm.community.trim()
+            }
+          >
+            {sendingCertificates
+              ? '正在发送…'
+              : `一键发送到 ${certificateParticipants.length} 人邮箱`}
           </Button>
         </DialogActions>
       </Dialog>

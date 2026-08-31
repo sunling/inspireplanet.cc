@@ -967,21 +967,6 @@ const MeetupDetail: React.FC = () => {
               </Card>
             )}
 
-            {/* 线上活动：把本期真实场景圆桌直接放进详情页 */}
-            {meetup.mode === 'online' && isUpcomingMeetup && (
-              <Box sx={{ mb: 4 }}>
-                <QuestionRoundtable
-                  embedded
-                  sessionDate={episode?.date || formattedDate}
-                  sessionLabel={
-                    meetup.is_recurring && episode
-                      ? `${meetup.title} EP${episode.episode_number} · ${episode.date}`
-                      : `${meetup.title} · ${formattedDate}`
-                  }
-                />
-              </Box>
-            )}
-
             {/* 操作按钮 */}
             <Box sx={{ mt: 4, textAlign: 'center' }}>
               <Box
@@ -1091,6 +1076,23 @@ const MeetupDetail: React.FC = () => {
                 )}
               </Box>
             </Box>
+
+            {/* 线上长期活动：把本期真实场景圆桌直接放进详情页 */}
+            {meetup.mode === 'online' &&
+              meetup.is_recurring &&
+              isUpcomingMeetup && (
+                <Box sx={{ mb: 4 }}>
+                  <QuestionRoundtable
+                    embedded
+                    sessionDate={episode?.date || formattedDate}
+                    sessionLabel={
+                      meetup.is_recurring && episode
+                        ? `${meetup.title} EP${episode.episode_number} · ${episode.date}`
+                        : `${meetup.title} · ${formattedDate}`
+                    }
+                  />
+                </Box>
+              )}
           </Box>
         </Box>
       </Box>
