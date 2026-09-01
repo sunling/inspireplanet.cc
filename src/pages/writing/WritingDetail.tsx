@@ -919,9 +919,9 @@ const WritingDetail: React.FC = () => {
                     crossOrigin="anonymous"
                     alt=""
                     sx={{
+                      display: 'block',
                       width: '100%',
-                      aspectRatio: post.image_urls.length === 1 ? '4 / 3' : '1',
-                      objectFit: 'cover',
+                      height: 'auto',
                       borderRadius: 1,
                     }}
                   />
