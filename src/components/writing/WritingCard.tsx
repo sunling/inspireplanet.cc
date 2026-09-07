@@ -104,7 +104,7 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
                       overflow: 'hidden',
                     }}
                   >
-                    <HighlightedText text={item.answer} />
+                    <HighlightedText text={item.answer} hideHashtags />
                   </Typography>
                 </Box>
               ))}
@@ -128,7 +128,10 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
                 mb: 2,
               }}
             >
-              <HighlightedText text={preview || '还没有正文内容'} />
+              <HighlightedText
+                text={preview || '还没有正文内容'}
+                hideHashtags
+              />
             </Typography>
           )}
 
