@@ -5,10 +5,13 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Collapse,
   Container,
   FormControl,
+  IconButton,
   InputLabel,
+  InputAdornment,
   MenuItem,
   Pagination,
   Paper,
@@ -25,7 +28,10 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import SearchIcon from '@mui/icons-material/Search';
+import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import ClearIcon from '@mui/icons-material/Clear';
+import DateRangeOutlinedIcon from '@mui/icons-material/DateRangeOutlined';
 import dayjs, { Dayjs } from 'dayjs';
 import 'dayjs/locale/zh-cn';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -48,6 +54,7 @@ import {
 } from '../../netlify/config';
 import { useGlobalSnackbar } from '../../context/app';
 import { useAuth } from '../../context/auth';
+import { buildWritingTxt } from '../user/ebook';
 
 const PAGE_SIZE = 9;
 
@@ -78,6 +85,12 @@ function formatTimelineDate(value: string): string {
   }).format(new Date(value));
 }
 
+function getThisWeekRange(): [Dayjs, Dayjs] {
+  const today = dayjs();
+  const monday = today.subtract((today.day() + 6) % 7, 'day').startOf('day');
+  return [monday, today];
+}
+
 const WritingCircle: React.FC = () => {
   const { isAuthenticated, isAuthLoading, user } = useAuth();
   const navigate = useNavigate();
@@ -99,6 +112,26 @@ const WritingCircle: React.FC = () => {
   const [groupsError, setGroupsError] = useState('');
   const [groupsExpanded, setGroupsExpanded] = useState(false);
   const [partners, setPartners] = useState<WritingPartner[]>([]);
+  const [creatorInput, setCreatorInput] = useState(
+    () => searchParams.get('creator') || ''
+  );
+  const [draftTopicId, setDraftTopicId] = useState(
+    () => searchParams.get('topic') || ''
+  );
+  const [draftSort, setDraftSort] = useState<'latest' | 'oldest'>(() =>
+    searchParams.get('sort') === 'oldest' ? 'oldest' : 'latest'
+  );
+  const [draftDateRange, setDraftDateRange] = useState<
+    [Dayjs | null, Dayjs | null]
+  >(() => [
+    /^\d{4}-\d{2}-\d{2}$/.test(searchParams.get('date_from') || '')
+      ? dayjs(searchParams.get('date_from'))
+      : null,
+    /^\d{4}-\d{2}-\d{2}$/.test(searchParams.get('date_to') || '')
+      ? dayjs(searchParams.get('date_to'))
+      : null,
+  ]);
+  const [downloadingTxt, setDownloadingTxt] = useState(false);
   const mineLoadMoreRef = useRef<HTMLDivElement>(null);
 
   const scope =
@@ -118,6 +151,7 @@ const WritingCircle: React.FC = () => {
     ? searchParams.get('date_to') || ''
     : '';
   const creator = searchParams.get('creator') || '';
+  const normalizedCreatorInput = creatorInput || '';
   const groupId = searchParams.get('group') || '';
   const parsedPage = Number(searchParams.get('page'));
   const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
@@ -305,6 +339,69 @@ const WritingCircle: React.FC = () => {
     setSearchParams(next);
   };
 
+  useEffect(() => {
+    setCreatorInput(creator);
+    setDraftTopicId(topicId);
+    setDraftSort(sort);
+    setDraftDateRange([
+      dateFrom ? dayjs(dateFrom) : null,
+      dateTo ? dayjs(dateTo) : null,
+    ]);
+  }, [creator, dateFrom, dateTo, sort, topicId]);
+
+  const applyFilters = () => {
+    const [from, to] = draftDateRange;
+    if (
+      from &&
+      to &&
+      (to.isBefore(from, 'day') || to.isAfter(from.add(1, 'year'), 'day'))
+    ) {
+      snackbar.warning('结束日期需晚于开始日期，且时间范围最多为一年');
+      return;
+    }
+    updateParams({
+      creator: normalizedCreatorInput.trim() || null,
+      date_from: from?.format('YYYY-MM-DD') || null,
+      date_to: to?.format('YYYY-MM-DD') || null,
+      sort: draftSort === 'oldest' ? 'oldest' : null,
+      topic: draftTopicId || null,
+      page: null,
+    });
+  };
+
+  const resetFilters = () => {
+    setCreatorInput('');
+    setDraftDateRange([null, null]);
+    setDraftSort('latest');
+    setDraftTopicId('');
+    setTopicQuery('');
+    updateParams({
+      creator: null,
+      date_from: null,
+      date_to: null,
+      sort: null,
+      topic: null,
+      page: null,
+    });
+  };
+
+  const selectThisWeekMyWritings = () => {
+    if (!isAuthenticated) {
+      navigate(`/login?redirect=${encodeURIComponent('/writing-circle')}`);
+      return;
+    }
+    setCreatorInput(user?.name || '');
+    setDraftDateRange(getThisWeekRange());
+  };
+
+  const [thisWeekStart, thisWeekEnd] = getThisWeekRange();
+  const isThisWeekMyWritingsSelected = Boolean(
+    user?.name &&
+    normalizedCreatorInput === user.name &&
+    draftDateRange[0]?.isSame(thisWeekStart, 'day') &&
+    draftDateRange[1]?.isSame(thisWeekEnd, 'day')
+  );
+
   const handleScopeChange = (_event: React.SyntheticEvent, value: string) => {
     if ((value === 'mine' || value === 'partners') && !isAuthenticated) {
       navigate(
@@ -345,27 +442,73 @@ const WritingCircle: React.FC = () => {
     navigate('/writing-circle/new');
   };
 
-  const handleDateRangeChange = (from: Dayjs | null, to: Dayjs | null) => {
-    if (
-      from &&
-      to &&
-      (to.isBefore(from, 'day') || to.isAfter(from.add(1, 'year'), 'day'))
-    ) {
-      snackbar.warning('搜索时间范围最多为一年');
-      return;
+  const downloadFilteredWritings = async () => {
+    if (scope !== 'mine' || downloadingTxt) return;
+    setDownloadingTxt(true);
+
+    try {
+      const records: WritingPost[] = [];
+      let downloadPage = 1;
+      let expectedTotal = 0;
+
+      do {
+        const response = await writingsApi.list({
+          scope: 'mine',
+          group_id: groupId || undefined,
+          topic_ids: topicId ? [topicId] : undefined,
+          sort,
+          page: downloadPage,
+          page_size: 50,
+          creator: creator || undefined,
+          date_from: dateFrom || undefined,
+          date_to: dateTo || undefined,
+        });
+        if (!response.success) {
+          throw new Error(response.error || '获取筛选结果失败');
+        }
+
+        const pageRecords = response.data?.records || [];
+        expectedTotal = response.data?.total || 0;
+        records.push(...pageRecords);
+        downloadPage += 1;
+
+        if (pageRecords.length === 0) break;
+      } while (records.length < expectedTotal);
+
+      const uniqueRecords = Array.from(
+        new Map(records.map((post) => [post.id, post])).values()
+      );
+      if (uniqueRecords.length === 0) {
+        snackbar.warning('当前筛选条件下没有可下载的书写');
+        return;
+      }
+
+      const text = buildWritingTxt(uniqueRecords);
+      const blob = new Blob([`\uFEFF${text}`], {
+        type: 'text/plain;charset=utf-8',
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${user?.name || '我的'}书写.txt`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (downloadError) {
+      snackbar.error(
+        downloadError instanceof Error
+          ? downloadError.message
+          : '下载失败，请稍后重试'
+      );
+    } finally {
+      setDownloadingTxt(false);
     }
-    updateParams({
-      date_from: from?.format('YYYY-MM-DD') || null,
-      date_to: to?.format('YYYY-MM-DD') || null,
-      page: null,
-    });
   };
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const orderedTopics = topicId
+  const orderedTopics = draftTopicId
     ? [
-        ...topics.filter((topic) => topic.id === topicId),
-        ...topics.filter((topic) => topic.id !== topicId),
+        ...topics.filter((topic) => topic.id === draftTopicId),
+        ...topics.filter((topic) => topic.id !== draftTopicId),
       ]
     : topics;
   const canCollapseTopics = topics.length > 4;
@@ -626,21 +769,40 @@ const WritingCircle: React.FC = () => {
                 <Tab value="mine" label="我的书写" />
                 <Tab value="partners" label="我的搭子" />
               </Tabs>
-              <Button
-                size="small"
-                color="inherit"
-                endIcon={
-                  filtersExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />
-                }
-                onClick={() => setFiltersExpanded((expanded) => !expanded)}
-                sx={{ flexShrink: 0, color: 'text.secondary' }}
-              >
-                {filtersExpanded
-                  ? '收起筛选'
-                  : activeFilterCount
-                    ? `展开筛选（${activeFilterCount}）`
-                    : '展开筛选'}
-              </Button>
+              <Stack direction="row" spacing={1} justifyContent="flex-end">
+                {scope === 'mine' && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={
+                      downloadingTxt ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <DownloadOutlinedIcon />
+                      )
+                    }
+                    onClick={downloadFilteredWritings}
+                    disabled={downloadingTxt || loading || total === 0}
+                  >
+                    {downloadingTxt ? '正在生成' : '下载 TXT'}
+                  </Button>
+                )}
+                <Button
+                  size="small"
+                  color="inherit"
+                  endIcon={
+                    filtersExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />
+                  }
+                  onClick={() => setFiltersExpanded((expanded) => !expanded)}
+                  sx={{ flexShrink: 0, color: 'text.secondary' }}
+                >
+                  {filtersExpanded
+                    ? '收起筛选'
+                    : activeFilterCount
+                      ? `展开筛选（${activeFilterCount}）`
+                      : '展开筛选'}
+                </Button>
+              </Stack>
               <Stack
                 direction={{ xs: 'column', md: 'row' }}
                 spacing={1}
@@ -649,63 +811,100 @@ const WritingCircle: React.FC = () => {
                   width: '100%',
                 }}
               >
+                <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+                  <Button
+                    size="small"
+                    variant={
+                      isThisWeekMyWritingsSelected ? 'contained' : 'outlined'
+                    }
+                    startIcon={<DateRangeOutlinedIcon />}
+                    onClick={selectThisWeekMyWritings}
+                  >
+                    本周我的书写
+                  </Button>
+                </Stack>
                 <TextField
                   size="small"
-                  value={creator}
-                  onChange={(event) =>
-                    updateParams({
-                      creator: event.target.value || null,
-                      page: null,
-                    })
-                  }
+                  value={normalizedCreatorInput}
+                  onChange={(event) => setCreatorInput(event.target.value)}
                   placeholder="创造者名字"
                   aria-label="按创造者名字搜索"
                   sx={{ minWidth: 150 }}
+                  slotProps={{
+                    input: {
+                      endAdornment: normalizedCreatorInput ? (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            aria-label="清除创造者名字"
+                            onClick={() => setCreatorInput('')}
+                            edge="end"
+                          >
+                            <ClearIcon fontSize="small" />
+                          </IconButton>
+                        </InputAdornment>
+                      ) : undefined,
+                    },
+                  }}
                 />
                 <LocalizationProvider
                   dateAdapter={AdapterDayjs}
                   adapterLocale="zh-cn"
                 >
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={1}
+                    alignItems={{ xs: 'stretch', sm: 'center' }}
+                    sx={{ minWidth: 0, flexShrink: 0 }}
+                  >
                     <DatePicker
                       label="开始日期"
-                      value={dateFrom ? dayjs(dateFrom) : null}
+                      value={draftDateRange[0]}
                       onChange={(value) =>
-                        handleDateRangeChange(
-                          value,
-                          dateTo ? dayjs(dateTo) : null
-                        )
+                        setDraftDateRange([value, draftDateRange[1]])
                       }
-                      maxDate={dateTo ? dayjs(dateTo) : dayjs()}
+                      maxDate={draftDateRange[1] || dayjs()}
                       slotProps={{
+                        field: { clearable: true },
+                        clearButton: { size: 'small', sx: { p: 0.5 } },
                         textField: {
                           size: 'small',
-                          sx: { minWidth: 145 },
+                          sx: {
+                            width: { xs: '100%', sm: 190 },
+                            flexShrink: 0,
+                          },
                         },
                       }}
                     />
-                    <Typography color="text.secondary">至</Typography>
+                    <Typography
+                      color="text.secondary"
+                      aria-hidden="true"
+                      sx={{ display: { xs: 'none', sm: 'block' } }}
+                    >
+                      至
+                    </Typography>
                     <DatePicker
                       label="结束日期"
-                      value={dateTo ? dayjs(dateTo) : null}
+                      value={draftDateRange[1]}
                       onChange={(value) =>
-                        handleDateRangeChange(
-                          dateFrom ? dayjs(dateFrom) : null,
-                          value
-                        )
+                        setDraftDateRange([draftDateRange[0], value])
                       }
-                      minDate={dateFrom ? dayjs(dateFrom) : undefined}
+                      minDate={draftDateRange[0] || undefined}
                       maxDate={
-                        dateFrom
-                          ? dayjs(dateFrom).add(1, 'year').isBefore(dayjs())
-                            ? dayjs(dateFrom).add(1, 'year')
-                            : dayjs()
+                        draftDateRange[0] &&
+                        draftDateRange[0].add(1, 'year').isBefore(dayjs())
+                          ? draftDateRange[0].add(1, 'year')
                           : dayjs()
                       }
                       slotProps={{
+                        field: { clearable: true },
+                        clearButton: { size: 'small', sx: { p: 0.5 } },
                         textField: {
                           size: 'small',
-                          sx: { minWidth: 145 },
+                          sx: {
+                            width: { xs: '100%', sm: 190 },
+                            flexShrink: 0,
+                          },
                         },
                       }}
                     />
@@ -719,12 +918,11 @@ const WritingCircle: React.FC = () => {
                   <Select
                     labelId="writing-sort-label"
                     label="时间排序"
-                    value={sort}
+                    value={draftSort}
                     onChange={(event) =>
-                      updateParams({
-                        sort: event.target.value === 'oldest' ? 'oldest' : null,
-                        page: null,
-                      })
+                      setDraftSort(
+                        event.target.value === 'oldest' ? 'oldest' : 'latest'
+                      )
                     }
                   >
                     <MenuItem value="latest">最新发布</MenuItem>
@@ -774,7 +972,7 @@ const WritingCircle: React.FC = () => {
                     <Typography variant="subtitle2" fontWeight={700}>
                       按话题筛选
                     </Typography>
-                    {topicId && (
+                    {draftTopicId && (
                       <Typography variant="caption" color="text.secondary">
                         已选 1 个
                       </Typography>
@@ -810,16 +1008,14 @@ const WritingCircle: React.FC = () => {
                       <Chip
                         label="全部话题"
                         variant="outlined"
-                        onClick={() =>
-                          updateParams({ topic: null, page: null })
-                        }
+                        onClick={() => setDraftTopicId('')}
                         sx={{
-                          borderColor: !topicId ? '#496a61' : '#d9d1c7',
-                          bgcolor: !topicId ? '#496a61' : '#fcfaf7',
-                          color: !topicId ? '#fff' : '#625a52',
-                          fontWeight: !topicId ? 700 : 500,
+                          borderColor: !draftTopicId ? '#496a61' : '#d9d1c7',
+                          bgcolor: !draftTopicId ? '#496a61' : '#fcfaf7',
+                          color: !draftTopicId ? '#fff' : '#625a52',
+                          fontWeight: !draftTopicId ? 700 : 500,
                           '&:hover': {
-                            bgcolor: !topicId ? '#3f5d55' : '#f3eee8',
+                            bgcolor: !draftTopicId ? '#3f5d55' : '#f3eee8',
                           },
                         }}
                       />
@@ -828,12 +1024,11 @@ const WritingCircle: React.FC = () => {
                       <TopicChip
                         key={topic.id}
                         topic={topic}
-                        selected={topic.id === topicId}
+                        selected={topic.id === draftTopicId}
                         onClick={() =>
-                          updateParams({
-                            topic: topic.id === topicId ? null : topic.id,
-                            page: null,
-                          })
+                          setDraftTopicId(
+                            topic.id === draftTopicId ? '' : topic.id
+                          )
                         }
                       />
                     ))}
@@ -848,6 +1043,19 @@ const WritingCircle: React.FC = () => {
                     )}
                   </Box>
                 </Collapse>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  justifyContent="flex-end"
+                  sx={{ mt: 2.5 }}
+                >
+                  <Button variant="text" color="inherit" onClick={resetFilters}>
+                    重置
+                  </Button>
+                  <Button variant="contained" onClick={applyFilters}>
+                    确认筛选
+                  </Button>
+                </Stack>
               </Box>
             </Collapse>
           </Stack>
