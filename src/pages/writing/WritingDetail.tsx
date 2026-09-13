@@ -883,22 +883,56 @@ const WritingDetail: React.FC = () => {
                   </Typography>
                 </Box>
               ))}
-            {post.body.trim() && (
-              <Typography
-                data-download-text
-                sx={{
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: '29px',
-                  fontSize: 15,
-                  fontWeight: 400,
-                  fontStyle: 'normal',
-                  overflowWrap: 'anywhere',
-                  letterSpacing: 0,
-                }}
-              >
-                {withoutHashtags(post.body)}
-              </Typography>
-            )}
+            {post.body.trim() &&
+              (post.editor_mode === 'rich' && post.body_rich ? (
+                <RichTextRenderer
+                  content={post.body_rich}
+                  sx={{
+                    maxWidth: 'none',
+                    mx: 0,
+                    fontSize: 15,
+                    lineHeight: '29px',
+                    letterSpacing: 0,
+                    '& h1': { fontSize: 24 },
+                    '& h2': { fontSize: 21 },
+                    '& h3': { fontSize: 18 },
+                    '& h4': { fontSize: 16 },
+                    '& strong, & b': {
+                      color: 'inherit',
+                      fontWeight: '800 !important',
+                    },
+                    '& ul': {
+                      display: 'block',
+                      listStyle: 'disc outside !important',
+                      pl: '24px !important',
+                    },
+                    '& ul > li': {
+                      display: 'list-item',
+                      listStyle: 'disc outside',
+                      pl: 0,
+                    },
+                    '& ul > li::marker': {
+                      color: '#678078',
+                      fontSize: '1em',
+                    },
+                  }}
+                />
+              ) : (
+                <Typography
+                  data-download-text
+                  sx={{
+                    whiteSpace: 'pre-wrap',
+                    lineHeight: '29px',
+                    fontSize: 15,
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                    overflowWrap: 'anywhere',
+                    letterSpacing: 0,
+                  }}
+                >
+                  {withoutHashtags(post.body)}
+                </Typography>
+              ))}
             {post.image_urls.length > 0 && (
               <Box
                 sx={{
