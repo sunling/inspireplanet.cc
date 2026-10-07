@@ -4,6 +4,7 @@ import {
   createCertificateSvg,
   escapeCertificateHtml,
   formatCertificateDate,
+  wrapCertificateText,
 } from '../utils/completionCertificate';
 
 describe('completion certificate', () => {
@@ -26,9 +27,35 @@ describe('completion certificate', () => {
       completionMessage: '谢谢记录',
       organizer: '抹茶',
       community: '启发星球',
+      activityEdition: '第二期',
     });
     expect(svg).toContain('&lt;一个月&gt;');
     expect(svg).toContain('抹茶 &amp; friends');
+    expect(svg).toContain('第二期');
     expect(svg).not.toContain('<一个月>');
+  });
+
+  it('wraps and truncates long certificate copy safely', () => {
+    expect(wrapCertificateText('一二三四五六七八', 3, 2)).toEqual([
+      '一二三',
+      '四五…',
+    ]);
+    expect(wrapCertificateText('  hello  ', 10, 2)).toEqual(['hello']);
+    expect(wrapCertificateText('', 10, 2)).toEqual([]);
+
+    const svg = createCertificateSvg({
+      activityName: '这是一个名字特别特别长的活动'.repeat(4),
+      participantName: '参与者',
+      startDate: '2026-09-01',
+      endDate: '2026-09-30',
+      completionDate: '2026-09-30',
+      completionMessage: '这是一段很长的结营文字'.repeat(8),
+      reflection: '一段很长的回顾'.repeat(12),
+      organizer: '抹茶',
+      community: '启发星球',
+    });
+    expect(svg).toContain('<tspan');
+    expect(svg).toContain('…');
+    expect(svg).not.toContain('这是一段很长的结营文字'.repeat(8));
   });
 });

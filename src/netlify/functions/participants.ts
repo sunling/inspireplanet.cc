@@ -79,6 +79,24 @@ async function handleSendCompletionCertificates(event: NetlifyEvent) {
     return createErrorResponse('请完整填写证书必填信息');
   if (rsvpIds.length > 100)
     return createErrorResponse('单次最多发送 100 份证书');
+  const startDate = String(input.start_date);
+  const endDate = String(input.end_date);
+  const completionDate = String(input.completion_date);
+  if (startDate > endDate)
+    return createErrorResponse('参与开始日不能晚于参与结束日');
+  if (endDate > completionDate)
+    return createErrorResponse('结营日期不能早于参与结束日');
+  const recordDays =
+    input.record_days === undefined ? null : Number(input.record_days);
+  const recordCount =
+    input.record_count === undefined ? null : Number(input.record_count);
+  if (
+    (recordDays !== null &&
+      (!Number.isInteger(recordDays) || recordDays < 0)) ||
+    (recordCount !== null &&
+      (!Number.isInteger(recordCount) || recordCount < 0))
+  )
+    return createErrorResponse('累计天数和篇数必须为非负整数');
 
   const [{ data: meetup }, { data: rsvps, error: rsvpError }] =
     await Promise.all([
@@ -134,10 +152,8 @@ async function handleSendCompletionCertificates(event: NetlifyEvent) {
         certificateNumber: input.certificate_prefix
           ? `${String(input.certificate_prefix).trim()}-${rsvp.id}`
           : undefined,
-        recordDays:
-          input.record_days === undefined ? null : Number(input.record_days),
-        recordCount:
-          input.record_count === undefined ? null : Number(input.record_count),
+        recordDays,
+        recordCount,
       });
       sentCount += 1;
     } catch (error) {
