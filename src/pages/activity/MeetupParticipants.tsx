@@ -510,12 +510,41 @@ const MeetupParticipants: React.FC = () => {
       selectedParticipants.includes(participant.id) &&
       participant.status === RSVPStatus.CONFIRMED
   );
+  const certificateDateError =
+    certificateForm.startDate &&
+    certificateForm.endDate &&
+    certificateForm.startDate > certificateForm.endDate
+      ? '参与开始日不能晚于参与结束日'
+      : certificateForm.endDate &&
+          certificateForm.completionDate &&
+          certificateForm.endDate > certificateForm.completionDate
+        ? '结营日期不能早于参与结束日'
+        : '';
+  const hasInvalidCertificateNumber = (value: string) =>
+    value !== '' && (!Number.isInteger(Number(value)) || Number(value) < 0);
+  const certificateNumberError =
+    hasInvalidCertificateNumber(certificateForm.recordDays) ||
+    hasInvalidCertificateNumber(certificateForm.recordCount);
+  const missingCertificateFields = [
+    !certificateForm.activityName.trim() && '活动名称',
+    !certificateForm.startDate && '参与开始日',
+    !certificateForm.endDate && '参与结束日',
+    !certificateForm.completionDate && '结营日期',
+    !certificateForm.organizer.trim() && '活动发起人',
+    !certificateForm.community.trim() && '平台 / 社区',
+    !certificateForm.completionMessage.trim() && '结营寄语',
+  ].filter(Boolean) as string[];
 
   const openCertificateDialog = () => {
     if (certificateParticipants.length === 0) {
       showSnackbar.info('请先选择已报名的参与者');
       return;
     }
+    setCertificateForm((current) => ({
+      ...current,
+      community: current.community.trim() || '启发星球',
+      organizer: current.organizer.trim() || meetup?.creator || '抹茶',
+    }));
     setShowCertificateDialog(true);
   };
 
@@ -553,8 +582,12 @@ const MeetupParticipants: React.FC = () => {
       }
       const result = response.data;
       if (result.failed_count || result.skipped_count) {
+        const failedNames = result.failures
+          .slice(0, 3)
+          .map((failure) => `${failure.name}（${failure.reason}）`)
+          .join('、');
         showSnackbar.warning(
-          `已发送 ${result.sent_count} 份，${result.failed_count + result.skipped_count} 份未发送`
+          `已发送 ${result.sent_count} 份，${result.failed_count + result.skipped_count} 份未发送${failedNames ? `：${failedNames}` : ''}`
         );
       } else {
         showSnackbar.success(
@@ -1389,6 +1422,16 @@ const MeetupParticipants: React.FC = () => {
             当前预览第 1 位参与者；发送时会为已选的{' '}
             {certificateParticipants.length} 人分别生成姓名和证书编号。
           </Alert>
+          {(certificateDateError || certificateNumberError) && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {certificateDateError || '累计天数和篇数必须为非负整数'}
+            </Alert>
+          )}
+          {missingCertificateFields.length > 0 && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              还需填写：{missingCertificateFields.join('、')}
+            </Alert>
+          )}
           <Box
             sx={{
               display: 'grid',
@@ -1435,6 +1478,21 @@ const MeetupParticipants: React.FC = () => {
                   InputLabelProps={
                     type === 'date' ? { shrink: true } : undefined
                   }
+                  required={[
+                    'activityName',
+                    'startDate',
+                    'endDate',
+                    'completionDate',
+                    'organizer',
+                    'community',
+                  ].includes(key)}
+                  placeholder={
+                    key === 'activityEdition' ? '如：第二期' : undefined
+                  }
+                  inputProps={{
+                    ...(type === 'number' ? { min: 0 } : {}),
+                    ...(type === 'text' ? { maxLength: 80 } : {}),
+                  }}
                   fullWidth
                   sx={
                     key === 'activityName' || key === 'completionDate'
@@ -1444,7 +1502,7 @@ const MeetupParticipants: React.FC = () => {
                 />
               ))}
               <TextField
-                label="一句结营文字"
+                label="结营寄语"
                 value={certificateForm.completionMessage}
                 onChange={(event) =>
                   setCertificateForm((current) => ({
@@ -1454,10 +1512,12 @@ const MeetupParticipants: React.FC = () => {
                 }
                 required
                 multiline
+                inputProps={{ maxLength: 68 }}
+                helperText={`${certificateForm.completionMessage.length}/68`}
                 sx={{ gridColumn: '1 / -1' }}
               />
               <TextField
-                label="留言 / 引语（可选）"
+                label="过去的留言 / 引语（可选）"
                 value={certificateForm.reflection}
                 onChange={(event) =>
                   setCertificateForm((current) => ({
@@ -1465,8 +1525,11 @@ const MeetupParticipants: React.FC = () => {
                     reflection: event.target.value,
                   }))
                 }
-                placeholder="原来，我是这样走过这个月的。"
+                placeholder="写下参与者曾经留下、值得被再次看见的话。"
                 multiline
+                minRows={3}
+                inputProps={{ maxLength: 90 }}
+                helperText={`这段话会成为证书的视觉重点 · ${certificateForm.reflection.length}/90`}
                 sx={{ gridColumn: '1 / -1' }}
               />
             </Box>
@@ -1492,7 +1555,9 @@ const MeetupParticipants: React.FC = () => {
               !certificateForm.completionDate ||
               !certificateForm.completionMessage.trim() ||
               !certificateForm.organizer.trim() ||
-              !certificateForm.community.trim()
+              !certificateForm.community.trim() ||
+              Boolean(certificateDateError) ||
+              certificateNumberError
             }
           >
             {sendingCertificates

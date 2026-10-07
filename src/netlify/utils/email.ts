@@ -390,14 +390,17 @@ export async function sendCompletionCertificateEmail(
 <table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#fffdf8;border:1px solid #d9b778;border-radius:12px">
 <tr><td align="center" style="padding:42px 36px">
 <p style="margin:0 0 12px;color:#b14834;letter-spacing:4px;font-size:13px">COMPLETION CERTIFICATE</p>
-<h1 style="margin:0 0 26px;font-family:serif;font-size:32px">结营证书</h1>
-<p style="margin:0 0 20px;color:#6f5c4d">${esc(params.activityName)}</p>
-<h2 style="margin:0 0 12px;color:#b14834;font-family:serif;font-size:34px">${esc(params.participantName)}</h2>
-<p style="margin:0 0 26px;color:#8c735c">${esc(formatCertificateDate(params.startDate))} — ${esc(formatCertificateDate(params.endDate))}</p>
-${summary ? `<p style="margin:0 0 22px">${esc(summary)}</p>` : ''}
-<p style="margin:0 0 22px;font-size:18px"><strong>${esc(params.completionMessage)}</strong></p>
-${params.reflection ? `<p style="margin:0 0 28px;color:#8c735c">「${esc(params.reflection)}」</p>` : ''}
-<p style="margin:0;color:#8c735c;font-size:13px">${esc(params.organizer)} · ${esc(params.community)} · ${esc(formatCertificateDate(params.completionDate))}</p>
+<h1 style="margin:10px 0 24px;font-family:serif;font-size:27px">结营证书</h1>
+<p style="margin:0 0 20px;color:#6f5c4d">${esc(params.activityName)}${params.activityEdition ? ` <span style="display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;background:#f5ede4;color:#9a6f55;font-size:12px">${esc(params.activityEdition)}</span>` : ''}</p>
+${summary ? `<p style="margin:0 0 6px;color:#ad9a87;font-size:12px;line-height:1.5">${esc(summary)}</p>` : ''}
+<p style="margin:0 0 24px;color:#6f5c4d;font-family:serif;font-size:16px;line-height:1.6">${esc(params.completionMessage)}</p>
+${params.reflection ? `<div style="margin:0 0 22px;padding:8px 16px;color:#b14834;font-family:serif;font-size:21px;line-height:1.8;white-space:pre-line">${esc(params.reflection)}</div>` : ''}
+<div style="margin:28px 0 0;text-align:right">
+<p style="margin:0 0 4px;color:#ad9a87;font-size:11px;letter-spacing:2px">结营留念</p>
+<p style="margin:0 0 4px;color:#55463b;font-family:serif;font-size:21px;font-weight:bold">${esc(params.participantName)}</p>
+<p style="margin:0;color:#8c735c;font-size:13px">${esc(formatCertificateDate(params.completionDate))}</p>
+</div>
+<p style="margin:28px 0 0;padding-top:8px;color:#8c735c;font-size:13px">${esc(params.organizer)} · ${esc(params.community)} · ${esc(formatCertificateDate(params.startDate))} — ${esc(formatCertificateDate(params.endDate))}</p>
 <p style="margin:28px 0 0;color:#aaa;font-size:12px">高清证书已作为 SVG 附件随邮件发送，可下载保存或打印。</p>
 </td></tr></table></td></tr></table></body></html>`,
     attachments: [
