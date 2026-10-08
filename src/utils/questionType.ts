@@ -53,7 +53,22 @@ export const convertValueForRenderer = (
   type: QuestionType
 ): any => {
   if (type === 'multiple' && typeof value === 'string' && value) {
-    return value
+    const trimmedValue = value.trim();
+
+    // JSON/JSONB columns may return the original array as a JSON string.
+    // Keep supporting the comma-separated format used by older submissions.
+    if (trimmedValue.startsWith('[')) {
+      try {
+        const parsedValue = JSON.parse(trimmedValue);
+        if (Array.isArray(parsedValue)) {
+          return parsedValue;
+        }
+      } catch {
+        // Fall through to the legacy comma-separated parser.
+      }
+    }
+
+    return trimmedValue
       .split(',')
       .map((v) => v.trim())
       .filter(Boolean);

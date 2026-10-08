@@ -44,6 +44,7 @@ import { Survey } from '../../netlify/types/survey';
 import Loading from '../../components/Loading';
 import ErrorCard from '../../components/ErrorCard';
 import { formatDateTime } from '../../utils/date';
+import { convertValueForRenderer } from '../../utils/questionType';
 
 // 颜色配置
 const COLORS = [
@@ -116,11 +117,17 @@ const SurveyResults: React.FC = () => {
         (a: any) => a.questionId === question.id
       );
       if (answer) {
-        if (Array.isArray(answer.value)) {
+        if (question.type === 'multiple') {
           // 多选题
-          answer.value.forEach((value: string) => {
-            optionCounts[value] = (optionCounts[value] || 0) + 1;
-          });
+          const selectedValues = convertValueForRenderer(
+            answer.value,
+            question.type
+          );
+          (Array.isArray(selectedValues) ? selectedValues : []).forEach(
+            (value: string) => {
+              optionCounts[value] = (optionCounts[value] || 0) + 1;
+            }
+          );
         } else if (
           answer.value !== undefined &&
           answer.value !== null &&
