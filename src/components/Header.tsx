@@ -72,9 +72,6 @@ const Header: React.FC<HeaderProps> = ({
   );
   const [activitiesMenuAnchor, setActivitiesMenuAnchor] =
     useState<HTMLElement | null>(null);
-  const [cardsMenuAnchor, setCardsMenuAnchor] = useState<HTMLElement | null>(
-    null
-  );
   const [weeklyMenuAnchor, setWeeklyMenuAnchor] = useState<HTMLElement | null>(
     null
   );
@@ -205,15 +202,11 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const toolsMenuItems: NavItem[] = [
+    { path: '/create-card', label: '创建卡片' },
     { path: '/page-poster', label: '页面分享海报' },
     { path: '/cover-editor', label: '横版封面制作' },
     { path: '/cover-editor-mobile', label: '竖版封面制作' },
     { path: '/surveys', label: '调查问卷' },
-  ];
-
-  const cardsMenuItems: NavItem[] = [
-    { path: '/cards', label: '近期卡片' },
-    { path: '/create-card', label: '创建卡片' },
   ];
 
   // 下拉菜单配置
@@ -238,13 +231,6 @@ const Header: React.FC<HeaderProps> = ({
       items: getActivitiesMenuItems(),
       anchor: activitiesMenuAnchor,
       setAnchor: setActivitiesMenuAnchor,
-    },
-    {
-      label: '金句卡片',
-      icon: <CardMembership fontSize="small" />,
-      items: cardsMenuItems,
-      anchor: cardsMenuAnchor,
-      setAnchor: setCardsMenuAnchor,
     },
     ...(isOrganizer()
       ? [
@@ -513,11 +499,6 @@ const Header: React.FC<HeaderProps> = ({
             <CalendarToday fontSize="small" />,
             getActivitiesMenuItems()
           )}
-          {renderMobileMenuItemGroup(
-            '金句卡片',
-            <CardMembership fontSize="small" />,
-            cardsMenuItems
-          )}
           {isOrganizer() &&
             renderMobileMenuItemGroup(
               '工具',
@@ -674,14 +655,16 @@ const Header: React.FC<HeaderProps> = ({
                   <CardMembership fontSize="small" sx={{ mr: 1 }} />
                   我的卡片
                 </MenuItem>
-                <MenuItem
-                  component={Link}
-                  to="/bulk-weekly-upload"
-                  onClick={() => setUserMenuAnchor(null)}
-                >
-                  <UploadFileOutlined fontSize="small" sx={{ mr: 1 }} />
-                  批量上传周刊
-                </MenuItem>
+                {isOrganizer() && (
+                  <MenuItem
+                    component={Link}
+                    to="/bulk-weekly-upload"
+                    onClick={() => setUserMenuAnchor(null)}
+                  >
+                    <UploadFileOutlined fontSize="small" sx={{ mr: 1 }} />
+                    批量上传周刊
+                  </MenuItem>
+                )}
                 <MenuItem
                   component={Link}
                   to="/writing-circle?scope=mine"

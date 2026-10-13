@@ -327,7 +327,7 @@ const router = createBrowserRouter(
         },
         {
           path: 'bulk-weekly-upload',
-          element: createProtectedRoute(<BulkWeeklyUpload />),
+          element: createOrganizerProtectedRoute(<BulkWeeklyUpload />),
         },
         {
           path: 'change-password',
