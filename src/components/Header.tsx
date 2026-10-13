@@ -29,6 +29,7 @@ import {
   Logout,
   Lock,
   AutoStoriesOutlined,
+  UploadFileOutlined,
 } from '@mui/icons-material';
 import { notificationsApi, weeklyCardsApi } from '../netlify/config';
 import { isOrganizer } from '../utils/user';
@@ -672,6 +673,14 @@ const Header: React.FC<HeaderProps> = ({
                 >
                   <CardMembership fontSize="small" sx={{ mr: 1 }} />
                   我的卡片
+                </MenuItem>
+                <MenuItem
+                  component={Link}
+                  to="/bulk-weekly-upload"
+                  onClick={() => setUserMenuAnchor(null)}
+                >
+                  <UploadFileOutlined fontSize="small" sx={{ mr: 1 }} />
+                  批量上传周刊
                 </MenuItem>
                 <MenuItem
                   component={Link}
