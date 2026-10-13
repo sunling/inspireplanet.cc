@@ -144,7 +144,6 @@ const ForgotPassword = lazy(() => import('../pages/auth/ForgotPassword'));
 const AuthCallback = lazy(() => import('../pages/auth/AuthCallback'));
 const ActSignup = lazy(() => import('../pages/auth/ActSignup'));
 const PeopleDirectory = lazy(() => import('../pages/people/Directory'));
-const MyConnections = lazy(() => import('../pages/connections/MyConnections'));
 const Profile = lazy(() => import('../pages/user/Profile'));
 const Notifications = lazy(() => import('../pages/user/Notifications'));
 const PersonalEbook = lazy(() => import('../pages/user/PersonalEbook'));
@@ -317,10 +316,6 @@ const router = createBrowserRouter(
           element: createProtectedRoute(<EditMeetup />),
         },
         { path: 'my-meetups', element: createProtectedRoute(<MyMeetups />) },
-        {
-          path: 'connections',
-          element: createProtectedRoute(<MyConnections />),
-        },
         { path: 'profile', element: createProtectedRoute(<Profile />) },
         {
           path: 'my-ebook',

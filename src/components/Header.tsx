@@ -700,14 +700,6 @@ const Header: React.FC<HeaderProps> = ({
                 </MenuItem>
                 <MenuItem
                   component={Link}
-                  to="/connections"
-                  onClick={() => setUserMenuAnchor(null)}
-                >
-                  <CalendarToday fontSize="small" sx={{ mr: 1 }} />
-                  我的连接
-                </MenuItem>
-                <MenuItem
-                  component={Link}
                   to="/profile"
                   onClick={() => setUserMenuAnchor(null)}
                 >

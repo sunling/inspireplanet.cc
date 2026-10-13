@@ -317,11 +317,6 @@ const Directory: React.FC = () => {
               />
               <Chip size="small" label="选择主题筛选" />
               <Chip size="small" label="发起邀请" />
-              <Chip
-                size="small"
-                label="在“我的连接”处理"
-                onClick={() => window.location.assign('/connections')}
-              />
               <Chip size="small" label="确认会面" />
             </Box>
           </Box>
