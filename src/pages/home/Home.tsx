@@ -36,9 +36,6 @@ const MeetupModeLabel: Record<string, string> = {
   outdoor: '户外',
 };
 
-const mutualAidDocUrl =
-  'https://docs.qq.com/sheet/DWU1EcU5YSmRVWnZZ?tab=BB08J2';
-
 type EntryPoint = {
   eyebrow: string;
   title: string;
@@ -229,18 +226,14 @@ const Home: React.FC = () => {
       to: '/join',
     },
     {
-      eyebrow: '互助',
-      title: '树洞互助',
-      description: '说出此刻的困扰，也看看是否能帮到别人。',
-      label: '打开互助文档',
-      href: mutualAidDocUrl,
-    },
-    {
-      eyebrow: '分享',
-      title: '向我们投稿',
-      description: '写下一段经历、一个问题，或一件想分享的小事。',
-      label: '开始投稿',
-      to: '/contribute',
+      eyebrow: '圆桌',
+      title: '问题圆桌',
+      description:
+        roundtableQuestionCount > 0
+          ? `把没想明白的那一点带来，当前有 ${roundtableQuestionCount} 个场景正在等待展开。`
+          : '把没想明白的那一点带来，默认匿名，从具体经历出发彼此照亮。',
+      label: '进入问题圆桌',
+      to: '/questions',
     },
   ];
 
@@ -253,54 +246,6 @@ const Home: React.FC = () => {
           <h1 className={styles['hero-title']}>让具体的经历被听见</h1>
           <p className={styles['hero-desc']}>
             一个线上社群。真实，不评判，相信每个人具体的经历都有力量。
-          </p>
-        </section>
-
-        {/* 真实场景圆桌 */}
-        <section className={styles['roundtable-section']}>
-          <div className={styles['roundtable-main']}>
-            <div className={styles['roundtable-meta']}>
-              <span>启发星球 · 真实场景圆桌</span>
-              {roundtableQuestionCount > 0 && (
-                <span>{roundtableQuestionCount} 个场景正在等待展开</span>
-              )}
-            </div>
-            <h2>把没想明白的那一点带来</h2>
-            <p>
-              一句话也可以，默认匿名。看到相似的困惑，也可以直接点“我也想问”。
-            </p>
-            <Link
-              to="/questions#submit-question"
-              className={styles['roundtable-button']}
-            >
-              写下一个问题 <ChevronRight fontSize="inherit" />
-            </Link>
-          </div>
-          <ol className={styles['roundtable-steps']}>
-            <li>
-              <span>01</span>
-              <div>
-                <strong>讲清情境</strong>
-                <p>从具体、正在发生的部分开始。</p>
-              </div>
-            </li>
-            <li>
-              <span>02</span>
-              <div>
-                <strong>澄清提问</strong>
-                <p>问题只为了理解，不把对方引向答案。</p>
-              </div>
-            </li>
-            <li>
-              <span>03</span>
-              <div>
-                <strong>分享经历</strong>
-                <p>说自己做过什么，不告诉对方应该怎么做。</p>
-              </div>
-            </li>
-          </ol>
-          <p className={styles['roundtable-principle']}>
-            最难的往往是第三步：先放下建议，把自己的经历放在桌面上。
           </p>
         </section>
 
