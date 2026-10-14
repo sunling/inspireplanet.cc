@@ -112,9 +112,9 @@ const EpisodeCardCreate: React.FC = () => {
         day: 'numeric',
       })
     : '';
-  const episodeYear = episode?.date
-    ? new Date(`${episode.date}T00:00:00`).getFullYear()
-    : null;
+  const episodeYear =
+    (episode?.date ? new Date(`${episode.date}T00:00:00`).getFullYear() : null) ??
+    routeYear;
   const episodeLabel = `${episodeYear ? `${episodeYear} · ` : ''}EP${episode?.episode_number}`;
   const responseDate = new Date(
     publishedResponseDate || Date.now()
