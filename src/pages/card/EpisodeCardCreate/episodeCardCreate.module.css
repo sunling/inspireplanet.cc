@@ -704,3 +704,34 @@
     display: none;
   }
 }
+
+.quotedContext {
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid #eadad0;
+  border-radius: 16px;
+  background: #fff6ed;
+  color: #5c4d44;
+}
+
+.quotedContext blockquote {
+  margin: 12px 0;
+  padding-left: 14px;
+  border-left: 3px solid #e69472;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+
+.quotedContext button {
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: #a94e2b;
+  font: inherit;
+  cursor: pointer;
+}
+
+.quotedContext p {
+  line-height: 1.6;
+}

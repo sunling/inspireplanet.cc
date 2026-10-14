@@ -236,26 +236,33 @@ const Home: React.FC = () => {
   const latestEpisodeYear = useRecurringEpisode
     ? activeRecurringEpisode.year
     : cardEpisodeYear;
-  const latestCreateUrl = latestEpisodeNumber
-    ? `/episodes/${latestEpisodeYear}/${latestEpisodeNumber}/respond`
+  const latestEpisodeUrl = latestEpisodeNumber
+    ? `/episodes/${latestEpisodeYear}/${latestEpisodeNumber}`
     : '/weekly-cards';
 
+  const nextWeeklyMeetup = upcomingMeetups.find(
+    ({ meetup }) => Number(meetup.id) === 39
+  );
   const entryPoints: EntryPoint[] = [
     {
-      eyebrow: '回应',
-      title: '写下本期一句',
-      description: '分享结束后，留下此刻还在你心里的一句话。',
-      label: latestEpisodeNumber
-        ? `回应 ${latestEpisodeYear} · EP${latestEpisodeNumber}`
-        : '看看本期内容',
-      to: latestCreateUrl,
+      eyebrow: '相遇',
+      title: '参加每周线上会议',
+      description:
+        '来听听大家这一周的经历与启发。有想分享的内容，可以在活动详情页报名分享。',
+      label: '查看活动，报名参加或分享',
+      to: nextWeeklyMeetup
+        ? `/meetup-detail?id=${nextWeeklyMeetup.meetup.id}&date=${nextWeeklyMeetup.dateStr}`
+        : '/activity-calendar',
     },
     {
-      eyebrow: '相遇',
-      title: '参加活动',
-      description: '看看接下来有哪些线上分享和线下活动。',
-      label: '查看活动日历',
-      to: '/activity-calendar',
+      eyebrow: '回顾与回应',
+      title: '回看每一期的分享',
+      description:
+        '没来现场，也可以浏览每期分享、选一段文字回应。刚参加完会议，可以先留下感受和收获。',
+      label: latestEpisodeNumber
+        ? `进入 ${latestEpisodeYear} · EP${latestEpisodeNumber}`
+        : '浏览往期分享',
+      to: latestEpisodeUrl,
     },
     {
       eyebrow: '连接',
@@ -292,7 +299,7 @@ const Home: React.FC = () => {
         <section className={styles['entry-section']}>
           <div className={styles['section-heading']}>
             <p>从这里开始</p>
-            <h2>你可以怎样来到启发星球</h2>
+            <h2>你可以怎样参与启发星球</h2>
           </div>
           <div className={styles['entry-grid']}>
             {entryPoints.map((entry) => {

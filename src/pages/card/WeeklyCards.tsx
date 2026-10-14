@@ -748,7 +748,7 @@ const WeeklyCards: React.FC = () => {
               to={`/episodes/${activeEpisodePath}/respond`}
               className={styles.episodeJourneyPrimary}
             >
-              写下我的一句
+              留下感受和收获
             </Link>
           </nav>
         )}
