@@ -42,6 +42,14 @@ const EpisodeCardCreate: React.FC = () => {
   const [quotedText, setQuotedText] = useState(() =>
     typeof location.state?.quote === 'string' ? location.state.quote.trim() : ''
   );
+  const quotedSpeaker =
+    typeof location.state?.quoteSpeaker === 'string'
+      ? location.state.quoteSpeaker.trim()
+      : '';
+  const quotedSourceLabel =
+    typeof location.state?.quoteSourceLabel === 'string'
+      ? location.state.quoteSourceLabel.trim()
+      : '';
   const episodeNumber = Number(
     params.episode ||
       searchParams.get('episode') ||
@@ -114,13 +122,6 @@ const EpisodeCardCreate: React.FC = () => {
     [episodeNumber, routeYear]
   );
 
-  const episodeDate = episode?.date
-    ? new Date(`${episode.date}T00:00:00`).toLocaleDateString('zh-CN', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : '';
   const episodeYear =
     (episode?.date
       ? new Date(`${episode.date}T00:00:00`).getFullYear()
@@ -135,7 +136,7 @@ const EpisodeCardCreate: React.FC = () => {
   });
   // Keep the original words with the response in storage and exported cards.
   const quotePrefix = quotedText
-    ? `回应这段分享：\n「${quotedText}」\n\n我的回应：\n`
+    ? `回应${quotedSpeaker ? `${quotedSpeaker}的分享` : quotedSourceLabel || '这段分享'}：\n「${quotedText}」\n\n我的回应：\n`
     : '';
   const maxReplyLength = Math.max(0, MAX_TEXT_LENGTH - quotePrefix.length);
   const responseContent = quotePrefix + text.trim();
@@ -364,7 +365,11 @@ const EpisodeCardCreate: React.FC = () => {
 
         {quotedText && (
           <div className={styles.quotedContext}>
-            <strong>你正在回应的内容</strong>
+            <strong>
+              {quotedSpeaker
+                ? `来自 ${quotedSpeaker} 的分享`
+                : quotedSourceLabel || '你正在回应的内容'}
+            </strong>
             <blockquote>{quotedText}</blockquote>
             <button
               type="button"
@@ -509,7 +514,7 @@ const EpisodeCardCreate: React.FC = () => {
               checked={showEpisodeInfo}
               onChange={(_, value) => setShowEpisodeInfo(value)}
             />
-            显示期数、分享日期和回应日期
+            显示期数
           </label>
         </div>
       </section>
@@ -547,12 +552,6 @@ const EpisodeCardCreate: React.FC = () => {
                 <div className={styles.brandChip}>
                   {showEpisodeInfo ? `启发星球 ${episodeLabel}` : '启发星球'}
                 </div>
-                {showEpisodeInfo && (
-                  <div className={styles.episodeDetails}>
-                    {episodeDate && <span>分享日期 · {episodeDate}</span>}
-                    <span>回应日期 · {responseDate}</span>
-                  </div>
-                )}
               </div>
               <div className={styles.expressionCue}>真实 · 自由 · 不必完整</div>
             </div>

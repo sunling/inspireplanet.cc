@@ -29,6 +29,9 @@ const getDetailParagraphs = (detail = ''): string[] =>
 
 const IGNORED_SPEAKER_LABELS = new Set(['现场分享', '星友分享', '匿名']);
 
+const getSourceSpeaker = (speaker = '') =>
+  IGNORED_SPEAKER_LABELS.has(speaker.trim()) ? '' : speaker.trim();
+
 const renderKeyPointText = (point: string) => {
   const colonIdx = point.indexOf('：');
   if (colonIdx > 0 && colonIdx <= 18) {
@@ -55,7 +58,11 @@ const getEpisodeYear = (date: string) =>
 const EpisodeHub: React.FC = () => {
   const params = useParams<{ year?: string; episode: string }>();
   const navigate = useNavigate();
-  const [selectedQuote, setSelectedQuote] = useState('');
+  const [selectedQuote, setSelectedQuote] = useState<{
+    text: string;
+    speaker: string;
+    label: string;
+  } | null>(null);
   const readingRef = useRef<HTMLElement>(null);
   const meetupId = INSPIRE_PLANET_MEETUP_ID;
   const episodeNumber = Number(params.episode);
@@ -152,7 +159,7 @@ const EpisodeHub: React.FC = () => {
     const updateSelection = () => {
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed || !selection.rangeCount) {
-        setSelectedQuote('');
+        setSelectedQuote(null);
         return;
       }
       const range = selection.getRangeAt(0);
@@ -164,19 +171,34 @@ const EpisodeHub: React.FC = () => {
       setSelectedQuote(
         source &&
           readingRef.current?.contains(source) &&
-          source.contains(range.endContainer)
-          ? selection.toString().trim()
-          : ''
+          source.contains(range.endContainer) &&
+          !range.cloneContents().querySelector('[data-response-source]') &&
+          (range.endContainer.nodeType === Node.ELEMENT_NODE
+            ? (range.endContainer as Element)
+            : range.endContainer.parentElement
+          )?.closest('[data-response-source]') === source
+          ? {
+              text: selection.toString().trim(),
+              speaker: source.getAttribute('data-response-speaker') || '',
+              label: source.getAttribute('data-response-label') || '',
+            }
+          : null
       );
     };
     document.addEventListener('selectionchange', updateSelection);
-    setSelectedQuote('');
+    setSelectedQuote(null);
     return () =>
       document.removeEventListener('selectionchange', updateSelection);
   }, [episodeNumber, routeYear]);
 
-  const respondToQuote = (quote: string) => {
-    navigate(createUrl, { state: { quote } });
+  const respondToQuote = (quote: string, speaker = '', label = '') => {
+    navigate(createUrl, {
+      state: {
+        quote,
+        quoteSpeaker: getSourceSpeaker(speaker),
+        quoteSourceLabel: label,
+      },
+    });
   };
 
   const episodeDate =
@@ -396,6 +418,7 @@ const EpisodeHub: React.FC = () => {
                 <article
                   id={`topic-${idx + 1}`}
                   data-response-source
+                  data-response-speaker={getSourceSpeaker(topic.speaker)}
                   className={styles.topicCard}
                   key={`${topic.speaker}-${idx}`}
                 >
@@ -418,7 +441,9 @@ const EpisodeHub: React.FC = () => {
                       <button
                         type="button"
                         className={styles.quoteAction}
-                        onClick={() => respondToQuote(topic.quote!)}
+                        onClick={() =>
+                          respondToQuote(topic.quote!, topic.speaker)
+                        }
                       >
                         回应这句金句
                       </button>
@@ -447,7 +472,11 @@ const EpisodeHub: React.FC = () => {
                   )}
 
                   {topic.discussion && (
-                    <div className={styles.topicDiscussion}>
+                    <div
+                      data-response-source
+                      data-response-label="现场讨论"
+                      className={styles.topicDiscussion}
+                    >
                       <strong>现场追问与碰撞</strong>
                       <p>{topic.discussion}</p>
                     </div>
@@ -458,7 +487,11 @@ const EpisodeHub: React.FC = () => {
 
             {episodeSummary.highlights &&
               episodeSummary.highlights.length > 0 && (
-                <div data-response-source className={styles.highlightsBox}>
+                <div
+                  data-response-source
+                  data-response-label="现场片段"
+                  className={styles.highlightsBox}
+                >
                   <strong>现场还聊到</strong>
                   <ul>
                     {episodeSummary.highlights.map((item, idx) => (
@@ -475,6 +508,7 @@ const EpisodeHub: React.FC = () => {
               return (
                 <article
                   data-response-source
+                  data-response-speaker={getSourceSpeaker(card.name)}
                   className={styles.weeklyCard}
                   key={card.id}
                 >
@@ -493,7 +527,7 @@ const EpisodeHub: React.FC = () => {
                       <button
                         type="button"
                         className={styles.quoteAction}
-                        onClick={() => respondToQuote(card.quote)}
+                        onClick={() => respondToQuote(card.quote, card.name)}
                       >
                         回应这句金句
                       </button>
@@ -599,14 +633,27 @@ const EpisodeHub: React.FC = () => {
         )}
       </section>
 
-      {selectedQuote && (
+      {selectedQuote?.text && (
         <aside className={styles.selectionBar} aria-label="回应选中文字">
-          <span>{selectedQuote}</span>
+          <span>
+            {selectedQuote.speaker
+              ? `来自 ${selectedQuote.speaker} 的分享 · `
+              : selectedQuote.label
+                ? `${selectedQuote.label} · `
+                : ''}
+            {selectedQuote.text}
+          </span>
           <button
             type="button"
             className={styles.quoteAction}
             onPointerDown={(event) => event.preventDefault()}
-            onClick={() => respondToQuote(selectedQuote)}
+            onClick={() =>
+              respondToQuote(
+                selectedQuote.text,
+                selectedQuote.speaker,
+                selectedQuote.label
+              )
+            }
           >
             回应这段文字
           </button>
@@ -628,21 +675,6 @@ const EpisodeHub: React.FC = () => {
                 <div className={cardStyles.episodeMeta}>
                   <div className={cardStyles.brandChip}>
                     启发星球 {episodeLabel}
-                  </div>
-                  <div className={cardStyles.episodeDetails}>
-                    {episode.date && (
-                      <span>分享日期 · {formatEpisodeDate(episode.date)}</span>
-                    )}
-                    <span>
-                      回应日期 ·{' '}
-                      {new Date(
-                        exportingResponse.created_at
-                      ).toLocaleDateString('zh-CN', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </span>
                   </div>
                 </div>
                 <div className={cardStyles.expressionCue}>
