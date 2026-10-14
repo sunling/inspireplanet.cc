@@ -116,32 +116,49 @@
   white-space: pre-wrap;
 }
 
-.heroHighlights {
-  margin-top: 16px;
-  padding: 14px 18px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.56);
+.topicOutlineNav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 18px;
 }
 
-.heroHighlights strong {
-  display: block;
-  margin-bottom: 6px;
-  color: #8f4528;
-  font-size: 0.78rem;
+.topicOutlineItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(169, 78, 43, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.65);
+  color: #4a372d;
+  font-size: 0.86rem;
+  font-weight: 650;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.topicOutlineItem:hover {
+  background: rgba(255, 255, 255, 0.94);
+  transform: translateY(-1px);
+}
+
+.topicOutlineIndex {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(169, 78, 43, 0.14);
+  color: #964120;
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
 }
 
-.heroHighlights ul {
-  margin: 0;
-  padding-left: 18px;
-  color: #5a4a41;
-  font-size: 0.88rem;
-  line-height: 1.7;
-}
-
-.heroHighlights li + li {
-  margin-top: 4px;
+.topicOutlineText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .heroFooter {
@@ -238,17 +255,25 @@
   text-decoration: none;
 }
 
+.summaryContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .topicList {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .topicCard {
-  padding: 26px 28px;
+  padding: 28px 32px;
   border: 1px solid #eadfd4;
-  border-radius: 20px;
+  border-radius: 22px;
   background: #fff;
+  box-shadow: 0 6px 20px rgba(96, 62, 43, 0.04);
+  scroll-margin-top: 84px;
 }
 
 .topicHeader {
@@ -259,47 +284,91 @@
 }
 
 .topicSpeaker {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #fdf1e6;
   color: #a94e2b;
   font-size: 0.8rem;
   font-weight: 700;
 }
 
 .topicIndex {
-  color: rgba(169, 78, 43, 0.45);
-  font-size: 0.78rem;
+  color: rgba(169, 78, 43, 0.48);
+  font-size: 0.76rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
 }
 
 .topicCard h3 {
-  margin: 10px 0 14px;
+  margin: 14px 0;
+  color: #2f241f;
   font-family: var(--font-serif);
-  font-size: clamp(1.2rem, 2vw, 1.45rem);
-  line-height: 1.4;
+  font-size: clamp(1.25rem, 2.1vw, 1.55rem);
+  line-height: 1.38;
 }
 
 .topicCard blockquote {
-  margin: 0 0 16px;
-  padding: 2px 0 2px 14px;
-  border-left: 3px solid #efb08f;
-  color: #5b4a40;
+  margin: 0 0 18px;
+  padding: 10px 16px;
+  border-left: 3px solid #e69472;
+  border-radius: 0 12px 12px 0;
+  background: #fff9f3;
+  color: #553f34;
   font-weight: 650;
   line-height: 1.7;
+}
+
+.blockLabel {
+  display: inline-block;
+  margin-bottom: 6px;
+  color: #9b4b2b;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.topicContextBox {
+  margin-bottom: 16px;
 }
 
 .topicBody {
   margin: 0;
   color: #4f433c;
-  font-size: 0.94rem;
-  line-height: 1.85;
+  font-size: 0.95rem;
+  line-height: 1.82;
   white-space: pre-wrap;
 }
 
+.topicKeyPointsBox {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #ece1d6;
+}
+
+.keyPointsList {
+  margin: 4px 0 0;
+  padding-left: 20px;
+  color: #4a3e37;
+  font-size: 0.94rem;
+  line-height: 1.82;
+}
+
+.keyPointsList li + li {
+  margin-top: 10px;
+}
+
+.keyPointsList strong {
+  color: #352923;
+}
+
 .topicDiscussion {
-  margin-top: 16px;
-  padding: 14px 18px;
-  border-radius: 14px;
-  background: #faf5ef;
+  margin-top: 18px;
+  padding: 16px 20px;
+  border: 1px solid #f0e4d8;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #fdf8f2 0%, #f9f1e7 100%);
 }
 
 .topicDiscussion strong {
@@ -307,74 +376,44 @@
   margin-bottom: 6px;
   color: #9b4b2b;
   font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 800;
+  letter-spacing: 0.05em;
 }
 
 .topicDiscussion p {
   margin: 0;
-  color: #65564d;
-  font-size: 0.9rem;
-  line-height: 1.75;
+  color: #5c4d44;
+  font-size: 0.91rem;
+  line-height: 1.78;
   white-space: pre-wrap;
 }
 
-.liveDiscussionsSection {
-  margin-top: 32px;
-  scroll-margin-top: 84px;
-}
-
-.subSectionHeader {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.subSectionHeader p {
-  margin: 0 0 4px;
-  color: #a94e2b;
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-}
-
-.subSectionHeader h3 {
-  margin: 0;
-  color: #3c2f28;
-  font-family: var(--font-serif);
-  font-size: 1.35rem;
-  font-weight: 600;
-}
-
-.discussionGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.discussionCard {
-  padding: 22px 24px;
-  border: 1px solid #eadad0;
+.highlightsBox {
+  padding: 22px 26px;
+  border: 1px dashed #dfcfc2;
   border-radius: 18px;
-  background: linear-gradient(145deg, #fff9f1 0%, #faf2e9 100%);
+  background: rgba(255, 255, 255, 0.78);
 }
 
-.discussionTag {
-  display: inline-block;
+.highlightsBox strong {
+  display: block;
   margin-bottom: 10px;
-  color: #9b4b2b;
-  font-size: 0.8rem;
-  font-weight: 700;
+  color: #8f4528;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
 }
 
-.discussionCard p {
+.highlightsBox ul {
   margin: 0;
-  color: #56473e;
+  padding-left: 18px;
+  color: #5f5047;
   font-size: 0.92rem;
-  line-height: 1.8;
-  white-space: pre-wrap;
+  line-height: 1.78;
+}
+
+.highlightsBox li + li {
+  margin-top: 6px;
 }
 
 .weeklyGrid,
@@ -666,12 +705,12 @@
 
 @media (max-width: 760px) {
   .hero {
-    padding: 16px 14px 0;
+    min-height: 0;
+    padding: 20px 14px 16px;
   }
 
   .heroInner {
-    padding: 20px 18px;
-    border-radius: 18px;
+    padding: 20px 18px 18px;
   }
 
   .heroFooter,
@@ -682,11 +721,12 @@
 
   .heroActions {
     width: 100%;
+    flex-direction: column;
   }
 
   .section {
     width: min(100% - 28px, 1120px);
-    margin-top: 36px;
+    margin-top: 28px;
   }
 
   .sectionHeading {
@@ -697,8 +737,11 @@
     align-self: flex-start;
   }
 
+  .topicCard {
+    padding: 22px 18px;
+  }
+
   .weeklyGrid,
-  .discussionGrid,
   .responseGrid {
     grid-template-columns: 1fr;
   }

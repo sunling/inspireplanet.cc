@@ -16,7 +16,9 @@ export interface WeeklyCard {
 export interface EpisodeTopic {
   speaker: string;
   title: string;
-  summary: string;
+  context?: string;
+  keyPoints?: string[];
+  summary?: string;
   discussion?: string;
   quote?: string;
 }

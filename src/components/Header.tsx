@@ -534,12 +534,11 @@ const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* 移动端菜单组 */}
-          {isOrganizer() &&
-            renderMobileMenuItemGroup(
-              '书写圈子',
-              <EditNote fontSize="small" />,
-              writingMenuItems
-            )}
+          {renderMobileMenuItemGroup(
+            '书写圈子',
+            <EditNote fontSize="small" />,
+            writingMenuItems
+          )}
           {renderMobileMenuItemGroup(
             '活动',
             <CalendarToday fontSize="small" />,

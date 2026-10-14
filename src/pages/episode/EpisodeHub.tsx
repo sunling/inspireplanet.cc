@@ -29,6 +29,19 @@ const getDetailParagraphs = (detail = ''): string[] =>
 
 const IGNORED_SPEAKER_LABELS = new Set(['现场分享', '星友分享', '匿名']);
 
+const renderKeyPointText = (point: string) => {
+  const colonIdx = point.indexOf('：');
+  if (colonIdx > 0 && colonIdx <= 18) {
+    return (
+      <>
+        <strong>{point.slice(0, colonIdx + 1)}</strong>
+        {point.slice(colonIdx + 1)}
+      </>
+    );
+  }
+  return point;
+};
+
 const formatEpisodeDate = (date: string) =>
   new Date(`${date}T00:00:00`).toLocaleDateString('zh-CN', {
     year: 'numeric',
@@ -143,6 +156,8 @@ const EpisodeHub: React.FC = () => {
       ? `/episodes/${episodeYear ? `${episodeYear}/` : ''}${episodeNumber - 1}`
       : null;
   const nextEpisodeHref = `/episodes/${episodeYear ? `${episodeYear}/` : ''}${episodeNumber + 1}`;
+  const hasStructuredSummary = Boolean(episodeSummary?.topics?.length);
+
   const speakerNames = useMemo(() => {
     const rawSource =
       weeklyCards.length > 0
@@ -154,14 +169,6 @@ const EpisodeHub: React.FC = () => {
       .filter((s) => s && !IGNORED_SPEAKER_LABELS.has(s));
     return Array.from(new Set(names));
   }, [episodeSummary, weeklyCards]);
-
-  const liveDiscussions = useMemo(
-    () =>
-      (episodeSummary?.topics || []).filter(
-        (topic) => topic.discussion && topic.discussion.trim().length > 0
-      ),
-    [episodeSummary]
-  );
 
   const exportingResponse = responses.find(
     (response) => response.id === exportingResponseId
@@ -273,17 +280,25 @@ const EpisodeHub: React.FC = () => {
                 : '大家从过去一周带来各自的碎片输入、启发与思考。这里收集本期分享，以及会议结束后仍想留下的话。')}
           </p>
 
-          {episodeSummary?.highlights &&
-            episodeSummary.highlights.length > 0 && (
-              <div className={styles.heroHighlights}>
-                <strong>现场还聊到</strong>
-                <ul>
-                  {episodeSummary.highlights.map((item, idx) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+          {hasStructuredSummary && episodeSummary?.topics && (
+            <nav className={styles.topicOutlineNav} aria-label="本期话题速览">
+              {episodeSummary.topics.map((topic, idx) => (
+                <a
+                  key={`${topic.title}-${idx}`}
+                  href={`#topic-${idx + 1}`}
+                  className={styles.topicOutlineItem}
+                >
+                  <span className={styles.topicOutlineIndex}>
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
+                  <span className={styles.topicOutlineText}>
+                    {topic.speaker ? `${topic.speaker}：` : ''}
+                    {topic.title.split(/[：:]/)[0]}
+                  </span>
+                </a>
+              ))}
+            </nav>
+          )}
 
           <div className={styles.heroFooter}>
             <div className={styles.heroActions}>
@@ -293,14 +308,11 @@ const EpisodeHub: React.FC = () => {
             </div>
 
             <nav className={styles.anchorNav} aria-label="本页内容导航">
-              {(weeklyCards.length > 0 || episodeSummary?.topics?.length) && (
+              {(hasStructuredSummary || weeklyCards.length > 0) && (
                 <a href="#weekly-heading" className={styles.anchorPill}>
-                  本期分享 ({weeklyCards.length || episodeSummary?.topics?.length})
-                </a>
-              )}
-              {liveDiscussions.length > 0 && (
-                <a href="#live-discussions" className={styles.anchorPill}>
-                  现场回响 ({liveDiscussions.length})
+                  {hasStructuredSummary
+                    ? `分享纪要 (${episodeSummary?.topics.length})`
+                    : `本期分享 (${weeklyCards.length})`}
                 </a>
               )}
               <a href="#responses" className={styles.anchorPill}>
@@ -315,100 +327,112 @@ const EpisodeHub: React.FC = () => {
         <div className={styles.sectionHeading}>
           <div>
             <p>
-              本期分享 · 共{' '}
-              {weeklyCards.length || episodeSummary?.topics?.length || 0} 篇
+              {hasStructuredSummary
+                ? `本期会议纪要 · ${episodeSummary?.topics.length} 个核心话题`
+                : `本期分享 · 共 ${weeklyCards.length} 篇`}
             </p>
             <h2 id="weekly-heading">这一期，我们分享了什么</h2>
           </div>
         </div>
 
-        {weeklyCards.length > 0 ? (
-          <>
-            <div className={styles.weeklyGrid}>
-              {weeklyCards.map((card, idx) => {
-                const paragraphs = getDetailParagraphs(card.detail);
-                return (
-                  <article className={styles.weeklyCard} key={card.id}>
-                    <div className={styles.topicHeader}>
-                      <span className={styles.topicSpeaker}>
-                        {card.name ? `分享者 · ${card.name}` : '星友分享'}
-                      </span>
-                      <span className={styles.topicIndex}>
-                        {String(idx + 1).padStart(2, '0')}
-                      </span>
+        {hasStructuredSummary && episodeSummary ? (
+          <div className={styles.summaryContainer}>
+            <div className={styles.topicList}>
+              {episodeSummary.topics.map((topic, idx) => (
+                <article
+                  id={`topic-${idx + 1}`}
+                  className={styles.topicCard}
+                  key={`${topic.speaker}-${idx}`}
+                >
+                  <div className={styles.topicHeader}>
+                    <span className={styles.topicSpeaker}>
+                      {topic.speaker
+                        ? `分享者 · ${topic.speaker}`
+                        : `话题 ${String(idx + 1).padStart(2, '0')}`}
+                    </span>
+                    <span className={styles.topicIndex}>
+                      TOPIC {String(idx + 1).padStart(2, '0')}
+                    </span>
+                  </div>
+
+                  <h3>{topic.title}</h3>
+
+                  {topic.quote && <blockquote>{topic.quote}</blockquote>}
+
+                  {(topic.context ||
+                    (!topic.keyPoints?.length && topic.summary)) && (
+                    <div className={styles.topicContextBox}>
+                      <span className={styles.blockLabel}>分享缘起</span>
+                      <p className={styles.topicBody}>
+                        {topic.context || topic.summary}
+                      </p>
                     </div>
-                    <h3>{card.title}</h3>
-                    {card.quote && <blockquote>{card.quote}</blockquote>}
-                    {paragraphs.length > 0 && (
-                      <div className={styles.cardDetailBody}>
-                        {paragraphs.map((para, pIdx) => (
-                          <p key={pIdx}>{para}</p>
+                  )}
+
+                  {topic.keyPoints && topic.keyPoints.length > 0 && (
+                    <div className={styles.topicKeyPointsBox}>
+                      <span className={styles.blockLabel}>关键脉络</span>
+                      <ol className={styles.keyPointsList}>
+                        {topic.keyPoints.map((point, pIdx) => (
+                          <li key={pIdx}>{renderKeyPointText(point)}</li>
                         ))}
-                      </div>
-                    )}
-                  </article>
-                );
-              })}
+                      </ol>
+                    </div>
+                  )}
+
+                  {topic.discussion && (
+                    <div className={styles.topicDiscussion}>
+                      <strong>现场追问与碰撞</strong>
+                      <p>{topic.discussion}</p>
+                    </div>
+                  )}
+                </article>
+              ))}
             </div>
 
-            {liveDiscussions.length > 0 && (
-              <div
-                id="live-discussions"
-                className={styles.liveDiscussionsSection}
-              >
-                <div className={styles.subSectionHeader}>
-                  <div>
-                    <p>会议现场互动</p>
-                    <h3>现场回响与延伸讨论</h3>
+            {episodeSummary.highlights &&
+              episodeSummary.highlights.length > 0 && (
+                <div className={styles.highlightsBox}>
+                  <strong>现场还聊到</strong>
+                  <ul>
+                    {episodeSummary.highlights.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+          </div>
+        ) : weeklyCards.length > 0 ? (
+          <div className={styles.weeklyGrid}>
+            {weeklyCards.map((card, idx) => {
+              const paragraphs = getDetailParagraphs(card.detail);
+              return (
+                <article className={styles.weeklyCard} key={card.id}>
+                  <div className={styles.topicHeader}>
+                    <span className={styles.topicSpeaker}>
+                      {card.name ? `分享者 · ${card.name}` : '星友分享'}
+                    </span>
+                    <span className={styles.topicIndex}>
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
                   </div>
-                </div>
-                <div className={styles.discussionGrid}>
-                  {liveDiscussions.map((topic, idx) => (
-                    <article
-                      className={styles.discussionCard}
-                      key={`${topic.title}-${idx}`}
-                    >
-                      <span className={styles.discussionTag}>
-                        围绕「{topic.title}」
-                      </span>
-                      <p>{topic.discussion}</p>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        ) : episodeSummary?.topics?.length ? (
-          <div className={styles.topicList}>
-            {episodeSummary.topics.map((topic, idx) => (
-              <article
-                className={styles.topicCard}
-                key={`${topic.speaker}-${idx}`}
-              >
-                <div className={styles.topicHeader}>
-                  <span className={styles.topicSpeaker}>
-                    {topic.speaker ? `分享者 · ${topic.speaker}` : '现场分享'}
-                  </span>
-                  <span className={styles.topicIndex}>
-                    {String(idx + 1).padStart(2, '0')}
-                  </span>
-                </div>
-                <h3>{topic.title}</h3>
-                {topic.quote && <blockquote>{topic.quote}</blockquote>}
-                <p className={styles.topicBody}>{topic.summary}</p>
-                {topic.discussion && (
-                  <div className={styles.topicDiscussion}>
-                    <strong>现场回响与讨论</strong>
-                    <p>{topic.discussion}</p>
-                  </div>
-                )}
-              </article>
-            ))}
+                  <h3>{card.title}</h3>
+                  {card.quote && <blockquote>{card.quote}</blockquote>}
+                  {paragraphs.length > 0 && (
+                    <div className={styles.cardDetailBody}>
+                      {paragraphs.map((para, pIdx) => (
+                        <p key={pIdx}>{para}</p>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className={styles.pendingCard}>
-            <strong>本期分享正在整理中</strong>
-            <p>你可以先写下自己的那一句。分享整理完成后，会自动出现在这里。</p>
+            <strong>本期分享纪要正在整理中</strong>
+            <p>你可以先写下自己的那一句。纪要发布后，会自动出现在这里。</p>
           </div>
         )}
       </section>
