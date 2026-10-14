@@ -246,7 +246,7 @@ const Home: React.FC = () => {
       title: '写下本期一句',
       description: '分享结束后，留下此刻还在你心里的一句话。',
       label: latestEpisodeNumber
-        ? `回应 EP${latestEpisodeNumber}`
+        ? `回应 ${latestEpisodeYear} · EP${latestEpisodeNumber}`
         : '看看本期内容',
       to: latestCreateUrl,
     },
