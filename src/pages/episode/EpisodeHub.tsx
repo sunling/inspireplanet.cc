@@ -13,7 +13,7 @@ import { EpisodeCardContext } from '@/netlify/functions/episodes';
 import { EpisodeResponse } from '@/netlify/functions/episodeResponses';
 import { EpisodeSummary, WeeklyCard } from '@/netlify/services/weeklyCards';
 import { saveImageDataUrl } from '@/utils/share';
-import useQuoteSelection, { getSourceSpeaker } from '@/hooks/useQuoteSelection';
+import { getSourceSpeaker } from '@/hooks/useQuoteSelection';
 import QuoteResponseBar from '@/components/QuoteResponseBar';
 import cardStyles from '../card/EpisodeCardCreate/episodeCardCreate.module.css';
 import styles from './episodeHub.module.css';
@@ -61,10 +61,6 @@ const EpisodeHub: React.FC = () => {
   const meetupId = INSPIRE_PLANET_MEETUP_ID;
   const episodeNumber = Number(params.episode);
   const routeYear = params.year ? Number(params.year) : null;
-  const selectedQuote = useQuoteSelection(
-    readingRef,
-    `${routeYear}/${episodeNumber}`
-  );
   const [episode, setEpisode] = useState<EpisodeCardContext | null>(null);
   const [responses, setResponses] = useState<EpisodeResponse[]>([]);
   const [weeklyCards, setWeeklyCards] = useState<WeeklyCard[]>([]);
@@ -598,7 +594,8 @@ const EpisodeHub: React.FC = () => {
       </section>
 
       <QuoteResponseBar
-        quote={selectedQuote}
+        container={readingRef}
+        resetKey={`${routeYear}/${episodeNumber}`}
         onRespond={(quote) =>
           respondToQuote(quote.text, quote.speaker, quote.label)
         }

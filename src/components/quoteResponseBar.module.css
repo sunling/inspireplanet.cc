@@ -1,28 +1,29 @@
 .bar {
   position: fixed;
-  bottom: 24px;
-  left: 50%;
   z-index: 1200;
   display: flex;
   align-items: center;
-  gap: 16px;
-  width: min(640px, calc(100% - 32px));
+  gap: 10px;
+  width: max-content;
+  max-width: calc(100vw - 16px);
   box-sizing: border-box;
-  padding: 14px 18px;
+  padding: 6px;
   border: 1px solid #d8ad96;
-  border-radius: 18px;
+  border-radius: 14px;
   background: #fffaf5;
-  box-shadow: 0 8px 32px rgba(96, 62, 43, 0.2);
-  transform: translateX(-50%);
+  box-shadow: 0 6px 24px rgba(96, 62, 43, 0.18);
   color: #5c4d44;
+  user-select: none;
 }
 
 .bar span {
-  flex: 1;
   min-width: 0;
+  max-width: 160px;
+  padding-left: 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 0.82rem;
 }
 
 .bar button {
@@ -34,13 +35,13 @@
   min-height: 44px;
   padding: 10px 16px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 10px;
   background: #a94e2b;
   color: #fff;
   font: inherit;
+  font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(106, 53, 31, 0.18);
 }
 
 .bar button:hover {
@@ -53,9 +54,7 @@
 }
 
 @media (max-width: 420px) {
-  .bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
+  .bar span {
+    max-width: 120px;
   }
 }

@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import ChatBubbleOutline from '@mui/icons-material/ChatBubbleOutline';
-import useQuoteSelection, { getSourceSpeaker } from '@/hooks/useQuoteSelection';
+import { getSourceSpeaker } from '@/hooks/useQuoteSelection';
 import QuoteResponseBar from '@/components/QuoteResponseBar';
 import useResponsive from '@/hooks/useResponsive';
 
@@ -418,10 +418,6 @@ const WeeklyCards: React.FC = () => {
   const ALL_PAGE_SIZE = 10;
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedQuery, setDebouncedQuery] = useState<string>('');
-  const selectedQuote = useQuoteSelection(
-    readingRef,
-    `${location.pathname}${location.search}/${allPage}/${showAll}/${debouncedQuery}`
-  );
   const { isMobile } = useResponsive();
   const showSnackbar = useGlobalSnackbar();
 
@@ -823,7 +819,9 @@ const WeeklyCards: React.FC = () => {
           选中金句或正文里触动你的文字，带着引用回应分享者；也可以直接点击卡片里的回应按钮。
         </p>
         <QuoteResponseBar
-          quote={selectedQuote?.path ? selectedQuote : null}
+          container={readingRef}
+          resetKey={`${location.pathname}${location.search}/${allPage}/${showAll}/${debouncedQuery}`}
+          requirePath
           onRespond={(quote) =>
             navigate(`${quote.path}/respond`, {
               state: { quote: quote.text, quoteSpeaker: quote.speaker },
@@ -920,10 +918,8 @@ const WeeklyCards: React.FC = () => {
                                   border: '1px solid rgba(255, 255, 255, 0.28)',
                                   boxShadow:
                                     '0 8px 24px rgba(75, 55, 42, 0.08)',
-                                  transition:
-                                    'transform 0.2s ease, box-shadow 0.2s ease',
+                                  transition: 'box-shadow 0.2s ease',
                                   '&:hover': {
-                                    transform: 'translateY(-3px)',
                                     boxShadow:
                                       '0 12px 30px rgba(75, 55, 42, 0.12)',
                                   },
