@@ -73,6 +73,9 @@ const EpisodeHub: React.FC = () => {
         return;
       }
 
+      setIsLoading(true);
+      setError(null);
+
       try {
         const [episodeResult, responsesResult, weeklyResult] =
           await Promise.all([
@@ -96,10 +99,15 @@ const EpisodeHub: React.FC = () => {
         setEpisode(loadedEpisode);
         if (responsesResult.success) {
           setResponses(responsesResult.data?.responses || []);
+        } else {
+          setResponses([]);
         }
         if (weeklyResult.success) {
           setWeeklyCards(weeklyResult.data?.records || []);
           setEpisodeSummary(weeklyResult.data?.summary || null);
+        } else {
+          setWeeklyCards([]);
+          setEpisodeSummary(null);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : '无法读取本期内容');
@@ -124,6 +132,20 @@ const EpisodeHub: React.FC = () => {
 
   const episodeYear = getEpisodeYear(episode?.date || '') ?? routeYear;
   const episodeLabel = `${episodeYear ? `${episodeYear} · ` : ''}EP${episode?.episode_number}`;
+  const prevEpisodeHref =
+    episodeNumber > 1
+      ? `/episodes/${episodeYear ? `${episodeYear}/` : ''}${episodeNumber - 1}`
+      : null;
+  const nextEpisodeHref = `/episodes/${episodeYear ? `${episodeYear}/` : ''}${episodeNumber + 1}`;
+  const speakerNames = useMemo(() => {
+    const names = [
+      ...(episodeSummary?.topics?.map((t) => t.speaker) || []),
+      ...weeklyCards.map((c) => c.name),
+    ]
+      .map((s) => s?.trim())
+      .filter(Boolean);
+    return Array.from(new Set(names));
+  }, [episodeSummary, weeklyCards]);
   const exportingResponse = responses.find(
     (response) => response.id === exportingResponseId
   );
@@ -196,42 +218,94 @@ const EpisodeHub: React.FC = () => {
   return (
     <main className={styles.page}>
       <header className={styles.hero}>
-        <p className={styles.eyebrow}>每周线上分享</p>
-        <h1>启发星球 {episodeLabel}</h1>
-        {episode.date && (
-          <time dateTime={episode.date}>{formatEpisodeDate(episode.date)}</time>
-        )}
-        <p className={styles.intro}>
-          大家从过去一周带来各自的碎片输入、启发与思考。这里收集本期周刊，以及分享结束后仍想留下的话。
-        </p>
-        <div className={styles.heroActions}>
-          <Link to={createUrl} className={styles.primaryAction}>
-            写下我的一句
-          </Link>
-          <a href="#responses" className={styles.secondaryAction}>
-            看看大家的回应
-          </a>
+        <div className={styles.heroInner}>
+          <div className={styles.heroTopBar}>
+            <div className={styles.heroMeta}>
+              <span className={styles.episodeBadge}>
+                启发星球 · {episodeLabel}
+              </span>
+              {episode.date && (
+                <time dateTime={episode.date}>
+                  {formatEpisodeDate(episode.date)}
+                </time>
+              )}
+              {speakerNames.length > 0 && (
+                <span className={styles.speakerSummary}>
+                  分享者：{speakerNames.slice(0, 5).join(' · ')}
+                </span>
+              )}
+            </div>
+            <nav className={styles.episodeSwitchNav} aria-label="期数切换">
+              {prevEpisodeHref && (
+                <Link to={prevEpisodeHref} className={styles.switchLink}>
+                  ← EP{String(episodeNumber - 1).padStart(2, '0')}
+                </Link>
+              )}
+              <Link to={nextEpisodeHref} className={styles.switchLink}>
+                EP{String(episodeNumber + 1).padStart(2, '0')} →
+              </Link>
+              <Link to="/weekly-cards" className={styles.switchLink}>
+                全部周刊
+              </Link>
+            </nav>
+          </div>
+
+          <h1>{episodeSummary?.title || `启发星球 ${episodeLabel}`}</h1>
+
+          <p className={styles.intro}>
+            {episodeSummary?.overview ||
+              (weeklyCards.length > 0
+                ? `本期收录了 ${weeklyCards.length} 张来自现场真实分享的启发卡片，记录大家在过去一周的输入、观察与行动。`
+                : '大家从过去一周带来各自的碎片输入、启发与思考。这里收集本期周刊，以及分享结束后仍想留下的话。')}
+          </p>
+
+          <div className={styles.heroFooter}>
+            <div className={styles.heroActions}>
+              <Link to={createUrl} className={styles.primaryAction}>
+                写下我的一句
+              </Link>
+              {weeklyCards.length > 0 && (
+                <Link
+                  to={`/weekly-cards/${episodeNumber}`}
+                  className={styles.secondaryAction}
+                >
+                  阅读完整周刊
+                </Link>
+              )}
+            </div>
+
+            <nav className={styles.anchorNav} aria-label="本页内容导航">
+              {(episodeSummary?.topics?.length || weeklyCards.length > 0) && (
+                <a href="#weekly-heading" className={styles.anchorPill}>
+                  我们分享了什么
+                </a>
+              )}
+              {weeklyCards.length > 0 && (
+                <a href="#weekly-cards" className={styles.anchorPill}>
+                  金句卡片 ({weeklyCards.length})
+                </a>
+              )}
+              <a href="#responses" className={styles.anchorPill}>
+                回应墙 ({responses.length})
+              </a>
+            </nav>
+          </div>
         </div>
       </header>
 
       <section className={styles.section} aria-labelledby="weekly-heading">
         <div className={styles.sectionHeading}>
           <div>
-            <p>本期周刊</p>
+            <p>本期现场纪要与周刊</p>
             <h2 id="weekly-heading">这一期，我们分享了什么</h2>
           </div>
           {weeklyCards.length > 0 && (
-            <Link to={`/weekly-cards/${episodeNumber}`}>阅读完整周刊</Link>
+            <Link to={`/weekly-cards/${episodeNumber}`}>阅读完整周刊 →</Link>
           )}
         </div>
 
         {episodeSummary && (
           <div className={styles.summaryContainer}>
-            <div className={styles.summaryOverview}>
-              <h3>{episodeSummary.title}</h3>
-              {episodeSummary.overview && <p>{episodeSummary.overview}</p>}
-            </div>
-
             {episodeSummary.topics?.length > 0 && (
               <div className={styles.topicList}>
                 {episodeSummary.topics.map((topic, idx) => (
@@ -276,7 +350,7 @@ const EpisodeHub: React.FC = () => {
         )}
 
         {weeklyCards.length > 0 ? (
-          <>
+          <div id="weekly-cards" className={styles.weeklyCardsBlock}>
             {episodeSummary && (
               <div className={styles.subSectionHeader}>
                 <h3>本期金句卡片</h3>
@@ -295,7 +369,7 @@ const EpisodeHub: React.FC = () => {
                 </article>
               ))}
             </div>
-          </>
+          </div>
         ) : (
           !episodeSummary && (
             <div className={styles.pendingCard}>

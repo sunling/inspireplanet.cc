@@ -29,7 +29,6 @@ import {
   Logout,
   Lock,
   AutoStoriesOutlined,
-  UploadFileOutlined,
 } from '@mui/icons-material';
 import {
   meetupsApi,
@@ -77,9 +76,6 @@ const Header: React.FC<HeaderProps> = ({
   );
   const [activitiesMenuAnchor, setActivitiesMenuAnchor] =
     useState<HTMLElement | null>(null);
-  const [weeklyMenuAnchor, setWeeklyMenuAnchor] = useState<HTMLElement | null>(
-    null
-  );
   const [writingMenuAnchor, setWritingMenuAnchor] =
     useState<HTMLElement | null>(null);
   const [unread, setUnread] = useState(0);
@@ -189,6 +185,12 @@ const Header: React.FC<HeaderProps> = ({
   // 判断当前路由是否匹配
   const isActiveRoute = (path?: string): boolean => {
     if (!path) return false;
+    if (path === '/weekly-cards') {
+      return location.pathname.startsWith('/weekly-cards');
+    }
+    if (path.startsWith('/episodes/')) {
+      return location.pathname.startsWith('/episodes/');
+    }
     return location.pathname === path;
   };
 
@@ -206,16 +208,32 @@ const Header: React.FC<HeaderProps> = ({
   const topNavItems: NavItem[] = [
     { path: '/', label: '首页', icon: <Home fontSize="small" /> },
     {
+      path: '/weekly-cards',
+      label: '启发周刊',
+      icon: <CardMembership fontSize="small" />,
+    },
+    ...(latestResponseWallHref
+      ? [
+          {
+            path: latestResponseWallHref,
+            label: '本期分享',
+            icon: <AutoStoriesOutlined fontSize="small" />,
+          },
+        ]
+      : []),
+    {
       path: '/questions',
       label: '问题圆桌',
       icon: <Forum fontSize="small" />,
     },
-  ];
-
-  const weeklyMenuItems: NavItem[] = [
-    { path: '/weekly-cards', label: '阅读启发周刊' },
-    ...(latestResponseWallHref
-      ? [{ path: latestResponseWallHref, label: '查看最新回应墙' }]
+    ...(!isOrganizer()
+      ? [
+          {
+            path: '/writing-circle',
+            label: '书写圈子',
+            icon: <EditNote fontSize="small" />,
+          },
+        ]
       : []),
   ];
 
@@ -255,20 +273,17 @@ const Header: React.FC<HeaderProps> = ({
 
   // 下拉菜单配置
   const dropdownMenus: DropdownMenu[] = [
-    {
-      label: '启发周刊',
-      icon: <CardMembership fontSize="small" />,
-      items: weeklyMenuItems,
-      anchor: weeklyMenuAnchor,
-      setAnchor: setWeeklyMenuAnchor,
-    },
-    {
-      label: '书写圈子',
-      icon: <EditNote fontSize="small" />,
-      items: writingMenuItems,
-      anchor: writingMenuAnchor,
-      setAnchor: setWritingMenuAnchor,
-    },
+    ...(isOrganizer()
+      ? [
+          {
+            label: '书写圈子',
+            icon: <EditNote fontSize="small" />,
+            items: writingMenuItems,
+            anchor: writingMenuAnchor,
+            setAnchor: setWritingMenuAnchor,
+          },
+        ]
+      : []),
     {
       label: '活动',
       icon: <CalendarToday fontSize="small" />,
@@ -528,16 +543,12 @@ const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* 移动端菜单组 */}
-          {renderMobileMenuItemGroup(
-            '启发周刊',
-            <CardMembership fontSize="small" />,
-            weeklyMenuItems
-          )}
-          {renderMobileMenuItemGroup(
-            '书写圈子',
-            <EditNote fontSize="small" />,
-            writingMenuItems
-          )}
+          {isOrganizer() &&
+            renderMobileMenuItemGroup(
+              '书写圈子',
+              <EditNote fontSize="small" />,
+              writingMenuItems
+            )}
           {renderMobileMenuItemGroup(
             '活动',
             <CalendarToday fontSize="small" />,
@@ -699,16 +710,6 @@ const Header: React.FC<HeaderProps> = ({
                   <CardMembership fontSize="small" sx={{ mr: 1 }} />
                   我的卡片
                 </MenuItem>
-                {isOrganizer() && (
-                  <MenuItem
-                    component={Link}
-                    to="/bulk-weekly-upload"
-                    onClick={() => setUserMenuAnchor(null)}
-                  >
-                    <UploadFileOutlined fontSize="small" sx={{ mr: 1 }} />
-                    批量上传周刊
-                  </MenuItem>
-                )}
                 <MenuItem
                   component={Link}
                   to="/writing-circle?scope=mine"
