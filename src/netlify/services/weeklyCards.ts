@@ -31,10 +31,12 @@ export const weeklyCardsApi = {
   },
 
   getByEpisode: async (
-    episode: string
+    episode: string,
+    year?: number | string
   ): Promise<ApiResponse<{ records: WeeklyCard[] }>> => {
     return http.get<{ records: WeeklyCard[] }>('/weeklyCards', 'getByEpisode', {
       episode,
+      ...(year ? { year } : {}),
     });
   },
 

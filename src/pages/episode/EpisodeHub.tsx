@@ -75,7 +75,10 @@ const EpisodeHub: React.FC = () => {
           await Promise.all([
             episodesApi.getByMeetupEpisode(meetupId, episodeNumber),
             episodeResponsesApi.getByEpisode(meetupId, episodeNumber),
-            weeklyCardsApi.getByEpisode(String(episodeNumber)),
+            weeklyCardsApi.getByEpisode(
+              String(episodeNumber),
+              routeYear || undefined
+            ),
           ]);
 
         if (!episodeResult.success || !episodeResult.data?.episode) {
