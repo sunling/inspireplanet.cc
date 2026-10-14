@@ -366,7 +366,7 @@ const EpisodeHub: React.FC = () => {
 
         {(hasStructuredSummary || weeklyCards.length > 0) && (
           <p className={styles.readingHint}>
-            选中触动你的文字，就可以带着这段引用回应；也可以直接回应金句。
+            选中金句或正文里触动你的文字，就可以带着引用回应。
           </p>
         )}
         {hasStructuredSummary && episodeSummary ? (
@@ -393,20 +393,7 @@ const EpisodeHub: React.FC = () => {
 
                   <h3>{topic.title}</h3>
 
-                  {topic.quote && (
-                    <>
-                      <blockquote>{topic.quote}</blockquote>
-                      <button
-                        type="button"
-                        className={styles.quoteAction}
-                        onClick={() =>
-                          respondToQuote(topic.quote!, topic.speaker)
-                        }
-                      >
-                        回应这句金句
-                      </button>
-                    </>
-                  )}
+                  {topic.quote && <blockquote>{topic.quote}</blockquote>}
 
                   {(topic.context ||
                     (!topic.keyPoints?.length && topic.summary)) && (
@@ -479,18 +466,7 @@ const EpisodeHub: React.FC = () => {
                     </span>
                   </div>
                   <h3>{card.title}</h3>
-                  {card.quote && (
-                    <>
-                      <blockquote>{card.quote}</blockquote>
-                      <button
-                        type="button"
-                        className={styles.quoteAction}
-                        onClick={() => respondToQuote(card.quote, card.name)}
-                      >
-                        回应这句金句
-                      </button>
-                    </>
-                  )}
+                  {card.quote && <blockquote>{card.quote}</blockquote>}
                   {paragraphs.length > 0 && (
                     <div className={styles.cardDetailBody}>
                       {paragraphs.map((para, pIdx) => (

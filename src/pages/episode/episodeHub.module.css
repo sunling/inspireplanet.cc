@@ -802,31 +802,6 @@
   line-height: 1.7;
 }
 
-.quoteAction {
-  align-self: flex-start;
-  margin: 8px 0 12px;
-  min-height: 44px;
-  padding: 10px 18px;
-  border: 1px solid #a94e2b;
-  border-radius: 999px;
-  background: #a94e2b;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(106, 53, 31, 0.18);
-  font: inherit;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.quoteAction:hover {
-  background: #873b1d;
-}
-
-.quoteAction:focus-visible {
-  outline: 2px solid #a94e2b;
-  outline-offset: 3px;
-}
-
 .sectionHeading > a.primaryAction {
   color: #fff;
 }
