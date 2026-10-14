@@ -185,11 +185,11 @@ const Header: React.FC<HeaderProps> = ({
   // 判断当前路由是否匹配
   const isActiveRoute = (path?: string): boolean => {
     if (!path) return false;
-    if (path === '/weekly-cards') {
-      return location.pathname.startsWith('/weekly-cards');
-    }
-    if (path.startsWith('/episodes/')) {
-      return location.pathname.startsWith('/episodes/');
+    if (path.startsWith('/episodes/') || path === '/weekly-cards') {
+      return (
+        location.pathname.startsWith('/episodes/') ||
+        location.pathname.startsWith('/weekly-cards')
+      );
     }
     return location.pathname === path;
   };
@@ -208,19 +208,10 @@ const Header: React.FC<HeaderProps> = ({
   const topNavItems: NavItem[] = [
     { path: '/', label: '首页', icon: <Home fontSize="small" /> },
     {
-      path: '/weekly-cards',
-      label: '启发周刊',
-      icon: <CardMembership fontSize="small" />,
+      path: latestResponseWallHref || '/weekly-cards',
+      label: '每周分享',
+      icon: <AutoStoriesOutlined fontSize="small" />,
     },
-    ...(latestResponseWallHref
-      ? [
-          {
-            path: latestResponseWallHref,
-            label: '本期分享',
-            icon: <AutoStoriesOutlined fontSize="small" />,
-          },
-        ]
-      : []),
     {
       path: '/questions',
       label: '问题圆桌',

@@ -222,7 +222,7 @@ function parseRecapMarkdownToSummary(
       return;
     }
 
-    let speaker = '现场分享';
+    let speaker = '';
     let topicTitle = currentSectionTitle;
     const colonMatch = currentSectionTitle.match(/^([^：:]{1,12})[：:]\s*(.+)$/);
     if (colonMatch) {

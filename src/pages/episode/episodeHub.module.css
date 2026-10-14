@@ -116,6 +116,34 @@
   white-space: pre-wrap;
 }
 
+.heroHighlights {
+  margin-top: 16px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.heroHighlights strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #8f4528;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.heroHighlights ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #5a4a41;
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+
+.heroHighlights li + li {
+  margin-top: 4px;
+}
+
 .heroFooter {
   display: flex;
   flex-wrap: wrap;
@@ -210,17 +238,6 @@
   text-decoration: none;
 }
 
-.summaryContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  margin-bottom: 32px;
-}
-
-.weeklyCardsBlock {
-  scroll-margin-top: 84px;
-}
-
 .topicList {
   display: flex;
   flex-direction: column;
@@ -302,62 +319,69 @@
   white-space: pre-wrap;
 }
 
-.highlightsBox {
-  padding: 20px 24px;
-  border: 1px dashed #dfcfc2;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.highlightsBox strong {
-  display: block;
-  margin-bottom: 10px;
-  color: #8f4528;
-  font-size: 0.84rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-}
-
-.highlightsBox ul {
-  margin: 0;
-  padding-left: 18px;
-  color: #5f5047;
-  font-size: 0.9rem;
-  line-height: 1.75;
-}
-
-.highlightsBox li + li {
-  margin-top: 6px;
+.liveDiscussionsSection {
+  margin-top: 32px;
+  scroll-margin-top: 84px;
 }
 
 .subSectionHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 16px;
 }
 
+.subSectionHeader p {
+  margin: 0 0 4px;
+  color: #a94e2b;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
 .subSectionHeader h3 {
   margin: 0;
-  color: #4a3c35;
+  color: #3c2f28;
   font-family: var(--font-serif);
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 600;
 }
 
-.subSectionHeader a {
-  color: #a94e2b;
-  font-size: 0.9rem;
+.discussionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.discussionCard {
+  padding: 22px 24px;
+  border: 1px solid #eadad0;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fff9f1 0%, #faf2e9 100%);
+}
+
+.discussionTag {
+  display: inline-block;
+  margin-bottom: 10px;
+  color: #9b4b2b;
+  font-size: 0.8rem;
   font-weight: 700;
-  text-decoration: none;
+}
+
+.discussionCard p {
+  margin: 0;
+  color: #56473e;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
 }
 
 .weeklyGrid,
 .responseGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
 }
 
 .weeklyCard,
@@ -370,20 +394,16 @@
 }
 
 .weeklyCard {
-  min-height: 270px;
-  padding: 24px;
-}
-
-.weeklyCard > span {
-  color: #a94e2b;
-  font-size: 0.78rem;
-  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 28px;
 }
 
 .weeklyCard h3 {
-  margin: 16px 0 14px;
+  margin: 12px 0 14px;
   font-family: var(--font-serif);
   font-size: 1.35rem;
+  line-height: 1.38;
 }
 
 .weeklyCard blockquote,
@@ -395,22 +415,26 @@
 }
 
 .weeklyCard blockquote {
-  padding-left: 14px;
+  padding: 4px 0 4px 14px;
   border-left: 3px solid #efb08f;
   color: #5b4a40;
   font-weight: 650;
   line-height: 1.7;
 }
 
-.weeklyCard > p {
-  display: -webkit-box;
-  overflow: hidden;
-  margin: 18px 0 0;
-  color: #84766d;
-  font-size: 0.88rem;
-  line-height: 1.65;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+.cardDetailBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  color: #4f433c;
+  font-size: 0.94rem;
+  line-height: 1.85;
+}
+
+.cardDetailBody p {
+  margin: 0;
+  white-space: pre-wrap;
 }
 
 .pendingCard {
@@ -674,6 +698,7 @@
   }
 
   .weeklyGrid,
+  .discussionGrid,
   .responseGrid {
     grid-template-columns: 1fr;
   }
