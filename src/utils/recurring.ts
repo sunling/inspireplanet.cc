@@ -59,19 +59,38 @@ export function getNextOccurrence(
   return dayjs(nextUTCOccurrenceDate(datetime, now));
 }
 
-// 计算期数（基于日历天数差，避免跨夏令时/冬令时或跨时区导致偏差）
+// 计算期数（基于日历天数差，按自然年自动重置为 EP1，且避免跨夏令时/冬令时或跨时区导致偏差）
 export function getEpisodeNumber(
   episodeStartDate: string,
   targetDate: dayjs.Dayjs | Date | string
 ): number {
+  const DAY_MS = 24 * 60 * 60 * 1000;
   const startNoon = parseDatePartsToUTCNoon(episodeStartDate);
   const targetStr =
     typeof targetDate === 'string'
       ? targetDate
       : dayjs(targetDate).format('YYYY-MM-DD');
   const targetNoon = parseDatePartsToUTCNoon(targetStr);
-  const diffDays = (targetNoon - startNoon) / (24 * 60 * 60 * 1000);
-  return Math.round(diffDays / 7) + 1;
+
+  // 先找到距离 targetDate 最近的活动发生日（吸附到与 episodeStartDate 相同的周周期上，消除美西周五与北京周六的 1 天日期差）
+  const totalWeeksFromStart = Math.round((targetNoon - startNoon) / DAY_MS / 7);
+  const occurrenceNoon = startNoon + totalWeeksFromStart * 7 * DAY_MS;
+  const occurrenceYear = new Date(occurrenceNoon).getUTCFullYear();
+  const startYear = Number(episodeStartDate.slice(0, 4));
+
+  if (occurrenceYear <= startYear) {
+    return totalWeeksFromStart + 1;
+  }
+
+  // 跨入新自然年时，以该自然年的第一个活动日作为 EP1
+  const jan1Noon = Date.UTC(occurrenceYear, 0, 1, 12, 0, 0);
+  const daysFromStartToJan1 = Math.round((jan1Noon - startNoon) / DAY_MS);
+  const rem = ((daysFromStartToJan1 % 7) + 7) % 7;
+  const offsetToFirstOccurrence = rem === 0 ? 0 : 7 - rem;
+  const yearFirstOccurrenceNoon =
+    jan1Noon + offsetToFirstOccurrence * DAY_MS;
+
+  return Math.round((occurrenceNoon - yearFirstOccurrenceNoon) / DAY_MS / 7) + 1;
 }
 
 // 计算当前已经开始（含开场前 2 小时预热窗口）的最新一期信息

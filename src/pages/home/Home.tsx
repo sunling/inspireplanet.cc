@@ -227,7 +227,9 @@ const Home: React.FC = () => {
 
   const useRecurringEpisode =
     activeRecurringEpisode &&
-    activeRecurringEpisode.episodeNumber >= cardEpisodeNumber;
+    (activeRecurringEpisode.year > cardEpisodeYear ||
+      (activeRecurringEpisode.year === cardEpisodeYear &&
+        activeRecurringEpisode.episodeNumber >= cardEpisodeNumber));
   const latestEpisodeNumber = useRecurringEpisode
     ? activeRecurringEpisode.episodeNumber
     : cardEpisodeNumber;

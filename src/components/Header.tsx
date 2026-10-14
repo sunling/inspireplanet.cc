@@ -162,7 +162,12 @@ const Header: React.FC<HeaderProps> = ({
               recurringMeetup.datetime,
               recurringMeetup.episode_start_date
             );
-            if (activeEp && activeEp.episodeNumber >= bestEpisode) {
+            if (
+              activeEp &&
+              (activeEp.year > bestYear ||
+                (activeEp.year === bestYear &&
+                  activeEp.episodeNumber >= bestEpisode))
+            ) {
               bestEpisode = activeEp.episodeNumber;
               bestYear = activeEp.year;
             }
