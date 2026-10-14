@@ -115,7 +115,7 @@ const EpisodeHub: React.FC = () => {
     }
   }, [isLoading]);
 
-  const episodeYear = getEpisodeYear(episode?.date || '');
+  const episodeYear = getEpisodeYear(episode?.date || '') ?? routeYear;
   const episodeLabel = `${episodeYear ? `${episodeYear} · ` : ''}EP${episode?.episode_number}`;
   const exportingResponse = responses.find(
     (response) => response.id === exportingResponseId

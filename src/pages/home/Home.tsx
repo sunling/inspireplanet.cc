@@ -18,6 +18,7 @@ import {
   getNextOccurrence,
   toLocalDateStr,
   getEpisodeNumber,
+  getLatestActiveEpisode,
 } from '../../utils/recurring';
 import dayjs from 'dayjs';
 
@@ -62,6 +63,10 @@ const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [upcomingMeetups, setUpcomingMeetups] = useState<UpcomingMeetup[]>([]);
+  const [activeRecurringEpisode, setActiveRecurringEpisode] = useState<{
+    episodeNumber: number;
+    year: number;
+  } | null>(null);
   const [roundtableQuestionCount, setRoundtableQuestionCount] = useState(0);
   const [showWechatQr, setShowWechatQr] = useState(false);
 
@@ -93,6 +98,23 @@ const Home: React.FC = () => {
       const res = await meetupsApi.getAll({ status: 'active' });
       const meetups: Meetup[] = res.data?.meetups || [];
       const now = dayjs();
+
+      const recurringMeetup =
+        meetups.find(
+          (m) => Number(m.id) === 39 && m.is_recurring && m.episode_start_date
+        ) || meetups.find((m) => m.is_recurring && m.episode_start_date);
+      if (recurringMeetup?.episode_start_date) {
+        const latestActive = getLatestActiveEpisode(
+          recurringMeetup.datetime,
+          recurringMeetup.episode_start_date
+        );
+        if (latestActive) {
+          setActiveRecurringEpisode({
+            episodeNumber: latestActive.episodeNumber,
+            year: latestActive.year,
+          });
+        }
+      }
 
       const upcoming: UpcomingMeetup[] = meetups
         .map((m) => {
@@ -193,10 +215,27 @@ const Home: React.FC = () => {
     );
   };
 
-  const latestEpisodeNumber = getEpisodeNumberFromLabel(cards[0]?.episode);
-  const latestEpisodeYear = cards[0]?.created
-    ? new Date(cards[0].created).getFullYear()
+  const cardEpisodeNumber = getEpisodeNumberFromLabel(cards[0]?.episode);
+  const cardEpisodeYear = cards[0]?.created
+    ? Number(
+        new Intl.DateTimeFormat('en-US', {
+          year: 'numeric',
+          timeZone: 'Asia/Shanghai',
+        }).format(new Date(cards[0].created))
+      )
     : new Date().getFullYear();
+
+  const useRecurringEpisode =
+    activeRecurringEpisode &&
+    (activeRecurringEpisode.year > cardEpisodeYear ||
+      (activeRecurringEpisode.year === cardEpisodeYear &&
+        activeRecurringEpisode.episodeNumber >= cardEpisodeNumber));
+  const latestEpisodeNumber = useRecurringEpisode
+    ? activeRecurringEpisode.episodeNumber
+    : cardEpisodeNumber;
+  const latestEpisodeYear = useRecurringEpisode
+    ? activeRecurringEpisode.year
+    : cardEpisodeYear;
   const latestCreateUrl = latestEpisodeNumber
     ? `/episodes/${latestEpisodeYear}/${latestEpisodeNumber}/respond`
     : '/weekly-cards';
@@ -207,7 +246,7 @@ const Home: React.FC = () => {
       title: '写下本期一句',
       description: '分享结束后，留下此刻还在你心里的一句话。',
       label: latestEpisodeNumber
-        ? `回应 EP${latestEpisodeNumber}`
+        ? `回应 ${latestEpisodeYear} · EP${latestEpisodeNumber}`
         : '看看本期内容',
       to: latestCreateUrl,
     },
@@ -351,7 +390,7 @@ const Home: React.FC = () => {
           <div className={styles['view-all-container']}>
             {latestEpisodeNumber > 0 && (
               <Link
-                to={`/episodes/${latestEpisodeNumber}`}
+                to={`/episodes/${latestEpisodeYear}/${latestEpisodeNumber}`}
                 className={styles['view-all-button']}
               >
                 进入本期页面 <ChevronRight fontSize="inherit" />

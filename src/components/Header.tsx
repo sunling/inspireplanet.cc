@@ -31,7 +31,12 @@ import {
   AutoStoriesOutlined,
   UploadFileOutlined,
 } from '@mui/icons-material';
-import { notificationsApi, weeklyCardsApi } from '../netlify/config';
+import {
+  meetupsApi,
+  notificationsApi,
+  weeklyCardsApi,
+} from '../netlify/config';
+import { getLatestActiveEpisode } from '../utils/recurring';
 import { isOrganizer } from '../utils/user';
 
 interface HeaderProps {
@@ -112,26 +117,65 @@ const Header: React.FC<HeaderProps> = ({
     let active = true;
     const loadLatestResponseWallHref = async () => {
       try {
-        const response = await weeklyCardsApi.getLatest();
-        const latestCard = response.data?.records?.[0];
-        const episodeNumber = latestCard?.episode?.replace(/\D/g, '');
-        const createdAt = latestCard?.created
-          ? new Date(latestCard.created)
-          : null;
-        if (
-          !active ||
-          !episodeNumber ||
-          !createdAt ||
-          Number.isNaN(createdAt.getTime())
-        )
-          return;
-        const year = new Intl.DateTimeFormat('en-US', {
-          year: 'numeric',
-          timeZone: 'Asia/Shanghai',
-        }).format(createdAt);
-        setLatestResponseWallHref(
-          `https://inspireplanet.cc/episodes/${year}/${episodeNumber}`
+        const [weeklyRes, meetupsRes] = await Promise.allSettled([
+          weeklyCardsApi.getLatest(),
+          meetupsApi.getAll({ status: 'active' }),
+        ]);
+
+        let bestEpisode = 0;
+        let bestYear = Number(
+          new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            timeZone: 'Asia/Shanghai',
+          }).format(new Date())
         );
+
+        if (weeklyRes.status === 'fulfilled') {
+          const latestCard = weeklyRes.value.data?.records?.[0];
+          const cardEp = Number(latestCard?.episode?.replace(/\D/g, '') || 0);
+          const createdAt = latestCard?.created
+            ? new Date(latestCard.created)
+            : null;
+          if (cardEp > 0) {
+            bestEpisode = cardEp;
+            if (createdAt && !Number.isNaN(createdAt.getTime())) {
+              bestYear = Number(
+                new Intl.DateTimeFormat('en-US', {
+                  year: 'numeric',
+                  timeZone: 'Asia/Shanghai',
+                }).format(createdAt)
+              );
+            }
+          }
+        }
+
+        if (meetupsRes.status === 'fulfilled') {
+          const meetups = meetupsRes.value.data?.meetups || [];
+          const recurringMeetup =
+            meetups.find(
+              (m: any) =>
+                Number(m.id) === 39 && m.is_recurring && m.episode_start_date
+            ) ||
+            meetups.find((m: any) => m.is_recurring && m.episode_start_date);
+          if (recurringMeetup?.episode_start_date) {
+            const activeEp = getLatestActiveEpisode(
+              recurringMeetup.datetime,
+              recurringMeetup.episode_start_date
+            );
+            if (
+              activeEp &&
+              (activeEp.year > bestYear ||
+                (activeEp.year === bestYear &&
+                  activeEp.episodeNumber >= bestEpisode))
+            ) {
+              bestEpisode = activeEp.episodeNumber;
+              bestYear = activeEp.year;
+            }
+          }
+        }
+
+        if (!active || bestEpisode <= 0) return;
+        setLatestResponseWallHref(`/episodes/${bestYear}/${bestEpisode}`);
       } catch (error) {
         console.error('加载最新一期回应墙地址失败:', error);
       }
@@ -171,7 +215,7 @@ const Header: React.FC<HeaderProps> = ({
   const weeklyMenuItems: NavItem[] = [
     { path: '/weekly-cards', label: '阅读启发周刊' },
     ...(latestResponseWallHref
-      ? [{ href: latestResponseWallHref, label: '查看最新回应墙' }]
+      ? [{ path: latestResponseWallHref, label: '查看最新回应墙' }]
       : []),
   ];
 
