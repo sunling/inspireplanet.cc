@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, CircularProgress } from '@mui/material';
 import html2canvas from 'html2canvas';
 import { QRCodeSVG } from 'qrcode.react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import {
   episodeResponsesApi,
@@ -13,6 +13,8 @@ import { EpisodeCardContext } from '@/netlify/functions/episodes';
 import { EpisodeResponse } from '@/netlify/functions/episodeResponses';
 import { EpisodeSummary, WeeklyCard } from '@/netlify/services/weeklyCards';
 import { saveImageDataUrl } from '@/utils/share';
+import { getSourceSpeaker } from '@/hooks/useQuoteSelection';
+import QuoteResponseBar from '@/components/QuoteResponseBar';
 import cardStyles from '../card/EpisodeCardCreate/episodeCardCreate.module.css';
 import styles from './episodeHub.module.css';
 
@@ -54,6 +56,8 @@ const getEpisodeYear = (date: string) =>
 
 const EpisodeHub: React.FC = () => {
   const params = useParams<{ year?: string; episode: string }>();
+  const navigate = useNavigate();
+  const readingRef = useRef<HTMLElement>(null);
   const meetupId = INSPIRE_PLANET_MEETUP_ID;
   const episodeNumber = Number(params.episode);
   const routeYear = params.year ? Number(params.year) : null;
@@ -145,6 +149,16 @@ const EpisodeHub: React.FC = () => {
     }
   }, [isLoading]);
 
+  const respondToQuote = (quote: string, speaker = '', label = '') => {
+    navigate(createUrl, {
+      state: {
+        quote,
+        quoteSpeaker: getSourceSpeaker(speaker),
+        quoteSourceLabel: label,
+      },
+    });
+  };
+
   const episodeDate =
     episode?.date ||
     episodeSummary?.date ||
@@ -157,6 +171,7 @@ const EpisodeHub: React.FC = () => {
       : null;
   const nextEpisodeHref = `/episodes/${episodeYear ? `${episodeYear}/` : ''}${episodeNumber + 1}`;
   const hasStructuredSummary = Boolean(episodeSummary?.topics?.length);
+  const weeklyIssueHref = `/weekly-cards/${episodeNumber}${episodeYear ? `?year=${episodeYear}` : ''}`;
 
   const speakerNames = useMemo(() => {
     const rawSource =
@@ -173,7 +188,7 @@ const EpisodeHub: React.FC = () => {
   const exportingResponse = responses.find(
     (response) => response.id === exportingResponseId
   );
-  const shareUrl = `${window.location.origin}${createUrl}`;
+  const shareUrl = `${window.location.origin}/episodes/${episodeYear ? `${episodeYear}/` : ''}${episodeNumber}`;
 
   const handleShareResponse = async (response: EpisodeResponse) => {
     setExportingResponseId(response.id);
@@ -192,8 +207,13 @@ const EpisodeHub: React.FC = () => {
       }
 
       let fontSize = Number.parseFloat(quote.style.fontSize);
+      const mainStyle = window.getComputedStyle(mainContent);
+      const availableHeight =
+        mainContent.clientHeight -
+        parseFloat(mainStyle.paddingTop) -
+        parseFloat(mainStyle.paddingBottom);
       while (
-        mainContent.scrollHeight > mainContent.clientHeight &&
+        (quote.parentElement?.offsetHeight || 0) > availableHeight &&
         fontSize > 10
       ) {
         fontSize -= 1;
@@ -303,7 +323,7 @@ const EpisodeHub: React.FC = () => {
           <div className={styles.heroFooter}>
             <div className={styles.heroActions}>
               <Link to={createUrl} className={styles.primaryAction}>
-                写下我的一句
+                留下感受和收获
               </Link>
             </div>
 
@@ -315,6 +335,11 @@ const EpisodeHub: React.FC = () => {
                     : `本期分享 (${weeklyCards.length})`}
                 </a>
               )}
+              {weeklyCards.length > 0 && (
+                <Link to={weeklyIssueHref} className={styles.anchorPill}>
+                  本期周刊
+                </Link>
+              )}
               <a href="#responses" className={styles.anchorPill}>
                 回应墙 ({responses.length})
               </a>
@@ -323,7 +348,11 @@ const EpisodeHub: React.FC = () => {
         </div>
       </header>
 
-      <section className={styles.section} aria-labelledby="weekly-heading">
+      <section
+        ref={readingRef}
+        className={styles.section}
+        aria-labelledby="weekly-heading"
+      >
         <div className={styles.sectionHeading}>
           <div>
             <p>
@@ -335,12 +364,19 @@ const EpisodeHub: React.FC = () => {
           </div>
         </div>
 
+        {(hasStructuredSummary || weeklyCards.length > 0) && (
+          <p className={styles.readingHint}>
+            选中金句或正文里触动你的文字，就可以带着引用回应。
+          </p>
+        )}
         {hasStructuredSummary && episodeSummary ? (
           <div className={styles.summaryContainer}>
             <div className={styles.topicList}>
               {episodeSummary.topics.map((topic, idx) => (
                 <article
                   id={`topic-${idx + 1}`}
+                  data-response-source
+                  data-response-speaker={getSourceSpeaker(topic.speaker)}
                   className={styles.topicCard}
                   key={`${topic.speaker}-${idx}`}
                 >
@@ -381,7 +417,11 @@ const EpisodeHub: React.FC = () => {
                   )}
 
                   {topic.discussion && (
-                    <div className={styles.topicDiscussion}>
+                    <div
+                      data-response-source
+                      data-response-label="现场讨论"
+                      className={styles.topicDiscussion}
+                    >
                       <strong>现场追问与碰撞</strong>
                       <p>{topic.discussion}</p>
                     </div>
@@ -392,7 +432,11 @@ const EpisodeHub: React.FC = () => {
 
             {episodeSummary.highlights &&
               episodeSummary.highlights.length > 0 && (
-                <div className={styles.highlightsBox}>
+                <div
+                  data-response-source
+                  data-response-label="现场片段"
+                  className={styles.highlightsBox}
+                >
                   <strong>现场还聊到</strong>
                   <ul>
                     {episodeSummary.highlights.map((item, idx) => (
@@ -407,7 +451,12 @@ const EpisodeHub: React.FC = () => {
             {weeklyCards.map((card, idx) => {
               const paragraphs = getDetailParagraphs(card.detail);
               return (
-                <article className={styles.weeklyCard} key={card.id}>
+                <article
+                  data-response-source
+                  data-response-speaker={getSourceSpeaker(card.name)}
+                  className={styles.weeklyCard}
+                  key={card.id}
+                >
                   <div className={styles.topicHeader}>
                     <span className={styles.topicSpeaker}>
                       {card.name ? `分享者 · ${card.name}` : '星友分享'}
@@ -432,8 +481,19 @@ const EpisodeHub: React.FC = () => {
         ) : (
           <div className={styles.pendingCard}>
             <strong>本期分享纪要正在整理中</strong>
-            <p>你可以先写下自己的那一句。纪要发布后，会自动出现在这里。</p>
+            <p>
+              刚参加完会议？不用等纪要，可以先留下当时的感受、收获，或接下来想试试的事。纪要整理好后会在这里发布。
+            </p>
           </div>
+        )}
+        {weeklyCards.length > 0 && (
+          <aside className={styles.weeklyIssue} aria-label="本期周刊">
+            <div>
+              <strong>把本期的启发带走</strong>
+              <p>在启发星球周刊里阅读金句与分享语境，收藏或分享喜欢的卡片。</p>
+            </div>
+            <Link to={weeklyIssueHref}>阅读本期周刊 →</Link>
+          </aside>
         )}
       </section>
 
@@ -447,7 +507,9 @@ const EpisodeHub: React.FC = () => {
             <p>本期回应墙 · {responses.length} 条</p>
             <h2 id="responses-heading">从这些片段继续生长</h2>
           </div>
-          <Link to={createUrl}>我也写一句</Link>
+          <Link to={createUrl} className={styles.primaryAction}>
+            留下我的回应
+          </Link>
         </div>
 
         {shareError && <Alert severity="warning">{shareError}</Alert>}
@@ -507,6 +569,14 @@ const EpisodeHub: React.FC = () => {
         )}
       </section>
 
+      <QuoteResponseBar
+        container={readingRef}
+        resetKey={`${routeYear}/${episodeNumber}`}
+        onRespond={(quote) =>
+          respondToQuote(quote.text, quote.speaker, quote.label)
+        }
+      />
+
       {exportingResponse && (
         <div className={styles.exportStage} aria-hidden="true">
           <div
@@ -522,21 +592,6 @@ const EpisodeHub: React.FC = () => {
                 <div className={cardStyles.episodeMeta}>
                   <div className={cardStyles.brandChip}>
                     启发星球 {episodeLabel}
-                  </div>
-                  <div className={cardStyles.episodeDetails}>
-                    {episode.date && (
-                      <span>分享日期 · {formatEpisodeDate(episode.date)}</span>
-                    )}
-                    <span>
-                      回应日期 ·{' '}
-                      {new Date(
-                        exportingResponse.created_at
-                      ).toLocaleDateString('zh-CN', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </span>
                   </div>
                 </div>
                 <div className={cardStyles.expressionCue}>
@@ -583,7 +638,7 @@ const EpisodeHub: React.FC = () => {
 
             <div className={cardStyles.qrFloat}>
               <QRCodeSVG value={shareUrl} size={54} bgColor="#ffffff" />
-              <span>扫码回应本期</span>
+              <span>扫码查看本期</span>
             </div>
           </div>
         </div>
