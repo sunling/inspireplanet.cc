@@ -11,7 +11,7 @@ import {
 } from '@/netlify/config';
 import { EpisodeCardContext } from '@/netlify/functions/episodes';
 import { EpisodeResponse } from '@/netlify/functions/episodeResponses';
-import { WeeklyCard } from '@/netlify/services/weeklyCards';
+import { EpisodeSummary, WeeklyCard } from '@/netlify/services/weeklyCards';
 import { saveImageDataUrl } from '@/utils/share';
 import cardStyles from '../card/EpisodeCardCreate/episodeCardCreate.module.css';
 import styles from './episodeHub.module.css';
@@ -45,6 +45,9 @@ const EpisodeHub: React.FC = () => {
   const [episode, setEpisode] = useState<EpisodeCardContext | null>(null);
   const [responses, setResponses] = useState<EpisodeResponse[]>([]);
   const [weeklyCards, setWeeklyCards] = useState<WeeklyCard[]>([]);
+  const [episodeSummary, setEpisodeSummary] = useState<EpisodeSummary | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [exportingResponseId, setExportingResponseId] = useState<number | null>(
     null
@@ -75,7 +78,10 @@ const EpisodeHub: React.FC = () => {
           await Promise.all([
             episodesApi.getByMeetupEpisode(meetupId, episodeNumber),
             episodeResponsesApi.getByEpisode(meetupId, episodeNumber),
-            weeklyCardsApi.getByEpisode(String(episodeNumber)),
+            weeklyCardsApi.getByEpisode(
+              String(episodeNumber),
+              routeYear || undefined
+            ),
           ]);
 
         if (!episodeResult.success || !episodeResult.data?.episode) {
@@ -93,6 +99,7 @@ const EpisodeHub: React.FC = () => {
         }
         if (weeklyResult.success) {
           setWeeklyCards(weeklyResult.data?.records || []);
+          setEpisodeSummary(weeklyResult.data?.summary || null);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : '无法读取本期内容');
@@ -218,22 +225,84 @@ const EpisodeHub: React.FC = () => {
           )}
         </div>
 
+        {episodeSummary && (
+          <div className={styles.summaryContainer}>
+            <div className={styles.summaryOverview}>
+              <h3>{episodeSummary.title}</h3>
+              {episodeSummary.overview && <p>{episodeSummary.overview}</p>}
+            </div>
+
+            {episodeSummary.topics?.length > 0 && (
+              <div className={styles.topicList}>
+                {episodeSummary.topics.map((topic, idx) => (
+                  <article
+                    className={styles.topicCard}
+                    key={`${topic.speaker}-${idx}`}
+                  >
+                    <div className={styles.topicHeader}>
+                      <span className={styles.topicSpeaker}>
+                        分享者 · {topic.speaker}
+                      </span>
+                      <span className={styles.topicIndex}>
+                        {String(idx + 1).padStart(2, '0')}
+                      </span>
+                    </div>
+                    <h3>{topic.title}</h3>
+                    {topic.quote && <blockquote>{topic.quote}</blockquote>}
+                    <p className={styles.topicBody}>{topic.summary}</p>
+                    {topic.discussion && (
+                      <div className={styles.topicDiscussion}>
+                        <strong>现场回响与讨论</strong>
+                        <p>{topic.discussion}</p>
+                      </div>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+
+            {episodeSummary.highlights &&
+              episodeSummary.highlights.length > 0 && (
+                <div className={styles.highlightsBox}>
+                  <strong>这一期还聊到</strong>
+                  <ul>
+                    {episodeSummary.highlights.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+          </div>
+        )}
+
         {weeklyCards.length > 0 ? (
-          <div className={styles.weeklyGrid}>
-            {weeklyCards.slice(0, 3).map((card) => (
-              <article className={styles.weeklyCard} key={card.id}>
-                <span>分享者 · {card.name}</span>
-                <h3>{card.title}</h3>
-                <blockquote>{card.quote}</blockquote>
-                {card.detail && <p>{getDetailPreview(card.detail)}</p>}
-              </article>
-            ))}
-          </div>
+          <>
+            {episodeSummary && (
+              <div className={styles.subSectionHeader}>
+                <h3>本期金句卡片</h3>
+                <Link to={`/weekly-cards/${episodeNumber}`}>
+                  查看全部 {weeklyCards.length} 张卡片 →
+                </Link>
+              </div>
+            )}
+            <div className={styles.weeklyGrid}>
+              {weeklyCards.slice(0, 3).map((card) => (
+                <article className={styles.weeklyCard} key={card.id}>
+                  <span>分享者 · {card.name}</span>
+                  <h3>{card.title}</h3>
+                  <blockquote>{card.quote}</blockquote>
+                  {card.detail && <p>{getDetailPreview(card.detail)}</p>}
+                </article>
+              ))}
+            </div>
+          </>
         ) : (
-          <div className={styles.pendingCard}>
-            <strong>本期周刊正在整理中</strong>
-            <p>你可以先写下自己的那一句。周刊发布后，会自动出现在这里。</p>
-          </div>
+          !episodeSummary && (
+            <div className={styles.pendingCard}>
+              <strong>本期周刊正在整理中</strong>
+              <p>你可以先写下自己的那一句。周刊发布后，会自动出现在这里。</p>
+            </div>
+          )
         )}
       </section>
 

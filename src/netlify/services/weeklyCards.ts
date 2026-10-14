@@ -13,9 +13,27 @@ export interface WeeklyCard {
   created: string;
 }
 
+export interface EpisodeTopic {
+  speaker: string;
+  title: string;
+  summary: string;
+  discussion?: string;
+  quote?: string;
+}
+
+export interface EpisodeSummary {
+  episode: string;
+  date?: string;
+  title: string;
+  overview: string;
+  topics: EpisodeTopic[];
+  highlights?: string[];
+}
+
 // 周刊卡片响应接口
 export interface WeeklyCardResponse {
   records: WeeklyCard[];
+  summary?: EpisodeSummary | null;
 }
 
 export const weeklyCardsApi = {
@@ -31,11 +49,19 @@ export const weeklyCardsApi = {
   },
 
   getByEpisode: async (
-    episode: string
-  ): Promise<ApiResponse<{ records: WeeklyCard[] }>> => {
-    return http.get<{ records: WeeklyCard[] }>('/weeklyCards', 'getByEpisode', {
-      episode,
-    });
+    episode: string,
+    year?: number | string
+  ): Promise<
+    ApiResponse<{ records: WeeklyCard[]; summary?: EpisodeSummary | null }>
+  > => {
+    return http.get<{ records: WeeklyCard[]; summary?: EpisodeSummary | null }>(
+      '/weeklyCards',
+      'getByEpisode',
+      {
+        episode,
+        ...(year ? { year } : {}),
+      }
+    );
   },
 
   getAllLimited: async (
