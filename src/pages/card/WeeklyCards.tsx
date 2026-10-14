@@ -16,7 +16,6 @@ import {
   Pagination,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
-import ChatBubbleOutline from '@mui/icons-material/ChatBubbleOutline';
 import { getSourceSpeaker } from '@/hooks/useQuoteSelection';
 import QuoteResponseBar from '@/components/QuoteResponseBar';
 import useResponsive from '@/hooks/useResponsive';
@@ -816,7 +815,7 @@ const WeeklyCards: React.FC = () => {
         )}
 
         <p className={styles.readingHint}>
-          选中金句或正文里触动你的文字，带着引用回应分享者；也可以直接点击卡片里的回应按钮。
+          选中金句或正文里触动你的文字，就可以带着引用回应分享者。
         </p>
         <QuoteResponseBar
           container={readingRef}
@@ -1027,28 +1026,6 @@ const WeeklyCards: React.FC = () => {
                                   </Box>
                                 </Box>
 
-                                {cardEpisodePath && (
-                                  <div
-                                    className={styles.cardResponseActions}
-                                    data-html2canvas-ignore="true"
-                                  >
-                                    <Link
-                                      className={styles.respondButton}
-                                      to={`${cardEpisodePath}/respond`}
-                                      state={{
-                                        quote: card.quote || '',
-                                        quoteSpeaker: getSourceSpeaker(
-                                          card.name
-                                        ),
-                                      }}
-                                    >
-                                      <ChatBubbleOutline fontSize="small" />
-                                      {card.quote
-                                        ? '回应这句金句'
-                                        : '留下我的回应'}
-                                    </Link>
-                                  </div>
-                                )}
                                 <Box
                                   className="card-footer-box"
                                   sx={{
