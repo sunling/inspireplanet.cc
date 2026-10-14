@@ -157,6 +157,7 @@ const EpisodeHub: React.FC = () => {
       : null;
   const nextEpisodeHref = `/episodes/${episodeYear ? `${episodeYear}/` : ''}${episodeNumber + 1}`;
   const hasStructuredSummary = Boolean(episodeSummary?.topics?.length);
+  const weeklyIssueHref = `/weekly-cards/${episodeNumber}${episodeYear ? `?year=${episodeYear}` : ''}`;
 
   const speakerNames = useMemo(() => {
     const rawSource =
@@ -315,6 +316,11 @@ const EpisodeHub: React.FC = () => {
                     : `本期分享 (${weeklyCards.length})`}
                 </a>
               )}
+              {weeklyCards.length > 0 && (
+                <Link to={weeklyIssueHref} className={styles.anchorPill}>
+                  本期周刊
+                </Link>
+              )}
               <a href="#responses" className={styles.anchorPill}>
                 回应墙 ({responses.length})
               </a>
@@ -434,6 +440,15 @@ const EpisodeHub: React.FC = () => {
             <strong>本期分享纪要正在整理中</strong>
             <p>你可以先写下自己的那一句。纪要发布后，会自动出现在这里。</p>
           </div>
+        )}
+        {weeklyCards.length > 0 && (
+          <aside className={styles.weeklyIssue} aria-label="本期周刊">
+            <div>
+              <strong>把本期的启发带走</strong>
+              <p>在启发星球周刊里阅读金句与分享语境，收藏或分享喜欢的卡片。</p>
+            </div>
+            <Link to={weeklyIssueHref}>阅读本期周刊 →</Link>
+          </aside>
         )}
       </section>
 

@@ -449,13 +449,16 @@ const WeeklyCards: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
+        setShowAll(false);
+        setAllPage(1);
 
         const params = new URLSearchParams(location.search);
         const episodeParam = episodeFromPath || params.get('episode') || '';
+        const yearParam = params.get('year') || undefined;
 
         let res: any;
         if (episodeParam) {
-          res = await weeklyCardsApi.getByEpisode(episodeParam);
+          res = await weeklyCardsApi.getByEpisode(episodeParam, yearParam);
         } else {
           // 默认只加载最新一期
           res = await weeklyCardsApi.getLatest();
@@ -618,7 +621,7 @@ const WeeklyCards: React.FC = () => {
 
         const episodeNumber = Number(card?.episode?.match(/\d+/)?.[0] || 0);
         const targetUrl = episodeNumber
-          ? `${window.location.origin}/episodes/${episodeNumber}`
+          ? `${window.location.origin}/episodes/${getBeijingYear(card.created)}/${episodeNumber}`
           : window.location.href;
 
         await (window as any).QRCode.toCanvas(qrCanvas, targetUrl, {
@@ -717,7 +720,9 @@ const WeeklyCards: React.FC = () => {
       /\d+/
     )?.[0] || 0
   );
-  const activeEpisodeYear = getBeijingYear(cards[0]?.created);
+  const activeEpisodeYear =
+    new URLSearchParams(location.search).get('year') ||
+    getBeijingYear(cards[0]?.created);
   const activeEpisodePath = `${activeEpisodeYear ? `${activeEpisodeYear}/` : ''}${activeEpisodeNumber}`;
 
   return (
@@ -733,13 +738,12 @@ const WeeklyCards: React.FC = () => {
           <p>星友分享</p>
           <h1>启发星球周刊</h1>
           <span>从每周真实的分享里，收藏一句话，也带走一个新的视角。</span>
-       
         </header>
 
         {activeEpisodeNumber > 0 && (
           <nav className={styles.episodeJourney} aria-label="本期参与入口">
             <span>EP{activeEpisodeNumber} 不只是一份周刊</span>
-            <Link to={`/episodes/${activeEpisodePath}`}>看本期回应墙</Link>
+            <Link to={`/episodes/${activeEpisodePath}`}>看本期分享与回应</Link>
             <Link
               to={`/episodes/${activeEpisodePath}/respond`}
               className={styles.episodeJourneyPrimary}
