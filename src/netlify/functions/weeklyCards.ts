@@ -4,6 +4,7 @@ import { WeeklyCard } from '../services/weeklyCards';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
   getAllWeeklyCards,
+  getEpisodeSummary,
   getWeeklyCardsByEpisode,
 } from '../utils/githubWeeklyCards';
 import {
@@ -67,11 +68,12 @@ async function handleGetByEpisode(
       return createErrorResponse('缺少期数参数');
     }
 
-    const records = await getWeeklyCardsByEpisode(String(episode), year);
+    const [records, summary] = await Promise.all([
+      getWeeklyCardsByEpisode(String(episode), year),
+      getEpisodeSummary(String(episode), year),
+    ]);
 
-    return createSuccessResponse({ records } as {
-      records: WeeklyCard[];
-    });
+    return createSuccessResponse({ records, summary });
   } catch (error) {
     console.error('Function error:', error);
     return createErrorResponse('Internal Server Error', 500);
