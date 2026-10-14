@@ -2,7 +2,6 @@ import React, {
   ChangeEvent,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -116,17 +115,12 @@ const EpisodeCardCreate: React.FC = () => {
     loadEpisode();
   }, [episodeNumber, meetupId, routeYear]);
 
-  const shareUrl = useMemo(
-    () =>
-      `${window.location.origin}/episodes/${routeYear ? `${routeYear}/` : ''}${episodeNumber}/respond`,
-    [episodeNumber, routeYear]
-  );
-
   const episodeYear =
     (episode?.date
       ? new Date(`${episode.date}T00:00:00`).getFullYear()
       : null) ?? routeYear;
   const episodeLabel = `${episodeYear ? `${episodeYear} · ` : ''}EP${episode?.episode_number}`;
+  const shareUrl = `${window.location.origin}/episodes/${episodeYear ? `${episodeYear}/` : ''}${episodeNumber}`;
   const responseDate = new Date(
     publishedResponseDate || Date.now()
   ).toLocaleDateString('zh-CN', {
@@ -568,7 +562,7 @@ const EpisodeCardCreate: React.FC = () => {
 
           <div className={styles.qrFloat}>
             <QRCodeSVG value={shareUrl} size={54} bgColor="#ffffff" />
-            <span>扫码回应本期</span>
+            <span>扫码查看本期</span>
           </div>
         </div>
 
@@ -591,7 +585,7 @@ const EpisodeCardCreate: React.FC = () => {
           </Button>
         </div>
         <p className={styles.privacy}>
-          照片只在你的浏览器中处理；二维码会邀请朋友也来写一句。
+          照片只在你的浏览器中处理；扫码可查看本期分享与回应。
         </p>
       </section>
 

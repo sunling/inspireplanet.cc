@@ -230,7 +230,7 @@ const EpisodeHub: React.FC = () => {
   const exportingResponse = responses.find(
     (response) => response.id === exportingResponseId
   );
-  const shareUrl = `${window.location.origin}${createUrl}`;
+  const shareUrl = `${window.location.origin}/episodes/${episodeYear ? `${episodeYear}/` : ''}${episodeNumber}`;
 
   const handleShareResponse = async (response: EpisodeResponse) => {
     setExportingResponseId(response.id);
@@ -721,7 +721,7 @@ const EpisodeHub: React.FC = () => {
 
             <div className={cardStyles.qrFloat}>
               <QRCodeSVG value={shareUrl} size={54} bgColor="#ffffff" />
-              <span>扫码回应本期</span>
+              <span>扫码查看本期</span>
             </div>
           </div>
         </div>
