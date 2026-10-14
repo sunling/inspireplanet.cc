@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import html2canvas from 'html2canvas';
@@ -16,6 +16,9 @@ import {
   Pagination,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
+import ChatBubbleOutline from '@mui/icons-material/ChatBubbleOutline';
+import useQuoteSelection, { getSourceSpeaker } from '@/hooks/useQuoteSelection';
+import QuoteResponseBar from '@/components/QuoteResponseBar';
 import useResponsive from '@/hooks/useResponsive';
 
 import { getFontColorForGradient, gradientClasses } from '@/constants/gradient';
@@ -403,6 +406,8 @@ const getFinalExportHeight = (measuredHeight: number) => {
 const WeeklyCards: React.FC = () => {
   marked.setOptions({ breaks: true });
   const location = useLocation();
+  const navigate = useNavigate();
+  const readingRef = useRef<HTMLDivElement>(null);
   const { episode: episodeFromPath } = useParams<{ episode?: string }>();
   const [cards, setCards] = useState<WeeklyCardItem[]>([]);
   const [filteredCards, setFilteredCards] = useState<WeeklyCardItem[]>([]);
@@ -413,6 +418,10 @@ const WeeklyCards: React.FC = () => {
   const ALL_PAGE_SIZE = 10;
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedQuery, setDebouncedQuery] = useState<string>('');
+  const selectedQuote = useQuoteSelection(
+    readingRef,
+    `${location.pathname}${location.search}/${allPage}/${showAll}/${debouncedQuery}`
+  );
   const { isMobile } = useResponsive();
   const showSnackbar = useGlobalSnackbar();
 
@@ -579,6 +588,10 @@ const WeeklyCards: React.FC = () => {
       const dlBtn = clone.querySelector('.download-btn') as HTMLElement | null;
       if (dlBtn) dlBtn.style.display = 'none';
 
+      clone
+        .querySelectorAll('[data-html2canvas-ignore]')
+        .forEach((node) => node.remove());
+
       const imgs = Array.from(clone.getElementsByTagName('img'));
       imgs.forEach((img) => {
         img.style.maxHeight = 'none';
@@ -733,7 +746,7 @@ const WeeklyCards: React.FC = () => {
         background: '#fffaf6',
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth="lg" ref={readingRef}>
         <header className={styles.header}>
           <p>星友分享</p>
           <h1>启发星球周刊</h1>
@@ -806,6 +819,18 @@ const WeeklyCards: React.FC = () => {
           </Paper>
         )}
 
+        <p className={styles.readingHint}>
+          选中金句或正文里触动你的文字，带着引用回应分享者；也可以直接点击卡片里的回应按钮。
+        </p>
+        <QuoteResponseBar
+          quote={selectedQuote?.path ? selectedQuote : null}
+          onRespond={(quote) =>
+            navigate(`${quote.path}/respond`, {
+              state: { quote: quote.text, quoteSpeaker: quote.speaker },
+            })
+          }
+        />
+
         {/* 卡片容器 */}
         {loading ? (
           <Loading size={40} />
@@ -855,6 +880,16 @@ const WeeklyCards: React.FC = () => {
                       id={`episode-container-${year}-${episode.toLowerCase()}`}
                     >
                       {groupedByYear[year][episode].map((card) => {
+                        const cardEpisodeNumber = Number(
+                          card.episode?.match(/\d+/)?.[0] || 0
+                        );
+                        const cardYear =
+                          getBeijingYear(card.created) ||
+                          (!showAll ? activeEpisodeYear : '');
+                        const cardEpisodePath =
+                          cardEpisodeNumber > 0
+                            ? `/episodes/${cardYear ? `${cardYear}/` : ''}${cardEpisodeNumber}`
+                            : '';
                         const cardGradientClass =
                           card.gradient || 'card-gradient-1';
                         const fontColor =
@@ -894,7 +929,14 @@ const WeeklyCards: React.FC = () => {
                                   },
                                 }}
                               >
-                                <Box className="card-export-content">
+                                <Box
+                                  className="card-export-content"
+                                  data-response-source
+                                  data-response-speaker={getSourceSpeaker(
+                                    card.name
+                                  )}
+                                  data-response-path={cardEpisodePath}
+                                >
                                   <Typography
                                     className="card-title"
                                     variant="h5"
@@ -989,6 +1031,28 @@ const WeeklyCards: React.FC = () => {
                                   </Box>
                                 </Box>
 
+                                {cardEpisodePath && (
+                                  <div
+                                    className={styles.cardResponseActions}
+                                    data-html2canvas-ignore="true"
+                                  >
+                                    <Link
+                                      className={styles.respondButton}
+                                      to={`${cardEpisodePath}/respond`}
+                                      state={{
+                                        quote: card.quote || '',
+                                        quoteSpeaker: getSourceSpeaker(
+                                          card.name
+                                        ),
+                                      }}
+                                    >
+                                      <ChatBubbleOutline fontSize="small" />
+                                      {card.quote
+                                        ? '回应这句金句'
+                                        : '留下我的回应'}
+                                    </Link>
+                                  </div>
+                                )}
                                 <Box
                                   className="card-footer-box"
                                   sx={{

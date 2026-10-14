@@ -13,6 +13,8 @@ import { EpisodeCardContext } from '@/netlify/functions/episodes';
 import { EpisodeResponse } from '@/netlify/functions/episodeResponses';
 import { EpisodeSummary, WeeklyCard } from '@/netlify/services/weeklyCards';
 import { saveImageDataUrl } from '@/utils/share';
+import useQuoteSelection, { getSourceSpeaker } from '@/hooks/useQuoteSelection';
+import QuoteResponseBar from '@/components/QuoteResponseBar';
 import cardStyles from '../card/EpisodeCardCreate/episodeCardCreate.module.css';
 import styles from './episodeHub.module.css';
 
@@ -28,9 +30,6 @@ const getDetailParagraphs = (detail = ''): string[] =>
     .filter(Boolean);
 
 const IGNORED_SPEAKER_LABELS = new Set(['现场分享', '星友分享', '匿名']);
-
-const getSourceSpeaker = (speaker = '') =>
-  IGNORED_SPEAKER_LABELS.has(speaker.trim()) ? '' : speaker.trim();
 
 const renderKeyPointText = (point: string) => {
   const colonIdx = point.indexOf('：');
@@ -58,15 +57,14 @@ const getEpisodeYear = (date: string) =>
 const EpisodeHub: React.FC = () => {
   const params = useParams<{ year?: string; episode: string }>();
   const navigate = useNavigate();
-  const [selectedQuote, setSelectedQuote] = useState<{
-    text: string;
-    speaker: string;
-    label: string;
-  } | null>(null);
   const readingRef = useRef<HTMLElement>(null);
   const meetupId = INSPIRE_PLANET_MEETUP_ID;
   const episodeNumber = Number(params.episode);
   const routeYear = params.year ? Number(params.year) : null;
+  const selectedQuote = useQuoteSelection(
+    readingRef,
+    `${routeYear}/${episodeNumber}`
+  );
   const [episode, setEpisode] = useState<EpisodeCardContext | null>(null);
   const [responses, setResponses] = useState<EpisodeResponse[]>([]);
   const [weeklyCards, setWeeklyCards] = useState<WeeklyCard[]>([]);
@@ -154,42 +152,6 @@ const EpisodeHub: React.FC = () => {
       });
     }
   }, [isLoading]);
-
-  useEffect(() => {
-    const updateSelection = () => {
-      const selection = window.getSelection();
-      if (!selection || selection.isCollapsed || !selection.rangeCount) {
-        setSelectedQuote(null);
-        return;
-      }
-      const range = selection.getRangeAt(0);
-      const source = (
-        range.startContainer.nodeType === Node.ELEMENT_NODE
-          ? (range.startContainer as Element)
-          : range.startContainer.parentElement
-      )?.closest('[data-response-source]');
-      setSelectedQuote(
-        source &&
-          readingRef.current?.contains(source) &&
-          source.contains(range.endContainer) &&
-          !range.cloneContents().querySelector('[data-response-source]') &&
-          (range.endContainer.nodeType === Node.ELEMENT_NODE
-            ? (range.endContainer as Element)
-            : range.endContainer.parentElement
-          )?.closest('[data-response-source]') === source
-          ? {
-              text: selection.toString().trim(),
-              speaker: source.getAttribute('data-response-speaker') || '',
-              label: source.getAttribute('data-response-label') || '',
-            }
-          : null
-      );
-    };
-    document.addEventListener('selectionchange', updateSelection);
-    setSelectedQuote(null);
-    return () =>
-      document.removeEventListener('selectionchange', updateSelection);
-  }, [episodeNumber, routeYear]);
 
   const respondToQuote = (quote: string, speaker = '', label = '') => {
     navigate(createUrl, {
@@ -573,7 +535,9 @@ const EpisodeHub: React.FC = () => {
             <p>本期回应墙 · {responses.length} 条</p>
             <h2 id="responses-heading">从这些片段继续生长</h2>
           </div>
-          <Link to={createUrl}>留下我的回应</Link>
+          <Link to={createUrl} className={styles.primaryAction}>
+            留下我的回应
+          </Link>
         </div>
 
         {shareError && <Alert severity="warning">{shareError}</Alert>}
@@ -633,32 +597,12 @@ const EpisodeHub: React.FC = () => {
         )}
       </section>
 
-      {selectedQuote?.text && (
-        <aside className={styles.selectionBar} aria-label="回应选中文字">
-          <span>
-            {selectedQuote.speaker
-              ? `来自 ${selectedQuote.speaker} 的分享 · `
-              : selectedQuote.label
-                ? `${selectedQuote.label} · `
-                : ''}
-            {selectedQuote.text}
-          </span>
-          <button
-            type="button"
-            className={styles.quoteAction}
-            onPointerDown={(event) => event.preventDefault()}
-            onClick={() =>
-              respondToQuote(
-                selectedQuote.text,
-                selectedQuote.speaker,
-                selectedQuote.label
-              )
-            }
-          >
-            回应这段文字
-          </button>
-        </aside>
-      )}
+      <QuoteResponseBar
+        quote={selectedQuote}
+        onRespond={(quote) =>
+          respondToQuote(quote.text, quote.speaker, quote.label)
+        }
+      />
 
       {exportingResponse && (
         <div className={styles.exportStage} aria-hidden="true">

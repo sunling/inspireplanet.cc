@@ -131,7 +131,12 @@
 }
 
 .episodeJourneyPrimary {
-  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 10px 20px;
   border-radius: 999px;
   background: #a94e2b;
   color: #fff !important;
@@ -146,4 +151,39 @@
     padding: 16px;
     border-radius: 18px;
   }
+}
+
+.readingHint {
+  margin: -24px 0 24px;
+  color: #74665d;
+  line-height: 1.7;
+}
+
+.cardResponseActions {
+  margin: 0 0 20px;
+}
+
+.respondButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: #a94e2b;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(106, 53, 31, 0.18);
+}
+
+.respondButton:hover {
+  background: #873b1d;
+}
+
+.respondButton:focus-visible {
+  outline: 2px solid #a94e2b;
+  outline-offset: 3px;
 }

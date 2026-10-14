@@ -181,7 +181,7 @@
 .primaryAction,
 .secondaryAction {
   display: inline-flex;
-  min-height: 40px;
+  min-height: 44px;
   align-items: center;
   justify-content: center;
   padding: 0 18px;
@@ -805,18 +805,21 @@
 .quoteAction {
   align-self: flex-start;
   margin: 8px 0 12px;
-  padding: 8px 14px;
-  border: 1px solid #d8ad96;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid #a94e2b;
   border-radius: 999px;
-  background: #fff6ed;
-  color: #8f4528;
+  background: #a94e2b;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(106, 53, 31, 0.18);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
 }
 
 .quoteAction:hover {
-  background: #fbe1ce;
+  background: #873b1d;
 }
 
 .quoteAction:focus-visible {
@@ -824,33 +827,6 @@
   outline-offset: 3px;
 }
 
-.selectionBar {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  z-index: 1200;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: min(640px, calc(100% - 32px));
-  box-sizing: border-box;
-  padding: 14px 18px;
-  border: 1px solid #d8ad96;
-  border-radius: 18px;
-  background: #fffaf5;
-  box-shadow: 0 8px 32px rgba(96, 62, 43, 0.2);
-  transform: translateX(-50%);
-}
-
-.selectionBar span {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.selectionBar button {
-  flex-shrink: 0;
-  margin: 0;
+.sectionHeading > a.primaryAction {
+  color: #fff;
 }
