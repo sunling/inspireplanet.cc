@@ -8,6 +8,11 @@ import {
   TextField,
 } from '@mui/material';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
+import { Link } from 'react-router-dom';
+import {
+  roundtableEpisodeHref,
+  roundtableSessionLabel,
+} from '../../utils/roundtableSession';
 
 import { roundtableQuestionsApi } from '../../netlify/config';
 import {
@@ -166,6 +171,16 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (loading || !/^#question-\d+$/.test(window.location.hash)) return;
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .getElementById(window.location.hash.slice(1))
+        ?.scrollIntoView({ block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [loading, questions]);
 
   const update = <K extends keyof FormState>(field: K, value: FormState[K]) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -513,7 +528,11 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
         ) : questions.length ? (
           <div className={styles.questionGrid}>
             {questions.map((item) => (
-              <article className={styles.questionCard} key={item.id}>
+              <article
+                className={styles.questionCard}
+                id={`question-${item.id}`}
+                key={item.id}
+              >
                 <div className={styles.cardMeta}>
                   <span>{item.name}</span>
                   <time dateTime={item.createdAt}>
@@ -531,9 +550,18 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
                     <span className={`${styles.status} ${styles[item.status]}`}>
                       {statusLabels[item.status]}
                     </span>
-                    {item.status === 'scheduled' && item.scheduledSession && (
-                      <span>{item.scheduledSession}</span>
+                    {roundtableEpisodeHref(item) && (
+                      <Link
+                        to={roundtableEpisodeHref(item)!}
+                        className={styles.sessionLink}
+                      >
+                        {roundtableSessionLabel(item)} · 查看本期 →
+                      </Link>
                     )}
+                    {['scheduled', 'completed'].includes(item.status) &&
+                      item.scheduledSession && (
+                        <span>{item.scheduledSession}</span>
+                      )}
                   </div>
                   <button
                     type="button"

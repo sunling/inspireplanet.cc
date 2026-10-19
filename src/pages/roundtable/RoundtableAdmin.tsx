@@ -20,12 +20,15 @@ const statusOptions: Array<{
   { value: 'open', label: '待展开' },
   { value: 'contacted', label: '已联系' },
   { value: 'scheduled', label: '已安排' },
-  { value: 'completed', label: '已完成' },
+  { value: 'completed', label: '已展开' },
   { value: 'hidden', label: '隐藏' },
 ];
 
 const RoundtableAdmin: React.FC = () => {
   const [questions, setQuestions] = useState<AdminRoundtableQuestion[]>([]);
+  const [savedStatuses, setSavedStatuses] = useState<
+    Record<string, RoundtableQuestionStatus>
+  >({});
   const [filter, setFilter] = useState<'all' | RoundtableQuestionStatus>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -41,7 +44,13 @@ const RoundtableAdmin: React.FC = () => {
     try {
       const response = await roundtableQuestionsApi.listAdmin();
       if (!response.success) throw new Error(response.error || '读取失败');
-      setQuestions(response.data?.questions || []);
+      const loaded = response.data?.questions || [];
+      setQuestions(loaded);
+      setSavedStatuses(
+        Object.fromEntries(
+          loaded.map((question) => [question.id, question.status])
+        )
+      );
     } catch (requestError) {
       setError(
         requestError instanceof Error ? requestError.message : '读取失败'
@@ -55,8 +64,11 @@ const RoundtableAdmin: React.FC = () => {
     () =>
       filter === 'all'
         ? questions
-        : questions.filter((question) => question.status === filter),
-    [filter, questions]
+        : questions.filter(
+            (question) =>
+              (savedStatuses[question.id] ?? question.status) === filter
+          ),
+    [filter, questions, savedStatuses]
   );
 
   const patchLocal = (id: string, values: Partial<AdminRoundtableQuestion>) => {
@@ -74,12 +86,18 @@ const RoundtableAdmin: React.FC = () => {
       const response = await roundtableQuestionsApi.update(
         question.id,
         question.status,
-        question.scheduledSession || ''
+        question.scheduledSession || '',
+        question.sessionDate,
+        question.episodeNumber
       );
       if (!response.success || !response.data?.question) {
         throw new Error(response.error || '更新失败');
       }
       patchLocal(question.id, response.data.question);
+      setSavedStatuses((current) => ({
+        ...current,
+        [question.id]: response.data!.question.status,
+      }));
     } catch (requestError) {
       setError(
         requestError instanceof Error ? requestError.message : '更新失败'
@@ -95,7 +113,9 @@ const RoundtableAdmin: React.FC = () => {
         <div>
           <span>启发星球 · 管理后台</span>
           <h1>问题圆桌</h1>
-          <p>查看提交者的私密信息，联系合适的人，并管理公开问题池的状态。</p>
+          <p>
+            联系提交者，选择展开日期与期数；会后标记“已展开”，同步到问题池与本期详情页。
+          </p>
         </div>
         <Button href="/questions" variant="outlined">
           查看公开页面
@@ -192,13 +212,38 @@ const RoundtableAdmin: React.FC = () => {
                   ))}
                 </TextField>
                 <TextField
-                  label="安排场次（公开显示）"
-                  placeholder="例如：EP35 · 9月5日"
+                  label="补充说明（选填，公开显示）"
+                  placeholder="例如：英语学习与真实使用场景"
                   value={item.scheduledSession || ''}
                   inputProps={{ maxLength: 120 }}
                   onChange={(event) =>
                     patchLocal(item.id, {
                       scheduledSession: event.target.value,
+                    })
+                  }
+                />
+                <TextField
+                  label="展开日期（北京时间）"
+                  type="date"
+                  value={item.sessionDate || ''}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  onChange={(event) =>
+                    patchLocal(item.id, {
+                      sessionDate: event.target.value || null,
+                    })
+                  }
+                />
+                <TextField
+                  label="关联期数"
+                  type="number"
+                  placeholder="例如：41"
+                  value={item.episodeNumber ?? ''}
+                  inputProps={{ min: 1, max: 999, step: 1 }}
+                  onChange={(event) =>
+                    patchLocal(item.id, {
+                      episodeNumber: event.target.value
+                        ? Number(event.target.value)
+                        : null,
                     })
                   }
                 />

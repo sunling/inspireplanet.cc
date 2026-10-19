@@ -9,14 +9,18 @@ export interface RoundtableQuestionInput {
 }
 
 type ValidationResult =
-  | { ok: true; value: RoundtableQuestionInput }
-  | { ok: false; error: string };
+  { ok: true; value: RoundtableQuestionInput } | { ok: false; error: string };
 
 const normalizeText = (value: unknown) => String(value || '').trim();
 
 export const normalizeRoundtableSessionDate = (value: unknown) => {
   const date = normalizeText(value);
-  return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const parsed = new Date(`${date}T00:00:00Z`);
+  return Number.isFinite(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === date
+    ? date
+    : null;
 };
 
 export const validateRoundtableQuestionInput = (
@@ -78,4 +82,40 @@ export const validateRoundtableQuestionInput = (
       otherAvailability,
     },
   };
+};
+
+// Session linkage is independent of a submitter's available dates. Episodes may
+// be virtual until their first RSVP, so link by episode number + session year.
+export const validateRoundtableSession = (input: Record<string, unknown>) => {
+  const rawDate = normalizeText(input.sessionDate);
+  const rawEpisode = normalizeText(input.episodeNumber);
+  const sessionDate = normalizeRoundtableSessionDate(rawDate);
+  const episodeNumber = /^\d+$/.test(rawEpisode) ? Number(rawEpisode) : null;
+  if (rawDate && !sessionDate)
+    return { ok: false as const, error: '请选择有效的展开日期。' };
+  if (
+    rawEpisode &&
+    (!Number.isSafeInteger(episodeNumber) ||
+      !episodeNumber ||
+      episodeNumber > 999)
+  )
+    return { ok: false as const, error: '期数需为 1–999 的整数。' };
+  if (Boolean(sessionDate) !== Boolean(episodeNumber))
+    return { ok: false as const, error: '请同时填写展开日期和关联期数。' };
+  if (['scheduled', 'completed'].includes(String(input.status)) && !sessionDate)
+    return {
+      ok: false as const,
+      error: '安排或标记已展开时，请填写日期和关联期数。',
+    };
+  if (input.status === 'completed' && sessionDate) {
+    const today = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+    if (sessionDate > today)
+      return { ok: false as const, error: '未来场次请先标记为已安排。' };
+  }
+  return { ok: true as const, sessionDate, episodeNumber };
 };

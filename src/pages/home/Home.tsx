@@ -144,7 +144,11 @@ const Home: React.FC = () => {
   const fetchRoundtableQuestionCount = async () => {
     try {
       const response = await roundtableQuestionsApi.listPublic();
-      setRoundtableQuestionCount(response.data?.questions?.length || 0);
+      setRoundtableQuestionCount(
+        response.data?.questions?.filter((question) =>
+          ['open', 'contacted'].includes(question.status)
+        ).length || 0
+      );
     } catch {
       // 首页数字只是辅助信息，读取失败时不影响主要内容。
     }

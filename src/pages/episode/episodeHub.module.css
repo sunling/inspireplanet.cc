@@ -805,3 +805,9 @@
 .sectionHeading > a.primaryAction {
   color: #fff;
 }
+
+.roundtableContext {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}

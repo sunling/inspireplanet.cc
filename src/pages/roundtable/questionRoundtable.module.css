@@ -472,6 +472,7 @@
 }
 .questionCard footer > div {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.8rem;
   align-items: center;
 }
@@ -611,4 +612,10 @@
   * {
     scroll-behavior: auto !important;
   }
+}
+
+.sessionLink {
+  color: var(--green);
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
 }
