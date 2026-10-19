@@ -15,6 +15,7 @@ import { EpisodeSummary, WeeklyCard } from '@/netlify/services/weeklyCards';
 import { saveImageDataUrl } from '@/utils/share';
 import { getSourceSpeaker } from '@/hooks/useQuoteSelection';
 import QuoteResponseBar from '@/components/QuoteResponseBar';
+import EpisodeRoundtable from '@/components/EpisodeRoundtable';
 import cardStyles from '../card/EpisodeCardCreate/episodeCardCreate.module.css';
 import styles from './episodeHub.module.css';
 
@@ -139,9 +140,12 @@ const EpisodeHub: React.FC = () => {
   }, [meetupId, episodeNumber, routeYear]);
 
   useEffect(() => {
-    if (!isLoading && window.location.hash === '#responses') {
+    if (
+      !isLoading &&
+      ['#responses', '#roundtable'].includes(window.location.hash)
+    ) {
       window.requestAnimationFrame(() => {
-        document.getElementById('responses')?.scrollIntoView({
+        document.getElementById(window.location.hash.slice(1))?.scrollIntoView({
           behavior: 'smooth',
           block: 'start',
         });
@@ -340,6 +344,9 @@ const EpisodeHub: React.FC = () => {
                   本期周刊
                 </Link>
               )}
+              <a href="#roundtable" className={styles.anchorPill}>
+                问题圆桌
+              </a>
               <a href="#responses" className={styles.anchorPill}>
                 回应墙 ({responses.length})
               </a>
@@ -496,6 +503,8 @@ const EpisodeHub: React.FC = () => {
           </aside>
         )}
       </section>
+
+      <EpisodeRoundtable episodeNumber={episodeNumber} year={episodeYear} />
 
       <section
         className={`${styles.section} ${styles.responsesSection}`}

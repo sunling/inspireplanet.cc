@@ -15,12 +15,13 @@ import {
   normalizeRoundtableSessionDate,
   RoundtableQuestionInput,
   validateRoundtableQuestionInput,
+  validateRoundtableSession,
 } from '../validation/roundtableQuestions';
 
 const MAX_SUBMISSIONS_PER_WINDOW = 3;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const PUBLIC_SELECT =
-  'id, name, question, context, status, scheduled_session, created_at';
+  'id, name, question, context, status, scheduled_session, session_date, episode_number, created_at';
 const ADMIN_SELECT = `${PUBLIC_SELECT}, email, boundaries, available_dates, other_availability, updated_at`;
 const ALLOWED_STATUSES = [
   'open',
@@ -53,6 +54,8 @@ const mapQuestion = (row: Record<string, any>) => ({
   context: row.context,
   status: row.status,
   scheduledSession: row.scheduled_session || null,
+  sessionDate: row.session_date || null,
+  episodeNumber: row.episode_number || null,
   createdAt: row.created_at,
   ...('email' in row
     ? {
@@ -104,7 +107,28 @@ async function handleListPublic(event: NetlifyEvent): Promise<NetlifyResponse> {
     .order('created_at', { ascending: false });
 
   if (sessionDate) {
-    query = query.contains('available_dates', [sessionDate]);
+    query = query.or(
+      `session_date.eq.${sessionDate},available_dates.cs.{${sessionDate}}`
+    );
+  }
+
+  const episodeNumber = event.queryStringParameters?.episodeNumber;
+  const year = event.queryStringParameters?.year;
+  if (episodeNumber !== undefined || year !== undefined) {
+    if (
+      !/^\d{1,3}$/.test(episodeNumber || '') ||
+      Number(episodeNumber) < 1 ||
+      !/^\d{4}$/.test(year || '') ||
+      Number(year) < 2000 ||
+      Number(year) > 9998
+    ) {
+      return createErrorResponse('期数或年份无效');
+    }
+    query = query
+      .eq('episode_number', Number(episodeNumber))
+      .gte('session_date', `${year}-01-01`)
+      .lt('session_date', `${Number(year) + 1}-01-01`)
+      .in('status', ['scheduled', 'completed']);
   }
 
   const { data, error } = await query.limit(100);
@@ -273,11 +297,30 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('场次说明请控制在 120 字以内。');
   }
 
+  const session = validateRoundtableSession(input);
+  if (!session.ok) return createErrorResponse(session.error);
+  // Reject a conflicting persisted episode; unpersisted episode pages are valid.
+  if (session.episodeNumber && session.sessionDate) {
+    const { data: episode, error: episodeError } = await supabase
+      .from('meetup_episodes')
+      .select('date')
+      .eq('meetup_id', 39)
+      .eq('episode_number', session.episodeNumber)
+      .maybeSingle();
+    if (episodeError) return createErrorResponse('读取关联期数失败', 500);
+    if (episode?.date && episode.date !== session.sessionDate)
+      return createErrorResponse(
+        `EP${session.episodeNumber} 的日期为 ${episode.date}，请核对。`
+      );
+  }
+
   const { data, error } = await supabase
     .from('roundtable_questions')
     .update({
       status,
       scheduled_session: scheduledSession || null,
+      session_date: session.sessionDate,
+      episode_number: session.episodeNumber,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

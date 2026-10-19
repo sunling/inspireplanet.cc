@@ -2,11 +2,7 @@ import { http } from '../config/http';
 import { ApiResponse } from '../types/http';
 
 export type RoundtableQuestionStatus =
-  | 'open'
-  | 'contacted'
-  | 'scheduled'
-  | 'completed'
-  | 'hidden';
+  'open' | 'contacted' | 'scheduled' | 'completed' | 'hidden';
 
 export interface PublicRoundtableQuestion {
   id: string;
@@ -15,6 +11,8 @@ export interface PublicRoundtableQuestion {
   context: string;
   status: RoundtableQuestionStatus;
   scheduledSession: string | null;
+  sessionDate: string | null;
+  episodeNumber: number | null;
   createdAt: string;
   supportCount: number;
 }
@@ -48,6 +46,12 @@ export const roundtableQuestionsApi = {
       sessionDate ? { sessionDate } : undefined
     ),
 
+  listByEpisode: (
+    episodeNumber: number,
+    year: number
+  ): Promise<ApiResponse<{ questions: PublicRoundtableQuestion[] }>> =>
+    http.get('/roundtableQuestions', 'listPublic', { episodeNumber, year }),
+
   create: (
     input: CreateRoundtableQuestionInput
   ): Promise<ApiResponse<{ question: PublicRoundtableQuestion | null }>> =>
@@ -67,12 +71,16 @@ export const roundtableQuestionsApi = {
   update: (
     id: string,
     status: RoundtableQuestionStatus,
-    scheduledSession: string
+    scheduledSession: string,
+    sessionDate: string | null,
+    episodeNumber: number | null
   ): Promise<ApiResponse<{ question: AdminRoundtableQuestion }>> =>
     http.put('/roundtableQuestions', 'update', {
       id,
       status,
       scheduledSession,
+      sessionDate,
+      episodeNumber,
     }),
 };
 

@@ -426,6 +426,7 @@
   gap: 1.2rem;
 }
 .questionCard {
+  scroll-margin-top: 100px;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -472,6 +473,7 @@
 }
 .questionCard footer > div {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.8rem;
   align-items: center;
 }
@@ -611,4 +613,10 @@
   * {
     scroll-behavior: auto !important;
   }
+}
+
+.sessionLink {
+  color: var(--green);
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
 }

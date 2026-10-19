@@ -128,11 +128,12 @@
 }
 .controls {
   display: grid;
-  grid-template-columns: 150px minmax(220px, 1fr) auto;
+  grid-template-columns: 150px minmax(180px, 1fr);
   gap: 0.8rem;
   align-items: center;
 }
 .controls :global(.MuiButton-contained) {
+  justify-self: start;
   background: #c95837;
 }
 .loading {
