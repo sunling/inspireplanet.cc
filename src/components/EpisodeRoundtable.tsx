@@ -45,7 +45,7 @@ const EpisodeRoundtable: React.FC<{
 
   return (
     <section
-      className={styles.section}
+      className={`${styles.section} ${styles.roundtableSection}`}
       id="roundtable"
       aria-labelledby="roundtable-heading"
     >
@@ -76,7 +76,7 @@ const EpisodeRoundtable: React.FC<{
         <div className={styles.topicList}>
           {questions.map((question) => (
             <article className={styles.topicCard} key={question.id}>
-              <div className={styles.topicHeader}>
+              <div className={`${styles.topicHeader} ${styles.roundtableMeta}`}>
                 <span className={styles.topicSpeaker}>
                   {question.name} ·{' '}
                   {question.status === 'completed' ? '已展开' : '已安排'}
@@ -90,7 +90,10 @@ const EpisodeRoundtable: React.FC<{
                 <p className={styles.roundtableContext}>{question.context}</p>
               )}
               {question.scheduledSession && <p>{question.scheduledSession}</p>}
-              <Link to={`/questions#question-${question.id}`}>
+              <Link
+                className={styles.roundtableLink}
+                to={`/questions#question-${question.id}`}
+              >
                 回到这个问题 →
               </Link>
             </article>

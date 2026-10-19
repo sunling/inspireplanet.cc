@@ -811,3 +811,15 @@
   overflow-wrap: anywhere;
   line-height: 1.8;
 }
+
+.roundtableSection {
+  scroll-margin-top: 100px;
+}
+.roundtableMeta {
+  flex-wrap: wrap;
+}
+.roundtableLink {
+  color: #9a4729;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
