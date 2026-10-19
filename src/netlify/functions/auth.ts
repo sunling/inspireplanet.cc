@@ -5,7 +5,6 @@ import {
   createErrorResponse,
   handleOptionsRequest,
   getFunctionNameFromEvent,
-  getDataFromEvent,
 } from '../utils/server';
 
 export interface User {
@@ -20,74 +19,73 @@ export async function handler(
   _context: NetlifyContext
 ): Promise<NetlifyResponse> {
   if (event.httpMethod === 'OPTIONS') return handleOptionsRequest();
-
   try {
-    const functionName = getFunctionNameFromEvent(event);
-    switch (functionName) {
-      case 'register':
-        return await handleRegister(event);
-      case 'getProfile':
-        return await handleGetProfile(event);
-      default:
-        return createErrorResponse('无效的操作类型');
+    const action = getFunctionNameFromEvent(event);
+    if (action !== 'register' && action !== 'getProfile')
+      return createErrorResponse('无效的操作类型');
+    const authorization =
+      event.headers?.authorization || event.headers?.Authorization;
+    const match =
+      typeof authorization === 'string' &&
+      /^Bearer\s+(\S+)$/i.exec(authorization);
+    if (!match) return createErrorResponse('未授权，请重新登录', 401);
+    let identity;
+    try {
+      const { data, error } = await supabase.auth.getUser(match[1]);
+      if (
+        error ||
+        !data.user?.id ||
+        !data.user.email ||
+        !data.user.email_confirmed_at
+      )
+        return createErrorResponse('未授权，请重新登录', 401);
+      identity = data.user;
+    } catch {
+      return createErrorResponse('未授权，请重新登录', 401);
     }
-  } catch (error) {
-    console.error('Auth handler error:', error);
-    return createErrorResponse('服务器内部错误', 500);
-  }
-}
-
-// Creates the users table profile after Supabase Auth signup
-async function handleRegister(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const { email, name } = getDataFromEvent(event);
-
-  if (!email || !name?.trim()) {
-    return createErrorResponse('姓名和邮箱为必填项');
-  }
-
-  // Check if profile already exists
-  const { data: existing } = await supabase
-    .from('users')
-    .select('id')
-    .eq('email', email)
-    .single();
-
-  if (existing) {
-    // Profile already exists, return it
-    const { data: user } = await supabase
+    // The legacy users IDs are not auth UUIDs. Resolve only by the email
+    // returned by Supabase's verified identity, never by request data.
+    const { data: user, error } = await supabase
       .from('users')
       .select('id, email, name, role')
-      .eq('email', email)
+      .eq('email', identity.email!)
+      .maybeSingle();
+    if (error) return createErrorResponse('读取用户资料失败，请稍后重试', 500);
+    if (user) return createSuccessResponse({ user });
+    // Metadata is user-editable: allow only a display name, never roles/IDs.
+    const metadata = identity.user_metadata || {};
+    const name = [metadata.name, metadata.full_name].find(
+      (value) => typeof value === 'string' && value.trim()
+    );
+    const { data: created, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        email: identity.email!,
+        name:
+          typeof name === 'string'
+            ? name.trim()
+            : identity.email!.split('@')[0],
+      })
+      .select('id, email, name, role')
       .single();
-    return createSuccessResponse({ user });
+    // Concurrent callback/background sync can race on the unique email key.
+    // Never upsert: that could overwrite an existing profile or its role.
+    if (insertError?.code === '23505') {
+      const { data: existing, error: retryError } = await supabase
+        .from('users')
+        .select('id, email, name, role')
+        .eq('email', identity.email!)
+        .maybeSingle();
+      if (!retryError && existing)
+        return createSuccessResponse({ user: existing });
+    }
+    if (insertError || !created)
+      return createErrorResponse('创建用户资料失败，请稍后重试', 500);
+    return createSuccessResponse(
+      { user: created },
+      action === 'register' ? 201 : 200
+    );
+  } catch {
+    return createErrorResponse('服务器内部错误', 500);
   }
-
-  const { data: newUser, error } = await supabase
-    .from('users')
-    .insert({ email, name: name.trim() })
-    .select('id, email, name, role')
-    .single();
-
-  if (error || !newUser) {
-    console.error('Insert user error:', error);
-    return createErrorResponse('注册失败，请稍后重试', 500);
-  }
-
-  return createSuccessResponse({ user: newUser }, 201);
-}
-
-// Fetch user profile by email (called after Supabase Auth login)
-async function handleGetProfile(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const { email } = getDataFromEvent(event);
-  if (!email) return createErrorResponse('缺少邮箱');
-
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('id, email, name, role')
-    .eq('email', email)
-    .single();
-
-  if (error || !user) return createErrorResponse('用户不存在', 404);
-
-  return createSuccessResponse({ user });
 }
