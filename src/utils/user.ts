@@ -98,8 +98,8 @@ export const syncUserAuthFromSession = async (): Promise<UserInfo | null> => {
   hasValidatedSession = true;
   const currentUser = getUserInfo();
   try {
-    const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', {
-      email: session.user.email,
+    const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', {}, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
     });
     const user = res.success ? res.data?.user : null;
     if (!user && res.statusCode === 401) {

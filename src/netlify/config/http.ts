@@ -134,6 +134,8 @@ class HttpClient {
   private async requestInterceptor(
     config: RequestConfig
   ): Promise<RequestConfig> {
+    // Login/callback callers already hold the newly returned session token.
+    if (Object.keys(config.headers || {}).some(key => key.toLowerCase() === 'authorization')) return config;
     const token = await this.getAuthToken();
     if (token) {
       config.headers = {
