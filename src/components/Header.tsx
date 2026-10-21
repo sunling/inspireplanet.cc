@@ -484,9 +484,11 @@ const Header: React.FC<HeaderProps> = ({
       <Box sx={{ width: 250, padding: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
           <img
-            src="/images/logo.png"
+            src="/images/logo-mark.svg"
             alt="启发星球"
-            style={{ width: 32, height: 32, marginRight: 8 }}
+            width={44}
+            height={44}
+            style={{ width: 44, height: 44, objectFit: 'contain', marginRight: 8 }}
           />
           <Typography variant="h6" color="primary">
             启发星球
@@ -604,9 +606,11 @@ const Header: React.FC<HeaderProps> = ({
             }}
           >
             <img
-              src="/images/logo.png"
+              src="/images/logo-mark.svg"
               alt="启发星球"
-              style={{ width: 32, height: 32, marginRight: 8 }}
+              width={44}
+            height={44}
+            style={{ width: 44, height: 44, objectFit: 'contain', marginRight: 8 }}
             />
             <div>
               <Typography
