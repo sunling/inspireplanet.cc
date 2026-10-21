@@ -1,12 +1,19 @@
-const CACHE_NAME = 'inspire-planet-v2';
-const STATIC_ASSETS_CACHE = 'inspire-planet-assets-v2';
+const CACHE_NAME = 'inspire-planet-v3';
+const STATIC_ASSETS_CACHE = 'inspire-planet-assets-v3';
 
 self.addEventListener('install', (event) => {
   // 立即激活，不等旧 SW 关闭
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(['/manifest.json', '/images/logo.png']);
+      return cache.addAll([
+        '/manifest.json',
+        '/images/logo-mark.svg',
+        '/images/logo-192.png',
+        '/images/logo-512.png',
+        '/images/logo-180.png',
+        '/images/logo-96.png',
+      ]);
     })
   );
 });

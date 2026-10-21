@@ -66,11 +66,17 @@ const About: React.FC = () => {
             我们的故事
           </h2>
           <div style={{ lineHeight: 1.8 }}>
-            <p style={{ marginBottom: '1.5rem', margin: 0 }}>
-              启发星球诞生于对生活中闪光时刻的珍视。我们相信，每个人都值得分享的启发和感悟，这些瞬间可能来自一本书、一段对话、一次经历，或者是日常生活中的细微观察。
+            <p style={{ margin: '0 0 1.5rem' }}>
+              启发星球由孙玲和李影共同发起。我们一直在做的一件事，是每周留出一段时间，邀请大家聚在一起，分享最近读到、听到、经历过，以及正在思考的事情。
+            </p>
+            <p style={{ margin: '0 0 1.5rem' }}>
+              分享可以从一本书、一段播客、一个生活片段开始，也可以是一个还没有答案的问题。不必等到自己成为专家，或把想法整理得很完整。你觉得有价值的内容，和你为什么在意它，就可以成为一次交流的起点。
+            </p>
+            <p style={{ margin: '0 0 1.5rem' }}>
+              孙玲和李影持续参与和组织，也有越来越多的朋友带来自己的经历与思考。对我们来说，每周认真在场、分享和倾听，是这件事最重要的部分。
             </p>
             <p style={{ margin: 0 }}>
-              我们创建了这个平台，让每个人都能记录和分享这些珍贵的启发时刻，通过精美的卡片形式将思想具象化，让智慧在传递中产生更大的价值。
+              我们也在尝试把交流整理成文字、音频和视频，让没能到场的人也有机会接触这些内容。这些尝试还在摸索中，欢迎你一起参与，让有价值的对话被更多人看到、听到。
             </p>
           </div>
         </section>
@@ -129,7 +135,7 @@ const About: React.FC = () => {
               }}
             >
               <span style={{ color: '#ff5a36', fontWeight: 'bold' }}>•</span>
-              通过美学设计，让思想传递更加生动有力
+              记录和整理有价值的对话，让启发继续传递
             </li>
             <li
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
@@ -165,8 +171,7 @@ const About: React.FC = () => {
             {[
               {
                 title: '每周分享会',
-                description:
-                  '围绕真实经历、学习收获与创作实践展开交流',
+                description: '围绕真实经历、学习收获与创作实践展开交流',
               },
               {
                 title: '启发周刊',
@@ -177,8 +182,8 @@ const About: React.FC = () => {
                 description: '查看近期活动，完成报名并管理自己的参与记录',
               },
               {
-                title: '树洞互助',
-                description: '用协作文档承载求助、回应与资源共享',
+                title: '问题圆桌',
+                description: '带着真实的问题，一起交换经历和不同的看法',
               },
             ].map((feature, index) => (
               <Grid size={{ xs: 12, sm: 6 }} key={index}>
@@ -245,10 +250,20 @@ const About: React.FC = () => {
           </h2>
           <div style={{ lineHeight: 1.8, marginBottom: '2rem' }}>
             <p style={{ marginBottom: '1.5rem', margin: 0 }}>
-              启发星球由一群热爱思考和分享的创作者组成。我们来自不同的背景和领域，但都有着共同的愿景：创造一个让思想自由流动的空间。
+              孙玲和李影是启发星球的共同发起者，也是一直参与和组织的人。每一位愿意分享、倾听、提问和回应的朋友，都在让这里变得更丰富。
             </p>
             <p style={{ margin: 0 }}>
-              我们相信，每个人都是独特的星球，拥有自己的引力场和光芒。当这些星球相互连接，就会形成一个更加璀璨的星系。
+              新的 Logo 保留了两位发起者的身影，也加入了围坐交流的参与者。三个人之间的星光，代表交流中产生的启发；桌前留出的空间，欢迎更多人加入。
+            </p>
+          </div>
+
+          <div style={{ lineHeight: 1.8, marginBottom: '2rem' }}>
+            <h3 style={{ color: '#ff5a36', margin: '0 0 1rem' }}>一起参与</h3>
+            <p style={{ margin: '0 0 1rem' }}>
+              你可以<a href="/join">加入每周交流</a>，从倾听开始，也可以带来一次分享，或在<a href="/questions">问题圆桌</a>留下你正在思考的问题。
+            </p>
+            <p style={{ margin: 0 }}>
+              <a href="https://github.com/sunling/inspireplanet.cc" target="_blank" rel="noopener noreferrer">站点</a>和<a href="https://github.com/sunling/inspire-planet" target="_blank" rel="noopener noreferrer">内容仓库</a>都是开源的。无论你是在校学生，还是想找一个具体项目练手，都欢迎参与网站优化、文章整理、播客剪辑、视频制作，或提出让内容更容易被看见的想法。
             </p>
           </div>
 
