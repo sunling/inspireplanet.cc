@@ -1,3 +1,10 @@
+import {
+  createSurveySubmission,
+  loadOpenSurvey,
+  checkedAnswers,
+  SubmissionError,
+} from '../utils/surveySubmission';
+import { storedAnswerValue } from '../validation/surveyAnswers';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import { supabase } from '../../database/supabase';
 import {
@@ -8,11 +15,26 @@ import {
   getAuthenticatedUser,
   handleOptionsRequest,
 } from '../utils/server';
-import {
-  SubmitSurveyRequest,
-  SurveySubmission,
-  QuestionAnswer,
-} from '../types/survey';
+import { QuestionAnswer } from '../types/survey';
+
+function answerValue(value: unknown, type?: string) {
+  if (typeof value !== 'string') return value;
+  if (type === 'rating' && value.trim() && Number.isFinite(Number(value)))
+    return Number(value);
+  if (type === 'multiple' || type === 'checkbox') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      /* Older choice answers were comma-separated. */
+    }
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return value;
+}
 
 function pagination(input: Record<string, unknown>) {
   const positive = (value: unknown, fallback: number, max: number) => {
@@ -57,109 +79,29 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
   }
 }
 
-async function handleSubmit(event: NetlifyEvent): Promise<NetlifyResponse> {
+export async function handleSubmit(
+  event: NetlifyEvent
+): Promise<NetlifyResponse> {
+  if (event.httpMethod !== 'POST')
+    return createErrorResponse('请求方式不支持', 405);
   try {
-    const requestData = getDataFromEvent(event);
-    const { survey_id, answers, email, respondent_id } =
-      requestData as SubmitSurveyRequest;
-
-    if (
-      !survey_id ||
-      !answers ||
-      !Array.isArray(answers) ||
-      answers.length === 0
-    ) {
-      return createErrorResponse('缺少必要参数', 400);
-    }
-
-    if (!respondent_id) {
-      return createErrorResponse('缺少提交者信息', 400);
-    }
-
-    // 检查问卷是否存在且激活
-    const { data: survey, error: surveyError } = await supabase
-      .from('surveys')
-      .select('id, is_active, allow_multiple_submissions')
-      .eq('id', survey_id)
-      .single();
-
-    if (surveyError) {
-      console.error('Error finding survey:', surveyError);
-      return createErrorResponse('问卷不存在', 404);
-    }
-
-    if (!survey.is_active) {
-      return createErrorResponse('问卷已关闭', 400);
-    }
-
-    // 检查是否允许重复提交
-    if (!survey.allow_multiple_submissions) {
-      const { data: existingSubmission, error: submissionError } =
-        await supabase
-          .from('survey_submissions')
-          .select('id')
-          .eq('survey_id', survey_id)
-          .eq('respondent_id', respondent_id)
-          .single();
-
-      if (!submissionError && existingSubmission) {
-        return createErrorResponse('您已经提交过此问卷', 400);
-      }
-    }
-
-    // 开始事务：创建提交记录
-    const { data: submission, error: submissionError } = await supabase
-      .from('survey_submissions')
-      .insert({
-        survey_id,
-        respondent_id,
-        respondent_email: email,
-        ip_address:
-          event.headers['x-forwarded-for'] ||
-          event.headers['client-ip'] ||
-          'unknown',
-        user_agent: event.headers['user-agent'],
-      })
-      .select('id')
-      .single();
-
-    if (submissionError) {
-      console.error('Error creating submission:', submissionError);
-      return createErrorResponse(submissionError.message, 500);
-    }
-
-    // 创建答案记录
-    const answerPromises = answers.map((answer: QuestionAnswer) => {
-      return supabase
-        .from('survey_answers')
-        .insert({
-          submission_id: submission.id,
-          question_id: answer.questionId,
-          value: answer.value,
-        })
-        .select();
-    });
-
-    const answerResults = await Promise.all(answerPromises);
-    const answerErrors = answerResults.filter((r) => r.error);
-
-    if (answerErrors.length > 0) {
-      console.error('Error creating answers:', answerErrors);
-      // 回滚：删除已创建的提交记录
-      await supabase
-        .from('survey_submissions')
-        .delete()
-        .eq('id', submission.id);
-      return createErrorResponse('提交答案失败', 500);
-    }
-
-    return createSuccessResponse({
-      id: submission.id,
-      message: '问卷提交成功',
-    });
+    const user = await getAuthenticatedUser(event);
+    if (!user) return createErrorResponse('请先登录后提交问卷', 401);
+    const input = getDataFromEvent(event);
+    if (typeof input.survey_id !== 'string' || !input.survey_id)
+      return createErrorResponse('缺少问卷 ID');
+    const result = await createSurveySubmission(
+      event,
+      input.survey_id,
+      input.answers,
+      user
+    );
+    return createSuccessResponse({ id: result.id, message: '问卷提交成功' });
   } catch (error) {
-    console.error('Error in handleSubmit:', error);
-    return createErrorResponse('Internal Server Error', 500);
+    if (error instanceof SubmissionError)
+      return createErrorResponse(error.message, error.status);
+    console.error('Submit survey failed');
+    return createErrorResponse('提交问卷失败', 500);
   }
 }
 
@@ -212,7 +154,7 @@ async function handleGetBySurveyId(
       (submissions || []).map(async (submission) => {
         const { data: answers, error: answersError } = await supabase
           .from('survey_answers')
-          .select('question_id, value')
+          .select('question_id, value, survey_questions(type)')
           .eq('submission_id', submission.id);
 
         if (answersError) {
@@ -228,7 +170,7 @@ async function handleGetBySurveyId(
           submitted_at: submission.submitted_at,
           answers: (answers || []).map((a) => ({
             questionId: a.question_id,
-            value: a.value,
+            value: answerValue(a.value, a.survey_questions?.type),
           })),
         };
       })
@@ -323,7 +265,7 @@ async function handleCheckSubmission(
 
     const { data: answers, error: answersError } = await supabase
       .from('survey_answers')
-      .select('question_id, value')
+      .select('question_id, value, survey_questions(type)')
       .eq('submission_id', submission.id);
 
     if (answersError) {
@@ -339,7 +281,7 @@ async function handleCheckSubmission(
       submitted_at: submission.submitted_at,
       answers: (answers || []).map((a) => ({
         questionId: a.question_id,
-        value: a.value,
+        value: answerValue(a.value, a.survey_questions?.type),
       })),
     };
 
@@ -375,51 +317,30 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('提交记录不存在', 404);
     }
 
-    // Do not let a submission write answers into another survey's questions.
-    const questionIds = answers.map(
-      (answer: QuestionAnswer) => answer?.questionId
+    await loadOpenSurvey(submission.survey_id);
+    const validatedAnswers = await checkedAnswers(
+      submission.survey_id,
+      answers
     );
-    if (
-      questionIds.some(
-        (questionId: unknown) => typeof questionId !== 'string' || !questionId
-      ) ||
-      new Set(questionIds).size !== questionIds.length
-    )
-      return createErrorResponse('答案问题 ID 无效', 400);
-    const { data: questions, error: questionsError } = await supabase
-      .from('survey_questions')
-      .select('id')
-      .eq('survey_id', submission.survey_id)
-      .in('id', questionIds);
-    if (questionsError) return createErrorResponse('读取问卷问题失败', 500);
-    if (questions?.length !== questionIds.length)
-      return createErrorResponse('答案包含不属于此问卷的问题', 400);
 
-    // 使用 upsert 更新或插入答案（不删除任何数据）
-    const answerPromises = answers.map((answer: QuestionAnswer) => {
-      return supabase.from('survey_answers').upsert(
-        {
-          submission_id: id,
-          question_id: answer.questionId,
-          value: answer.value,
-        },
-        { onConflict: 'submission_id,question_id' }
-      );
-    });
-
-    const answerResults = await Promise.all(answerPromises);
-    const answerErrors = answerResults.filter((r) => r.error);
-
-    if (answerErrors.length > 0) {
-      console.error('Error updating answers:', answerErrors);
-      return createErrorResponse('更新答案失败', 500);
-    }
+    // One bulk statement prevents partial answer updates on a database error.
+    const { error: updateError } = await supabase.from('survey_answers').upsert(
+      validatedAnswers.map((answer: QuestionAnswer) => ({
+        submission_id: id,
+        question_id: answer.questionId,
+        value: storedAnswerValue(answer.value),
+      })),
+      { onConflict: 'submission_id,question_id' }
+    );
+    if (updateError) return createErrorResponse('更新答案失败', 500);
 
     return createSuccessResponse({
       id: submission.id,
       message: '答案更新成功',
     });
   } catch (error) {
+    if (error instanceof SubmissionError)
+      return createErrorResponse(error.message, error.status);
     console.error('Error in handleUpdate:', error);
     return createErrorResponse('Internal Server Error', 500);
   }

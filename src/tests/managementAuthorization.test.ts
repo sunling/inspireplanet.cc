@@ -156,6 +156,7 @@ const cardInput = {
 };
 
 beforeEach(() => {
+  vi.stubEnv('JWT_SECRET', 'test-only-guest-capability-key');
   db.user = null;
   db.queries.length = 0;
   db.writes.length = 0;

@@ -7,6 +7,11 @@ export const rsvpApi = {
     return http.post<any>('/rsvp', 'create', rsvpData);
   },
 
+  cancelGuest: async (
+    token: string
+  ): Promise<ApiResponse<{ success: boolean }>> =>
+    http.post('/rsvp', 'cancelGuest', { guest_cancel_token: token }),
+
   update: async (
     id: string | number,
     data: Partial<Participant>

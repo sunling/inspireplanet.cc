@@ -105,7 +105,7 @@ beforeEach(() => {
   mocks.sendConfirm.mockReset();
   mocks.sendReject.mockReset();
   mocks.tables = {
-    surveys: [{ id: 'survey-a', created_by: '42' }],
+    surveys: [{ id: 'survey-a', created_by: '42', is_active: true }],
     survey_submissions: [
       {
         id: 'own',
@@ -118,8 +118,8 @@ beforeEach(() => {
       { id: 'other', survey_id: 'survey-a', respondent_id: '43' },
     ],
     survey_questions: [
-      { id: 'question-a', survey_id: 'survey-a' },
-      { id: 'question-b', survey_id: 'survey-b' },
+      { id: 'question-a', survey_id: 'survey-a', type: 'text', required: true },
+      { id: 'question-b', survey_id: 'survey-b', type: 'text' },
     ],
     survey_answers: [
       { submission_id: 'own', question_id: 'question-a', value: 'Own answer' },
@@ -280,11 +280,13 @@ describe('survey submission permissions', () => {
       {
         table: 'survey_answers',
         operation: 'upsert',
-        value: {
-          submission_id: 'own',
-          question_id: 'question-a',
-          value: 'Edited',
-        },
+        value: [
+          {
+            submission_id: 'own',
+            question_id: 'question-a',
+            value: 'Edited',
+          },
+        ],
       },
     ]);
   });
