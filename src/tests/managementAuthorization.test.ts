@@ -389,11 +389,22 @@ describe('organizer-only writes', () => {
     expect((await invoke(handler, action, data)).statusCode).toBe(403);
     expect(db.writes).toEqual([]);
   });
-  it.each(cases)('allows organizers', async (handler, action, data) => {
-    db.user = organizer;
-    expect((await invoke(handler, action, data)).statusCode).toBe(200);
-    expect(db.writes.length).toBeGreaterThan(0);
-  });
+  it.each(cases)(
+    'handles organizer requests without reviving retired weekly writes',
+    async (handler, action, data) => {
+      db.user = organizer;
+      const retired = handler === weekly || handler === upload;
+      expect((await invoke(handler, action, data)).statusCode).toBe(
+        retired ? 410 : 200
+      );
+      if (retired) {
+        expect(db.queries).toEqual([]);
+        expect(db.writes).toEqual([]);
+      } else {
+        expect(db.writes.length).toBeGreaterThan(0);
+      }
+    }
+  );
   it('ignores a spoofed approval actor', async () => {
     db.user = organizer;
     await invoke(rsvp, 'update', {

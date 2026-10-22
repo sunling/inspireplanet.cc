@@ -1,6 +1,5 @@
 import { requireMutationUser } from '../utils/authorization';
 // src/netlify/functions/weeklyCards.ts
-import { supabase } from '../../database/supabase';
 import { WeeklyCard } from '../services/weeklyCards';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
@@ -106,35 +105,8 @@ async function handleGetAllLimited(
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   const auth = await requireMutationUser(event, ['POST'], true);
   if (auth.error) return auth.error;
-  try {
-    const data = getDataFromEvent(event);
-    const { name, title, quote, detail, episode } = data;
-
-    if (!name || !title || !quote || !detail || !episode) {
-      return createErrorResponse('缺少必要参数');
-    }
-
-    const { data: result, error } = await supabase
-      .from('weekly_cards')
-      .insert({
-        name,
-        title,
-        quote,
-        detail,
-        episode,
-        created: new Date().toISOString(),
-      })
-      .select('id')
-      .single();
-
-    if (error) {
-      console.error('Error creating weekly card:', error);
-      return createErrorResponse(error.message, 500);
-    }
-
-    return createSuccessResponse({ id: result.id, message: '创建成功' });
-  } catch (error) {
-    console.error('Function error:', error);
-    return createErrorResponse('Internal Server Error', 500);
-  }
+  return createErrorResponse(
+    '旧周卡写入入口已停用，请在 sunling/inspire-planet 仓库维护周刊内容',
+    410
+  );
 }
