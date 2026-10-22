@@ -1,6 +1,11 @@
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import { supabase } from '../../database/supabase';
 import {
+  canManage,
+  checkManagedLink,
+  requireMutationUser,
+} from '../utils/authorization';
+import {
   createErrorResponse,
   createSuccessResponse,
   getDataFromEvent,
@@ -195,6 +200,8 @@ async function handleGetById(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['POST']);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
     const {
@@ -205,11 +212,9 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       endDate,
       isActive,
       allowMultipleSubmissions,
-      createdBy,
       meetup_id,
       is_for_meetup = false,
     } = requestData as CreateSurveyRequest & {
-      createdBy: string;
       meetup_id?: string;
       is_for_meetup?: boolean;
     };
@@ -218,8 +223,9 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('缺少必要参数', 400);
     }
 
-    if (!createdBy) {
-      return createErrorResponse('缺少创建者信息', 400);
+    if (meetup_id) {
+      const error = await checkManagedLink(auth.user, 'meetups', meetup_id);
+      if (error) return error;
     }
 
     // 开始事务
@@ -228,7 +234,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       .insert({
         title,
         description,
-        created_by: createdBy,
+        created_by: auth.user.id,
         start_date: startDate,
         end_date: endDate,
         is_active: isActive,
@@ -277,6 +283,8 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['PUT', 'POST']);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
     const {
@@ -309,13 +317,20 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     // 检查问卷是否存在
     const { data: existingSurvey, error: surveyError } = await supabase
       .from('surveys')
-      .select('id')
+      .select('id, created_by')
       .eq('id', id)
       .single();
 
     if (surveyError) {
       console.error('Error finding survey:', surveyError);
       return createErrorResponse('问卷不存在', 404);
+    }
+    if (!existingSurvey || !canManage(auth.user, existingSurvey.created_by))
+      return createErrorResponse('没有权限管理此问卷', 403);
+
+    if (meetup_id) {
+      const error = await checkManagedLink(auth.user, 'meetups', meetup_id);
+      if (error) return error;
     }
 
     // 构建更新数据
@@ -432,6 +447,8 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['DELETE', 'POST']);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
     const { id } = requestData;
@@ -443,7 +460,7 @@ async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
     // 检查问卷是否存在
     const { data: existingSurvey, error: surveyError } = await supabase
       .from('surveys')
-      .select('id')
+      .select('id, created_by')
       .eq('id', id)
       .single();
 
@@ -451,6 +468,8 @@ async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
       console.error('Error finding survey:', surveyError);
       return createErrorResponse('问卷不存在', 404);
     }
+    if (!existingSurvey || !canManage(auth.user, existingSurvey.created_by))
+      return createErrorResponse('没有权限管理此问卷', 403);
 
     // 删除问卷（级联删除问题和提交）
     const { error: deleteError } = await supabase
@@ -473,6 +492,8 @@ async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
 async function handleToggleActive(
   event: NetlifyEvent
 ): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['PUT', 'POST']);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
     const { id } = requestData;
@@ -484,7 +505,7 @@ async function handleToggleActive(
     // 检查问卷是否存在
     const { data: existingSurvey, error: surveyError } = await supabase
       .from('surveys')
-      .select('is_active')
+      .select('id, created_by, is_active')
       .eq('id', id)
       .single();
 
@@ -492,6 +513,8 @@ async function handleToggleActive(
       console.error('Error finding survey:', surveyError);
       return createErrorResponse('问卷不存在', 404);
     }
+    if (!existingSurvey || !canManage(auth.user, existingSurvey.created_by))
+      return createErrorResponse('没有权限管理此问卷', 403);
 
     // 切换激活状态
     const newStatus = !existingSurvey.is_active;
