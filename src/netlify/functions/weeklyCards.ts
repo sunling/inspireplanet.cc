@@ -1,3 +1,4 @@
+import { requireMutationUser } from '../utils/authorization';
 // src/netlify/functions/weeklyCards.ts
 import { supabase } from '../../database/supabase';
 import { WeeklyCard } from '../services/weeklyCards';
@@ -103,6 +104,8 @@ async function handleGetAllLimited(
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['POST'], true);
+  if (auth.error) return auth.error;
   try {
     const data = getDataFromEvent(event);
     const { name, title, quote, detail, episode } = data;

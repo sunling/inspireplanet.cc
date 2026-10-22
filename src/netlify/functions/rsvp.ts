@@ -1,3 +1,4 @@
+import { requireMutationUser } from '../utils/authorization';
 import { supabase } from '../../database/supabase';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
@@ -64,6 +65,8 @@ export async function handler(event: NetlifyEvent, context: any) {
 }
 
 async function handleCreate(event: NetlifyEvent) {
+  if (event.httpMethod !== 'POST')
+    return createErrorResponse('请求方式不支持', 405);
   try {
     const rsvpData = getDataFromEvent(event);
     const meetupIdNum = Number(rsvpData.meetup_id);
@@ -72,9 +75,7 @@ async function handleCreate(event: NetlifyEvent) {
       ? String(rsvpData.timezone)
       : 'Asia/Shanghai';
     const authUserId = await getUserIdFromAuth(event);
-    const providedUserId =
-      rsvpData.user_id !== undefined ? rsvpData.user_id : null;
-    const userId = authUserId ?? providedUserId ?? null;
+    const userId = authUserId;
 
     // episode 相关（定期活动）
     const episodeDate: string | undefined = rsvpData.episode_date
@@ -101,7 +102,7 @@ async function handleCreate(event: NetlifyEvent) {
     const { data: meetup, error: meetupError } = await supabase
       .from('meetups')
       .select(
-        'id, max_ppl, status, title, datetime, location, mode, is_recurring, duration, survey_id'
+        'id, max_ppl, status, title, datetime, location, mode, is_recurring, duration, survey_id, skip_login'
       )
       .eq('id', meetupIdNum)
       .single();
@@ -109,6 +110,8 @@ async function handleCreate(event: NetlifyEvent) {
     if (meetupError || !meetup) {
       return createErrorResponse('活动不存在', 404);
     }
+    if (!userId && !meetup.skip_login)
+      return createErrorResponse('请先登录后报名', 401);
 
     if (meetup.status === 'cancelled') {
       return createErrorResponse('活动已取消');
@@ -369,6 +372,8 @@ async function handleGetAll(event: NetlifyEvent) {
 }
 
 async function handleUpdate(event: NetlifyEvent) {
+  const auth = await requireMutationUser(event, ['PUT', 'POST'], true);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
     // id 可能在查询参数中，也可能在请求体中
@@ -398,6 +403,14 @@ async function handleUpdate(event: NetlifyEvent) {
         updateRecord[field] = updateData[field];
       }
     });
+
+    if (
+      updateData.application_status !== undefined ||
+      updateData.approved_by !== undefined
+    ) {
+      updateRecord.approved_by = auth.user.name;
+      updateRecord.approved_at = new Date().toISOString();
+    }
 
     if (Object.keys(updateRecord).length === 0) {
       return createErrorResponse('无可更新字段');
@@ -561,112 +574,7 @@ async function handleUpdate(event: NetlifyEvent) {
 }
 
 async function handleDelete(event: NetlifyEvent) {
-  try {
-    const requestData = getDataFromEvent(event);
-    // id 和其他参数可能在查询参数中，也可能在请求体中
-    const id = requestData.id || event.queryStringParameters?.id;
-    const meetup_id =
-      requestData.meetup_id || event.queryStringParameters?.meetup_id;
-    const wechat_id =
-      requestData.wechat_id || event.queryStringParameters?.wechat_id;
-
-    const idTrimmed = id !== undefined ? String(id).trim() : undefined;
-    const meetupIdTrimmed =
-      meetup_id !== undefined ? String(meetup_id).trim() : undefined;
-    const wechatIdTrimmed =
-      wechat_id !== undefined ? String(wechat_id).trim() : undefined;
-
-    if (!idTrimmed && !(meetupIdTrimmed && wechatIdTrimmed)) {
-      return createErrorResponse('缺少必要参数');
-    }
-
-    let data: any[] | null = null;
-    let error: any = null;
-
-    if (idTrimmed) {
-      const idStr = idTrimmed;
-      const idNum = Number(idTrimmed);
-      const hasNum = Number.isFinite(idNum);
-
-      let pre = await supabase
-        .from('meetup_rsvps')
-        .select('id')
-        .eq('id', idStr as any)
-        .limit(1);
-      let preData = pre.data || [];
-      if ((!preData || preData.length === 0) && hasNum) {
-        pre = await supabase
-          .from('meetup_rsvps')
-          .select('id')
-          .eq('id', idNum as any)
-          .limit(1);
-        preData = pre.data || [];
-      }
-
-      if (!preData || preData.length === 0) {
-        return createErrorResponse('RSVP不存在', 404);
-      }
-
-      let res = await supabase
-        .from('meetup_rsvps')
-        .update({ status: 'cancelled' })
-        .eq('id', idStr as any)
-        .select();
-      data = res.data;
-      error = res.error;
-
-      if ((!data || data.length === 0) && hasNum && !error) {
-        const res2 = await supabase
-          .from('meetup_rsvps')
-          .update({ status: 'cancelled' })
-          .eq('id', idNum as any)
-          .select();
-        data = res2.data;
-        error = res2.error;
-      }
-    } else if (meetupIdTrimmed && wechatIdTrimmed) {
-      const meetupIdNum = Number(meetupIdTrimmed);
-      const hasMeetupNum = Number.isFinite(meetupIdNum);
-
-      let preQuery = supabase
-        .from('meetup_rsvps')
-        .select('id')
-        .eq('wechat_id', wechatIdTrimmed);
-      preQuery = hasMeetupNum
-        ? preQuery.eq('meetup_id', meetupIdNum)
-        : preQuery.eq('meetup_id', meetupIdTrimmed as any);
-      const pre = await preQuery.limit(1);
-      const preData = pre.data || [];
-
-      if (!preData || preData.length === 0) {
-        return createErrorResponse('RSVP不存在', 404);
-      }
-
-      let query = supabase
-        .from('meetup_rsvps')
-        .update({ status: 'cancelled' })
-        .eq('wechat_id', wechatIdTrimmed);
-      query = hasMeetupNum
-        ? query.eq('meetup_id', meetupIdNum)
-        : query.eq('meetup_id', meetupIdTrimmed as any);
-      const res = await query.select();
-      data = res.data;
-      error = res.error;
-    }
-
-    if (error) {
-      return createErrorResponse('取消报名失败', 500);
-    }
-
-    return createSuccessResponse({
-      message: '取消报名成功',
-      affected: Array.isArray(data) ? data.length : 0,
-      rsvp: Array.isArray(data) && data.length > 0 ? data[0] : null,
-    });
-  } catch (error) {
-    console.error('Delete RSVP error:', error);
-    return createErrorResponse('取消报名失败', 500);
-  }
+  return handleCancel(event);
 }
 
 async function handleGetByMeetupId(event: NetlifyEvent) {
@@ -766,120 +674,45 @@ async function handleGetByWechatId(event: NetlifyEvent) {
 }
 
 async function handleCancel(event: NetlifyEvent) {
-  try {
-    const body = getDataFromEvent(event);
-    const { id } = body;
+  const auth = await requireMutationUser(event, ['DELETE', 'POST']);
+  if (auth.error) return auth.error;
+  const input = getDataFromEvent(event);
+  const id = input.id || event.queryStringParameters?.id;
+  if (!id && !(input.meetup_id && input.wechat_id))
+    return createErrorResponse('缺少必要参数');
 
-    if (!id) {
-      return createErrorResponse('缺少RSVP ID');
-    }
+  let query = supabase.from('meetup_rsvps').select('id');
+  if (id) query = query.eq('id', id);
+  else
+    query = query
+      .eq('meetup_id', input.meetup_id)
+      .eq('wechat_id', input.wechat_id);
+  // A WeChat ID is a lookup key, never proof of ownership. Legacy guest
+  // registrations without an account must be cancelled by an organizer.
+  if (auth.user.role !== 'organizer') query = query.eq('user_id', auth.user.id);
+  const { data: records, error: lookupError } = await query;
+  if (lookupError) return createErrorResponse('读取报名记录失败', 500);
+  if (!records?.length) return createErrorResponse('报名不存在或无权取消', 404);
 
-    const idTrimmed = String(id).trim();
-    const idNum = Number(idTrimmed);
-    const hasNum = Number.isFinite(idNum);
-
-    let pre = await supabase
-      .from('meetup_rsvps')
-      .select('id')
-      .eq('id', idTrimmed as any)
-      .limit(1);
-    let preData = pre.data || [];
-    if ((!preData || preData.length === 0) && hasNum) {
-      pre = await supabase
-        .from('meetup_rsvps')
-        .select('id')
-        .eq('id', idNum as any)
-        .limit(1);
-      preData = pre.data || [];
-    }
-
-    if (!preData || preData.length === 0) {
-      return createErrorResponse('RSVP不存在', 404);
-    }
-
-    let res = await supabase
-      .from('meetup_rsvps')
-      .update({ status: 'cancelled' })
-      .eq('id', idTrimmed as any)
-      .select();
-    let data = res.data;
-    let error = res.error;
-
-    if ((!data || data.length === 0) && hasNum && !error) {
-      const res2 = await supabase
-        .from('meetup_rsvps')
-        .update({ status: 'cancelled' })
-        .eq('id', idNum as any)
-        .select();
-      data = res2.data;
-      error = res2.error;
-    }
-
-    if (error) {
-      return createErrorResponse('取消报名失败', 500);
-    }
-
-    return createSuccessResponse({
-      success: true,
-      message: '取消报名成功',
-      affected: Array.isArray(data) ? data.length : 0,
-    });
-  } catch (error) {
-    console.error('Cancel RSVP error:', error);
-    return createErrorResponse('取消报名失败', 500);
-  }
+  let update = supabase
+    .from('meetup_rsvps')
+    .update({ status: RSVPStatus.CANCELLED })
+    .in(
+      'id',
+      records.map((record) => record.id)
+    );
+  if (auth.user.role !== 'organizer')
+    update = update.eq('user_id', auth.user.id);
+  const { data, error } = await update.select('id');
+  if (error) return createErrorResponse('取消报名失败', 500);
+  if (!data?.length) return createErrorResponse('报名不存在或无权取消', 404);
+  return createSuccessResponse({
+    success: true,
+    message: '取消报名成功',
+    affected: data.length,
+  });
 }
 
 async function handleCancelByMeetupWechat(event: NetlifyEvent) {
-  try {
-    const body = getDataFromEvent(event);
-    const { meetup_id, wechat_id } = body;
-
-    if (!meetup_id || !wechat_id) {
-      return createErrorResponse('缺少必要参数');
-    }
-
-    const meetupIdTrimmed = String(meetup_id).trim();
-    const wechatIdTrimmed = String(wechat_id).trim();
-    const meetupIdNum = Number(meetupIdTrimmed);
-    const hasMeetupNum = Number.isFinite(meetupIdNum);
-
-    let preQuery = supabase
-      .from('meetup_rsvps')
-      .select('id')
-      .eq('wechat_id', wechatIdTrimmed);
-    preQuery = hasMeetupNum
-      ? preQuery.eq('meetup_id', meetupIdNum)
-      : preQuery.eq('meetup_id', meetupIdTrimmed as any);
-    const pre = await preQuery.limit(1);
-    const preData = pre.data || [];
-
-    if (!preData || preData.length === 0) {
-      return createErrorResponse('RSVP不存在', 404);
-    }
-
-    let query = supabase
-      .from('meetup_rsvps')
-      .update({ status: 'cancelled' })
-      .eq('wechat_id', wechatIdTrimmed);
-    query = hasMeetupNum
-      ? query.eq('meetup_id', meetupIdNum)
-      : query.eq('meetup_id', meetupIdTrimmed as any);
-    const res = await query.select();
-    const data = res.data;
-    const error = res.error;
-
-    if (error) {
-      return createErrorResponse('取消报名失败', 500);
-    }
-
-    return createSuccessResponse({
-      success: true,
-      message: '取消报名成功',
-      affected: Array.isArray(data) ? data.length : 0,
-    });
-  } catch (error) {
-    console.error('Cancel RSVP by meetup and wechat error:', error);
-    return createErrorResponse('取消报名失败', 500);
-  }
+  return handleCancel(event);
 }
