@@ -31,6 +31,10 @@ this PR does not recreate it.
 
 ## Validation
 
+Local verification: all 109 tests passed, including 61 new F02 cases and
+48 prerequisite/existing regression cases. All seven modified Netlify
+Functions bundled successfully. See the PR checks for the deployment result.
+
 Automated tests cover unauthenticated requests, unrelated members, stored
 owners, organizers, all cancellation aliases, forged owner/approver inputs,
 cross-owner linked surveys, safe HTTP methods and public compatibility.
