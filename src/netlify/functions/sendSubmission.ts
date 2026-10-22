@@ -1,4 +1,10 @@
-import { Resend } from 'resend';
+import {
+  sendProtectedEmail,
+  protectAction,
+  emailAddress,
+  shortText,
+  MailProtectionError,
+} from '../utils/mailProtection';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
   createErrorResponse,
@@ -15,17 +21,20 @@ export async function handler(
   if (event.httpMethod !== 'POST')
     return createErrorResponse('请求方式不支持', 405);
 
-  const { name, email, content, website } = getDataFromEvent(event);
-
-  // This field is hidden from people. Bots commonly fill it in.
-  if (website) return createSuccessResponse({ success: true });
-
-  if (!name?.trim() || !email?.trim() || !content?.trim()) {
-    return createErrorResponse('请完整填写投稿信息');
-  }
-
-  if (content.trim().length > 20000) {
-    return createErrorResponse('投稿内容请控制在 20000 字以内');
+  const input = getDataFromEvent(event);
+  if (input.website) return createSuccessResponse({ success: true });
+  const name = shortText(input.name, 80);
+  const email = emailAddress(input.email);
+  const content = shortText(input.content, 20000);
+  if (!name || !email || !content)
+    return createErrorResponse('请填写有效的称呼、邮箱和投稿内容');
+  try {
+    await protectAction(event, 'sendSubmission');
+  } catch (error) {
+    return createErrorResponse(
+      error instanceof Error ? error.message : '暂时无法处理',
+      error instanceof MailProtectionError ? error.status : 503
+    );
   }
 
   const resendKey = process.env.RESEND_API_KEY;
@@ -48,11 +57,10 @@ export async function handler(
   }
 
   try {
-    const resend = new Resend(resendKey);
     const from = process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc';
     const author = name.trim().slice(0, 80);
 
-    const { error } = await resend.emails.send({
+    await sendProtectedEmail({
       from: `启发星球 <${from}>`,
       to,
       cc,
@@ -66,14 +74,11 @@ export async function handler(
       ].join('\n\n'),
     });
 
-    if (error) {
-      console.error('[sendSubmission] Resend error:', error);
-      return createErrorResponse('投稿发送失败，请稍后再试', 500);
-    }
-
     return createSuccessResponse({ success: true });
   } catch (error) {
-    console.error('[sendSubmission] Unexpected error:', error);
+    if (error instanceof MailProtectionError)
+      return createErrorResponse(error.message, error.status);
+    console.error('[sendSubmission] Email operation failed');
     return createErrorResponse('投稿发送失败，请稍后再试', 500);
   }
 }

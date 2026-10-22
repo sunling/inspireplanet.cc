@@ -1,4 +1,4 @@
-import { Resend } from 'resend';
+import { sendProtectedEmail } from './mailProtection';
 import {
   CompletionCertificateData,
   buildRecordSummary,
@@ -7,9 +7,9 @@ import {
   formatCertificateDate,
 } from '../../utils/completionCertificate';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const esc = escapeCertificateHtml;
 const FROM = process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc';
-const SITE_URL = process.env.URL || 'https://inspireplanet.cc';
+const SITE_URL = 'https://inspireplanet.cc';
 
 interface RSVPConfirmParams {
   to: string;
@@ -95,7 +95,10 @@ function generateICS(params: RSVPConfirmParams): string {
       .replace(/\.\d{3}/, '');
 
   const escape = (s: string) =>
-    s.replace(/[,;\\]/g, (c) => '\\' + c).replace(/\n/g, '\\n');
+    s
+      .replace(/\\/g, '\\\\')
+      .replace(/[,;]/g, (c) => '\\' + c)
+      .replace(/\r\n|\r|\n/g, '\\n');
 
   const title = episodeNumber
     ? `${meetupTitle} EP${episodeNumber}`
@@ -166,23 +169,23 @@ export async function sendRSVPConfirmEmail(params: RSVPConfirmParams) {
         </tr>
         <tr>
           <td style="padding:28px 32px;">
-            <p style="margin:0 0 20px;font-size:15px;color:#333;">你好，<strong>${name}</strong>！</p>
+            <p style="margin:0 0 20px;font-size:15px;color:#333;">你好，<strong>${esc(name)}</strong>！</p>
             <p style="margin:0 0 20px;font-size:15px;color:#333;">你已成功报名以下活动，期待与你相见 👋</p>
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff8f6;border:1px solid #ffd6ce;border-radius:10px;margin-bottom:24px;">
               <tr><td style="padding:20px 24px;">
-                <h2 style="margin:0 0 16px;font-size:17px;color:#ff6348;">${titleLine}</h2>
+                <h2 style="margin:0 0 16px;font-size:17px;color:#ff6348;">${esc(titleLine)}</h2>
                 <p style="margin:0 0 8px;font-size:14px;color:#555;">
-                  📅 <strong>时间：</strong>${dateStr} ${timeStr}（${tzLabel}）
+                  📅 <strong>时间：</strong>${esc(dateStr)} ${esc(timeStr)}（${esc(tzLabel)}）
                 </p>
                 <p style="margin:0;font-size:14px;color:#555;">
-                  📍 <strong>地点：</strong>${locationLine}
+                  📍 <strong>地点：</strong>${esc(locationLine)}
                 </p>
               </td></tr>
             </table>
             <p style="margin:0 0 24px;font-size:14px;color:#666;">
               邮件附件中已包含日历文件（.ics），可直接添加到你的日历应用。
             </p>
-            <a href="${detailUrl}" style="display:inline-block;background:#ff6348;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">查看活动详情</a>
+            <a href="${esc(detailUrl)}" style="display:inline-block;background:#ff6348;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">查看活动详情</a>
           </td>
         </tr>
         <tr>
@@ -198,21 +201,17 @@ export async function sendRSVPConfirmEmail(params: RSVPConfirmParams) {
 </html>`;
 
   const icsContent = generateICS(params);
-  const filename = `${titleLine.replace(/\s+/g, '-')}.ics`;
+  const filename = `${titleLine.replace(/[\\/:*?"<>|\x00-\x1f]/g, '-').slice(0, 100)}.ics`;
 
-  try {
-    await resend.emails.send({
-      from: `启发星球 <${FROM}>`,
-      to,
-      subject: `报名确认：${titleLine}`,
-      html,
-      attachments: [
-        { filename, content: Buffer.from(icsContent).toString('base64') },
-      ],
-    });
-  } catch (err) {
-    console.error('发送确认邮件失败:', err);
-  }
+  return await sendProtectedEmail({
+    from: `启发星球 <${FROM}>`,
+    to,
+    subject: `报名确认：${titleLine}`,
+    html,
+    attachments: [
+      { filename, content: Buffer.from(icsContent).toString('base64') },
+    ],
+  });
 }
 
 interface SpeakerConfirmParams extends RSVPConfirmParams {
@@ -265,25 +264,25 @@ export async function sendSpeakerConfirmEmail(params: SpeakerConfirmParams) {
         </tr>
         <tr>
           <td style="padding:28px 32px;">
-            <p style="margin:0 0 20px;font-size:15px;color:#333;">你好，<strong>${name}</strong>！</p>
+            <p style="margin:0 0 20px;font-size:15px;color:#333;">你好，<strong>${esc(name)}</strong>！</p>
             <p style="margin:0 0 20px;font-size:15px;color:#333;">你已成功报名在以下活动中分享，期待你的精彩内容 🌟</p>
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff8f6;border:1px solid #ffd6ce;border-radius:10px;margin-bottom:24px;">
               <tr><td style="padding:20px 24px;">
-                <h2 style="margin:0 0 16px;font-size:17px;color:#ff6348;">${titleLine}</h2>
+                <h2 style="margin:0 0 16px;font-size:17px;color:#ff6348;">${esc(titleLine)}</h2>
                 <p style="margin:0 0 8px;font-size:14px;color:#555;">
-                  📅 <strong>时间：</strong>${dateStr} ${timeStr}（${tzLabel}）
+                  📅 <strong>时间：</strong>${esc(dateStr)} ${esc(timeStr)}（${esc(tzLabel)}）
                 </p>
                 <p style="margin:0 0 8px;font-size:14px;color:#555;">
-                  📍 <strong>地点：</strong>${locationLine}
+                  📍 <strong>地点：</strong>${esc(locationLine)}
                 </p>
                 <p style="margin:0 0 8px;font-size:14px;color:#555;">
-                  💡 <strong>你的主题：</strong>${topic}
+                  💡 <strong>你的主题：</strong>${esc(topic)}
                 </p>
-                ${duration ? `<p style="margin:0;font-size:14px;color:#555;">⏱️ <strong>预计时长：</strong>${duration}</p>` : ''}
+                ${duration ? `<p style="margin:0;font-size:14px;color:#555;">⏱️ <strong>预计时长：</strong>${esc(duration)}</p>` : ''}
               </td></tr>
             </table>
             <p style="margin:0 0 24px;font-size:14px;color:#666;">如有任何问题，请通过公众号「启发星球笔记」联系我们。</p>
-            <a href="${detailUrl}" style="display:inline-block;background:#ff6348;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">查看活动详情</a>
+            <a href="${esc(detailUrl)}" style="display:inline-block;background:#ff6348;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">查看活动详情</a>
           </td>
         </tr>
         <tr>
@@ -299,21 +298,17 @@ export async function sendSpeakerConfirmEmail(params: SpeakerConfirmParams) {
 </html>`;
 
   const icsContent = generateICS(params);
-  const filename = `${titleLine.replace(/\s+/g, '-')}.ics`;
+  const filename = `${titleLine.replace(/[\\/:*?"<>|\x00-\x1f]/g, '-').slice(0, 100)}.ics`;
 
-  try {
-    await resend.emails.send({
-      from: `启发星球 <${FROM}>`,
-      to,
-      subject: `分享报名确认：${titleLine}`,
-      html,
-      attachments: [
-        { filename, content: Buffer.from(icsContent).toString('base64') },
-      ],
-    });
-  } catch (err) {
-    console.error('发送分享确认邮件失败:', err);
-  }
+  return await sendProtectedEmail({
+    from: `启发星球 <${FROM}>`,
+    to,
+    subject: `分享报名确认：${titleLine}`,
+    html,
+    attachments: [
+      { filename, content: Buffer.from(icsContent).toString('base64') },
+    ],
+  });
 }
 
 interface RSVPRejectParams {
@@ -343,10 +338,10 @@ export async function sendRSVPRejectEmail(params: RSVPRejectParams) {
         </tr>
         <tr>
           <td style="padding:28px 32px;">
-            <p style="margin:0 0 20px;font-size:15px;color:#333;">你好，<strong>${name}</strong>！</p>
-            <p style="margin:0 0 20px;font-size:15px;color:#333;">很遗憾，你报名的活动<strong>${meetupTitle}</strong>，暂时与您无缘，感谢你的理解与支持 🙏</p>
+            <p style="margin:0 0 20px;font-size:15px;color:#333;">你好，<strong>${esc(name)}</strong>！</p>
+            <p style="margin:0 0 20px;font-size:15px;color:#333;">很遗憾，你报名的活动<strong>${esc(meetupTitle)}</strong>，暂时与您无缘，感谢你的理解与支持 🙏</p>
             <p style="margin:0 0 24px;font-size:14px;color:#666;">期待下次活动与你相见！</p>
-            <a href="${activityListUrl}" style="display:inline-block;background:#1e40af;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">浏览更多活动</a>
+            <a href="${esc(activityListUrl)}" style="display:inline-block;background:#1e40af;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">浏览更多活动</a>
           </td>
         </tr>
         <tr>
@@ -361,26 +356,21 @@ export async function sendRSVPRejectEmail(params: RSVPRejectParams) {
 </body>
 </html>`;
 
-  try {
-    await resend.emails.send({
-      from: `启发星球 <${FROM}>`,
-      to,
-      subject: `报名结果：${meetupTitle}`,
-      html,
-    });
-  } catch (err) {
-    console.error('发送拒绝邮件失败:', err);
-  }
+  return await sendProtectedEmail({
+    from: `启发星球 <${FROM}>`,
+    to,
+    subject: `报名结果：${meetupTitle}`,
+    html,
+  });
 }
 
 export async function sendCompletionCertificateEmail(
   params: CompletionCertificateData & { to: string }
 ) {
-  const esc = escapeCertificateHtml;
   const summary = buildRecordSummary(params.recordDays, params.recordCount);
   const svg = createCertificateSvg(params);
   const safeName = params.participantName.replace(/[\\/:*?"<>|]/g, '-');
-  const result = await resend.emails.send({
+  const result = await sendProtectedEmail({
     from: `启发星球 <${FROM}>`,
     to: params.to,
     subject: `结营证书：${params.activityName}`,
@@ -411,6 +401,5 @@ ${params.reflection ? `<div style="margin:0 0 22px;padding:8px 16px;color:#b1483
       },
     ],
   });
-  if (result.error) throw new Error(result.error.message);
-  return result.data;
+  return result;
 }

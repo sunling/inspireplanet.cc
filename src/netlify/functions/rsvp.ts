@@ -1,3 +1,4 @@
+import { protectAction, MailProtectionError } from '../utils/mailProtection';
 import {
   createSurveySubmission,
   discardNewSubmission,
@@ -272,19 +273,23 @@ async function handleCreate(event: NetlifyEvent) {
         .single();
       recipientEmail = userData?.email;
     }
-    if (recipientEmail && needsApproval === ApprovalStatus.APPROVED) {
-      sendRSVPConfirmEmail({
-        to: recipientEmail,
-        name: recipientName,
-        meetupTitle: meetup.title,
-        meetupId: meetupIdNum,
-        eventDatetime: meetup.datetime,
-        durationHours: meetup.duration ? Number(meetup.duration) : 1,
-        location: meetup.location,
-        mode: meetup.mode,
-        episodeNumber: episodeNumber,
-        timezone,
-      });
+    if (recipientEmail && needsApproval === ApprovalStatus.AUTO) {
+      try {
+        await sendRSVPConfirmEmail({
+          to: recipientEmail,
+          name: recipientName,
+          meetupTitle: meetup.title,
+          meetupId: meetupIdNum,
+          eventDatetime: meetup.datetime,
+          durationHours: meetup.duration ? Number(meetup.duration) : 1,
+          location: meetup.location,
+          mode: meetup.mode,
+          episodeNumber: episodeNumber,
+          timezone,
+        });
+      } catch {
+        console.error('RSVP saved, confirmation delivery failed');
+      }
     }
 
     return createSuccessResponse({
@@ -431,6 +436,8 @@ async function handleUpdate(event: NetlifyEvent) {
     const idNum = Number(idTrimmed);
     const hasNum = Number.isFinite(idNum);
 
+    if (updateData.send_email)
+      await protectAction(event, 'approval-mail', auth.user.id);
     const allowedFields = [
       'status',
       'name',
@@ -503,15 +510,7 @@ async function handleUpdate(event: NetlifyEvent) {
     let meetup = null;
     let meetupError = null;
 
-    // 调试日志
-    console.log('📧 邮件发送检查:', {
-      send_email: updateData.send_email,
-      hasData: data && data.length > 0,
-      application_status: updateData.application_status,
-      isRejected: updateData.application_status === ApprovalStatus.REJECTED,
-      isApproved: updateData.application_status === ApprovalStatus.APPROVED,
-    });
-
+    let emailFailed = 0;
     if (
       updateData.send_email &&
       data &&
@@ -530,11 +529,6 @@ async function handleUpdate(event: NetlifyEvent) {
 
       if (!meetupError && meetup) {
         let email = null;
-        // 从用户表获取邮箱（活动报名用户必须登录，user_id 一定存在）
-        console.log('📧 获取用户邮箱:', {
-          rsvp_user_id: rsvp.user_id,
-          rsvp_name: rsvp.name,
-        });
         if (rsvp.user_id) {
           try {
             const { data: userData } = await supabase
@@ -543,15 +537,9 @@ async function handleUpdate(event: NetlifyEvent) {
               .eq('id', rsvp.user_id)
               .single();
             email = userData?.email;
-            console.log('📧 用户邮箱获取结果:', {
-              userData: userData,
-              email: email,
-            });
           } catch (userError) {
             console.error('获取用户邮箱失败:', userError);
           }
-        } else {
-          console.log('📧 警告: rsvp.user_id 为空');
         }
 
         // 审批拒绝发送拒绝邮件
@@ -573,6 +561,7 @@ async function handleUpdate(event: NetlifyEvent) {
               .update({ email_sent: true, email_sent_at: now })
               .eq('id', rsvp.id);
           } catch (emailError) {
+            emailFailed += 1;
             console.error('发送拒绝邮件失败:', emailError);
           }
         }
@@ -599,6 +588,7 @@ async function handleUpdate(event: NetlifyEvent) {
               .update({ email_sent: true, email_sent_at: now })
               .eq('id', rsvp.id);
           } catch (emailError) {
+            emailFailed += 1;
             console.error('发送报名成功邮件失败:', emailError);
           }
         }
@@ -607,10 +597,13 @@ async function handleUpdate(event: NetlifyEvent) {
 
     return createSuccessResponse({
       message: 'RSVP更新成功',
+      email_failed_count: emailFailed,
       affected: Array.isArray(data) ? data.length : 0,
       rsvp: Array.isArray(data) && data.length > 0 ? data[0] : null,
     });
   } catch (error) {
+    if (error instanceof MailProtectionError)
+      return createErrorResponse(error.message, error.status);
     console.error('Update RSVP error:', error);
     return createErrorResponse('更新RSVP失败', 500);
   }

@@ -1,3 +1,9 @@
+import { requireMutationUser } from '../utils/authorization';
+import {
+  protectAction,
+  shortText,
+  MailProtectionError,
+} from '../utils/mailProtection';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
   createSuccessResponse,
@@ -30,20 +36,25 @@ export async function handler(
         return createErrorResponse('无效的操作类型');
     }
   } catch (error) {
-    console.error('SearchImage handler error:', error);
+    if (error instanceof MailProtectionError)
+      return createErrorResponse(error.message, error.status);
+    console.error('Image search failed');
     return createErrorResponse('服务器内部错误', 500);
   }
 }
 
 async function handleSearch(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['POST']);
+  if (auth.error) return auth.error;
   const requestBody = getDataFromEvent(event);
-  const text: string = requestBody.text || '';
+  const text = shortText(requestBody.text, 500);
   const orientation: string = requestBody.orientation || 'landscape';
 
-  if (!text) {
+  if (!text || !['landscape', 'portrait', 'squarish'].includes(orientation)) {
     return createErrorResponse('缺少文本参数');
   }
 
+  await protectAction(event, 'image-search', auth.user.id);
   try {
     const result = await searchImageByText(text, orientation);
 

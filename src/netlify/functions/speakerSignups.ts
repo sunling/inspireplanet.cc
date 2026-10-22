@@ -1,3 +1,9 @@
+import {
+  protectAction,
+  emailAddress,
+  shortText,
+  MailProtectionError,
+} from '../utils/mailProtection';
 import { requireMutationUser } from '../utils/authorization';
 import { supabase } from '../../database/supabase';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
@@ -7,6 +13,7 @@ import {
   handleOptionsRequest,
   getFunctionNameFromEvent,
   getDataFromEvent,
+  getAuthenticatedUser,
 } from '../utils/server';
 import { sendSpeakerConfirmEmail } from '../utils/email';
 
@@ -42,7 +49,9 @@ export async function handler(
         return createErrorResponse('无效的操作类型');
     }
   } catch (error) {
-    console.error('SpeakerSignups handler error:', error);
+    if (error instanceof MailProtectionError)
+      return createErrorResponse(error.message, error.status);
+    console.error('Speaker signup operation failed');
     return createErrorResponse('服务器内部错误', 500);
   }
 }
@@ -68,11 +77,32 @@ async function handleGetByEpisode(
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   if (event.httpMethod !== 'POST')
     return createErrorResponse('请求方式不支持', 405);
-  const { meetup_id, episode_number, name, topic, duration, email, timezone } =
-    getDataFromEvent(event);
-  if (!meetup_id || !episode_number || !name?.trim() || !topic?.trim()) {
-    return createErrorResponse('缺少必填字段');
+  const input = getDataFromEvent(event);
+  const meetup_id = Number(input.meetup_id);
+  const episode_number = Number(input.episode_number);
+  const name = shortText(input.name, 80);
+  const topic = shortText(input.topic, 300);
+  const duration = input.duration ? shortText(input.duration, 80) : undefined;
+  const timezone =
+    typeof input.timezone === 'string' ? input.timezone : 'Asia/Shanghai';
+  if (
+    !Number.isSafeInteger(meetup_id) ||
+    meetup_id < 1 ||
+    !Number.isSafeInteger(episode_number) ||
+    episode_number < 1 ||
+    !name ||
+    !topic ||
+    (input.duration && !duration) ||
+    (input.email && !emailAddress(input.email))
+  )
+    return createErrorResponse('报名信息格式无效或过长');
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: timezone }).format();
+  } catch {
+    return createErrorResponse('时区无效');
   }
+  const user = await getAuthenticatedUser(event);
+  await protectAction(event, 'speaker-signup', user?.id);
 
   const { data, error } = await supabase
     .from('speaker_signups')
@@ -91,42 +121,49 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
   if (error) return createErrorResponse('报名失败', 500);
 
-  // 发送确认邮件
-  if (email?.trim()) {
+  // An unverified form address must never receive branded confirmation email.
+  // Guests can still register; signed-in confirmations use only the profile email.
+  let confirmationEmail = 'not_requested';
+  if (user) {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', user.id)
+      .maybeSingle();
+    const to = emailAddress(profile?.email);
     const { data: meetup } = await supabase
       .from('meetups')
       .select('title, datetime, location, mode, duration')
       .eq('id', meetup_id)
-      .single();
-
-    const { data: episode } = await supabase
-      .from('meetup_episodes')
-      .select('date')
-      .eq('meetup_id', meetup_id)
-      .eq('episode_number', episode_number)
-      .single();
-
-    if (meetup) {
-      const eventDatetime = meetup.datetime;
-
-      sendSpeakerConfirmEmail({
-        to: email.trim(),
-        name: name.trim(),
-        topic: topic.trim(),
-        duration: duration?.trim(),
-        meetupTitle: meetup.title,
-        meetupId: Number(meetup_id),
-        eventDatetime,
-        durationHours: meetup.duration ? Number(meetup.duration) : 1,
-        location: meetup.location,
-        mode: meetup.mode,
-        episodeNumber: Number(episode_number),
-        timezone: timezone || 'Asia/Shanghai',
-      });
+      .maybeSingle();
+    if (to && meetup) {
+      try {
+        await sendSpeakerConfirmEmail({
+          to,
+          name,
+          topic,
+          duration: duration || undefined,
+          meetupTitle: meetup.title,
+          meetupId: meetup_id,
+          eventDatetime: meetup.datetime,
+          durationHours: meetup.duration ? Number(meetup.duration) : 1,
+          location: meetup.location,
+          mode: meetup.mode,
+          episodeNumber: episode_number,
+          timezone,
+        });
+        confirmationEmail = 'sent_or_duplicate';
+      } catch {
+        confirmationEmail = 'failed';
+        console.error('Speaker signup saved, confirmation delivery failed');
+      }
     }
   }
 
-  return createSuccessResponse({ signup: data });
+  return createSuccessResponse({
+    signup: data,
+    confirmation_email: confirmationEmail,
+  });
 }
 
 async function handleUpdateStatus(

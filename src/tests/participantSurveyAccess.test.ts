@@ -1,3 +1,8 @@
+// Quota/delivery behavior is exercised by mailSecurity tests and SQL integration tests.
+vi.mock('../netlify/utils/mailProtection', async (importOriginal) => ({
+  ...(await importOriginal<any>()),
+  protectAction: vi.fn(async () => {}),
+}));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
