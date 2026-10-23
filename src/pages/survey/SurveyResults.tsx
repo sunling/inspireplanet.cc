@@ -17,6 +17,9 @@ import {
   TableRow,
   Rating,
   Divider,
+  Button,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -40,7 +43,9 @@ import {
   Line,
 } from 'recharts';
 import surveyApi from '../../netlify/services/survey';
-import { Survey } from '../../netlify/types/survey';
+import { Survey, SurveySubmission } from '../../netlify/types/survey';
+import { isOrganizer } from '../../utils/user';
+import { buildSurveyText } from '../../utils/surveyExport';
 import Loading from '../../components/Loading';
 import ErrorCard from '../../components/ErrorCard';
 import { formatDateTime } from '../../utils/date';
@@ -66,6 +71,50 @@ const SurveyResults: React.FC = () => {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const exportText = async () => {
+    if (!isOrganizer() || !survey || exporting) return;
+    setExporting(true);
+    setExportError(null);
+    try {
+      const records: SurveySubmission[] = [];
+      let page = 1;
+      let total = 0;
+      do {
+        const response = await surveyApi.getSubmissions({
+          survey_id: survey.id,
+          page,
+          pageSize: 100,
+        });
+        if (!response.success || !response.data)
+          throw new Error('读取作答失败，请重试');
+        total = response.data.total;
+        if (!response.data.records.length && records.length < total)
+          throw new Error('作答数据不完整，请重试');
+        records.push(...response.data.records);
+        page += 1;
+      } while (records.length < total);
+      const blob = new Blob(['\uFEFF', buildSurveyText(survey, records)], {
+        type: 'text/plain;charset=utf-8',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${survey.title.replace(/[\\/:*?"<>|]/g, '_')}-问题与答案.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      setExportError(
+        error instanceof Error ? error.message : '导出失败，请重试'
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     if (!surveyId) {
@@ -445,6 +494,27 @@ const SurveyResults: React.FC = () => {
           <Typography variant="h4" gutterBottom>
             {survey?.title} - 统计结果
           </Typography>
+          {isOrganizer() && (
+            <Button
+              variant="outlined"
+              onClick={exportText}
+              disabled={exporting || !survey}
+              aria-busy={exporting}
+              startIcon={
+                exporting ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : undefined
+              }
+              sx={{ mb: 2 }}
+            >
+              {exporting ? '正在导出…' : '导出 TXT'}
+            </Button>
+          )}
+          {exportError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {exportError}
+            </Alert>
+          )}
           {survey?.description && (
             <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
               {survey.description}
