@@ -30,7 +30,12 @@ import {
   Lock,
   AutoStoriesOutlined,
 } from '@mui/icons-material';
-import { notificationsApi, weeklyCardsApi } from '../netlify/config';
+import {
+  meetupsApi,
+  notificationsApi,
+  weeklyCardsApi,
+} from '../netlify/config';
+import { getLatestActiveEpisode } from '../utils/recurring';
 import { isOrganizer } from '../utils/user';
 
 interface HeaderProps {
@@ -71,12 +76,6 @@ const Header: React.FC<HeaderProps> = ({
   );
   const [activitiesMenuAnchor, setActivitiesMenuAnchor] =
     useState<HTMLElement | null>(null);
-  const [cardsMenuAnchor, setCardsMenuAnchor] = useState<HTMLElement | null>(
-    null
-  );
-  const [weeklyMenuAnchor, setWeeklyMenuAnchor] = useState<HTMLElement | null>(
-    null
-  );
   const [writingMenuAnchor, setWritingMenuAnchor] =
     useState<HTMLElement | null>(null);
   const [unread, setUnread] = useState(0);
@@ -114,26 +113,65 @@ const Header: React.FC<HeaderProps> = ({
     let active = true;
     const loadLatestResponseWallHref = async () => {
       try {
-        const response = await weeklyCardsApi.getLatest();
-        const latestCard = response.data?.records?.[0];
-        const episodeNumber = latestCard?.episode?.replace(/\D/g, '');
-        const createdAt = latestCard?.created
-          ? new Date(latestCard.created)
-          : null;
-        if (
-          !active ||
-          !episodeNumber ||
-          !createdAt ||
-          Number.isNaN(createdAt.getTime())
-        )
-          return;
-        const year = new Intl.DateTimeFormat('en-US', {
-          year: 'numeric',
-          timeZone: 'Asia/Shanghai',
-        }).format(createdAt);
-        setLatestResponseWallHref(
-          `https://inspireplanet.cc/episodes/${year}/${episodeNumber}`
+        const [weeklyRes, meetupsRes] = await Promise.allSettled([
+          weeklyCardsApi.getLatest(),
+          meetupsApi.getAll({ status: 'active' }),
+        ]);
+
+        let bestEpisode = 0;
+        let bestYear = Number(
+          new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            timeZone: 'Asia/Shanghai',
+          }).format(new Date())
         );
+
+        if (weeklyRes.status === 'fulfilled') {
+          const latestCard = weeklyRes.value.data?.records?.[0];
+          const cardEp = Number(latestCard?.episode?.replace(/\D/g, '') || 0);
+          const createdAt = latestCard?.created
+            ? new Date(latestCard.created)
+            : null;
+          if (cardEp > 0) {
+            bestEpisode = cardEp;
+            if (createdAt && !Number.isNaN(createdAt.getTime())) {
+              bestYear = Number(
+                new Intl.DateTimeFormat('en-US', {
+                  year: 'numeric',
+                  timeZone: 'Asia/Shanghai',
+                }).format(createdAt)
+              );
+            }
+          }
+        }
+
+        if (meetupsRes.status === 'fulfilled') {
+          const meetups = meetupsRes.value.data?.meetups || [];
+          const recurringMeetup =
+            meetups.find(
+              (m: any) =>
+                Number(m.id) === 39 && m.is_recurring && m.episode_start_date
+            ) ||
+            meetups.find((m: any) => m.is_recurring && m.episode_start_date);
+          if (recurringMeetup?.episode_start_date) {
+            const activeEp = getLatestActiveEpisode(
+              recurringMeetup.datetime,
+              recurringMeetup.episode_start_date
+            );
+            if (
+              activeEp &&
+              (activeEp.year > bestYear ||
+                (activeEp.year === bestYear &&
+                  activeEp.episodeNumber >= bestEpisode))
+            ) {
+              bestEpisode = activeEp.episodeNumber;
+              bestYear = activeEp.year;
+            }
+          }
+        }
+
+        if (!active || bestEpisode <= 0) return;
+        setLatestResponseWallHref(`/episodes/${bestYear}/${bestEpisode}`);
       } catch (error) {
         console.error('加载最新一期回应墙地址失败:', error);
       }
@@ -147,6 +185,12 @@ const Header: React.FC<HeaderProps> = ({
   // 判断当前路由是否匹配
   const isActiveRoute = (path?: string): boolean => {
     if (!path) return false;
+    if (path.startsWith('/episodes/') || path === '/weekly-cards') {
+      return (
+        location.pathname.startsWith('/episodes/') ||
+        location.pathname.startsWith('/weekly-cards')
+      );
+    }
     return location.pathname === path;
   };
 
@@ -164,16 +208,23 @@ const Header: React.FC<HeaderProps> = ({
   const topNavItems: NavItem[] = [
     { path: '/', label: '首页', icon: <Home fontSize="small" /> },
     {
-      path: '/clarify-together',
-      label: '对话实验',
+      path: latestResponseWallHref || '/weekly-cards',
+      label: '每周分享',
+      icon: <AutoStoriesOutlined fontSize="small" />,
+    },
+    {
+      path: '/questions',
+      label: '问题圆桌',
       icon: <Forum fontSize="small" />,
     },
-  ];
-
-  const weeklyMenuItems: NavItem[] = [
-    { path: '/weekly-cards', label: '阅读启发周刊' },
-    ...(latestResponseWallHref
-      ? [{ href: latestResponseWallHref, label: '查看最新回应墙' }]
+    ...(!isOrganizer()
+      ? [
+          {
+            path: '/writing-circle',
+            label: '书写圈子',
+            icon: <EditNote fontSize="small" />,
+          },
+        ]
       : []),
   ];
 
@@ -194,6 +245,10 @@ const Header: React.FC<HeaderProps> = ({
     if (isOrganizer()) {
       baseItems.push({ path: '/create-meetup', label: '创建活动' });
       baseItems.push({ path: '/meetup-participants-list', label: '报名管理' });
+      baseItems.push({
+        path: '/admin/question-roundtable',
+        label: '问题圆桌管理',
+      });
     }
 
     return baseItems;
@@ -201,46 +256,32 @@ const Header: React.FC<HeaderProps> = ({
 
   const toolsMenuItems: NavItem[] = [
     { path: '/pomodoro', label: '番茄钟' },
+    { path: '/create-card', label: '创建卡片' },
     { path: '/page-poster', label: '页面分享海报' },
     { path: '/cover-editor', label: '横版封面制作' },
     { path: '/cover-editor-mobile', label: '竖版封面制作' },
     { path: '/surveys', label: '调查问卷' },
   ];
 
-  const cardsMenuItems: NavItem[] = [
-    { path: '/cards', label: '近期卡片' },
-    { path: '/create-card', label: '创建卡片' },
-  ];
-
   // 下拉菜单配置
   const dropdownMenus: DropdownMenu[] = [
-    {
-      label: '启发周刊',
-      icon: <CardMembership fontSize="small" />,
-      items: weeklyMenuItems,
-      anchor: weeklyMenuAnchor,
-      setAnchor: setWeeklyMenuAnchor,
-    },
-    {
-      label: '书写圈子',
-      icon: <EditNote fontSize="small" />,
-      items: writingMenuItems,
-      anchor: writingMenuAnchor,
-      setAnchor: setWritingMenuAnchor,
-    },
+    ...(isOrganizer()
+      ? [
+          {
+            label: '书写圈子',
+            icon: <EditNote fontSize="small" />,
+            items: writingMenuItems,
+            anchor: writingMenuAnchor,
+            setAnchor: setWritingMenuAnchor,
+          },
+        ]
+      : []),
     {
       label: '活动',
       icon: <CalendarToday fontSize="small" />,
       items: getActivitiesMenuItems(),
       anchor: activitiesMenuAnchor,
       setAnchor: setActivitiesMenuAnchor,
-    },
-    {
-      label: '金句卡片',
-      icon: <CardMembership fontSize="small" />,
-      items: cardsMenuItems,
-      anchor: cardsMenuAnchor,
-      setAnchor: setCardsMenuAnchor,
     },
     ...(isOrganizer()
       ? [
@@ -444,9 +485,16 @@ const Header: React.FC<HeaderProps> = ({
       <Box sx={{ width: 250, padding: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
           <img
-            src="/images/logo.png"
+            src="/images/logo-mark.svg"
             alt="启发星球"
-            style={{ width: 32, height: 32, marginRight: 8 }}
+            width={44}
+            height={44}
+            style={{
+              width: 44,
+              height: 44,
+              objectFit: 'contain',
+              marginRight: 8,
+            }}
           />
           <Typography variant="h6" color="primary">
             启发星球
@@ -495,11 +543,6 @@ const Header: React.FC<HeaderProps> = ({
 
           {/* 移动端菜单组 */}
           {renderMobileMenuItemGroup(
-            '启发周刊',
-            <CardMembership fontSize="small" />,
-            weeklyMenuItems
-          )}
-          {renderMobileMenuItemGroup(
             '书写圈子',
             <EditNote fontSize="small" />,
             writingMenuItems
@@ -508,11 +551,6 @@ const Header: React.FC<HeaderProps> = ({
             '活动',
             <CalendarToday fontSize="small" />,
             getActivitiesMenuItems()
-          )}
-          {renderMobileMenuItemGroup(
-            '金句卡片',
-            <CardMembership fontSize="small" />,
-            cardsMenuItems
           )}
           {isOrganizer() &&
             renderMobileMenuItemGroup(
@@ -574,9 +612,16 @@ const Header: React.FC<HeaderProps> = ({
             }}
           >
             <img
-              src="/images/logo.png"
+              src="/images/logo-mark.svg"
               alt="启发星球"
-              style={{ width: 32, height: 32, marginRight: 8 }}
+              width={44}
+              height={44}
+              style={{
+                width: 44,
+                height: 44,
+                objectFit: 'contain',
+                marginRight: 8,
+              }}
             />
             <div>
               <Typography
@@ -685,14 +730,6 @@ const Header: React.FC<HeaderProps> = ({
                 >
                   <CalendarToday fontSize="small" sx={{ mr: 1 }} />
                   我的活动
-                </MenuItem>
-                <MenuItem
-                  component={Link}
-                  to="/connections"
-                  onClick={() => setUserMenuAnchor(null)}
-                >
-                  <CalendarToday fontSize="small" sx={{ mr: 1 }} />
-                  我的连接
                 </MenuItem>
                 <MenuItem
                   component={Link}

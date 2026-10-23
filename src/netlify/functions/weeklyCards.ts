@@ -3,6 +3,11 @@ import { supabase } from '../../database/supabase';
 import { WeeklyCard } from '../services/weeklyCards';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
+  getAllWeeklyCards,
+  getEpisodeSummary,
+  getWeeklyCardsByEpisode,
+} from '../utils/githubWeeklyCards';
+import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
@@ -41,17 +46,8 @@ export async function handler(
 
 async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
-    const { data, error } = await supabase
-      .from('weekly_cards')
-      .select('*')
-      .order('created', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching weekly cards:', error);
-      return createErrorResponse(error.message, 500);
-    }
-
-    return createSuccessResponse({ records: data } as unknown as {
+    const records = await getAllWeeklyCards();
+    return createSuccessResponse({ records } as {
       records: WeeklyCard[];
     });
   } catch (error) {
@@ -66,30 +62,18 @@ async function handleGetByEpisode(
   try {
     const data = getDataFromEvent(event);
     const episode = data.episode;
+    const year = data.year;
 
     if (!episode) {
       return createErrorResponse('缺少期数参数');
     }
 
-    let query = supabase.from('weekly_cards').select('*');
-    const digits = episode.match(/\d+/)?.[0] || '';
-    if (digits) {
-      query = query.ilike('episode', `%${digits}%`);
-    } else {
-      query = query.ilike('episode', `%${episode}%`);
-    }
-    query = query.order('created', { ascending: false });
+    const [records, summary] = await Promise.all([
+      getWeeklyCardsByEpisode(String(episode), year),
+      getEpisodeSummary(String(episode), year),
+    ]);
 
-    const { data: result, error } = await query;
-
-    if (error) {
-      console.error('Error fetching weekly cards:', error);
-      return createErrorResponse(error.message, 500);
-    }
-
-    return createSuccessResponse({ records: result } as {
-      records: WeeklyCard[];
-    });
+    return createSuccessResponse({ records, summary });
   } catch (error) {
     console.error('Function error:', error);
     return createErrorResponse('Internal Server Error', 500);
@@ -107,18 +91,9 @@ async function handleGetAllLimited(
       return createErrorResponse('无效的限制参数');
     }
 
-    const { data: result, error } = await supabase
-      .from('weekly_cards')
-      .select('*')
-      .order('created', { ascending: false })
-      .limit(limit);
+    const records = await getAllWeeklyCards(limit);
 
-    if (error) {
-      console.error('Error fetching weekly cards:', error);
-      return createErrorResponse(error.message, 500);
-    }
-
-    return createSuccessResponse({ records: result } as {
+    return createSuccessResponse({ records } as {
       records: WeeklyCard[];
     });
   } catch (error) {

@@ -2,7 +2,6 @@ import React, {
   ChangeEvent,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -16,7 +15,12 @@ import {
 } from '@mui/material';
 import html2canvas from 'html2canvas';
 import { QRCodeSVG } from 'qrcode.react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import {
+  Link,
+  useLocation,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 
 import { episodeResponsesApi, episodesApi } from '@/netlify/config';
 import { EpisodeCardContext } from '@/netlify/functions/episodes';
@@ -33,6 +37,18 @@ type PhotoMode = 'cover' | 'contain';
 const EpisodeCardCreate: React.FC = () => {
   const params = useParams<{ year?: string; episode: string }>();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const [quotedText, setQuotedText] = useState(() =>
+    typeof location.state?.quote === 'string' ? location.state.quote.trim() : ''
+  );
+  const quotedSpeaker =
+    typeof location.state?.quoteSpeaker === 'string'
+      ? location.state.quoteSpeaker.trim()
+      : '';
+  const quotedSourceLabel =
+    typeof location.state?.quoteSourceLabel === 'string'
+      ? location.state.quoteSourceLabel.trim()
+      : '';
   const episodeNumber = Number(
     params.episode ||
       searchParams.get('episode') ||
@@ -99,23 +115,12 @@ const EpisodeCardCreate: React.FC = () => {
     loadEpisode();
   }, [episodeNumber, meetupId, routeYear]);
 
-  const shareUrl = useMemo(
-    () =>
-      `${window.location.origin}/episodes/${routeYear ? `${routeYear}/` : ''}${episodeNumber}/respond`,
-    [episodeNumber, routeYear]
-  );
-
-  const episodeDate = episode?.date
-    ? new Date(`${episode.date}T00:00:00`).toLocaleDateString('zh-CN', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : '';
-  const episodeYear = episode?.date
-    ? new Date(`${episode.date}T00:00:00`).getFullYear()
-    : null;
+  const episodeYear =
+    (episode?.date
+      ? new Date(`${episode.date}T00:00:00`).getFullYear()
+      : null) ?? routeYear;
   const episodeLabel = `${episodeYear ? `${episodeYear} · ` : ''}EP${episode?.episode_number}`;
+  const shareUrl = `${window.location.origin}/episodes/${episodeYear ? `${episodeYear}/` : ''}${episodeNumber}`;
   const responseDate = new Date(
     publishedResponseDate || Date.now()
   ).toLocaleDateString('zh-CN', {
@@ -123,7 +128,15 @@ const EpisodeCardCreate: React.FC = () => {
     month: 'long',
     day: 'numeric',
   });
-  const displayText = text.trim() || '写下此刻还留在心里的片段。';
+  // Keep the original words with the response in storage and exported cards.
+  const quotePrefix = quotedText
+    ? `回应${quotedSpeaker ? `${quotedSpeaker}的分享` : quotedSourceLabel || '这段分享'}：\n「${quotedText}」\n\n我的回应：\n`
+    : '';
+  const maxReplyLength = Math.max(0, MAX_TEXT_LENGTH - quotePrefix.length);
+  const responseContent = quotePrefix + text.trim();
+  const displayText = text.trim()
+    ? responseContent
+    : quotePrefix + '写下此刻还留在心里的感受和收获。';
   const displayAuthor = author.trim() || '匿名';
   const weightedLength =
     Array.from(displayText).length +
@@ -154,15 +167,36 @@ const EpisodeCardCreate: React.FC = () => {
       quote.style.lineHeight =
         weightedLength > 300 ? '1.32' : weightedLength > 180 ? '1.4' : '1.5';
 
-      while (container.scrollHeight > container.clientHeight && fontSize > 10) {
+      const containerStyle = window.getComputedStyle(container);
+      const availableHeight =
+        container.clientHeight -
+        parseFloat(containerStyle.paddingTop) -
+        parseFloat(containerStyle.paddingBottom);
+      while (
+        (quote.parentElement?.offsetHeight || 0) > availableHeight &&
+        fontSize > 10
+      ) {
         fontSize -= 1;
         quote.style.fontSize = `${fontSize}px`;
       }
     };
 
     const animationFrame = window.requestAnimationFrame(fitText);
-    return () => window.cancelAnimationFrame(animationFrame);
-  }, [displayText, weightedLength, photo, photoMode, showEpisodeInfo, author]);
+    const observer = new ResizeObserver(fitText);
+    observer.observe(container);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      observer.disconnect();
+    };
+  }, [
+    displayText,
+    weightedLength,
+    photo,
+    photoMode,
+    showEpisodeInfo,
+    author,
+    isLoading,
+  ]);
 
   const handlePhoto = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -253,7 +287,13 @@ const EpisodeCardCreate: React.FC = () => {
   };
 
   const handlePublish = async () => {
-    if (!text.trim() || !publishConsent || publishedResponseId) return;
+    if (
+      !text.trim() ||
+      responseContent.length > MAX_TEXT_LENGTH ||
+      !publishConsent ||
+      publishedResponseId
+    )
+      return;
 
     setIsPublishing(true);
     setError(null);
@@ -261,7 +301,7 @@ const EpisodeCardCreate: React.FC = () => {
       const response = await episodeResponsesApi.create({
         meetup_id: meetupId,
         episode_number: episodeNumber,
-        content: text,
+        content: responseContent,
         author,
         publish_consent: publishConsent,
         website,
@@ -308,16 +348,39 @@ const EpisodeCardCreate: React.FC = () => {
           </Link>
           <span>回应日期：{responseDate} · 约 2 分钟</span>
         </div>
-        <h1>刚才有什么留在你心里？</h1>
+        <h1>
+          {quotedText ? '这段分享让你想到了什么？' : '这一期给你带来了什么？'}
+        </h1>
         <p className={styles.description}>
-          可以是一句话、一个碎片、一点启发，或者刚刚冒出的新想法。不必总结整场分享。
+          参加过会议，可以留下当时的感受和收获；读过本期内容，也欢迎说说触动你的地方。不必总结整场分享。
         </p>
 
         {error && <Alert severity="warning">{error}</Alert>}
 
+        {quotedText && (
+          <div className={styles.quotedContext}>
+            <strong>
+              {quotedSpeaker
+                ? `来自 ${quotedSpeaker} 的分享`
+                : quotedSourceLabel || '你正在回应的内容'}
+            </strong>
+            <blockquote>{quotedText}</blockquote>
+            <button
+              type="button"
+              onClick={() => setQuotedText('')}
+              disabled={Boolean(publishedResponseId)}
+            >
+              移除引用
+            </button>
+            {maxReplyLength < 50 && (
+              <p>这段引用较长，可以返回选一小段，或移除引用后写下感受。</p>
+            )}
+          </div>
+        )}
         <textarea
+          aria-label="我的回应"
           value={text}
-          maxLength={MAX_TEXT_LENGTH}
+          maxLength={maxReplyLength}
           onChange={(event) => setText(event.target.value)}
           placeholder="哪句话触动了你？你想到了什么？或者接下来想试着做什么？"
           className={styles.textarea}
@@ -325,7 +388,8 @@ const EpisodeCardCreate: React.FC = () => {
           autoFocus
         />
         <div className={styles.counter}>
-          {text.length}/{MAX_TEXT_LENGTH}
+          {text.length}/{maxReplyLength}
+          {quotedText ? '（引用与回应合计最多 500 字）' : ''}
         </div>
 
         <label className={styles.authorField}>
@@ -369,6 +433,7 @@ const EpisodeCardCreate: React.FC = () => {
             size="large"
             disabled={
               !text.trim() ||
+              responseContent.length > MAX_TEXT_LENGTH ||
               !publishConsent ||
               isPublishing ||
               Boolean(publishedResponseId)
@@ -443,7 +508,7 @@ const EpisodeCardCreate: React.FC = () => {
               checked={showEpisodeInfo}
               onChange={(_, value) => setShowEpisodeInfo(value)}
             />
-            显示期数、分享日期和回应日期
+            显示期数
           </label>
         </div>
       </section>
@@ -481,12 +546,6 @@ const EpisodeCardCreate: React.FC = () => {
                 <div className={styles.brandChip}>
                   {showEpisodeInfo ? `启发星球 ${episodeLabel}` : '启发星球'}
                 </div>
-                {showEpisodeInfo && (
-                  <div className={styles.episodeDetails}>
-                    {episodeDate && <span>分享日期 · {episodeDate}</span>}
-                    <span>回应日期 · {responseDate}</span>
-                  </div>
-                )}
               </div>
               <div className={styles.expressionCue}>真实 · 自由 · 不必完整</div>
             </div>
@@ -503,7 +562,7 @@ const EpisodeCardCreate: React.FC = () => {
 
           <div className={styles.qrFloat}>
             <QRCodeSVG value={shareUrl} size={54} bgColor="#ffffff" />
-            <span>扫码回应本期</span>
+            <span>扫码查看本期</span>
           </div>
         </div>
 
@@ -526,7 +585,7 @@ const EpisodeCardCreate: React.FC = () => {
           </Button>
         </div>
         <p className={styles.privacy}>
-          照片只在你的浏览器中处理；二维码会邀请朋友也来写一句。
+          照片只在你的浏览器中处理；扫码可查看本期分享与回应。
         </p>
       </section>
 

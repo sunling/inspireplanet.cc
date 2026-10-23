@@ -355,25 +355,6 @@
   gap: 8px;
 }
 
-.episodeDetails {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 2px;
-  color: rgba(82, 62, 51, 0.76);
-  font-size: 0.7rem;
-  line-height: 1.35;
-}
-
-.episodeDetails span {
-  font-size: 0.64rem;
-}
-
-.cardWithPhoto .episodeDetails {
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.28);
-}
-
 .brandChip {
   width: fit-content;
   padding: 6px 10px;
@@ -703,4 +684,35 @@
   .episodeContext span {
     display: none;
   }
+}
+
+.quotedContext {
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid #eadad0;
+  border-radius: 16px;
+  background: #fff6ed;
+  color: #5c4d44;
+}
+
+.quotedContext blockquote {
+  margin: 12px 0;
+  padding-left: 14px;
+  border-left: 3px solid #e69472;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+
+.quotedContext button {
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: #a94e2b;
+  font: inherit;
+  cursor: pointer;
+}
+
+.quotedContext p {
+  line-height: 1.6;
 }

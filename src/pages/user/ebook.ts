@@ -1,4 +1,4 @@
-import { EbookChapter, EbookSource } from '../../netlify/types';
+import { EbookChapter, EbookSource, WritingPost } from '../../netlify/types';
 
 export type EbookOrder = 'time' | 'topic';
 
@@ -49,6 +49,25 @@ export function buildEbookTxt(
       return `日期：${txtDateFormatter.format(new Date(chapter.created_at))}\n内容：\n${content.trim()}`;
     })
     .join('\n\n--------------------\n\n');
+}
+
+export function buildWritingTxt(posts: WritingPost[]): string {
+  const chapters: EbookChapter[] = posts.map((post) => ({
+    id: `writing-${post.id}`,
+    source: 'writing',
+    title: post.title || post.template_snapshot?.template_name || '一则书写',
+    summary: '',
+    content: post.body || '',
+    editor_mode: post.editor_mode,
+    rich_content: post.body_rich || null,
+    template_snapshot: post.template_snapshot || null,
+    created_at: post.created_at,
+    topics: post.topics.map((topic) => ({ id: topic.id, name: topic.name })),
+    image_urls: post.image_urls,
+    detail_url: `/writing-circle/${post.id}`,
+  }));
+
+  return buildEbookTxt(chapters, ['writing']);
 }
 
 const monthFormatter = new Intl.DateTimeFormat('zh-CN', {

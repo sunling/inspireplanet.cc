@@ -26,7 +26,6 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import FavoriteBorderRoundedIcon from '@mui/icons-material/FavoriteBorderRounded';
 import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
-import CloseIcon from '@mui/icons-material/Close';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import Loading from '../../components/Loading';
@@ -35,10 +34,11 @@ import { writingInteractionsApi, writingsApi } from '../../netlify/config';
 import { formatDate, formatLocalDateTime } from '../../utils/date';
 import { useGlobalSnackbar } from '../../context/app';
 import HighlightedText from '../../components/writing/HighlightedText';
+import { useAuth } from '../../context/auth';
 import RichTextRenderer from '../../components/rich-text/RichTextRenderer';
-import { isUserLoggedIn } from '../../utils/user';
 import { downloadCard, isMobileBrowser } from '../../utils/share';
 import { tokenizeHashtags } from '../../utils/hashtags';
+import ImagePreviewDialog from '../../components/ImagePreviewDialog';
 
 interface PendingCommentDeletion {
   id: string;
@@ -52,6 +52,7 @@ const withoutHashtags = (text: string) =>
     .join('');
 
 const WritingDetail: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const showSnackbar = useGlobalSnackbar();
@@ -68,7 +69,7 @@ const WritingDetail: React.FC = () => {
   const [interactionInputFocused, setInteractionInputFocused] = useState(false);
   const [interactionLoading, setInteractionLoading] = useState(true);
   const [resonanceLoading, setResonanceLoading] = useState(false);
-  const [previewImage, setPreviewImage] = useState('');
+  const [previewImageIndex, setPreviewImageIndex] = useState(-1);
   const [downloadImage, setDownloadImage] = useState('');
   const [downloading, setDownloading] = useState(false);
   const interactionInputRef = useRef<HTMLInputElement>(null);
@@ -171,7 +172,7 @@ const WritingDetail: React.FC = () => {
   };
 
   const requireLogin = () => {
-    if (isUserLoggedIn()) return true;
+    if (isAuthenticated) return true;
     navigate(`/login?redirect=${encodeURIComponent(`/writing-circle/${id}`)}`);
     return false;
   };
@@ -699,7 +700,7 @@ const WritingDetail: React.FC = () => {
                     key={`${imageUrl}-${index}`}
                     component="button"
                     type="button"
-                    onClick={() => setPreviewImage(imageUrl)}
+                    onClick={() => setPreviewImageIndex(index)}
                     aria-label={`查看第 ${index + 1} 张配图`}
                     sx={{
                       display: 'block',
@@ -882,22 +883,56 @@ const WritingDetail: React.FC = () => {
                   </Typography>
                 </Box>
               ))}
-            {post.body.trim() && (
-              <Typography
-                data-download-text
-                sx={{
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: '29px',
-                  fontSize: 15,
-                  fontWeight: 400,
-                  fontStyle: 'normal',
-                  overflowWrap: 'anywhere',
-                  letterSpacing: 0,
-                }}
-              >
-                {withoutHashtags(post.body)}
-              </Typography>
-            )}
+            {post.body.trim() &&
+              (post.editor_mode === 'rich' && post.body_rich ? (
+                <RichTextRenderer
+                  content={post.body_rich}
+                  sx={{
+                    maxWidth: 'none',
+                    mx: 0,
+                    fontSize: 15,
+                    lineHeight: '29px',
+                    letterSpacing: 0,
+                    '& h1': { fontSize: 24 },
+                    '& h2': { fontSize: 21 },
+                    '& h3': { fontSize: 18 },
+                    '& h4': { fontSize: 16 },
+                    '& strong, & b': {
+                      color: 'inherit',
+                      fontWeight: '800 !important',
+                    },
+                    '& ul': {
+                      display: 'block',
+                      listStyle: 'disc outside !important',
+                      pl: '24px !important',
+                    },
+                    '& ul > li': {
+                      display: 'list-item',
+                      listStyle: 'disc outside',
+                      pl: 0,
+                    },
+                    '& ul > li::marker': {
+                      color: '#678078',
+                      fontSize: '1em',
+                    },
+                  }}
+                />
+              ) : (
+                <Typography
+                  data-download-text
+                  sx={{
+                    whiteSpace: 'pre-wrap',
+                    lineHeight: '29px',
+                    fontSize: 15,
+                    fontWeight: 400,
+                    fontStyle: 'normal',
+                    overflowWrap: 'anywhere',
+                    letterSpacing: 0,
+                  }}
+                >
+                  {withoutHashtags(post.body)}
+                </Typography>
+              ))}
             {post.image_urls.length > 0 && (
               <Box
                 sx={{
@@ -918,9 +953,9 @@ const WritingDetail: React.FC = () => {
                     crossOrigin="anonymous"
                     alt=""
                     sx={{
+                      display: 'block',
                       width: '100%',
-                      aspectRatio: post.image_urls.length === 1 ? '4 / 3' : '1',
-                      objectFit: 'cover',
+                      height: 'auto',
                       borderRadius: 1,
                     }}
                   />
@@ -1273,46 +1308,13 @@ const WritingDetail: React.FC = () => {
           </Button>
         </Box>
       </Dialog>
-      <Dialog
-        open={Boolean(previewImage)}
-        onClose={() => setPreviewImage('')}
-        maxWidth={false}
-        slotProps={{
-          paper: {
-            sx: {
-              m: { xs: 1, sm: 3 },
-              bgcolor: 'transparent',
-              boxShadow: 'none',
-              overflow: 'visible',
-            },
-          },
-          backdrop: { sx: { bgcolor: 'rgba(0, 0, 0, 0.88)' } },
-        }}
-      >
-        <IconButton
-          aria-label="关闭图片预览"
-          onClick={() => setPreviewImage('')}
-          sx={{
-            position: 'absolute',
-            right: 0,
-            top: -48,
-            color: '#fff',
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
-        <Box
-          component="img"
-          src={previewImage}
-          alt="书写配图预览"
-          sx={{
-            display: 'block',
-            maxWidth: 'min(94vw, 1200px)',
-            maxHeight: '88vh',
-            objectFit: 'contain',
-          }}
-        />
-      </Dialog>
+      <ImagePreviewDialog
+        images={post?.image_urls || []}
+        index={previewImageIndex}
+        onIndexChange={setPreviewImageIndex}
+        onClose={() => setPreviewImageIndex(-1)}
+        alt="书写配图预览"
+      />
     </Box>
   );
 };

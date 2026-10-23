@@ -71,6 +71,8 @@ interface EditFormProps {
   showDownloadButton?: boolean;
   // 下载卡片的回调函数
   onDownload?: () => Promise<void>;
+  // 标题右侧附加操作区
+  headerAction?: React.ReactNode;
 }
 
 const EditForm = forwardRef<EditFormRef, EditFormProps>(
@@ -87,6 +89,7 @@ const EditForm = forwardRef<EditFormRef, EditFormProps>(
       onBack,
       showDownloadButton = false,
       onDownload,
+      headerAction,
     },
     ref
   ) => {
@@ -378,15 +381,31 @@ const EditForm = forwardRef<EditFormRef, EditFormProps>(
       <Box sx={{ minHeight: '100vh', bgcolor: 'var(--bg-light)', py: 4 }}>
         <Box sx={{ maxWidth: 'lg', mx: 'auto', px: 3 }}>
           {/* 页面标题 */}
-          <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
-            {showBackButton && onBack && (
-              <IconButton onClick={onBack} sx={{ mr: 2 }}>
-                <ArrowBack />
-              </IconButton>
-            )}
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-              {pageTitle}
-            </Typography>
+          <Box
+            sx={{
+              mb: 4,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              {showBackButton && onBack && (
+                <IconButton onClick={onBack} sx={{ mr: 2 }}>
+                  <ArrowBack />
+                </IconButton>
+              )}
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{ fontWeight: 'bold' }}
+              >
+                {pageTitle}
+              </Typography>
+            </Box>
+            {headerAction}
           </Box>
 
           {pageDescription && (

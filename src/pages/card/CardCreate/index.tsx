@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '@mui/material';
+import { ChevronRight } from '@mui/icons-material';
 import html2canvas from 'html2canvas';
 
 import { CardItem } from '../../../netlify/types';
@@ -104,6 +106,16 @@ const StandardCardCreate: React.FC = () => {
       pageDescription="创建一张灵感卡片，记录触动你的观点和启发"
       showBackButton={false}
       showDownloadButton={true}
+      headerAction={
+        <Button
+          component={Link}
+          to="/cards"
+          variant="outlined"
+          endIcon={<ChevronRight />}
+        >
+          查看近期卡片
+        </Button>
+      }
       onSubmit={handleSubmit}
       onDownload={handleDownload}
     />

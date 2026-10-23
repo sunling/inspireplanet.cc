@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
+import DOMPurify from 'dompurify';
 import {
   Box,
+  Button,
   Divider,
   IconButton,
   Paper,
+  Popover,
   Stack,
   Tooltip,
   Typography,
@@ -21,8 +24,14 @@ import LinkIcon from '@mui/icons-material/Link';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
+import FormatColorTextIcon from '@mui/icons-material/FormatColorText';
+import BorderColorIcon from '@mui/icons-material/BorderColor';
 import { WritingRichContent } from '../../netlify/types';
-import { createRichTextExtensions } from '../rich-text/config';
+import {
+  createRichTextExtensions,
+  looksLikeMarkdown,
+  markdownToHtml,
+} from '../rich-text/config';
 import styles from '../rich-text/richText.module.css';
 
 interface Props {
@@ -31,12 +40,25 @@ interface Props {
   onChange: (content: WritingRichContent, plainText: string) => void;
 }
 
+const TEXT_COLORS = ['#292522', '#e45d34', '#b23a48', '#496a61', '#376996'];
+const HIGHLIGHT_COLORS = [
+  '#fff1a8',
+  '#ffd8c8',
+  '#dcefe7',
+  '#dce9f7',
+  '#eadff4',
+];
+
 const RichTextEditor: React.FC<Props> = ({
   content,
   maxLength = 20000,
   onChange,
 }) => {
   const [, setRevision] = useState(0);
+  const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null);
+  const [highlightAnchor, setHighlightAnchor] = useState<HTMLElement | null>(
+    null
+  );
   const editor = useEditor({
     extensions: createRichTextExtensions(),
     content,
@@ -69,6 +91,18 @@ const RichTextEditor: React.FC<Props> = ({
       return;
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
+
+  const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    const markdown = event.clipboardData.getData('text/plain');
+    if (!looksLikeMarkdown(markdown)) return;
+
+    event.preventDefault();
+    editor
+      .chain()
+      .focus()
+      .insertContent(DOMPurify.sanitize(markdownToHtml(markdown)))
+      .run();
   };
 
   const tools = [
@@ -132,6 +166,19 @@ const RichTextEditor: React.FC<Props> = ({
         gap={0.25}
         sx={{ p: 0.75, bgcolor: '#faf9f7' }}
       >
+        <Tooltip title="一级标题">
+          <IconButton
+            size="small"
+            color={
+              editor.isActive('heading', { level: 1 }) ? 'primary' : 'default'
+            }
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 1 }).run()
+            }
+          >
+            <Typography fontWeight={800}>H1</Typography>
+          </IconButton>
+        </Tooltip>
         <Tooltip title="二级标题">
           <IconButton
             size="small"
@@ -156,6 +203,19 @@ const RichTextEditor: React.FC<Props> = ({
             }
           >
             <Typography fontWeight={800}>H3</Typography>
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="四级标题">
+          <IconButton
+            size="small"
+            color={
+              editor.isActive('heading', { level: 4 }) ? 'primary' : 'default'
+            }
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 4 }).run()
+            }
+          >
+            <Typography fontWeight={800}>H4</Typography>
           </IconButton>
         </Tooltip>
         <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
@@ -209,6 +269,25 @@ const RichTextEditor: React.FC<Props> = ({
             </IconButton>
           </span>
         </Tooltip>
+        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+        <Tooltip title="文字颜色">
+          <IconButton
+            size="small"
+            color={editor.isActive('textColor') ? 'primary' : 'default'}
+            onClick={(event) => setColorAnchor(event.currentTarget)}
+          >
+            <FormatColorTextIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="背景高亮">
+          <IconButton
+            size="small"
+            color={editor.isActive('textHighlight') ? 'primary' : 'default'}
+            onClick={(event) => setHighlightAnchor(event.currentTarget)}
+          >
+            <BorderColorIcon />
+          </IconButton>
+        </Tooltip>
         <Box sx={{ flex: 1 }} />
         <Tooltip title="撤销">
           <span>
@@ -233,8 +312,100 @@ const RichTextEditor: React.FC<Props> = ({
           </span>
         </Tooltip>
       </Stack>
+      <Popover
+        open={Boolean(colorAnchor)}
+        anchorEl={colorAnchor}
+        onClose={() => setColorAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Stack direction="row" spacing={0.5} sx={{ p: 1 }}>
+          {TEXT_COLORS.map((color) => (
+            <IconButton
+              key={color}
+              size="small"
+              aria-label={`设置文字颜色 ${color}`}
+              onClick={() => {
+                editor.chain().focus().setMark('textColor', { color }).run();
+                setColorAnchor(null);
+              }}
+            >
+              <Box
+                sx={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: '50%',
+                  bgcolor: color,
+                }}
+              />
+            </IconButton>
+          ))}
+          <Button
+            size="small"
+            color="inherit"
+            onClick={() => {
+              editor.chain().focus().unsetMark('textColor').run();
+              setColorAnchor(null);
+            }}
+          >
+            清除
+          </Button>
+        </Stack>
+      </Popover>
+      <Popover
+        open={Boolean(highlightAnchor)}
+        anchorEl={highlightAnchor}
+        onClose={() => setHighlightAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Stack direction="row" spacing={0.5} sx={{ p: 1 }}>
+          {HIGHLIGHT_COLORS.map((color) => (
+            <IconButton
+              key={color}
+              size="small"
+              aria-label={`设置背景高亮 ${color}`}
+              onClick={() => {
+                editor
+                  .chain()
+                  .focus()
+                  .setMark('textHighlight', { color })
+                  .run();
+                setHighlightAnchor(null);
+              }}
+            >
+              <Box
+                sx={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 1,
+                  bgcolor: color,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              />
+            </IconButton>
+          ))}
+          <Button
+            size="small"
+            color="inherit"
+            onClick={() => {
+              editor.chain().focus().unsetMark('textHighlight').run();
+              setHighlightAnchor(null);
+            }}
+          >
+            清除
+          </Button>
+        </Stack>
+      </Popover>
       <Divider />
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} onPaste={handlePaste} />
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ display: 'block', px: 1.5, pt: 0.75 }}
+      >
+        支持直接粘贴
+        Markdown：标题、粗体、列表、引用、分隔线、代码和链接会自动排版
+      </Typography>
       <Typography
         variant="caption"
         color={textLength > maxLength ? 'error' : 'text.disabled'}

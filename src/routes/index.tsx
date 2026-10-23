@@ -12,7 +12,7 @@ import App from '../App';
 import Error from '../components/ErrorCard/index';
 import Loading from '../components/Loading/index';
 import MyMeetups from '../pages/user/MyMeetups';
-import { isUserLoggedIn, isOrganizer } from '../utils/user';
+import { AuthProvider, useAuth } from '../context/auth';
 
 // 错误边界组件
 const ErrorBoundary: React.FC<{ children?: React.ReactNode }> = ({
@@ -49,9 +49,11 @@ const ErrorBoundary: React.FC<{ children?: React.ReactNode }> = ({
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const isAuthenticated = isUserLoggedIn();
+  const { isAuthenticated, isAuthLoading } = useAuth();
   const location = useLocation();
   const redirect = `${location.pathname}${location.search}${location.hash}`;
+
+  if (isAuthLoading) return <Loading message="正在验证登录状态..." />;
 
   return isAuthenticated ? (
     <>{children}</>
@@ -64,10 +66,12 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 const OrganizerProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const isAuthenticated = isUserLoggedIn();
-  const userIsOrganizer = isOrganizer();
+  const { isAuthenticated, isAuthLoading, user } = useAuth();
+  const userIsOrganizer = user?.role === 'organizer';
   const location = useLocation();
   const redirect = `${location.pathname}${location.search}${location.hash}`;
+
+  if (isAuthLoading) return <Loading message="正在验证登录状态..." />;
 
   if (!isAuthenticated) {
     return (
@@ -108,11 +112,13 @@ const Pomodoro = lazy(() => import('../pages/tools/Pomodoro'));
 const About = lazy(() => import('../pages/introduce/About'));
 const Contact = lazy(() => import('../pages/introduce/Contact'));
 const Contribution = lazy(() => import('../pages/contribute/Contribution'));
-const ClarifyTogether = lazy(() => import('../pages/dialogue/ClarifyTogether'));
-const ParticipantSignup = lazy(
-  () => import('../pages/dialogue/ParticipantSignup')
-);
 const DialoguePoster = lazy(() => import('../pages/dialogue/DialoguePoster'));
+const QuestionRoundtable = lazy(
+  () => import('../pages/roundtable/QuestionRoundtable')
+);
+const RoundtableAdmin = lazy(
+  () => import('../pages/roundtable/RoundtableAdmin')
+);
 const CommunityJoin = lazy(() => import('../pages/community/CommunityJoin'));
 const CommunityQrAdmin = lazy(
   () => import('../pages/community/CommunityQrAdmin')
@@ -139,7 +145,6 @@ const ForgotPassword = lazy(() => import('../pages/auth/ForgotPassword'));
 const AuthCallback = lazy(() => import('../pages/auth/AuthCallback'));
 const ActSignup = lazy(() => import('../pages/auth/ActSignup'));
 const PeopleDirectory = lazy(() => import('../pages/people/Directory'));
-const MyConnections = lazy(() => import('../pages/connections/MyConnections'));
 const Profile = lazy(() => import('../pages/user/Profile'));
 const Notifications = lazy(() => import('../pages/user/Notifications'));
 const PersonalEbook = lazy(() => import('../pages/user/PersonalEbook'));
@@ -191,7 +196,11 @@ const router = createBrowserRouter(
   [
     {
       path: '/',
-      element: <App />,
+      element: (
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      ),
       errorElement: <ErrorBoundary />,
       children: [
         {
@@ -204,17 +213,18 @@ const router = createBrowserRouter(
         { path: 'home', element: createLazyRoute(<Home />) },
         { path: 'contact', element: createLazyRoute(<Contact />) },
         { path: 'contribute', element: createLazyRoute(<Contribution />) },
+        { path: 'questions', element: createLazyRoute(<QuestionRoundtable />) },
         {
           path: 'clarify-together',
-          element: createLazyRoute(<ClarifyTogether />),
+          element: <Navigate to="/questions" replace />,
         },
         {
           path: 'clarify-together/participant',
-          element: createLazyRoute(<ParticipantSignup />),
+          element: <Navigate to="/questions#submit-question" replace />,
         },
         {
           path: 'clarify-together/poster',
-          element: createLazyRoute(<DialoguePoster />),
+          element: <Navigate to="/page-poster" replace />,
         },
         {
           path: 'page-poster',
@@ -311,10 +321,6 @@ const router = createBrowserRouter(
           element: createProtectedRoute(<EditMeetup />),
         },
         { path: 'my-meetups', element: createProtectedRoute(<MyMeetups />) },
-        {
-          path: 'connections',
-          element: createProtectedRoute(<MyConnections />),
-        },
         { path: 'profile', element: createProtectedRoute(<Profile />) },
         {
           path: 'my-ebook',
@@ -326,7 +332,7 @@ const router = createBrowserRouter(
         },
         {
           path: 'bulk-weekly-upload',
-          element: createProtectedRoute(<BulkWeeklyUpload />),
+          element: createOrganizerProtectedRoute(<BulkWeeklyUpload />),
         },
         {
           path: 'change-password',
@@ -352,6 +358,10 @@ const router = createBrowserRouter(
         {
           path: 'admin/writing-circle',
           element: createOrganizerProtectedRoute(<WritingAdmin />),
+        },
+        {
+          path: 'admin/question-roundtable',
+          element: createOrganizerProtectedRoute(<RoundtableAdmin />),
         },
 
         // 404路由

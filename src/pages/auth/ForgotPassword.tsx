@@ -73,7 +73,9 @@ const ForgotPassword: React.FC = () => {
     // 验证成功后取 profile 存入 localStorage，后续 updateUser 需要已登录
     const token = data.session.access_token;
     try {
-      const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', { email: email.trim() });
+      const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const user: UserInfo = res.data?.user || { email: email.trim(), name: '' };
       setUserAuth(token, user);
     } catch {

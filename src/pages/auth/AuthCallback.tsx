@@ -32,27 +32,16 @@ const AuthCallback: React.FC = () => {
         return;
       }
 
-      const email = session.user.email!;
       const token = session.access_token;
-
-      // Fetch or create profile in users table
-      let profile: UserInfo | null = null;
-      const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', { email });
-      if (res.success && res.data?.user) {
-        profile = res.data.user;
-      } else {
-        // First Google login — create profile
-        const name =
-          session.user.user_metadata?.full_name ||
-          session.user.user_metadata?.name ||
-          email.split('@')[0];
-        const createRes = await http.post<{ user: UserInfo }>('/auth', 'register', { email, name });
-        if (createRes.success && createRes.data?.user) {
-          profile = createRes.data.user;
-        }
+      // getProfile provisions a missing profile from the verified server identity.
+      const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.success || !res.data?.user) {
+        setError('读取用户资料失败，请重试登录');
+        return;
       }
-
-      setUserAuth(token, profile || { email });
+      setUserAuth(token, res.data.user);
       
       // 获取之前保存的重定向URL，默认跳转到/cards
       const redirectUrl = localStorage.getItem('redirectAfterLogin') || '/cards';

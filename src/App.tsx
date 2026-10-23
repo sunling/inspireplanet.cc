@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 
 import '@/styles/index.css';
 
@@ -8,12 +8,7 @@ import Footer from './components/Footer';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import {
-  getUserName,
-  isUserLoggedIn,
-  logoutUser,
-  syncUserAuthFromSession,
-} from './utils/user';
+import { useAuth } from './context/auth';
 import { Snackbar, Alert, Button } from '@mui/material';
 
 const theme = createTheme({
@@ -34,45 +29,13 @@ const theme = createTheme({
 });
 
 const App: React.FC = () => {
-  // 用户认证状态
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userName, setUserName] = useState<string>('');
-  const location = useLocation();
+  const { isAuthenticated, user, logout } = useAuth();
+  const userName = user?.name || user?.username || '用户';
 
   // PWA更新状态
   const [showUpdateAlert, setShowUpdateAlert] = useState<boolean>(false);
   const [registration, setRegistration] =
     useState<ServiceWorkerRegistration | null>(null);
-
-  // 检查用户认证状态
-  useEffect(() => {
-    let cancelled = false;
-    const checkAuth = async () => {
-      try {
-        const syncedUser = await syncUserAuthFromSession();
-        if (cancelled) return;
-
-        if (syncedUser || isUserLoggedIn()) {
-          setIsAuthenticated(true);
-          setUserName(
-            syncedUser?.name || syncedUser?.username || getUserName() || '用户'
-          );
-        } else {
-          setIsAuthenticated(false);
-          setUserName('');
-        }
-      } catch (error) {
-        console.error('检查认证状态时出错:', error);
-        setIsAuthenticated(false);
-        setUserName('');
-      }
-    };
-
-    checkAuth();
-    return () => {
-      cancelled = true;
-    };
-  }, [location.pathname, location.search, location.hash]);
 
   // 注册Service Worker并检查更新
   useEffect(() => {
@@ -150,9 +113,7 @@ const App: React.FC = () => {
 
   // 退出登录函数
   const handleLogout = async () => {
-    await logoutUser();
-    setIsAuthenticated(false);
-    setUserName('');
+    await logout();
   };
 
   return (

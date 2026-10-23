@@ -37,10 +37,15 @@ export function getSignUpErrorResponse(error: {
   };
 }
 
-async function getProfile(email: string): Promise<UserInfo | null> {
-  const res = await http.post<{ user: UserInfo }>('/auth', 'getProfile', {
-    email,
-  });
+export async function getProfile(token: string): Promise<UserInfo | null> {
+  const res = await http.post<{ user: UserInfo }>(
+    '/auth',
+    'getProfile',
+    {},
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return res.success ? (res.data?.user ?? null) : null;
 }
 
@@ -61,11 +66,13 @@ export const authApi = {
     }
 
     const token = data.session.access_token;
-    const profile = await getProfile(email);
-    const user: UserInfo = profile || {
-      email,
-      name: data.user.user_metadata?.name || '',
-    };
+    const user = await getProfile(token);
+    if (!user)
+      return {
+        success: false,
+        statusCode: 500,
+        error: '读取用户资料失败，请重试登录',
+      };
 
     setUserAuth(token, user);
     return { success: true, statusCode: 200, data: { user, token } };
@@ -99,23 +106,30 @@ export const authApi = {
       };
     }
 
-    // Create profile in users table
+    const token = authData.session?.access_token || '';
+    // With email confirmation enabled there is no verified session yet.
+    // The first verified login/callback will provision the profile instead.
+    if (!token)
+      return {
+        success: true,
+        statusCode: 201,
+        data: { user: { email, name: data.name }, token: '' },
+        message: '注册成功，请先到邮箱点击确认邮件后再登录',
+      };
     const profileRes = await http.post<{ user: UserInfo }>(
       '/auth',
       'register',
-      {
-        email,
-        name: data.name,
-      }
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
     );
-
-    const token = authData.session?.access_token || '';
-    const user: UserInfo = profileRes.data?.user || {
-      email,
-      name: data.name,
-    };
-
-    if (token) setUserAuth(token, user);
+    const user = profileRes.success ? profileRes.data?.user : null;
+    if (!user)
+      return {
+        success: false,
+        statusCode: profileRes.statusCode || 500,
+        error: '创建用户资料失败，请重试登录',
+      };
+    setUserAuth(token, user);
     return {
       success: true,
       statusCode: 201,

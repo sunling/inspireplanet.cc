@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import html2canvas from 'html2canvas';
@@ -16,6 +16,8 @@ import {
   Pagination,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
+import { getSourceSpeaker } from '@/hooks/useQuoteSelection';
+import QuoteResponseBar from '@/components/QuoteResponseBar';
 import useResponsive from '@/hooks/useResponsive';
 
 import { getFontColorForGradient, gradientClasses } from '@/constants/gradient';
@@ -403,6 +405,8 @@ const getFinalExportHeight = (measuredHeight: number) => {
 const WeeklyCards: React.FC = () => {
   marked.setOptions({ breaks: true });
   const location = useLocation();
+  const navigate = useNavigate();
+  const readingRef = useRef<HTMLDivElement>(null);
   const { episode: episodeFromPath } = useParams<{ episode?: string }>();
   const [cards, setCards] = useState<WeeklyCardItem[]>([]);
   const [filteredCards, setFilteredCards] = useState<WeeklyCardItem[]>([]);
@@ -449,13 +453,16 @@ const WeeklyCards: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
+        setShowAll(false);
+        setAllPage(1);
 
         const params = new URLSearchParams(location.search);
         const episodeParam = episodeFromPath || params.get('episode') || '';
+        const yearParam = params.get('year') || undefined;
 
         let res: any;
         if (episodeParam) {
-          res = await weeklyCardsApi.getByEpisode(episodeParam);
+          res = await weeklyCardsApi.getByEpisode(episodeParam, yearParam);
         } else {
           // 默认只加载最新一期
           res = await weeklyCardsApi.getLatest();
@@ -576,6 +583,10 @@ const WeeklyCards: React.FC = () => {
       const dlBtn = clone.querySelector('.download-btn') as HTMLElement | null;
       if (dlBtn) dlBtn.style.display = 'none';
 
+      clone
+        .querySelectorAll('[data-html2canvas-ignore]')
+        .forEach((node) => node.remove());
+
       const imgs = Array.from(clone.getElementsByTagName('img'));
       imgs.forEach((img) => {
         img.style.maxHeight = 'none';
@@ -618,7 +629,7 @@ const WeeklyCards: React.FC = () => {
 
         const episodeNumber = Number(card?.episode?.match(/\d+/)?.[0] || 0);
         const targetUrl = episodeNumber
-          ? `${window.location.origin}/episodes/${episodeNumber}`
+          ? `${window.location.origin}/episodes/${getBeijingYear(card.created)}/${episodeNumber}`
           : window.location.href;
 
         await (window as any).QRCode.toCanvas(qrCanvas, targetUrl, {
@@ -717,7 +728,9 @@ const WeeklyCards: React.FC = () => {
       /\d+/
     )?.[0] || 0
   );
-  const activeEpisodeYear = getBeijingYear(cards[0]?.created);
+  const activeEpisodeYear =
+    new URLSearchParams(location.search).get('year') ||
+    getBeijingYear(cards[0]?.created);
   const activeEpisodePath = `${activeEpisodeYear ? `${activeEpisodeYear}/` : ''}${activeEpisodeNumber}`;
 
   return (
@@ -728,23 +741,22 @@ const WeeklyCards: React.FC = () => {
         background: '#fffaf6',
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth="lg" ref={readingRef}>
         <header className={styles.header}>
           <p>星友分享</p>
           <h1>启发星球周刊</h1>
           <span>从每周真实的分享里，收藏一句话，也带走一个新的视角。</span>
-       
         </header>
 
         {activeEpisodeNumber > 0 && (
           <nav className={styles.episodeJourney} aria-label="本期参与入口">
             <span>EP{activeEpisodeNumber} 不只是一份周刊</span>
-            <Link to={`/episodes/${activeEpisodePath}`}>看本期回应墙</Link>
+            <Link to={`/episodes/${activeEpisodePath}`}>看本期分享与回应</Link>
             <Link
               to={`/episodes/${activeEpisodePath}/respond`}
               className={styles.episodeJourneyPrimary}
             >
-              写下我的一句
+              留下感受和收获
             </Link>
           </nav>
         )}
@@ -802,6 +814,20 @@ const WeeklyCards: React.FC = () => {
           </Paper>
         )}
 
+        <p className={styles.readingHint}>
+          选中金句或正文里触动你的文字，就可以带着引用回应分享者。
+        </p>
+        <QuoteResponseBar
+          container={readingRef}
+          resetKey={`${location.pathname}${location.search}/${allPage}/${showAll}/${debouncedQuery}`}
+          requirePath
+          onRespond={(quote) =>
+            navigate(`${quote.path}/respond`, {
+              state: { quote: quote.text, quoteSpeaker: quote.speaker },
+            })
+          }
+        />
+
         {/* 卡片容器 */}
         {loading ? (
           <Loading size={40} />
@@ -851,6 +877,16 @@ const WeeklyCards: React.FC = () => {
                       id={`episode-container-${year}-${episode.toLowerCase()}`}
                     >
                       {groupedByYear[year][episode].map((card) => {
+                        const cardEpisodeNumber = Number(
+                          card.episode?.match(/\d+/)?.[0] || 0
+                        );
+                        const cardYear =
+                          getBeijingYear(card.created) ||
+                          (!showAll ? activeEpisodeYear : '');
+                        const cardEpisodePath =
+                          cardEpisodeNumber > 0
+                            ? `/episodes/${cardYear ? `${cardYear}/` : ''}${cardEpisodeNumber}`
+                            : '';
                         const cardGradientClass =
                           card.gradient || 'card-gradient-1';
                         const fontColor =
@@ -881,16 +917,21 @@ const WeeklyCards: React.FC = () => {
                                   border: '1px solid rgba(255, 255, 255, 0.28)',
                                   boxShadow:
                                     '0 8px 24px rgba(75, 55, 42, 0.08)',
-                                  transition:
-                                    'transform 0.2s ease, box-shadow 0.2s ease',
+                                  transition: 'box-shadow 0.2s ease',
                                   '&:hover': {
-                                    transform: 'translateY(-3px)',
                                     boxShadow:
                                       '0 12px 30px rgba(75, 55, 42, 0.12)',
                                   },
                                 }}
                               >
-                                <Box className="card-export-content">
+                                <Box
+                                  className="card-export-content"
+                                  data-response-source
+                                  data-response-speaker={getSourceSpeaker(
+                                    card.name
+                                  )}
+                                  data-response-path={cardEpisodePath}
+                                >
                                   <Typography
                                     className="card-title"
                                     variant="h5"

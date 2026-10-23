@@ -27,6 +27,14 @@ export interface AddToWritingGroupResult {
   skipped_count: number;
 }
 
+export interface SendCertificatesResult {
+  requested_count: number;
+  sent_count: number;
+  failed_count: number;
+  skipped_count: number;
+  failures: Array<{ id: string; name: string; reason: string }>;
+}
+
 export interface Participant {
   id: string;
   name: string;
@@ -67,6 +75,28 @@ const participantsApi = {
       { meetup_id, group_id }
     );
   },
+
+  sendCompletionCertificates: async (params: {
+    meetup_id: number;
+    rsvp_ids: number[];
+    activity_name: string;
+    start_date: string;
+    end_date: string;
+    completion_date: string;
+    completion_message: string;
+    reflection?: string;
+    organizer: string;
+    community: string;
+    activity_edition?: string;
+    certificate_prefix?: string;
+    record_days?: number;
+    record_count?: number;
+  }) =>
+    await http.post<SendCertificatesResult>(
+      '/participants',
+      'sendCompletionCertificates',
+      params
+    ),
 };
 
 export default participantsApi;

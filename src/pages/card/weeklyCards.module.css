@@ -131,7 +131,12 @@
 }
 
 .episodeJourneyPrimary {
-  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 10px 20px;
   border-radius: 999px;
   background: #a94e2b;
   color: #fff !important;
@@ -146,4 +151,10 @@
     padding: 16px;
     border-radius: 18px;
   }
+}
+
+.readingHint {
+  margin: -24px 0 24px;
+  color: #74665d;
+  line-height: 1.7;
 }

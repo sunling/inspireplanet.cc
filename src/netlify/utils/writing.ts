@@ -56,6 +56,26 @@ export function mapWritingTopic(row: any): WritingTopic {
   };
 }
 
+function mapUniqueWritingTopics(topicLinks: any[]): WritingTopic[] {
+  const seen = new Set<string>();
+
+  return topicLinks
+    .map((link: any) => link?.topic)
+    .filter(Boolean)
+    .map(mapWritingTopic)
+    .sort((a: WritingTopic, b: WritingTopic) => a.sort_order - b.sort_order)
+    .filter((topic) => {
+      const normalizedName = topic.name
+        .trim()
+        .replace(/^#+/, '')
+        .toLocaleLowerCase();
+      const key = normalizedName || `id:${topic.id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
 export function mapWritingTemplate(row: any): WritingTemplate {
   const prompts = Array.isArray(row.prompts) ? row.prompts : [];
   return {
@@ -130,11 +150,7 @@ export function mapWritingPost(
             : row.group.name || '',
         }
       : null,
-    topics: topicLinks
-      .map((link: any) => link?.topic)
-      .filter(Boolean)
-      .map(mapWritingTopic)
-      .sort((a: WritingTopic, b: WritingTopic) => a.sort_order - b.sort_order),
+    topics: mapUniqueWritingTopics(topicLinks),
     author: {
       id:
         isAnonymous && !isOwner

@@ -29,3 +29,4 @@ export { default as writingInteractionsApi } from '../services/writingInteractio
 export { default as writingAdminApi } from '../services/writingAdmin';
 export { default as writingGroupsApi } from '../services/writingGroups';
 export { default as ebookApi } from '../services/ebook';
+export { default as roundtableQuestionsApi } from '../services/roundtableQuestions';

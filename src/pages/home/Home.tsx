@@ -7,13 +7,18 @@ import Empty from '@/components/Empty';
 import Loading from '@/components/Loading';
 import styles from './home.module.css';
 import ErrorCard from '@/components/ErrorCard';
-import { weeklyCardsApi, meetupsApi } from '../../netlify/config';
+import {
+  weeklyCardsApi,
+  meetupsApi,
+  roundtableQuestionsApi,
+} from '../../netlify/config';
 import { WeeklyCard } from '../../netlify/services/weeklyCards';
 import { Meetup } from '../../netlify/functions/meetup';
 import {
   getNextOccurrence,
   toLocalDateStr,
   getEpisodeNumber,
+  getLatestActiveEpisode,
 } from '../../utils/recurring';
 import dayjs from 'dayjs';
 
@@ -31,9 +36,6 @@ const MeetupModeLabel: Record<string, string> = {
   culture: '文化',
   outdoor: '户外',
 };
-
-const mutualAidDocUrl =
-  'https://docs.qq.com/sheet/DWU1EcU5YSmRVWnZZ?tab=BB08J2';
 
 type EntryPoint = {
   eyebrow: string;
@@ -61,6 +63,11 @@ const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [upcomingMeetups, setUpcomingMeetups] = useState<UpcomingMeetup[]>([]);
+  const [activeRecurringEpisode, setActiveRecurringEpisode] = useState<{
+    episodeNumber: number;
+    year: number;
+  } | null>(null);
+  const [roundtableQuestionCount, setRoundtableQuestionCount] = useState(0);
   const [showWechatQr, setShowWechatQr] = useState(false);
 
   // 加载最新卡片数据
@@ -92,6 +99,23 @@ const Home: React.FC = () => {
       const meetups: Meetup[] = res.data?.meetups || [];
       const now = dayjs();
 
+      const recurringMeetup =
+        meetups.find(
+          (m) => Number(m.id) === 39 && m.is_recurring && m.episode_start_date
+        ) || meetups.find((m) => m.is_recurring && m.episode_start_date);
+      if (recurringMeetup?.episode_start_date) {
+        const latestActive = getLatestActiveEpisode(
+          recurringMeetup.datetime,
+          recurringMeetup.episode_start_date
+        );
+        if (latestActive) {
+          setActiveRecurringEpisode({
+            episodeNumber: latestActive.episodeNumber,
+            year: latestActive.year,
+          });
+        }
+      }
+
       const upcoming: UpcomingMeetup[] = meetups
         .map((m) => {
           if (m.is_recurring && m.episode_start_date) {
@@ -117,10 +141,24 @@ const Home: React.FC = () => {
     }
   };
 
+  const fetchRoundtableQuestionCount = async () => {
+    try {
+      const response = await roundtableQuestionsApi.listPublic();
+      setRoundtableQuestionCount(
+        response.data?.questions?.filter((question) =>
+          ['open', 'contacted'].includes(question.status)
+        ).length || 0
+      );
+    } catch {
+      // 首页数字只是辅助信息，读取失败时不影响主要内容。
+    }
+  };
+
   // 初始化和清理
   useEffect(() => {
     fetchLatestCards();
     fetchUpcomingMeetups();
+    fetchRoundtableQuestionCount();
   }, []);
 
   const renderWeeklyCards = () => {
@@ -181,37 +219,54 @@ const Home: React.FC = () => {
     );
   };
 
-  const latestEpisodeNumber = getEpisodeNumberFromLabel(cards[0]?.episode);
-  const latestEpisodeYear = cards[0]?.created
-    ? new Date(cards[0].created).getFullYear()
+  const cardEpisodeNumber = getEpisodeNumberFromLabel(cards[0]?.episode);
+  const cardEpisodeYear = cards[0]?.created
+    ? Number(
+        new Intl.DateTimeFormat('en-US', {
+          year: 'numeric',
+          timeZone: 'Asia/Shanghai',
+        }).format(new Date(cards[0].created))
+      )
     : new Date().getFullYear();
-  const latestCreateUrl = latestEpisodeNumber
-    ? `/episodes/${latestEpisodeYear}/${latestEpisodeNumber}/respond`
+
+  const useRecurringEpisode =
+    activeRecurringEpisode &&
+    (activeRecurringEpisode.year > cardEpisodeYear ||
+      (activeRecurringEpisode.year === cardEpisodeYear &&
+        activeRecurringEpisode.episodeNumber >= cardEpisodeNumber));
+  const latestEpisodeNumber = useRecurringEpisode
+    ? activeRecurringEpisode.episodeNumber
+    : cardEpisodeNumber;
+  const latestEpisodeYear = useRecurringEpisode
+    ? activeRecurringEpisode.year
+    : cardEpisodeYear;
+  const latestEpisodeUrl = latestEpisodeNumber
+    ? `/episodes/${latestEpisodeYear}/${latestEpisodeNumber}`
     : '/weekly-cards';
 
+  const nextWeeklyMeetup = upcomingMeetups.find(
+    ({ meetup }) => Number(meetup.id) === 39
+  );
   const entryPoints: EntryPoint[] = [
     {
-      eyebrow: '回应',
-      title: '写下本期一句',
-      description: '分享结束后，留下此刻还在你心里的一句话。',
-      label: latestEpisodeNumber
-        ? `回应 EP${latestEpisodeNumber}`
-        : '看看本期内容',
-      to: latestCreateUrl,
-    },
-    {
       eyebrow: '相遇',
-      title: '参加活动',
-      description: '看看接下来有哪些线上分享和线下活动。',
-      label: '查看活动日历',
-      to: '/activity-calendar',
+      title: '参加每周线上会议',
+      description:
+        '来听听大家这一周的经历与启发。有想分享的内容，可以在活动详情页报名分享。',
+      label: '查看活动，报名参加或分享',
+      to: nextWeeklyMeetup
+        ? `/meetup-detail?id=${nextWeeklyMeetup.meetup.id}&date=${nextWeeklyMeetup.dateStr}`
+        : '/activity-calendar',
     },
     {
-      eyebrow: '探索',
-      title: '对话实验',
-      description: '带着一个真实问题，一起把它说得更清楚。',
-      label: '了解对话实验',
-      to: '/clarify-together',
+      eyebrow: '回顾与回应',
+      title: '回看每一期的分享',
+      description:
+        '没来现场，也可以浏览每期分享、选一段文字回应。刚参加完会议，可以先留下感受和收获。',
+      label: latestEpisodeNumber
+        ? `进入 ${latestEpisodeYear} · EP${latestEpisodeNumber}`
+        : '浏览往期分享',
+      to: latestEpisodeUrl,
     },
     {
       eyebrow: '连接',
@@ -221,18 +276,14 @@ const Home: React.FC = () => {
       to: '/join',
     },
     {
-      eyebrow: '互助',
-      title: '树洞互助',
-      description: '说出此刻的困扰，也看看是否能帮到别人。',
-      label: '打开互助文档',
-      href: mutualAidDocUrl,
-    },
-    {
-      eyebrow: '分享',
-      title: '向我们投稿',
-      description: '写下一段经历、一个问题，或一件想分享的小事。',
-      label: '开始投稿',
-      to: '/contribute',
+      eyebrow: '圆桌',
+      title: '问题圆桌',
+      description:
+        roundtableQuestionCount > 0
+          ? `把没想明白的那一点带来，当前有 ${roundtableQuestionCount} 个场景正在等待展开。`
+          : '把没想明白的那一点带来，默认匿名，从具体经历出发彼此照亮。',
+      label: '进入问题圆桌',
+      to: '/questions',
     },
   ];
 
@@ -252,7 +303,7 @@ const Home: React.FC = () => {
         <section className={styles['entry-section']}>
           <div className={styles['section-heading']}>
             <p>从这里开始</p>
-            <h2>你可以怎样来到启发星球</h2>
+            <h2>你可以怎样参与启发星球</h2>
           </div>
           <div className={styles['entry-grid']}>
             {entryPoints.map((entry) => {
@@ -350,7 +401,7 @@ const Home: React.FC = () => {
           <div className={styles['view-all-container']}>
             {latestEpisodeNumber > 0 && (
               <Link
-                to={`/episodes/${latestEpisodeNumber}`}
+                to={`/episodes/${latestEpisodeYear}/${latestEpisodeNumber}`}
                 className={styles['view-all-button']}
               >
                 进入本期页面 <ChevronRight fontSize="inherit" />

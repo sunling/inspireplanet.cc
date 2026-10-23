@@ -29,6 +29,7 @@
 - `meetup.ts` – 活动创建、列表、更新、删除
 - `rsvp.ts` – 活动报名与状态管理
 - `workshop.ts` – 工作坊报名接口
+- `roundtableQuestions.ts` – 问题圆桌的公开问题池、提交与组织者管理
 
 函数在本地开发时由 `netlify dev` 代理并与 Vite 一起运行：Vite 默认端口 `5173`，Netlify Dev 暴露在 `8888`。
 
@@ -55,23 +56,24 @@ cp .env.example .env
 
 **服务端变量（无前缀，Netlify Functions 运行时注入）**
 
-| 变量名                      | 说明                                                 |
-| --------------------------- | ---------------------------------------------------- |
-| `URL`                       | 本地开发填 `http://localhost:8888`                   |
-| `SUPABASE_URL`              | Supabase 项目地址                                    |
-| `SUPABASE_ANON_KEY`         | Supabase 匿名密钥                                    |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role 密钥（绕过 RLS，后端专用）     |
-| `JWT_SECRET`                | JWT 加密密钥                                         |
-| `OPENROUTER_API_KEY`        | OpenRouter API 密钥                                  |
-| `UNSPLASH_ACCESS_KEY`       | Unsplash Access Key                                  |
-| `RESEND_API_KEY`            | Resend API 密钥（服务端发送邮件）                    |
-| `RESEND_FROM_EMAIL`         | Resend 已验证的发件地址                              |
-| `CONTACT_EMAIL`             | 邮件主收件地址，多个地址用英文逗号分隔               |
-| `SUBMISSION_CC_EMAILS`      | 投稿抄送地址，多个地址用英文逗号分隔                 |
-| `GITHUB_TOKEN`              | GitHub Personal Access Token（用于保存生成图片）     |
-| `GITHUB_REPO_OWNER`         | GitHub 用户名，生产环境填 `sunling`                  |
-| `GITHUB_REPO_NAME`          | 存放图片的仓库名，生产环境填 `inspireplanet-assets`  |
-| `GITHUB_BRANCH`             | 目标分支，通常填 `main`                              |
+| 变量名                       | 说明                                                |
+| ---------------------------- | --------------------------------------------------- |
+| `URL`                        | 本地开发填 `http://localhost:8888`                  |
+| `SUPABASE_URL`               | Supabase 项目地址                                   |
+| `SUPABASE_ANON_KEY`          | Supabase 匿名密钥                                   |
+| `SUPABASE_SERVICE_ROLE_KEY`  | Supabase Service Role 密钥（绕过 RLS，后端专用）    |
+| `JWT_SECRET`                 | JWT 加密密钥                                        |
+| `OPENROUTER_API_KEY`         | OpenRouter API 密钥                                 |
+| `UNSPLASH_ACCESS_KEY`        | Unsplash Access Key                                 |
+| `RESEND_API_KEY`             | Resend API 密钥（服务端发送邮件）                   |
+| `RESEND_FROM_EMAIL`          | Resend 已验证的发件地址                             |
+| `CONTACT_EMAIL`              | 邮件主收件地址，多个地址用英文逗号分隔              |
+| `SUBMISSION_CC_EMAILS`       | 投稿抄送地址，多个地址用英文逗号分隔                |
+| `ROUNDTABLE_RATE_LIMIT_SALT` | 问题圆桌提交限流哈希盐值（建议使用随机长字符串）    |
+| `GITHUB_TOKEN`               | GitHub Personal Access Token（用于保存生成图片）    |
+| `GITHUB_REPO_OWNER`          | GitHub 用户名，生产环境填 `sunling`                 |
+| `GITHUB_REPO_NAME`           | 存放图片的仓库名，生产环境填 `inspireplanet-assets` |
+| `GITHUB_BRANCH`              | 目标分支，通常填 `main`                             |
 
 > Netlify 本地开发（`netlify dev`）会自动读取根目录的 `.env` 文件，无需手动 `source`。
 

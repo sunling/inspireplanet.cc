@@ -1,0 +1,60 @@
+.bar {
+  position: fixed;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
+  padding: 6px;
+  border: 1px solid #d8ad96;
+  border-radius: 14px;
+  background: #fffaf5;
+  box-shadow: 0 6px 24px rgba(96, 62, 43, 0.18);
+  color: #5c4d44;
+  user-select: none;
+}
+
+.bar span {
+  min-width: 0;
+  max-width: 160px;
+  padding-left: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+}
+
+.bar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #a94e2b;
+  color: #fff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bar button:hover {
+  background: #873b1d;
+}
+
+.bar button:focus-visible {
+  outline: 2px solid #a94e2b;
+  outline-offset: 3px;
+}
+
+@media (max-width: 420px) {
+  .bar span {
+    max-width: 120px;
+  }
+}

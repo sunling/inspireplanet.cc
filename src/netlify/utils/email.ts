@@ -1,4 +1,11 @@
 import { Resend } from 'resend';
+import {
+  CompletionCertificateData,
+  buildRecordSummary,
+  createCertificateSvg,
+  escapeCertificateHtml,
+  formatCertificateDate,
+} from '../../utils/completionCertificate';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc';
@@ -364,4 +371,46 @@ export async function sendRSVPRejectEmail(params: RSVPRejectParams) {
   } catch (err) {
     console.error('发送拒绝邮件失败:', err);
   }
+}
+
+export async function sendCompletionCertificateEmail(
+  params: CompletionCertificateData & { to: string }
+) {
+  const esc = escapeCertificateHtml;
+  const summary = buildRecordSummary(params.recordDays, params.recordCount);
+  const svg = createCertificateSvg(params);
+  const safeName = params.participantName.replace(/[\\/:*?"<>|]/g, '-');
+  const result = await resend.emails.send({
+    from: `启发星球 <${FROM}>`,
+    to: params.to,
+    subject: `结营证书：${params.activityName}`,
+    html: `<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8" /></head>
+<body style="margin:0;background:#f5efe4;font-family:'PingFang SC',Arial,sans-serif;color:#352b24">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
+<table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#fffdf8;border:1px solid #d9b778;border-radius:12px">
+<tr><td align="center" style="padding:42px 36px">
+<p style="margin:0 0 12px;color:#b14834;letter-spacing:4px;font-size:13px">COMPLETION CERTIFICATE</p>
+<h1 style="margin:10px 0 24px;font-family:serif;font-size:27px">结营证书</h1>
+<p style="margin:0 0 20px;color:#6f5c4d">${esc(params.activityName)}${params.activityEdition ? ` <span style="display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;background:#f5ede4;color:#9a6f55;font-size:12px">${esc(params.activityEdition)}</span>` : ''}</p>
+${summary ? `<p style="margin:0 0 6px;color:#ad9a87;font-size:12px;line-height:1.5">${esc(summary)}</p>` : ''}
+<p style="margin:0 0 24px;color:#6f5c4d;font-family:serif;font-size:16px;line-height:1.6">${esc(params.completionMessage)}</p>
+${params.reflection ? `<div style="margin:0 0 22px;padding:8px 16px;color:#b14834;font-family:serif;font-size:21px;line-height:1.8;white-space:pre-line">${esc(params.reflection)}</div>` : ''}
+<div style="margin:28px 0 0;text-align:right">
+<p style="margin:0 0 4px;color:#ad9a87;font-size:11px;letter-spacing:2px">结营留念</p>
+<p style="margin:0 0 4px;color:#55463b;font-family:serif;font-size:21px;font-weight:bold">${esc(params.participantName)}</p>
+<p style="margin:0;color:#8c735c;font-size:13px">${esc(formatCertificateDate(params.completionDate))}</p>
+</div>
+<p style="margin:28px 0 0;padding-top:8px;color:#8c735c;font-size:13px">${esc(params.organizer)} · ${esc(params.community)} · ${esc(formatCertificateDate(params.startDate))} — ${esc(formatCertificateDate(params.endDate))}</p>
+<p style="margin:28px 0 0;color:#aaa;font-size:12px">高清证书已作为 SVG 附件随邮件发送，可下载保存或打印。</p>
+</td></tr></table></td></tr></table></body></html>`,
+    attachments: [
+      {
+        filename: `${safeName}-结营证书.svg`,
+        content: Buffer.from(svg).toString('base64'),
+        contentType: 'image/svg+xml',
+      },
+    ],
+  });
+  if (result.error) throw new Error(result.error.message);
+  return result.data;
 }
