@@ -331,9 +331,14 @@ const MeetupParticipants: React.FC = () => {
         approved_by: getUserName() || '',
       });
       if (response.success) {
-        showSnackbar.success(
-          response.message || `已通过 ${pendingParticipants.length} 位参与者`
-        );
+        if (response.data?.email_failed_count)
+          showSnackbar.warning(
+            `审批已保存，${response.data.email_failed_count} 封通知邮件暂未送达。`
+          );
+        else
+          showSnackbar.success(
+            response.message || `已通过 ${pendingParticipants.length} 位参与者`
+          );
         await loadData(currentPage);
       } else {
         showSnackbar.error(response.error || '批量通过失败');
@@ -369,7 +374,9 @@ const MeetupParticipants: React.FC = () => {
           )
         );
         await refreshStats();
-        showSnackbar.success('审批通过');
+        if (response.data?.email_failed_count)
+          showSnackbar.warning('审批已通过，通知邮件暂未送达。');
+        else showSnackbar.success('审批通过');
       } else {
         showSnackbar.error('审批失败');
       }
@@ -404,7 +411,9 @@ const MeetupParticipants: React.FC = () => {
           )
         );
         await refreshStats();
-        showSnackbar.success('已拒绝');
+        if (response.data?.email_failed_count)
+          showSnackbar.warning('已拒绝报名，通知邮件暂未送达。');
+        else showSnackbar.success('已拒绝');
       } else {
         showSnackbar.error('操作失败');
       }
@@ -444,9 +453,14 @@ const MeetupParticipants: React.FC = () => {
       });
 
       if (response.success) {
-        showSnackbar.success(
-          response.message || `已拒绝 ${joinedParticipants.length} 位参与者`
-        );
+        if (response.data?.email_failed_count)
+          showSnackbar.warning(
+            `审批已保存，${response.data.email_failed_count} 封通知邮件暂未送达。`
+          );
+        else
+          showSnackbar.success(
+            response.message || `已拒绝 ${joinedParticipants.length} 位参与者`
+          );
         // 刷新列表
         loadData();
       } else {

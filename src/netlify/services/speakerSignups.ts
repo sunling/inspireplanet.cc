@@ -24,7 +24,9 @@ export const speakerSignupsApi = {
       | 'email'
       | 'timezone'
     >
-  ): Promise<ApiResponse<{ signup: SpeakerSignup }>> => {
+  ): Promise<
+    ApiResponse<{ signup: SpeakerSignup; confirmation_email?: string }>
+  > => {
     return http.post('/speakerSignups', 'create', data);
   },
 

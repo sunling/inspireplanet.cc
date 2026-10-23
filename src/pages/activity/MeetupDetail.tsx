@@ -93,6 +93,57 @@ const MeetupDetail: React.FC = () => {
 
   // 模态框状态
   const [showRSVPDialog, setShowRSVPDialog] = useState(false);
+  const [guestReceipt, setGuestReceipt] = useState<{
+    token: string;
+    id: string;
+  } | null>(null);
+  const guestReceiptKey = () =>
+    `guest-rsvp:${getMeetupId()}:${new URLSearchParams(location.search).get('date') || episode?.date || 'once'}`;
+  useEffect(() => {
+    try {
+      const receipt = JSON.parse(
+        sessionStorage.getItem(guestReceiptKey()) || 'null'
+      );
+      setGuestReceipt(
+        receipt &&
+          typeof receipt.token === 'string' &&
+          typeof receipt.id === 'string'
+          ? receipt
+          : null
+      );
+    } catch {
+      setGuestReceipt(null);
+    }
+  }, [location.search, episode?.date]);
+  const cancelGuestRegistration = async () => {
+    if (!guestReceipt) return;
+    setIsActionLoading(true);
+    try {
+      const result = await rsvpApi.cancelGuest(guestReceipt.token);
+      if (!result.success) throw new Error(result.error || '取消报名失败');
+      setGuestReceipt(null);
+      setIsCurrentUserRSVPed(false);
+      try {
+        sessionStorage.removeItem(guestReceiptKey());
+      } catch {
+        /* Session storage may be unavailable. */
+      }
+      showSnackbar.success('已取消本次游客报名');
+      if (meetup)
+        await loadParticipants(
+          String(meetup.id),
+          episode?.id,
+          meetup.is_recurring
+        );
+    } catch (error) {
+      showSnackbar.error(
+        error instanceof Error ? error.message : '取消报名失败'
+      );
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   const [showQRModal, setShowQRModal] = useState(false);
   const [showFollowModal, setShowFollowModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
@@ -388,8 +439,6 @@ const MeetupDetail: React.FC = () => {
     setSubmitStatus('loading');
 
     try {
-      const loggedIn = isUserLoggedIn();
-
       // 准备报名数据（支持未登录用户报名）
       const rsvpPayload: Record<string, any> = {
         meetup_id: Number(meetup.id),
@@ -397,43 +446,16 @@ const MeetupDetail: React.FC = () => {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       };
 
-      // 登录用户才传 user_id
-      if (loggedIn) {
-        rsvpPayload.user_id = getUserId();
-      }
-
       if (episode) {
         rsvpPayload.episode_date = episode.date;
         rsvpPayload.episode_number = episode.episode_number;
       }
-
-      let surveySubmissionId: string | null = null;
-
-      // 如果有问卷，先提交问卷答案
-      if (survey && meetup.survey_id) {
-        // 将 Record<string, any> 转换为 QuestionAnswer[] 格式
-        const answers = Object.entries(rsvpForm.answers).map(
-          ([questionId, value]) => ({
-            questionId,
-            value,
-          })
+      // Identity, answer-sheet creation and linkage are owned by one server flow.
+      if (meetup.survey_id) {
+        if (!survey) throw new Error('报名问卷尚未加载，请稍后重试');
+        rsvpPayload.answers = Object.entries(rsvpForm.answers).map(
+          ([questionId, value]) => ({ questionId, value })
         );
-        const surveyResponse = await surveyApi.submit({
-          survey_id: meetup.survey_id,
-          respondent_id: loggedIn ? getUserId() || '' : '',
-          answers,
-        });
-
-        if (!surveyResponse.success) {
-          throw new Error(surveyResponse.error || '提交问卷失败');
-        }
-
-        surveySubmissionId = surveyResponse.data?.id || null;
-      }
-
-      // 添加问卷提交ID到报名数据
-      if (surveySubmissionId) {
-        rsvpPayload.survey_submission_id = surveySubmissionId;
       }
 
       // 提交报名
@@ -451,6 +473,20 @@ const MeetupDetail: React.FC = () => {
           return;
         }
         throw new Error(msg);
+      }
+
+      const guestToken = rsvpResponse.data?.guest_cancel_token;
+      if (guestToken) {
+        const receipt = {
+          token: guestToken,
+          id: String(rsvpResponse.data.rsvp.id),
+        };
+        setGuestReceipt(receipt);
+        try {
+          sessionStorage.setItem(guestReceiptKey(), JSON.stringify(receipt));
+        } catch {
+          /* Cancellation remains available in this page session. */
+        }
       }
 
       // 从返回的RSVP里拿 episode_id（新建 episode 时 backend 会返回）
@@ -504,7 +540,6 @@ const MeetupDetail: React.FC = () => {
         meetup_id: episode.meetup_id,
         episode_number: episode.episode_number,
         name: speakerForm.name,
-        email: speakerForm.email.trim() || undefined,
         topic: speakerForm.topic,
         duration: speakerForm.duration || undefined,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -514,7 +549,9 @@ const MeetupDetail: React.FC = () => {
         setSpeakerSignups((prev) => [...prev, newSignup]);
         setSpeakerForm({ name: '', email: '', topic: '', duration: '' });
         setShowSpeakerForm(false);
-        showSnackbar.success('报名成功！期待你的分享 🎉');
+        if (res.data.confirmation_email === 'failed')
+          showSnackbar.warning('报名已保存，确认邮件暂未送达。');
+        else showSnackbar.success('报名成功！期待你的分享 🎉');
       } else {
         showSnackbar.error('报名失败，请稍后重试');
       }
@@ -1054,7 +1091,16 @@ const MeetupDetail: React.FC = () => {
                 >
                   生成海报
                 </Button>
-                {isUpcomingMeetup && !isCurrentUserRSVPed && (
+                {isUpcomingMeetup && guestReceipt && (
+                  <Button
+                    variant="outlined"
+                    onClick={cancelGuestRegistration}
+                    disabled={isActionLoading}
+                  >
+                    取消本次游客报名
+                  </Button>
+                )}
+                {isUpcomingMeetup && !isCurrentUserRSVPed && !guestReceipt && (
                   <Button
                     variant="contained"
                     onClick={handleJoinMeetup}
@@ -1505,16 +1551,9 @@ const MeetupDetail: React.FC = () => {
             placeholder="如何称呼你？"
             required
           />
-          <TextField
-            fullWidth
-            label="邮箱（用于发送确认邮件）"
-            type="email"
-            value={speakerForm.email}
-            onChange={(e) =>
-              setSpeakerForm((p) => ({ ...p, email: e.target.value }))
-            }
-            placeholder="your@email.com"
-          />
+          <Typography variant="body2" color="text.secondary" sx={{ my: 1 }}>
+            确认邮件仅发送到已登录账号的邮箱；游客也可以直接报名。
+          </Typography>
           <TextField
             fullWidth
             label="分享主题"

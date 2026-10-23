@@ -1,3 +1,4 @@
+import { requireMutationUser } from '../utils/authorization';
 import { supabase } from '../../database/supabase';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
@@ -58,6 +59,8 @@ export async function handler(
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['POST'], true);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event) as WeeklyCardRequest;
     const record: WeeklyCardRecord = requestData.record;

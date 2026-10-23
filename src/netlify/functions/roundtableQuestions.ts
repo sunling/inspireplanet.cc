@@ -1,5 +1,10 @@
 import { createHash } from 'crypto';
-import { Resend } from 'resend';
+import {
+  sendProtectedEmail,
+  protectAction,
+  MailProtectionError,
+  headerText,
+} from '../utils/mailProtection';
 
 import { supabase } from '../../database/supabase';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
@@ -155,6 +160,14 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
   const validation = validateRoundtableQuestionInput(input);
   if (!validation.ok) return createErrorResponse(validation.error);
+  try {
+    await protectAction(event, 'roundtable-submit');
+  } catch (error) {
+    return createErrorResponse(
+      error instanceof Error ? error.message : '暂时无法处理',
+      error instanceof MailProtectionError ? error.status : 503
+    );
+  }
   const fingerprint = getClientFingerprint(event);
   if (fingerprint) {
     const windowStart = new Date(
@@ -376,13 +389,12 @@ async function sendSubmissionNotification(
   }
 
   try {
-    const resend = new Resend(resendKey);
     const from = process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc';
-    const { error } = await resend.emails.send({
+    await sendProtectedEmail({
       from: `启发星球 <${from}>`,
       to: recipients,
       ...(input.email ? { replyTo: input.email } : {}),
-      subject: `问题圆桌新提交｜${input.name}`,
+      subject: `问题圆桌新提交｜${headerText(input.name)}`,
       text: [
         `问题编号：${id}`,
         `称呼：${input.name}`,
@@ -395,8 +407,7 @@ async function sendSubmissionNotification(
         '管理地址：https://inspireplanet.cc/admin/question-roundtable',
       ].join('\n\n'),
     });
-    if (error) console.error('[roundtableQuestions] Resend error:', error);
   } catch (error) {
-    console.error('[roundtableQuestions] Email notification error:', error);
+    console.error('[roundtableQuestions] Email notification failed');
   }
 }
