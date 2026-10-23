@@ -200,6 +200,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const toolsMenuItems: NavItem[] = [
+    { path: '/pomodoro', label: '番茄钟' },
     { path: '/page-poster', label: '页面分享海报' },
     { path: '/cover-editor', label: '横版封面制作' },
     { path: '/cover-editor-mobile', label: '竖版封面制作' },
