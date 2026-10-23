@@ -205,7 +205,7 @@ const router = createBrowserRouter(
       children: [
         {
           path: 'pomodoro',
-          element: createOrganizerProtectedRoute(<Pomodoro />),
+          element: createLazyRoute(<Pomodoro />),
         },
         // 公开路由
         { index: true, element: createLazyRoute(<Home />) },
