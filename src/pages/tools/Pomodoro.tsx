@@ -4,6 +4,8 @@ import {
   Alert,
   Button,
   Container,
+  FormControlLabel,
+  Switch,
   Paper,
   Stack,
   TextField,
@@ -26,6 +28,61 @@ const Pomodoro: React.FC = () => {
   const [finished, setFinished] = useState(false);
   const sceneRef = useRef<HTMLDivElement>(null);
   const [fullscreen, setFullscreen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const soundEnabledRef = useRef(false);
+  const audioRef = useRef<AudioContext | null>(null);
+
+  const changeSound = (enabled: boolean) => {
+    setSoundEnabled(enabled);
+    soundEnabledRef.current = enabled;
+    if (enabled) {
+      try {
+        audioRef.current ??= new AudioContext();
+        void audioRef.current.resume().catch(() => {});
+      } catch {
+        // Keep the timer usable when audio is unavailable.
+      }
+    }
+  };
+
+  const playArrival = () => {
+    const audio = audioRef.current;
+    if (!soundEnabledRef.current || !audio || audio.state !== 'running') return;
+    // A station chime followed by a soft, two-tone train whistle.
+    [659.25, 523.25, 587.33, 392].forEach((frequency, index) => {
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+      const start = audio.currentTime + index * 0.32;
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.16, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.7);
+      oscillator.connect(gain).connect(audio.destination);
+      oscillator.start(start);
+      oscillator.stop(start + 0.75);
+    });
+    [440, 554.37].forEach((frequency) => {
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+      const start = audio.currentTime + 1.5;
+      oscillator.frequency.setValueAtTime(frequency, start);
+      oscillator.frequency.linearRampToValueAtTime(frequency * 0.94, start + 1);
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.07, start + 0.15);
+      gain.gain.linearRampToValueAtTime(0, start + 1.1);
+      oscillator.connect(gain).connect(audio.destination);
+      oscillator.start(start);
+      oscillator.stop(start + 1.2);
+    });
+  };
+
+  useEffect(
+    () => () => {
+      void audioRef.current?.close().catch(() => {});
+    },
+    []
+  );
 
   useEffect(() => {
     const syncFullscreen = () =>
@@ -68,10 +125,14 @@ const Pomodoro: React.FC = () => {
 
   useEffect(() => {
     if (deadline === null) return;
+    let arrived = false;
     const tick = () => {
+      if (arrived) return;
       const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       setRemaining(seconds);
       if (seconds === 0) {
+        arrived = true;
+        playArrival();
         setDeadline(null);
         setFinished(true);
         if (mode === 0) setCompleted((count) => count + 1);
@@ -90,6 +151,7 @@ const Pomodoro: React.FC = () => {
   };
 
   const toggle = () => {
+    if (soundEnabledRef.current) changeSound(true);
     if (deadline !== null) {
       setRemaining(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
       setDeadline(null);
@@ -134,6 +196,13 @@ const Pomodoro: React.FC = () => {
             <div className="pomodoro-fullscreen-controls">
               <button type="button" onClick={toggle} disabled={!validDurations}>
                 {deadline !== null ? '暂停' : '开始 / 继续'}
+              </button>
+              <button
+                type="button"
+                aria-pressed={soundEnabled}
+                onClick={() => changeSound(!soundEnabled)}
+              >
+                到站音效：{soundEnabled ? '开' : '关'}
               </button>
               <button
                 type="button"
@@ -337,6 +406,15 @@ const Pomodoro: React.FC = () => {
             重置
           </Button>
         </Stack>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={soundEnabled}
+              onChange={(_, checked) => changeSound(checked)}
+            />
+          }
+          label="到站音效"
+        />
         {finished && (
           <Alert severity="success" sx={{ mb: 2 }}>
             {mode === 0 ? '专注完成！休息一下吧。' : '休息结束，准备好再开始。'}
