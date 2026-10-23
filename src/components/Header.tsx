@@ -255,11 +255,16 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const toolsMenuItems: NavItem[] = [
-    { path: '/create-card', label: '创建卡片' },
-    { path: '/page-poster', label: '页面分享海报' },
-    { path: '/cover-editor', label: '横版封面制作' },
-    { path: '/cover-editor-mobile', label: '竖版封面制作' },
-    { path: '/surveys', label: '调查问卷' },
+    { path: '/pomodoro', label: '番茄钟' },
+    ...(isOrganizer()
+      ? [
+          { path: '/create-card', label: '创建卡片' },
+          { path: '/page-poster', label: '页面分享海报' },
+          { path: '/cover-editor', label: '横版封面制作' },
+          { path: '/cover-editor-mobile', label: '竖版封面制作' },
+          { path: '/surveys', label: '调查问卷' },
+        ]
+      : []),
   ];
 
   // 下拉菜单配置
@@ -282,17 +287,13 @@ const Header: React.FC<HeaderProps> = ({
       anchor: activitiesMenuAnchor,
       setAnchor: setActivitiesMenuAnchor,
     },
-    ...(isOrganizer()
-      ? [
-          {
-            label: '工具',
-            icon: <CardMembership fontSize="small" />,
-            items: toolsMenuItems,
-            anchor: toolsMenuAnchor,
-            setAnchor: setToolsMenuAnchor,
-          },
-        ]
-      : []),
+    {
+      label: '工具',
+      icon: <CardMembership fontSize="small" />,
+      items: toolsMenuItems,
+      anchor: toolsMenuAnchor,
+      setAnchor: setToolsMenuAnchor,
+    },
   ];
 
   // 渲染下拉菜单
@@ -488,7 +489,12 @@ const Header: React.FC<HeaderProps> = ({
             alt="启发星球"
             width={44}
             height={44}
-            style={{ width: 44, height: 44, objectFit: 'contain', marginRight: 8 }}
+            style={{
+              width: 44,
+              height: 44,
+              objectFit: 'contain',
+              marginRight: 8,
+            }}
           />
           <Typography variant="h6" color="primary">
             启发星球
@@ -546,12 +552,11 @@ const Header: React.FC<HeaderProps> = ({
             <CalendarToday fontSize="small" />,
             getActivitiesMenuItems()
           )}
-          {isOrganizer() &&
-            renderMobileMenuItemGroup(
-              '工具',
-              <CardMembership fontSize="small" />,
-              toolsMenuItems
-            )}
+          {renderMobileMenuItemGroup(
+            '工具',
+            <CardMembership fontSize="small" />,
+            toolsMenuItems
+          )}
 
           {/* 移动端：关于我们 */}
           <ListItem
@@ -609,8 +614,13 @@ const Header: React.FC<HeaderProps> = ({
               src="/images/logo-mark.svg"
               alt="启发星球"
               width={44}
-            height={44}
-            style={{ width: 44, height: 44, objectFit: 'contain', marginRight: 8 }}
+              height={44}
+              style={{
+                width: 44,
+                height: 44,
+                objectFit: 'contain',
+                marginRight: 8,
+              }}
             />
             <div>
               <Typography

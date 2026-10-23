@@ -108,6 +108,7 @@ const createOrganizerProtectedRoute = (Component: React.ReactNode) => (
 
 // 懒加载页面组件
 const Home = lazy(() => import('../pages/home/Home'));
+const Pomodoro = lazy(() => import('../pages/tools/Pomodoro'));
 const About = lazy(() => import('../pages/introduce/About'));
 const Contact = lazy(() => import('../pages/introduce/Contact'));
 const Contribution = lazy(() => import('../pages/contribute/Contribution'));
@@ -202,6 +203,10 @@ const router = createBrowserRouter(
       ),
       errorElement: <ErrorBoundary />,
       children: [
+        {
+          path: 'pomodoro',
+          element: createLazyRoute(<Pomodoro />),
+        },
         // 公开路由
         { index: true, element: createLazyRoute(<Home />) },
         { path: 'about', element: createLazyRoute(<About />) },
