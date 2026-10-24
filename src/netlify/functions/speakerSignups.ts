@@ -1,3 +1,4 @@
+import { requireMutationUser } from '../utils/authorization';
 import { supabase } from '../../database/supabase';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
@@ -65,6 +66,8 @@ async function handleGetByEpisode(
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  if (event.httpMethod !== 'POST')
+    return createErrorResponse('请求方式不支持', 405);
   const { meetup_id, episode_number, name, topic, duration, email, timezone } =
     getDataFromEvent(event);
   if (!meetup_id || !episode_number || !name?.trim() || !topic?.trim()) {
@@ -129,8 +132,12 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 async function handleUpdateStatus(
   event: NetlifyEvent
 ): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['PUT', 'POST'], true);
+  if (auth.error) return auth.error;
   const { id, status } = getDataFromEvent(event);
   if (!id || !status) return createErrorResponse('缺少必填字段');
+  if (!['pending', 'confirmed', 'cancelled'].includes(status))
+    return createErrorResponse('无效的报名状态', 400);
 
   const { data, error } = await supabase
     .from('speaker_signups')

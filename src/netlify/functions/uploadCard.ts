@@ -1,13 +1,10 @@
-import { supabase } from '../../database/supabase';
+import { requireMutationUser } from '../utils/authorization';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
-  createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
   getFunctionNameFromEvent,
-  getDataFromEvent,
 } from '../utils/server';
-import { searchImageByText } from '../utils/imageSearch';
 
 export interface WeeklyCardRecord {
   episode: string;
@@ -58,46 +55,10 @@ export async function handler(
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
-  try {
-    const requestData = getDataFromEvent(event) as WeeklyCardRequest;
-    const record: WeeklyCardRecord = requestData.record;
-
-    if (
-      !record.episode ||
-      !record.name ||
-      !record.title ||
-      !record.quote ||
-      !record.detail
-    ) {
-      return createErrorResponse('缺少必填字段');
-    }
-
-    let imagePath: string | null = null;
-    // 图片搜索功能已关闭，直接存入空值使用纯色/渐变背景
-
-    const { data, error } = await supabase
-      .from('weekly_cards')
-      .insert([
-        {
-          episode: record.episode,
-          name: record.name,
-          title: record.title,
-          quote: record.quote,
-          detail: record.detail,
-          image_path: imagePath,
-          created: new Date().toISOString(),
-        },
-      ])
-      .select();
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return createErrorResponse('提交周卡失败', 500);
-    }
-
-    return createSuccessResponse({ message: '周卡提交成功', id: data[0].id });
-  } catch (error: any) {
-    console.error('Function error:', error);
-    return createErrorResponse('服务器内部错误', 500);
-  }
+  const auth = await requireMutationUser(event, ['POST'], true);
+  if (auth.error) return auth.error;
+  return createErrorResponse(
+    '旧周卡写入入口已停用，请在 sunling/inspire-planet 仓库维护周刊内容',
+    410
+  );
 }

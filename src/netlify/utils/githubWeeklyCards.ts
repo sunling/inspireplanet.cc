@@ -1,4 +1,3 @@
-import { supabase } from '../../database/supabase';
 import {
   EpisodeSummary,
   EpisodeTopic,
@@ -224,7 +223,9 @@ function parseRecapMarkdownToSummary(
 
     let speaker = '';
     let topicTitle = currentSectionTitle;
-    const colonMatch = currentSectionTitle.match(/^([^：:]{1,12})[：:]\s*(.+)$/);
+    const colonMatch = currentSectionTitle.match(
+      /^([^：:]{1,12})[：:]\s*(.+)$/
+    );
     if (colonMatch) {
       speaker = colonMatch[1].trim();
       topicTitle = colonMatch[2].trim();
@@ -587,50 +588,16 @@ async function fetchConcurrency<T, R>(
   return results;
 }
 
-function getRecordYearAndEpisodeKey(card: WeeklyCard): string {
-  const date = card.created ? new Date(card.created) : null;
-  const year =
-    date && !Number.isNaN(date.getTime())
-      ? new Intl.DateTimeFormat('en-US', {
-          timeZone: 'Asia/Shanghai',
-          year: 'numeric',
-        }).format(date)
-      : '';
-  const epNum = Number(card.episode?.match(/\d+/)?.[0] || 0);
-  return `${year}-EP${String(epNum).padStart(2, '0')}`;
-}
-
+// Weekly content is maintained exclusively in sunling/inspire-planet.
+// A GitHub outage must never reactivate the retired database archive.
 export async function getLatestWeeklyCards(): Promise<WeeklyCard[]> {
   try {
     const entries = (await getGitHubEpisodeEntries()).filter((e) => !!e.path);
-    if (entries.length > 0) {
-      return await fetchEpisodeCardsFromGitHub(entries[0]);
-    }
+    return entries.length ? await fetchEpisodeCardsFromGitHub(entries[0]) : [];
   } catch (error) {
-    console.warn(
-      'Falling back to Supabase for getLatestWeeklyCards due to error:',
-      error
-    );
-  }
-
-  // Fallback to Supabase if GitHub is unreachable
-  const { data: latestEpisode, error: episodeError } = await supabase
-    .from('weekly_cards')
-    .select('episode')
-    .order('created', { ascending: false })
-    .limit(1);
-
-  if (episodeError || !latestEpisode || latestEpisode.length === 0) {
+    console.warn('Failed to load latest weekly cards from GitHub:', error);
     return [];
   }
-
-  const { data } = await supabase
-    .from('weekly_cards')
-    .select('*')
-    .eq('episode', latestEpisode[0].episode)
-    .order('created', { ascending: false });
-
-  return (data as WeeklyCard[]) || [];
 }
 
 export async function getEpisodeSummary(
@@ -689,86 +656,37 @@ export async function getWeeklyCardsByEpisode(
         return await fetchEpisodeCardsFromGitHub(matching[0]);
       }
     } catch (error) {
-      console.warn(
-        'Falling back to Supabase for getWeeklyCardsByEpisode due to error:',
-        error
-      );
+      console.warn('Failed to load weekly episode from GitHub:', error);
     }
   }
 
-  // Fallback to Supabase if not found in GitHub tree yet
-  let query = supabase.from('weekly_cards').select('*');
-  if (Number.isFinite(targetEpNum)) {
-    const padded = `EP${String(targetEpNum).padStart(2, '0')}`;
-    const unpadded = `EP${targetEpNum}`;
-    query = query.in('episode', [padded, unpadded]);
-  } else {
-    query = query.ilike('episode', `%${episodeInput}%`);
-  }
-  query = query.order('created', { ascending: false });
-
-  const { data: result, error } = await query;
-  if (error || !result) {
-    return [];
-  }
-
-  const records = result as WeeklyCard[];
-  if (Number.isFinite(targetYear)) {
-    return records.filter((r) => {
-      const y = r.created ? new Date(r.created).getFullYear() : NaN;
-      return y === targetYear;
-    });
-  }
-  return records;
+  return [];
 }
 
 export async function getAllWeeklyCards(limit?: number): Promise<WeeklyCard[]> {
   let githubCards: WeeklyCard[] = [];
-  const githubKeys = new Set<string>();
-  let has2025ArchiveOnGitHub = false;
 
   try {
     const entries = (await getGitHubEpisodeEntries()).filter((e) => !!e.path);
-    has2025ArchiveOnGitHub = entries.some((e) => e.year <= 2025);
-    const perEpisodeLists = await fetchConcurrency(entries, 12, async (entry) => {
-      try {
-        const cards = await fetchEpisodeCardsFromGitHub(entry);
-        githubKeys.add(
-          `${entry.year}-EP${String(entry.episodeNum).padStart(2, '0')}`
-        );
-        return cards;
-      } catch (err) {
-        console.warn(`Failed to fetch episode ${entry.path}:`, err);
-        return [];
+    const perEpisodeLists = await fetchConcurrency(
+      entries,
+      12,
+      async (entry) => {
+        try {
+          const cards = await fetchEpisodeCardsFromGitHub(entry);
+          return cards;
+        } catch (err) {
+          console.warn(`Failed to fetch episode ${entry.path}:`, err);
+          return [];
+        }
       }
-    });
+    );
     githubCards = perEpisodeLists.flat();
   } catch (error) {
-    console.warn(
-      'Failed to load all weekly cards from GitHub, falling back to Supabase:',
-      error
-    );
+    console.warn('Failed to load all weekly cards from GitHub:', error);
   }
 
-  // Only query Supabase fallback if GitHub failed or 2025 archive hasn't been pushed yet
-  let supabaseCards: WeeklyCard[] = [];
-  if (githubCards.length === 0 || !has2025ArchiveOnGitHub) {
-    try {
-      const { data } = await supabase
-        .from('weekly_cards')
-        .select('*')
-        .order('created', { ascending: false });
-      if (data) {
-        supabaseCards = (data as WeeklyCard[]).filter(
-          (card) => !githubKeys.has(getRecordYearAndEpisodeKey(card))
-        );
-      }
-    } catch (error) {
-      // Ignore Supabase fallback errors if GitHub succeeded
-    }
-  }
-
-  const combined = [...githubCards, ...supabaseCards].sort((a, b) => {
+  const combined = githubCards.sort((a, b) => {
     const timeA = a.created ? new Date(a.created).getTime() : 0;
     const timeB = b.created ? new Date(b.created).getTime() : 0;
     if (timeB !== timeA) return timeB - timeA;
