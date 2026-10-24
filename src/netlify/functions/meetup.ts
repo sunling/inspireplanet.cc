@@ -1,5 +1,10 @@
 import { supabase } from '../../database/supabase';
 import {
+  canManage,
+  checkManagedLink,
+  requireMutationUser,
+} from '../utils/authorization';
+import {
   NetlifyContext,
   NetlifyEvent,
   NetlifyResponse,
@@ -10,7 +15,6 @@ import {
   createSuccessResponse,
   createErrorResponse,
   handleOptionsRequest,
-  getUserIdFromAuth,
   getFunctionNameFromEvent,
   getDataFromEvent,
 } from '../utils/server';
@@ -140,6 +144,8 @@ export async function handler(
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['POST']);
+  if (auth.error) return auth.error;
   try {
     const meetupData = getDataFromEvent(event) as MeetupRequest;
 
@@ -171,6 +177,10 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       Number.isFinite(maxParsed) && maxParsed > 0 ? maxParsed : null;
 
     let surveyId: string | null = meetupData.survey_id || null;
+    if (surveyId) {
+      const error = await checkManagedLink(auth.user, 'surveys', surveyId);
+      if (error) return error;
+    }
 
     // 如果有问卷问题数据，自动创建活动专用问卷
     if (meetupData.survey_questions && meetupData.survey_questions.length > 0) {
@@ -182,7 +192,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
         .insert({
           title: surveyTitle,
           description: `活动「${title}」的报名问卷`,
-          created_by: meetupData.user_id || creator,
+          created_by: auth.user.id,
           is_active: true,
           allow_multiple_submissions: false,
           is_for_meetup: true,
@@ -240,7 +250,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
           wechat_id: wechat_id,
           cover: meetupData.cover || null,
           status: 'active',
-          user_id: meetupData.user_id || null,
+          user_id: auth.user.id,
           is_recurring: meetupData.is_recurring || false,
           recurrence_day: meetupData.is_recurring
             ? (meetupData.recurrence_day ?? null)
@@ -401,6 +411,8 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['PUT', 'POST']);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
     const { id, survey_questions, ...updateData } = requestData;
@@ -419,8 +431,24 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('活动不存在', 404);
     }
 
-    if (updateData.user_id != existingMeetup.user_id) {
+    if (!canManage(auth.user, existingMeetup.user_id)) {
       return createErrorResponse('没有权限修改此活动', 403);
+    }
+    if (updateData.survey_id) {
+      const error = await checkManagedLink(
+        auth.user,
+        'surveys',
+        updateData.survey_id
+      );
+      if (error) return error;
+    }
+    if (Array.isArray(survey_questions) && existingMeetup.survey_id) {
+      const error = await checkManagedLink(
+        auth.user,
+        'surveys',
+        existingMeetup.survey_id
+      );
+      if (error) return error;
     }
 
     const updateRecord: Record<string, any> = {};
@@ -465,11 +493,7 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
         .insert({
           title: `${meetupTitle} - 报名问卷`,
           description: `活动「${meetupTitle}」的报名问卷`,
-          created_by:
-            updateData.user_id ||
-            existingMeetup.user_id ||
-            updateRecord.creator ||
-            existingMeetup.creator,
+          created_by: auth.user.id,
           is_active: true,
           allow_multiple_submissions: false,
           meetup_id: Number(id),
@@ -584,9 +608,11 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['DELETE', 'POST']);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
-    const { id, createdBy } = requestData;
+    const { id } = requestData;
 
     if (!id) {
       return createErrorResponse('缺少活动ID');
@@ -602,11 +628,7 @@ async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('活动不存在', 404);
     }
 
-    if (
-      createdBy &&
-      existingMeetup.created_by &&
-      createdBy !== existingMeetup.created_by
-    ) {
+    if (!canManage(auth.user, existingMeetup.user_id)) {
       return createErrorResponse('没有权限删除此活动', 403);
     }
 

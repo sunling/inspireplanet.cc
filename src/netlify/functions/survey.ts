@@ -1,8 +1,15 @@
+import { handleSubmit } from './surveySubmission';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import { supabase } from '../../database/supabase';
 import {
+  canManage,
+  checkManagedLink,
+  requireMutationUser,
+} from '../utils/authorization';
+import {
   createErrorResponse,
   createSuccessResponse,
+  handleOptionsRequest,
   getDataFromEvent,
   getFunctionNameFromEvent,
 } from '../utils/server';
@@ -13,6 +20,7 @@ import {
 } from '../types/survey';
 
 export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
+  if (event.httpMethod === 'OPTIONS') return handleOptionsRequest();
   try {
     const action = getFunctionNameFromEvent(event) as
       | 'getAll'
@@ -195,6 +203,8 @@ async function handleGetById(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['POST']);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
     const {
@@ -205,11 +215,9 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       endDate,
       isActive,
       allowMultipleSubmissions,
-      createdBy,
       meetup_id,
       is_for_meetup = false,
     } = requestData as CreateSurveyRequest & {
-      createdBy: string;
       meetup_id?: string;
       is_for_meetup?: boolean;
     };
@@ -218,8 +226,9 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('缺少必要参数', 400);
     }
 
-    if (!createdBy) {
-      return createErrorResponse('缺少创建者信息', 400);
+    if (meetup_id) {
+      const error = await checkManagedLink(auth.user, 'meetups', meetup_id);
+      if (error) return error;
     }
 
     // 开始事务
@@ -228,7 +237,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       .insert({
         title,
         description,
-        created_by: createdBy,
+        created_by: auth.user.id,
         start_date: startDate,
         end_date: endDate,
         is_active: isActive,
@@ -277,6 +286,8 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['PUT', 'POST']);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
     const {
@@ -309,13 +320,20 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     // 检查问卷是否存在
     const { data: existingSurvey, error: surveyError } = await supabase
       .from('surveys')
-      .select('id')
+      .select('id, created_by')
       .eq('id', id)
       .single();
 
     if (surveyError) {
       console.error('Error finding survey:', surveyError);
       return createErrorResponse('问卷不存在', 404);
+    }
+    if (!existingSurvey || !canManage(auth.user, existingSurvey.created_by))
+      return createErrorResponse('没有权限管理此问卷', 403);
+
+    if (meetup_id) {
+      const error = await checkManagedLink(auth.user, 'meetups', meetup_id);
+      if (error) return error;
     }
 
     // 构建更新数据
@@ -432,6 +450,8 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['DELETE', 'POST']);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
     const { id } = requestData;
@@ -443,7 +463,7 @@ async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
     // 检查问卷是否存在
     const { data: existingSurvey, error: surveyError } = await supabase
       .from('surveys')
-      .select('id')
+      .select('id, created_by')
       .eq('id', id)
       .single();
 
@@ -451,6 +471,8 @@ async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
       console.error('Error finding survey:', surveyError);
       return createErrorResponse('问卷不存在', 404);
     }
+    if (!existingSurvey || !canManage(auth.user, existingSurvey.created_by))
+      return createErrorResponse('没有权限管理此问卷', 403);
 
     // 删除问卷（级联删除问题和提交）
     const { error: deleteError } = await supabase
@@ -473,6 +495,8 @@ async function handleDelete(event: NetlifyEvent): Promise<NetlifyResponse> {
 async function handleToggleActive(
   event: NetlifyEvent
 ): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['PUT', 'POST']);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
     const { id } = requestData;
@@ -484,7 +508,7 @@ async function handleToggleActive(
     // 检查问卷是否存在
     const { data: existingSurvey, error: surveyError } = await supabase
       .from('surveys')
-      .select('is_active')
+      .select('id, created_by, is_active')
       .eq('id', id)
       .single();
 
@@ -492,6 +516,8 @@ async function handleToggleActive(
       console.error('Error finding survey:', surveyError);
       return createErrorResponse('问卷不存在', 404);
     }
+    if (!existingSurvey || !canManage(auth.user, existingSurvey.created_by))
+      return createErrorResponse('没有权限管理此问卷', 403);
 
     // 切换激活状态
     const newStatus = !existingSurvey.is_active;
@@ -512,110 +538,6 @@ async function handleToggleActive(
     });
   } catch (error) {
     console.error('Error in handleToggleActive:', error);
-    return createErrorResponse('Internal Server Error', 500);
-  }
-}
-
-async function handleSubmit(event: NetlifyEvent): Promise<NetlifyResponse> {
-  try {
-    const requestData = getDataFromEvent(event);
-    const {
-      survey_id,
-      respondent_id,
-      respondent_email,
-      answers,
-      ip_address,
-      user_agent,
-    } = requestData;
-
-    if (!survey_id) {
-      return createErrorResponse('缺少问卷 ID', 400);
-    }
-
-    if (!answers || typeof answers !== 'object') {
-      return createErrorResponse('缺少答案数据', 400);
-    }
-
-    // 检查问卷是否存在
-    const { data: survey, error: surveyError } = await supabase
-      .from('surveys')
-      .select('id')
-      .eq('id', survey_id)
-      .single();
-
-    if (surveyError || !survey) {
-      return createErrorResponse('问卷不存在', 404);
-    }
-
-    // 创建问卷提交记录
-    const { data: submission, error: submissionError } = await supabase
-      .from('survey_submissions')
-      .insert({
-        survey_id,
-        respondent_id: respondent_id || `guest_${Date.now()}`,
-        respondent_email: respondent_email || null,
-        ip_address:
-          ip_address ||
-          event.headers['x-forwarded-for'] ||
-          event.headers['client-ip'] ||
-          'unknown',
-        user_agent: user_agent || event.headers['user-agent'],
-      })
-      .select('id')
-      .single();
-
-    if (submissionError) {
-      console.error('Error creating survey submission:', submissionError);
-      return createErrorResponse('提交问卷失败', 500);
-    }
-
-    // 支持两种格式：对象格式 { questionId: value } 和数组格式 [{ questionId, value }]
-    let answersArray: { questionId: string; value: any }[] = [];
-
-    if (Array.isArray(answers)) {
-      // 数组格式
-      answersArray = answers;
-    } else if (typeof answers === 'object' && answers !== null) {
-      // 对象格式转换为数组格式
-      answersArray = Object.entries(answers)
-        .map(([questionId, value]) => ({
-          questionId,
-          value,
-        }))
-        .filter(
-          (item) =>
-            item.value !== undefined && item.value !== null && item.value !== ''
-        );
-    }
-
-    // 创建答案记录
-    const answerPromises = answersArray.map((answer) => {
-      return supabase.from('survey_answers').insert({
-        submission_id: submission.id,
-        question_id: answer.questionId,
-        value: answer.value,
-      });
-    });
-
-    const answerResults = await Promise.all(answerPromises);
-    const answerErrors = answerResults.filter((r) => r.error);
-
-    if (answerErrors.length > 0) {
-      console.error('Error creating survey answers:', answerErrors);
-      // 回滚：删除已创建的提交记录
-      await supabase
-        .from('survey_submissions')
-        .delete()
-        .eq('id', submission.id);
-      return createErrorResponse('提交问卷答案失败', 500);
-    }
-
-    return createSuccessResponse({
-      id: submission.id,
-      message: '提交成功',
-    });
-  } catch (error) {
-    console.error('Error in handleSubmit:', error);
     return createErrorResponse('Internal Server Error', 500);
   }
 }

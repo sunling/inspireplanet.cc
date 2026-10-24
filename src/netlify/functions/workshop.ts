@@ -1,3 +1,4 @@
+import { requireMutationUser } from '../utils/authorization';
 import { supabase } from '../../database/supabase';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
@@ -60,6 +61,8 @@ export async function handler(
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
+  if (event.httpMethod !== 'POST')
+    return createErrorResponse('请求方式不支持', 405);
   try {
     const registrationData = getDataFromEvent(event) as WorkshopRegistration;
 
@@ -72,10 +75,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       wechat: registrationData.wechat.trim(),
       why: registrationData.why?.trim() || '',
       expectation: registrationData.expectation?.trim() || '',
-      paid:
-        typeof registrationData.paid === 'string'
-          ? registrationData.paid === 'true'
-          : Boolean(registrationData.paid),
+      paid: false,
     };
 
     const record: Omit<WorkshopRecord, 'id'> = {
@@ -104,6 +104,8 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
 }
 
 async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
+  const auth = await requireMutationUser(event, ['GET', 'POST'], true);
+  if (auth.error) return auth.error;
   try {
     const { data, error } = await supabase
       .from('workshop')
