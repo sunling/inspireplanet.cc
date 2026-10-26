@@ -40,6 +40,11 @@ import { MeetupEpisode } from '../../netlify/functions/episodes';
 import { meetupsApi, rsvpApi, episodesApi } from '../../netlify/config';
 import { getNextOccurrence, getEpisodeNumber, toLocalDateStr, nextUTCOccurrenceDateStr } from '../../utils/recurring';
 
+import {
+  hasMeetupEpisodes,
+  getMeetupParticipantCount,
+} from '../../utils/meetupParticipantCount';
+
 const PAGE_SIZE = 6;
 
 // 判断活动是否已结束（now > start + duration）
@@ -104,9 +109,7 @@ const Meetups: React.FC = () => {
       setMeetups(allMeetups);
 
       // 并行加载所有循环活动的本期 episode
-      const recurring = allMeetups.filter(
-        (m) => m.is_recurring && m.episode_start_date && m.recurrence_day !== undefined
-      );
+      const recurring = allMeetups.filter(hasMeetupEpisodes);
       if (recurring.length > 0) {
         const entries = await Promise.all(
           recurring.map(async (m) => {
@@ -305,8 +308,8 @@ const Meetups: React.FC = () => {
       setShowRSVPDialog(false);
       setMeetups((prev) =>
         prev.map((m) =>
-          m.id === currentMeetupId
-            ? { ...m, participantCount: (m.participant_count ?? 0) + 1 }
+          String(m.id) === String(currentMeetupId)
+            ? { ...m, participant_count: (m.participant_count ?? 0) + 1 }
             : m
         )
       );
@@ -444,9 +447,7 @@ const Meetups: React.FC = () => {
           }}
         >
           <Typography variant="caption" color="text.secondary">
-            {meetup.is_recurring
-              ? (episodeParticipantCounts[String(meetup.id)] ?? 0)
-              : meetup.participant_count}
+            {getMeetupParticipantCount(meetup, episodeParticipantCounts)}
             {Number(meetup.max_ppl) > 0 ? '/' + meetup.max_ppl : ''}
             人参加
           </Typography>

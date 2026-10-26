@@ -54,6 +54,7 @@ import {
   isMeetupOwner,
 } from '../../utils/user';
 import { hasQuestionValue } from '../../utils/meetup';
+import { hasMeetupEpisodes } from '../../utils/meetupParticipantCount';
 
 const MeetupDetail: React.FC = () => {
   const location = useLocation();
@@ -184,11 +185,7 @@ const MeetupDetail: React.FC = () => {
 
       // 如果是定期活动，加载对应期次信息
       let episodeId: number | undefined;
-      if (
-        processedMeetup.is_recurring &&
-        processedMeetup.episode_start_date &&
-        processedMeetup.recurrence_day !== undefined
-      ) {
+      if (hasMeetupEpisodes(processedMeetup)) {
         const searchParams = new URLSearchParams(location.search);
         const urlDate = searchParams.get('date');
         // URL 传来的日期（从日历点击）→ 用北京时区解析；否则算最近一期
@@ -199,7 +196,7 @@ const MeetupDetail: React.FC = () => {
         const dateStr =
           urlDate ?? nextUTCOccurrenceDateStr(processedMeetup.datetime);
         const epNum = getEpisodeNumber(
-          processedMeetup.episode_start_date,
+          processedMeetup.episode_start_date!,
           targetDay
         );
         const epRes = await episodesApi.getByMeetupDate(
@@ -224,7 +221,7 @@ const MeetupDetail: React.FC = () => {
       }
 
       // 加载参与者信息（定期活动传 episode_id，按期次过滤）
-      loadParticipants(meetupId, episodeId, processedMeetup.is_recurring);
+      loadParticipants(meetupId, episodeId, hasMeetupEpisodes(processedMeetup));
 
       // 如果活动关联了问卷，加载问卷信息
       if (processedMeetup.survey_id) {
@@ -283,10 +280,10 @@ const MeetupDetail: React.FC = () => {
   const loadParticipants = async (
     meetupId: string,
     episodeId?: number,
-    isRecurring?: boolean
+    requiresEpisode?: boolean
   ) => {
-    // 定期活动必须有 episodeId 才能过滤，否则会返回所有期次的报名
-    if (isRecurring && episodeId === undefined) {
+    // 只有已配置分期的活动需要期次 ID；未配置分期的循环活动使用总报名名单。
+    if (requiresEpisode && episodeId === undefined) {
       setParticipants([]);
       return;
     }
@@ -466,7 +463,7 @@ const MeetupDetail: React.FC = () => {
         loadParticipants(
           String(meetup.id),
           returnedEpisodeId,
-          meetup.is_recurring
+          hasMeetupEpisodes(meetup)
         );
         setTimeout(() => setShowFollowModal(true), 300);
         setSubmitStatus('initial');
