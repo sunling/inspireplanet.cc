@@ -10,7 +10,10 @@ import {
   handleOptionsRequest,
 } from '../utils/server';
 
-const BUCKET = 'community-qrcode';
+const QR_BUCKETS = {
+  community: 'community-qrcode',
+  speakers: 'speaker-qrcode',
+} as const;
 const MAX_FILE_SIZE = 3 * 1024 * 1024;
 const ALLOWED_TYPES: Record<string, string> = {
   'image/png': 'png',
@@ -23,8 +26,21 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
 
   try {
     const functionName = getFunctionNameFromEvent(event);
-    if (functionName === 'current') return await handleCurrent();
-    if (functionName === 'update') return await handleUpdate(event);
+    const { group = 'community' } = getDataFromEvent(event);
+    if (group !== 'community' && group !== 'speakers') {
+      return createErrorResponse('无效的群类型');
+    }
+    const bucket = QR_BUCKETS[group];
+    if (functionName === 'current') {
+      if (event.httpMethod !== 'GET')
+        return createErrorResponse('不支持的请求方法', 405);
+      return await handleCurrent(bucket);
+    }
+    if (functionName === 'update') {
+      if (event.httpMethod !== 'POST')
+        return createErrorResponse('不支持的请求方法', 405);
+      return await handleUpdate(event, bucket);
+    }
     return createErrorResponse('无效的操作类型');
   } catch (error) {
     console.error('Community QR handler error:', error);
@@ -32,15 +48,15 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
   }
 }
 
-async function listQrFiles() {
-  return supabase.storage.from(BUCKET).list('', {
+async function listQrFiles(bucket: string) {
+  return supabase.storage.from(bucket).list('', {
     limit: 20,
     sortBy: { column: 'name', order: 'desc' },
   });
 }
 
-async function handleCurrent(): Promise<NetlifyResponse> {
-  const { data, error } = await listQrFiles();
+async function handleCurrent(bucket: string): Promise<NetlifyResponse> {
+  const { data, error } = await listQrFiles(bucket);
 
   if (error) {
     if (/not found|does not exist/i.test(error.message)) {
@@ -56,7 +72,7 @@ async function handleCurrent(): Promise<NetlifyResponse> {
   }
 
   const { data: publicUrl } = supabase.storage
-    .from(BUCKET)
+    .from(bucket)
     .getPublicUrl(current.name);
 
   return createSuccessResponse({
@@ -65,7 +81,10 @@ async function handleCurrent(): Promise<NetlifyResponse> {
   });
 }
 
-async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
+async function handleUpdate(
+  event: NetlifyEvent,
+  bucket: string
+): Promise<NetlifyResponse> {
   const userId = await getUserIdFromAuth(event);
   if (!userId) return createErrorResponse('请先登录', 401);
 
@@ -103,9 +122,9 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     return createErrorResponse('无法检查图片存储空间', 500);
   }
 
-  if (!buckets?.some((bucket) => bucket.id === BUCKET)) {
+  if (!buckets?.some((bucketInfo) => bucketInfo.id === bucket)) {
     const { error: createBucketError } = await supabase.storage.createBucket(
-      BUCKET,
+      bucket,
       {
         public: true,
         allowedMimeTypes: Object.keys(ALLOWED_TYPES),
@@ -118,7 +137,7 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
     }
   }
 
-  const { data: oldFiles, error: listError } = await listQrFiles();
+  const { data: oldFiles, error: listError } = await listQrFiles(bucket);
   if (listError) {
     console.error('List old community QR files error:', listError);
     return createErrorResponse('无法读取旧二维码', 500);
@@ -126,7 +145,7 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
   const filename = `${Date.now()}-${randomUUID()}.${extension}`;
   const { error: uploadError } = await supabase.storage
-    .from(BUCKET)
+    .from(bucket)
     .upload(filename, fileBuffer, {
       contentType,
       cacheControl: '31536000',
@@ -143,7 +162,7 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   let cleanupComplete = true;
   if (oldNames.length) {
     const { error: removeError } = await supabase.storage
-      .from(BUCKET)
+      .from(bucket)
       .remove(oldNames);
     if (removeError) {
       cleanupComplete = false;
@@ -152,7 +171,7 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
   }
 
   const { data: publicUrl } = supabase.storage
-    .from(BUCKET)
+    .from(bucket)
     .getPublicUrl(filename);
 
   return createSuccessResponse({

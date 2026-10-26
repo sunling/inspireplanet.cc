@@ -18,6 +18,7 @@ import {
 } from '../../utils/recurring';
 import dayjs from 'dayjs';
 import QuestionRenderer from '../../components/QuestionRenderer';
+import SpeakerGroupDialog from '../../components/SpeakerGroupDialog';
 import { getCurrentRoundtableDate } from '../../utils/meetupRoundtable';
 
 import {
@@ -82,6 +83,7 @@ const MeetupDetail: React.FC = () => {
   // 分享报名状态
   const [speakerSignups, setSpeakerSignups] = useState<SpeakerSignup[]>([]);
   const [showSpeakerForm, setShowSpeakerForm] = useState(false);
+  const [showSpeakerGroup, setShowSpeakerGroup] = useState(false);
   const [speakerForm, setSpeakerForm] = useState({
     name: '',
     email: '',
@@ -531,7 +533,11 @@ const MeetupDetail: React.FC = () => {
         setSpeakerSignups((prev) => [...prev, newSignup]);
         setSpeakerForm({ name: '', email: '', topic: '', duration: '' });
         setShowSpeakerForm(false);
-        showSnackbar.success('报名成功！期待你的分享 🎉');
+        if (Number(episode.meetup_id) === 39) {
+          setShowSpeakerGroup(true);
+        } else {
+          showSnackbar.success('分享申请已提交！');
+        }
       } else {
         showSnackbar.error('报名失败，请稍后重试');
       }
@@ -1532,6 +1538,11 @@ const MeetupDetail: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <SpeakerGroupDialog
+        open={showSpeakerGroup}
+        onClose={() => setShowSpeakerGroup(false)}
+      />
 
       {/* 分享报名弹窗 */}
       <Dialog
