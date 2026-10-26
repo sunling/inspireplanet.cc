@@ -820,6 +820,104 @@ const MeetupDetail: React.FC = () => {
                   ? episode.description
                   : meetup.description}
               </Box>
+              {roundtableDate && (
+                <Box
+                  component="section"
+                  aria-labelledby="meetup-participation-title"
+                  sx={{
+                    mt: 2,
+                    pt: 2,
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Typography
+                    id="meetup-participation-title"
+                    component="h3"
+                    variant="subtitle1"
+                    fontWeight={600}
+                  >
+                    如何参与本期线上分享会
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 0.5, mb: 2 }}
+                  >
+                    可以从倾听开始，也可以主动分享，或带来一个想和大家讨论的问题。
+                  </Typography>
+                  <Box sx={{ display: 'grid', gap: 2 }}>
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>
+                        来听一听、聊一聊
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ my: 0.5 }}
+                      >
+                        报名参加本期线上活动，听大家的分享，加入交流。不需要准备分享内容。
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={handleJoinMeetup}
+                        disabled={isActionLoading || isCurrentUserRSVPed}
+                      >
+                        {isCurrentUserRSVPed
+                          ? '已报名本期活动'
+                          : '报名参加本期活动'}
+                      </Button>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>
+                        带来一次分享
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ my: 0.5 }}
+                      >
+                        在本期线上活动中分享你的经历、阅读或思考。填写分享主题和预计时长，等待组织者确认安排。
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={handleOpenSpeakerForm}
+                        disabled={!episode}
+                      >
+                        申请在本期分享
+                      </Button>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>
+                        提交问题场景 · 问题圆桌
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ my: 0.5 }}
+                      >
+                        写下你正在经历、还没想明白的具体问题。分享会最后 20
+                        分钟，我们从大家关心的场景中选一个展开，先理解，再分享经历。提交的问题会进入问题池，由组织者选择和安排。
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          component={Link}
+                          to={`/questions?date=${roundtableDate}#submit-question`}
+                        >
+                          提交问题场景
+                        </Button>
+                        <Button size="small" component={Link} to="/questions">
+                          查看问题圆桌 →
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
             </Card>
 
             {/* 组织者信息 */}
@@ -858,14 +956,16 @@ const MeetupDetail: React.FC = () => {
                     本期分享者{' '}
                     {speakerSignups.length > 0 && `(${speakerSignups.length})`}
                   </Typography>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={handleOpenSpeakerForm}
-                    sx={{ fontWeight: 600 }}
-                  >
-                    申请分享 🎤
-                  </Button>
+                  {!roundtableDate && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={handleOpenSpeakerForm}
+                      sx={{ fontWeight: 600 }}
+                    >
+                      申请分享 🎤
+                    </Button>
+                  )}
                 </Box>
 
                 {speakerSignups.length === 0 ? (
@@ -874,7 +974,9 @@ const MeetupDetail: React.FC = () => {
                     color="text.secondary"
                     sx={{ textAlign: 'center', py: 2 }}
                   >
-                    还没有人报名分享，来做第一个吧！
+                    {roundtableDate
+                      ? '还没有人报名分享，欢迎在上方申请！'
+                      : '还没有人报名分享，来做第一个吧！'}
                   </Typography>
                 ) : (
                   <Box
@@ -1064,79 +1166,30 @@ const MeetupDetail: React.FC = () => {
                 >
                   生成海报
                 </Button>
-                {isUpcomingMeetup && !isCurrentUserRSVPed && (
-                  <Button
-                    variant="contained"
-                    onClick={handleJoinMeetup}
-                    disabled={isActionLoading}
-                    startIcon={
-                      isActionLoading ? (
-                        <CircularProgress size={16} />
-                      ) : undefined
-                    }
-                    sx={{
-                      py: 1.2,
-                      px: 4,
-                      fontSize: '1rem',
-                      textTransform: 'none',
-                    }}
-                  >
-                    我要参加
-                  </Button>
-                )}
-              </Box>
-            </Box>
-
-            {roundtableDate && (
-              <Card
-                component="section"
-                aria-labelledby="meetup-roundtable-title"
-                sx={{ mb: 3, p: 2, borderRadius: 2 }}
-              >
-                <Typography
-                  id="meetup-roundtable-title"
-                  variant="subtitle1"
-                  fontWeight={600}
-                >
-                  本期问题圆桌
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: 0.5 }}
-                >
-                  欢迎来听、来分享，也可以带来一个真实的问题场景。分享会最后 20
-                  分钟，我们选一个共同关心的问题，先理解，再分享经历。
-                </Typography>
-                <Box
-                  sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1.5 }}
-                >
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={handleJoinMeetup}
-                    disabled={isActionLoading || isCurrentUserRSVPed}
-                  >
-                    {isCurrentUserRSVPed ? '已报名参加' : '报名参加'}
-                  </Button>
-                  {episode && (
-                    <Button size="small" onClick={handleOpenSpeakerForm}>
-                      申请分享
+                {isUpcomingMeetup &&
+                  !isCurrentUserRSVPed &&
+                  !roundtableDate && (
+                    <Button
+                      variant="contained"
+                      onClick={handleJoinMeetup}
+                      disabled={isActionLoading}
+                      startIcon={
+                        isActionLoading ? (
+                          <CircularProgress size={16} />
+                        ) : undefined
+                      }
+                      sx={{
+                        py: 1.2,
+                        px: 4,
+                        fontSize: '1rem',
+                        textTransform: 'none',
+                      }}
+                    >
+                      我要参加
                     </Button>
                   )}
-                  <Button
-                    size="small"
-                    component={Link}
-                    to={`/questions?date=${roundtableDate}#submit-question`}
-                  >
-                    提交问题场景
-                  </Button>
-                  <Button size="small" component={Link} to="/questions">
-                    查看问题圆桌 →
-                  </Button>
-                </Box>
-              </Card>
-            )}
+              </Box>
+            </Box>
           </Box>
         </Box>
       </Box>
