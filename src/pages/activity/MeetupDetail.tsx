@@ -37,9 +37,11 @@ import {
   IconButton,
   Tooltip,
   Grid,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import { Share as ShareIcon, Close as CloseIcon } from '@mui/icons-material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 
 import ErrorCard from '../../components/ErrorCard';
@@ -98,6 +100,9 @@ const MeetupDetail: React.FC = () => {
   const [showFollowModal, setShowFollowModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [shareMenuAnchor, setShareMenuAnchor] = useState<HTMLElement | null>(
+    null
+  );
   const [qrColor, setQrColor] = useState<string>('#000000');
   const [qrBgColor, setQrBgColor] = useState<string>('#ffffff');
 
@@ -822,100 +827,43 @@ const MeetupDetail: React.FC = () => {
               </Box>
               {roundtableDate && (
                 <Box
-                  component="section"
-                  aria-labelledby="meetup-participation-title"
+                  role="group"
+                  aria-label="参与本期活动"
                   sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: 1,
                     mt: 2,
-                    pt: 2,
-                    borderTop: '1px solid',
-                    borderColor: 'divider',
                   }}
                 >
-                  <Typography
-                    id="meetup-participation-title"
-                    component="h3"
-                    variant="subtitle1"
-                    fontWeight={600}
+                  <Button
+                    variant="contained"
+                    size="medium"
+                    onClick={handleJoinMeetup}
+                    disabled={isActionLoading || isCurrentUserRSVPed}
+                    sx={{ textTransform: 'none' }}
                   >
-                    如何参与本期线上分享会
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 0.5, mb: 2 }}
+                    {isCurrentUserRSVPed ? '已报名' : '报名参加'}
+                  </Button>
+                  <Button
+                    variant="text"
+                    size="medium"
+                    onClick={handleOpenSpeakerForm}
+                    disabled={!episode}
+                    sx={{ textTransform: 'none' }}
                   >
-                    可以从倾听开始，也可以主动分享，或带来一个想和大家讨论的问题。
-                  </Typography>
-                  <Box sx={{ display: 'grid', gap: 2 }}>
-                    <Box>
-                      <Typography variant="body2" fontWeight={600}>
-                        来听一听、聊一聊
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ my: 0.5 }}
-                      >
-                        报名参加本期线上活动，听大家的分享，加入交流。不需要准备分享内容。
-                      </Typography>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={handleJoinMeetup}
-                        disabled={isActionLoading || isCurrentUserRSVPed}
-                      >
-                        {isCurrentUserRSVPed
-                          ? '已报名本期活动'
-                          : '报名参加本期活动'}
-                      </Button>
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" fontWeight={600}>
-                        带来一次分享
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ my: 0.5 }}
-                      >
-                        在本期线上活动中分享你的经历、阅读或思考。填写分享主题和预计时长，等待组织者确认安排。
-                      </Typography>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={handleOpenSpeakerForm}
-                        disabled={!episode}
-                      >
-                        申请在本期分享
-                      </Button>
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" fontWeight={600}>
-                        提交问题场景 · 问题圆桌
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ my: 0.5 }}
-                      >
-                        写下你正在经历、还没想明白的具体问题。分享会最后 20
-                        分钟，我们从大家关心的场景中选一个展开，先理解，再分享经历。提交的问题会进入问题池，由组织者选择和安排。
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          component={Link}
-                          to={`/questions?date=${roundtableDate}#submit-question`}
-                        >
-                          提交问题场景
-                        </Button>
-                        <Button size="small" component={Link} to="/questions">
-                          查看问题圆桌 →
-                        </Button>
-                      </Box>
-                    </Box>
-                  </Box>
+                    申请分享
+                  </Button>
+                  <Button
+                    variant="text"
+                    size="medium"
+                    component={Link}
+                    to={`/questions?date=${roundtableDate}#submit-question`}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    提交问题场景
+                  </Button>
                 </Box>
               )}
             </Card>
@@ -1133,38 +1081,19 @@ const MeetupDetail: React.FC = () => {
                 }}
               >
                 <Button
-                  variant="outlined"
-                  onClick={() => setShowShareModal(true)}
-                  startIcon={<ShareIcon />}
-                  sx={{
-                    py: 1.2,
-                    px: 3,
-                    fontSize: '1rem',
-                    textTransform: 'none',
-                    '&&': {
-                      color: '#888',
-                      borderColor: '#ccc',
-                    },
-                    '&&:hover': {
-                      borderColor: '#999',
-                      bgcolor: 'rgba(0,0,0,0.04)',
-                    },
-                  }}
+                  id="meetup-share-tools-button"
+                  aria-haspopup="menu"
+                  aria-controls={
+                    shareMenuAnchor ? 'meetup-share-tools-menu' : undefined
+                  }
+                  aria-expanded={shareMenuAnchor ? 'true' : undefined}
+                  variant="text"
+                  size="medium"
+                  color="inherit"
+                  onClick={(event) => setShareMenuAnchor(event.currentTarget)}
+                  sx={{ textTransform: 'none', color: 'text.secondary' }}
                 >
-                  分享活动
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={handleCreatePoster}
-                  startIcon={<span>🖼️</span>}
-                  sx={{
-                    py: 1.2,
-                    px: 3,
-                    fontSize: '1rem',
-                    textTransform: 'none',
-                  }}
-                >
-                  生成海报
+                  转发活动
                 </Button>
                 {isUpcomingMeetup &&
                   !isCurrentUserRSVPed &&
@@ -1489,6 +1418,31 @@ const MeetupDetail: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      <Menu
+        id="meetup-share-tools-menu"
+        anchorEl={shareMenuAnchor}
+        open={Boolean(shareMenuAnchor)}
+        onClose={() => setShareMenuAnchor(null)}
+        slotProps={{ list: { 'aria-labelledby': 'meetup-share-tools-button' } }}
+      >
+        <MenuItem
+          onClick={() => {
+            setShareMenuAnchor(null);
+            setShowShareModal(true);
+          }}
+        >
+          活动链接与二维码
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setShareMenuAnchor(null);
+            handleCreatePoster();
+          }}
+        >
+          生成活动海报
+        </MenuItem>
+      </Menu>
+
       {/* 分享活动对话框 */}
       <Dialog
         open={showShareModal}
@@ -1505,7 +1459,7 @@ const MeetupDetail: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <span>分享活动</span>
+          <span>转发活动</span>
           <IconButton onClick={() => setShowShareModal(false)} size="small">
             <CloseIcon />
           </IconButton>
