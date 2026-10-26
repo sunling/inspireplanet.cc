@@ -18,7 +18,8 @@ import {
 } from '../../utils/recurring';
 import dayjs from 'dayjs';
 import QuestionRenderer from '../../components/QuestionRenderer';
-import QuestionRoundtable from '../roundtable/QuestionRoundtable';
+import SpeakerGroupDialog from '../../components/SpeakerGroupDialog';
+import { getCurrentRoundtableDate } from '../../utils/meetupRoundtable';
 
 import {
   Box,
@@ -37,9 +38,11 @@ import {
   IconButton,
   Tooltip,
   Grid,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import { Share as ShareIcon, Close as CloseIcon } from '@mui/icons-material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 
 import ErrorCard from '../../components/ErrorCard';
@@ -80,6 +83,7 @@ const MeetupDetail: React.FC = () => {
   // 分享报名状态
   const [speakerSignups, setSpeakerSignups] = useState<SpeakerSignup[]>([]);
   const [showSpeakerForm, setShowSpeakerForm] = useState(false);
+  const [showSpeakerGroup, setShowSpeakerGroup] = useState(false);
   const [speakerForm, setSpeakerForm] = useState({
     name: '',
     email: '',
@@ -98,6 +102,9 @@ const MeetupDetail: React.FC = () => {
   const [showFollowModal, setShowFollowModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [shareMenuAnchor, setShareMenuAnchor] = useState<HTMLElement | null>(
+    null
+  );
   const [qrColor, setQrColor] = useState<string>('#000000');
   const [qrBgColor, setQrBgColor] = useState<string>('#ffffff');
 
@@ -151,6 +158,8 @@ const MeetupDetail: React.FC = () => {
   const loadMeetupDetail = async (meetupId: string) => {
     setIsLoading(true);
     setError(null);
+    setEpisode(null);
+    setSpeakerSignups([]);
 
     try {
       // 使用统一的api客户端获取活动详情
@@ -187,7 +196,10 @@ const MeetupDetail: React.FC = () => {
       let episodeId: number | undefined;
       if (hasMeetupEpisodes(processedMeetup)) {
         const searchParams = new URLSearchParams(location.search);
-        const urlDate = searchParams.get('date');
+        const requestedDate = searchParams.get('date');
+        const urlDate =
+          getCurrentRoundtableDate(processedMeetup, requestedDate) ??
+          requestedDate;
         // URL 传来的日期（从日历点击）→ 用北京时区解析；否则算最近一期
         const targetDay = urlDate
           ? dayjs(urlDate)
@@ -491,6 +503,16 @@ const MeetupDetail: React.FC = () => {
     }
   };
 
+  const handleOpenSpeakerForm = () => {
+    const user = getUserInfo();
+    setSpeakerForm((current) => ({
+      ...current,
+      name: user?.name || user?.email || '',
+      email: user?.email || '',
+    }));
+    setShowSpeakerForm(true);
+  };
+
   // 提交分享报名
   const handleSpeakerSubmit = async () => {
     if (!episode || !speakerForm.name.trim() || !speakerForm.topic.trim())
@@ -511,7 +533,11 @@ const MeetupDetail: React.FC = () => {
         setSpeakerSignups((prev) => [...prev, newSignup]);
         setSpeakerForm({ name: '', email: '', topic: '', duration: '' });
         setShowSpeakerForm(false);
-        showSnackbar.success('报名成功！期待你的分享 🎉');
+        if (Number(episode.meetup_id) === 39) {
+          setShowSpeakerGroup(true);
+        } else {
+          showSnackbar.success('分享申请已提交！');
+        }
       } else {
         showSnackbar.error('报名失败，请稍后重试');
       }
@@ -572,9 +598,15 @@ const MeetupDetail: React.FC = () => {
   const renderMeetupDetail = () => {
     if (!meetup) return null;
 
+    const roundtableDate = getCurrentRoundtableDate(
+      meetup,
+      new URLSearchParams(location.search).get('date')
+    );
+
     // 循环活动：用 episode.date（本地日期）+ meetup 本地时分，避免 UTC 偏移导致日期偏移一天
     // 普通活动：直接用 meetup.datetime
     const displayDatetime = (() => {
+      if (roundtableDate) return getNextOccurrence(meetup.datetime);
       if (meetup.is_recurring && episode?.date) {
         const [y, m, d] = episode.date.split('-').map(Number);
         const baseLocal = dayjs(meetup.datetime);
@@ -799,6 +831,47 @@ const MeetupDetail: React.FC = () => {
                   ? episode.description
                   : meetup.description}
               </Box>
+              {roundtableDate && (
+                <Box
+                  role="group"
+                  aria-label="参与本期活动"
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: 1,
+                    mt: 2,
+                  }}
+                >
+                  <Button
+                    variant="contained"
+                    size="medium"
+                    onClick={handleJoinMeetup}
+                    disabled={isActionLoading || isCurrentUserRSVPed}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    {isCurrentUserRSVPed ? '已报名' : '报名参加'}
+                  </Button>
+                  <Button
+                    variant="text"
+                    size="medium"
+                    onClick={handleOpenSpeakerForm}
+                    disabled={!episode}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    申请分享
+                  </Button>
+                  <Button
+                    variant="text"
+                    size="medium"
+                    component={Link}
+                    to={`/questions?date=${roundtableDate}#submit-question`}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    提交问题场景
+                  </Button>
+                </Box>
+              )}
             </Card>
 
             {/* 组织者信息 */}
@@ -837,22 +910,16 @@ const MeetupDetail: React.FC = () => {
                     本期分享者{' '}
                     {speakerSignups.length > 0 && `(${speakerSignups.length})`}
                   </Typography>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => {
-                      const u = getUserInfo();
-                      setSpeakerForm((p) => ({
-                        ...p,
-                        name: u?.name || u?.email || '',
-                        email: u?.email || '',
-                      }));
-                      setShowSpeakerForm(true);
-                    }}
-                    sx={{ fontWeight: 600 }}
-                  >
-                    申请分享 🎤
-                  </Button>
+                  {!roundtableDate && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={handleOpenSpeakerForm}
+                      sx={{ fontWeight: 600 }}
+                    >
+                      申请分享 🎤
+                    </Button>
+                  )}
                 </Box>
 
                 {speakerSignups.length === 0 ? (
@@ -861,7 +928,9 @@ const MeetupDetail: React.FC = () => {
                     color="text.secondary"
                     sx={{ textAlign: 'center', py: 2 }}
                   >
-                    还没有人报名分享，来做第一个吧！
+                    {roundtableDate
+                      ? '还没有人报名分享，欢迎在上方申请！'
+                      : '还没有人报名分享，来做第一个吧！'}
                   </Typography>
                 ) : (
                   <Box
@@ -1018,78 +1087,44 @@ const MeetupDetail: React.FC = () => {
                 }}
               >
                 <Button
-                  variant="outlined"
-                  onClick={() => setShowShareModal(true)}
-                  startIcon={<ShareIcon />}
-                  sx={{
-                    py: 1.2,
-                    px: 3,
-                    fontSize: '1rem',
-                    textTransform: 'none',
-                    '&&': {
-                      color: '#888',
-                      borderColor: '#ccc',
-                    },
-                    '&&:hover': {
-                      borderColor: '#999',
-                      bgcolor: 'rgba(0,0,0,0.04)',
-                    },
-                  }}
+                  id="meetup-share-tools-button"
+                  aria-haspopup="menu"
+                  aria-controls={
+                    shareMenuAnchor ? 'meetup-share-tools-menu' : undefined
+                  }
+                  aria-expanded={shareMenuAnchor ? 'true' : undefined}
+                  variant="text"
+                  size="medium"
+                  color="inherit"
+                  onClick={(event) => setShareMenuAnchor(event.currentTarget)}
+                  sx={{ textTransform: 'none', color: 'text.secondary' }}
                 >
-                  分享活动
+                  转发活动
                 </Button>
-                <Button
-                  variant="outlined"
-                  onClick={handleCreatePoster}
-                  startIcon={<span>🖼️</span>}
-                  sx={{
-                    py: 1.2,
-                    px: 3,
-                    fontSize: '1rem',
-                    textTransform: 'none',
-                  }}
-                >
-                  生成海报
-                </Button>
-                {isUpcomingMeetup && !isCurrentUserRSVPed && (
-                  <Button
-                    variant="contained"
-                    onClick={handleJoinMeetup}
-                    disabled={isActionLoading}
-                    startIcon={
-                      isActionLoading ? (
-                        <CircularProgress size={16} />
-                      ) : undefined
-                    }
-                    sx={{
-                      py: 1.2,
-                      px: 4,
-                      fontSize: '1rem',
-                      textTransform: 'none',
-                    }}
-                  >
-                    我要参加
-                  </Button>
-                )}
+                {isUpcomingMeetup &&
+                  !isCurrentUserRSVPed &&
+                  !roundtableDate && (
+                    <Button
+                      variant="contained"
+                      onClick={handleJoinMeetup}
+                      disabled={isActionLoading}
+                      startIcon={
+                        isActionLoading ? (
+                          <CircularProgress size={16} />
+                        ) : undefined
+                      }
+                      sx={{
+                        py: 1.2,
+                        px: 4,
+                        fontSize: '1rem',
+                        textTransform: 'none',
+                      }}
+                    >
+                      我要参加
+                    </Button>
+                  )}
               </Box>
             </Box>
-
-            {/* 线上长期活动：把本期真实场景圆桌直接放进详情页 */}
-            {meetup.mode === 'online' &&
-              meetup.is_recurring &&
-              isUpcomingMeetup && (
-                <Box sx={{ mb: 4 }}>
-                  <QuestionRoundtable
-                    embedded
-                    sessionDate={episode?.date || formattedDate}
-                    sessionLabel={
-                      meetup.is_recurring && episode
-                        ? `${meetup.title} EP${episode.episode_number} · ${episode.date}`
-                        : `${meetup.title} · ${formattedDate}`
-                    }
-                  />
-                </Box>
-              )}
           </Box>
         </Box>
       </Box>
@@ -1389,6 +1424,31 @@ const MeetupDetail: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      <Menu
+        id="meetup-share-tools-menu"
+        anchorEl={shareMenuAnchor}
+        open={Boolean(shareMenuAnchor)}
+        onClose={() => setShareMenuAnchor(null)}
+        slotProps={{ list: { 'aria-labelledby': 'meetup-share-tools-button' } }}
+      >
+        <MenuItem
+          onClick={() => {
+            setShareMenuAnchor(null);
+            setShowShareModal(true);
+          }}
+        >
+          活动链接与二维码
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setShareMenuAnchor(null);
+            handleCreatePoster();
+          }}
+        >
+          生成活动海报
+        </MenuItem>
+      </Menu>
+
       {/* 分享活动对话框 */}
       <Dialog
         open={showShareModal}
@@ -1405,7 +1465,7 @@ const MeetupDetail: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <span>分享活动</span>
+          <span>转发活动</span>
           <IconButton onClick={() => setShowShareModal(false)} size="small">
             <CloseIcon />
           </IconButton>
@@ -1478,6 +1538,11 @@ const MeetupDetail: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <SpeakerGroupDialog
+        open={showSpeakerGroup}
+        onClose={() => setShowSpeakerGroup(false)}
+      />
 
       {/* 分享报名弹窗 */}
       <Dialog
