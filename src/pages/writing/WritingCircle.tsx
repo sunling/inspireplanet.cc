@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  Link as RouterLink,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -35,6 +39,7 @@ import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ClearIcon from '@mui/icons-material/Clear';
 import DateRangeOutlinedIcon from '@mui/icons-material/DateRangeOutlined';
+import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import dayjs, { Dayjs } from 'dayjs';
 import 'dayjs/locale/zh-cn';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -641,6 +646,15 @@ const WritingCircle: React.FC = () => {
                 justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
                 spacing={1}
               >
+                <Button
+                  component={RouterLink}
+                  to="/my-ebook"
+                  size="small"
+                  variant="outlined"
+                  startIcon={<MenuBookOutlinedIcon />}
+                >
+                  我的电子书
+                </Button>
                 <Button
                   size="small"
                   variant="outlined"
