@@ -1,3 +1,4 @@
+import { protectAction, MailProtectionError } from '../utils/mailProtection';
 import { supabase } from '../../database/supabase';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
@@ -77,8 +78,15 @@ async function handleSendCompletionCertificates(event: NetlifyEvent) {
     !String(input.community || '').trim()
   )
     return createErrorResponse('请完整填写证书必填信息');
-  if (rsvpIds.length > 100)
-    return createErrorResponse('单次最多发送 100 份证书');
+  try {
+    await protectAction(event, 'certificate-mail', auth.user.id);
+  } catch (error) {
+    return createErrorResponse(
+      error instanceof Error ? error.message : '暂时无法处理',
+      error instanceof MailProtectionError ? error.status : 503
+    );
+  }
+  if (rsvpIds.length > 25) return createErrorResponse('单次最多发送 25 份证书');
   const startDate = String(input.start_date);
   const endDate = String(input.end_date);
   const completionDate = String(input.completion_date);
@@ -288,13 +296,21 @@ async function handleAddToWritingGroup(event: NetlifyEvent) {
 }
 
 async function handleBatchReject(event: NetlifyEvent) {
+  const auth = await requireOrganizer(event);
+  if (auth.error) return auth.error;
+  if (event.httpMethod !== 'POST')
+    return createErrorResponse('请求方式不支持', 405);
   try {
     const requestData = getDataFromEvent(event);
-    const { meetup_id, rsvp_ids, send_email, approved_by } = requestData;
+    const { meetup_id, rsvp_ids, send_email } = requestData;
 
     if (!meetup_id || !rsvp_ids || !Array.isArray(rsvp_ids)) {
       return createErrorResponse('缺少必要参数');
     }
+
+    if (rsvp_ids.length > 25)
+      return createErrorResponse('单次最多处理 25 位参与者');
+    if (send_email) await protectAction(event, 'approval-mail', auth.user.id);
 
     const meetupIdNum = Number(meetup_id);
     if (!Number.isFinite(meetupIdNum) || meetupIdNum <= 0) {
@@ -319,7 +335,7 @@ async function handleBatchReject(event: NetlifyEvent) {
       .from('meetup_rsvps')
       .update({
         application_status: ApprovalStatus.REJECTED,
-        approved_by: approved_by || 'Organizer',
+        approved_by: auth.user.name,
         approved_at: now,
       })
       .in('id', rsvp_ids)
@@ -331,6 +347,7 @@ async function handleBatchReject(event: NetlifyEvent) {
       return createErrorResponse('更新失败', 500);
     }
 
+    let emailFailed = 0;
     // 如果需要发送邮件通知
     if (send_email && updatedRsvps && updatedRsvps.length > 0) {
       for (const rsvp of updatedRsvps) {
@@ -368,6 +385,7 @@ async function handleBatchReject(event: NetlifyEvent) {
               // 忽略这个错误，因为这两个字段可能也不存在
             }
           } catch (emailError) {
+            emailFailed += 1;
             console.error('发送拒绝邮件失败:', emailError);
           }
         }
@@ -377,21 +395,32 @@ async function handleBatchReject(event: NetlifyEvent) {
     return createSuccessResponse({
       message: `已拒绝 ${updatedRsvps?.length || 0} 位参与者`,
       count: updatedRsvps?.length || 0,
+      email_failed_count: emailFailed,
     });
   } catch (error) {
+    if (error instanceof MailProtectionError)
+      return createErrorResponse(error.message, error.status);
     console.error('Batch reject error:', error);
     return createErrorResponse('批量拒绝失败', 500);
   }
 }
 
 async function handleBatchConfirm(event: NetlifyEvent) {
+  const auth = await requireOrganizer(event);
+  if (auth.error) return auth.error;
+  if (event.httpMethod !== 'POST')
+    return createErrorResponse('请求方式不支持', 405);
   try {
     const requestData = getDataFromEvent(event);
-    const { meetup_id, rsvp_ids, send_email, approved_by } = requestData;
+    const { meetup_id, rsvp_ids, send_email } = requestData;
 
     if (!meetup_id || !rsvp_ids || !Array.isArray(rsvp_ids)) {
       return createErrorResponse('缺少必要参数');
     }
+
+    if (rsvp_ids.length > 25)
+      return createErrorResponse('单次最多处理 25 位参与者');
+    if (send_email) await protectAction(event, 'approval-mail', auth.user.id);
 
     const meetupIdNum = Number(meetup_id);
     if (!Number.isFinite(meetupIdNum) || meetupIdNum <= 0) {
@@ -413,7 +442,7 @@ async function handleBatchConfirm(event: NetlifyEvent) {
     const updateFields: Record<string, any> = {
       status: RSVPStatus.CONFIRMED,
       application_status: ApprovalStatus.APPROVED,
-      approved_by: approved_by || 'Organizer',
+      approved_by: auth.user.name,
       approved_at: now,
     };
 
@@ -430,6 +459,7 @@ async function handleBatchConfirm(event: NetlifyEvent) {
       return createErrorResponse('更新失败', 500);
     }
 
+    let emailFailed = 0;
     // 如果需要发送邮件通知
     if (send_email && updatedRsvps && updatedRsvps.length > 0) {
       for (const rsvp of updatedRsvps) {
@@ -472,6 +502,7 @@ async function handleBatchConfirm(event: NetlifyEvent) {
               // 忽略这个错误，因为这两个字段可能也不存在
             }
           } catch (emailError) {
+            emailFailed += 1;
             console.error('发送邮件失败:', emailError);
           }
         }
@@ -481,14 +512,19 @@ async function handleBatchConfirm(event: NetlifyEvent) {
     return createSuccessResponse({
       message: `已确认 ${updatedRsvps?.length || 0} 位参与者`,
       count: updatedRsvps?.length || 0,
+      email_failed_count: emailFailed,
     });
   } catch (error) {
+    if (error instanceof MailProtectionError)
+      return createErrorResponse(error.message, error.status);
     console.error('Batch confirm error:', error);
     return createErrorResponse('批量确认失败', 500);
   }
 }
 
 async function handleGetParticipants(event: NetlifyEvent) {
+  const auth = await requireOrganizer(event);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
     const { meetup_id, page = 1, limit = 10, stats_only = false } = requestData;

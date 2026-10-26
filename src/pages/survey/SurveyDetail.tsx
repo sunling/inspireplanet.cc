@@ -75,7 +75,6 @@ const SurveyDetail: React.FC = () => {
         if (respondentId) {
           const checkResponse = await surveyApi.checkSubmission({
             survey_id: surveyId!,
-            respondent_id: String(respondentId),
           });
 
           if (checkResponse.success && checkResponse.data) {
@@ -175,7 +174,6 @@ const SurveyDetail: React.FC = () => {
         response = await surveyApi.submit({
           survey_id: survey.id,
           answers: submitAnswers,
-          respondent_id: String(respondentId),
         });
       }
 

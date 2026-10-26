@@ -1,3 +1,8 @@
+vi.mock('../netlify/utils/mailProtection', async (importOriginal) => ({
+  ...(await importOriginal<any>()),
+  protectAction: vi.fn(async () => {}),
+  sendProtectedEmail: vi.fn(async () => ({ id: 'mock-mail' })),
+}));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   normalizeRoundtableSessionDate,

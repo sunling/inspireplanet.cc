@@ -1,3 +1,4 @@
+import { sendProtectedEmail } from '../utils/mailProtection';
 import { supabase } from '../../database/supabase';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
@@ -205,57 +206,14 @@ export async function createNotification(
 }
 
 async function sendEmail(to: string, subject: string, text: string) {
-  const resendKey = process.env.RESEND_API_KEY;
-  const sendgridKey = process.env.SENDGRID_API_KEY;
   try {
-    if (resendKey) {
-      const from = process.env.EMAIL_FROM || 'onboarding@resend.dev';
-      console.log('[notifications] sending via Resend to:', to, 'from:', from);
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ from, to, subject, text }),
-      });
-      if (!res.ok) {
-        const body = await res.text();
-        console.error('Resend email failed:', res.status, body);
-      }
-      return;
-    }
-    if (sendgridKey) {
-      const from = process.env.EMAIL_FROM || 'no-reply@inspireplanet.cc';
-      console.log(
-        '[notifications] sending via SendGrid to:',
-        to,
-        'from:',
-        from
-      );
-      const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${sendgridKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          personalizations: [{ to: [{ email: to }] }],
-          from: { email: from },
-          subject,
-          content: [{ type: 'text/plain', value: text }],
-        }),
-      });
-      if (!res.ok) {
-        const body = await res.text();
-        console.error('SendGrid email failed:', res.status, body);
-      }
-      return;
-    }
-    console.warn(
-      '[notifications] no email provider configured: set RESEND_API_KEY or SENDGRID_API_KEY'
-    );
-  } catch (e) {
-    console.error('sendEmail error:', e);
+    await sendProtectedEmail({
+      from: process.env.EMAIL_FROM || 'noreply@inspireplanet.cc',
+      to,
+      subject,
+      text,
+    });
+  } catch {
+    console.error('Notification email not delivered');
   }
 }
