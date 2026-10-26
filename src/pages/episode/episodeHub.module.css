@@ -823,3 +823,59 @@
   font-weight: 600;
   text-underline-offset: 3px;
 }
+
+/* Brief reading first; full context remains available on demand. */
+.topicPreview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  margin: 0 0 12px;
+  color: #62554c;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.topicCard:has(.topicDetails[open]) > .topicPreview,
+.weeklyCard:has(.topicDetails[open]) .topicPreview {
+  display: none;
+}
+
+.topicDetails > summary {
+  width: fit-content;
+  padding: 8px 0;
+  cursor: pointer;
+  color: #9a4729;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.topicDetails > summary:focus-visible {
+  outline: 2px solid #a94e2b;
+  outline-offset: 4px;
+  border-radius: 3px;
+}
+
+.topicDetails[open] > summary {
+  margin-bottom: 12px;
+}
+
+.collapseLabel,
+.topicDetails[open] > summary .expandLabel {
+  display: none;
+}
+
+.topicDetails[open] > summary .collapseLabel {
+  display: inline;
+}
+
+.sectionHeading > a.cardCollectionLink {
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-underline-offset: 4px;
+}
+
+.sectionHeading > a.cardCollectionLink:hover {
+  text-decoration: underline;
+}

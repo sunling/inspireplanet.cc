@@ -140,18 +140,30 @@ const EpisodeHub: React.FC = () => {
   }, [meetupId, episodeNumber, routeYear]);
 
   useEffect(() => {
-    if (
-      !isLoading &&
-      ['#responses', '#roundtable'].includes(window.location.hash)
-    ) {
-      window.requestAnimationFrame(() => {
-        document.getElementById(window.location.hash.slice(1))?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        });
+    if (isLoading) return;
+    let frame = 0;
+    const revealAnchor = () => {
+      const hash = window.location.hash;
+      if (
+        !['#responses', '#roundtable', '#weekly-heading'].includes(hash) &&
+        !/^#topic-\d+$/.test(hash)
+      )
+        return;
+      frame = window.requestAnimationFrame(() => {
+        const target = document.getElementById(hash.slice(1));
+        if (/^#topic-\d+$/.test(hash)) {
+          target?.querySelector('details')?.setAttribute('open', '');
+        }
+        target?.scrollIntoView({ block: 'start' });
       });
-    }
-  }, [isLoading]);
+    };
+    revealAnchor();
+    window.addEventListener('hashchange', revealAnchor);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('hashchange', revealAnchor);
+    };
+  }, [isLoading, episodeNumber, routeYear]);
 
   const respondToQuote = (quote: string, speaker = '', label = '') => {
     navigate(createUrl, {
@@ -303,55 +315,6 @@ const EpisodeHub: React.FC = () => {
                 ? `本期共整理了 ${weeklyCards.length} 段来自现场真实分享的记录，涵盖过去一周的阅读、观察与实践。`
                 : '大家从过去一周带来各自的碎片输入、启发与思考。这里收集本期分享，以及会议结束后仍想留下的话。')}
           </p>
-
-          {hasStructuredSummary && episodeSummary?.topics && (
-            <nav className={styles.topicOutlineNav} aria-label="本期话题速览">
-              {episodeSummary.topics.map((topic, idx) => (
-                <a
-                  key={`${topic.title}-${idx}`}
-                  href={`#topic-${idx + 1}`}
-                  className={styles.topicOutlineItem}
-                >
-                  <span className={styles.topicOutlineIndex}>
-                    {String(idx + 1).padStart(2, '0')}
-                  </span>
-                  <span className={styles.topicOutlineText}>
-                    {topic.speaker ? `${topic.speaker}：` : ''}
-                    {topic.title.split(/[：:]/)[0]}
-                  </span>
-                </a>
-              ))}
-            </nav>
-          )}
-
-          <div className={styles.heroFooter}>
-            <div className={styles.heroActions}>
-              <Link to={createUrl} className={styles.primaryAction}>
-                留下感受和收获
-              </Link>
-            </div>
-
-            <nav className={styles.anchorNav} aria-label="本页内容导航">
-              {(hasStructuredSummary || weeklyCards.length > 0) && (
-                <a href="#weekly-heading" className={styles.anchorPill}>
-                  {hasStructuredSummary
-                    ? `分享纪要 (${episodeSummary?.topics.length})`
-                    : `本期分享 (${weeklyCards.length})`}
-                </a>
-              )}
-              {weeklyCards.length > 0 && (
-                <Link to={weeklyIssueHref} className={styles.anchorPill}>
-                  本期周刊
-                </Link>
-              )}
-              <a href="#roundtable" className={styles.anchorPill}>
-                问题圆桌
-              </a>
-              <a href="#responses" className={styles.anchorPill}>
-                回应墙 ({responses.length})
-              </a>
-            </nav>
-          </div>
         </div>
       </header>
 
@@ -362,18 +325,18 @@ const EpisodeHub: React.FC = () => {
       >
         <div className={styles.sectionHeading}>
           <div>
-            <p>
-              {hasStructuredSummary
-                ? `本期会议纪要 · ${episodeSummary?.topics.length} 个核心话题`
-                : `本期分享 · 共 ${weeklyCards.length} 篇`}
-            </p>
-            <h2 id="weekly-heading">这一期，我们分享了什么</h2>
+            <h2 id="weekly-heading">这一期聊了什么</h2>
           </div>
+          {weeklyCards.length > 0 && (
+            <Link to={weeklyIssueHref} className={styles.cardCollectionLink}>
+              本期金句卡片 ↗
+            </Link>
+          )}
         </div>
 
         {(hasStructuredSummary || weeklyCards.length > 0) && (
           <p className={styles.readingHint}>
-            选中金句或正文里触动你的文字，就可以带着引用回应。
+            展开感兴趣的话题；选中文字，可以带着引用回应。
           </p>
         )}
         {hasStructuredSummary && episodeSummary ? (
@@ -385,7 +348,7 @@ const EpisodeHub: React.FC = () => {
                   data-response-source
                   data-response-speaker={getSourceSpeaker(topic.speaker)}
                   className={styles.topicCard}
-                  key={`${topic.speaker}-${idx}`}
+                  key={`${routeYear}/${episodeNumber}/${idx}`}
                 >
                   <div className={styles.topicHeader}>
                     <span className={styles.topicSpeaker}>
@@ -402,36 +365,53 @@ const EpisodeHub: React.FC = () => {
 
                   {topic.quote && <blockquote>{topic.quote}</blockquote>}
 
+                  {(topic.context || topic.summary) && (
+                    <p className={styles.topicPreview}>
+                      {topic.context || topic.summary}
+                    </p>
+                  )}
                   {(topic.context ||
-                    (!topic.keyPoints?.length && topic.summary)) && (
-                    <div className={styles.topicContextBox}>
-                      <span className={styles.blockLabel}>分享缘起</span>
-                      <p className={styles.topicBody}>
-                        {topic.context || topic.summary}
-                      </p>
-                    </div>
-                  )}
+                    topic.summary ||
+                    topic.keyPoints?.length ||
+                    topic.discussion) && (
+                    <details className={styles.topicDetails}>
+                      <summary>
+                        <span className={styles.expandLabel}>
+                          展开分享与讨论
+                        </span>
+                        <span className={styles.collapseLabel}>收起详情</span>
+                      </summary>
+                      {(topic.context || topic.summary) && (
+                        <div className={styles.topicContextBox}>
+                          <span className={styles.blockLabel}>分享缘起</span>
+                          <p className={styles.topicBody}>
+                            {topic.context || topic.summary}
+                          </p>
+                        </div>
+                      )}
 
-                  {topic.keyPoints && topic.keyPoints.length > 0 && (
-                    <div className={styles.topicKeyPointsBox}>
-                      <span className={styles.blockLabel}>关键脉络</span>
-                      <ol className={styles.keyPointsList}>
-                        {topic.keyPoints.map((point, pIdx) => (
-                          <li key={pIdx}>{renderKeyPointText(point)}</li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
+                      {topic.keyPoints && topic.keyPoints.length > 0 && (
+                        <div className={styles.topicKeyPointsBox}>
+                          <span className={styles.blockLabel}>关键脉络</span>
+                          <ol className={styles.keyPointsList}>
+                            {topic.keyPoints.map((point, pIdx) => (
+                              <li key={pIdx}>{renderKeyPointText(point)}</li>
+                            ))}
+                          </ol>
+                        </div>
+                      )}
 
-                  {topic.discussion && (
-                    <div
-                      data-response-source
-                      data-response-label="现场讨论"
-                      className={styles.topicDiscussion}
-                    >
-                      <strong>现场追问与碰撞</strong>
-                      <p>{topic.discussion}</p>
-                    </div>
+                      {topic.discussion && (
+                        <div
+                          data-response-source
+                          data-response-label="现场讨论"
+                          className={styles.topicDiscussion}
+                        >
+                          <strong>现场追问与碰撞</strong>
+                          <p>{topic.discussion}</p>
+                        </div>
+                      )}
+                    </details>
                   )}
                 </article>
               ))}
@@ -439,18 +419,19 @@ const EpisodeHub: React.FC = () => {
 
             {episodeSummary.highlights &&
               episodeSummary.highlights.length > 0 && (
-                <div
+                <details
                   data-response-source
                   data-response-label="现场片段"
-                  className={styles.highlightsBox}
+                  className={`${styles.highlightsBox} ${styles.topicDetails}`}
+                  key={`${routeYear}/${episodeNumber}/highlights`}
                 >
-                  <strong>现场还聊到</strong>
+                  <summary>现场还聊到</summary>
                   <ul>
                     {episodeSummary.highlights.map((item, idx) => (
                       <li key={idx}>{item}</li>
                     ))}
                   </ul>
-                </div>
+                </details>
               )}
           </div>
         ) : weeklyCards.length > 0 ? (
@@ -462,7 +443,7 @@ const EpisodeHub: React.FC = () => {
                   data-response-source
                   data-response-speaker={getSourceSpeaker(card.name)}
                   className={styles.weeklyCard}
-                  key={card.id}
+                  key={`${routeYear}/${episodeNumber}/${card.id}`}
                 >
                   <div className={styles.topicHeader}>
                     <span className={styles.topicSpeaker}>
@@ -475,11 +456,22 @@ const EpisodeHub: React.FC = () => {
                   <h3>{card.title}</h3>
                   {card.quote && <blockquote>{card.quote}</blockquote>}
                   {paragraphs.length > 0 && (
-                    <div className={styles.cardDetailBody}>
-                      {paragraphs.map((para, pIdx) => (
-                        <p key={pIdx}>{para}</p>
-                      ))}
-                    </div>
+                    <>
+                      <p className={styles.topicPreview}>{paragraphs[0]}</p>
+                      <details className={styles.topicDetails}>
+                        <summary>
+                          <span className={styles.expandLabel}>
+                            展开分享详情
+                          </span>
+                          <span className={styles.collapseLabel}>收起详情</span>
+                        </summary>
+                        <div className={styles.cardDetailBody}>
+                          {paragraphs.map((para, pIdx) => (
+                            <p key={pIdx}>{para}</p>
+                          ))}
+                        </div>
+                      </details>
+                    </>
                   )}
                 </article>
               );
@@ -493,15 +485,6 @@ const EpisodeHub: React.FC = () => {
             </p>
           </div>
         )}
-        {weeklyCards.length > 0 && (
-          <aside className={styles.weeklyIssue} aria-label="本期周刊">
-            <div>
-              <strong>把本期的启发带走</strong>
-              <p>在启发星球周刊里阅读金句与分享语境，收藏或分享喜欢的卡片。</p>
-            </div>
-            <Link to={weeklyIssueHref}>阅读本期周刊 →</Link>
-          </aside>
-        )}
       </section>
 
       <EpisodeRoundtable episodeNumber={episodeNumber} year={episodeYear} />
@@ -514,10 +497,10 @@ const EpisodeHub: React.FC = () => {
         <div className={styles.sectionHeading}>
           <div>
             <p>本期回应墙 · {responses.length} 条</p>
-            <h2 id="responses-heading">从这些片段继续生长</h2>
+            <h2 id="responses-heading">大家的回应</h2>
           </div>
           <Link to={createUrl} className={styles.primaryAction}>
-            留下我的回应
+            留下回应
           </Link>
         </div>
 
@@ -571,9 +554,6 @@ const EpisodeHub: React.FC = () => {
             <span>✦</span>
             <h3>这里正等着第一句话</h3>
             <p>可以是一句话、一个片段，或刚刚冒出的新想法。</p>
-            <Link to={createUrl} className={styles.primaryAction}>
-              成为第一个回应的人
-            </Link>
           </div>
         )}
       </section>
