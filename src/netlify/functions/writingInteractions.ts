@@ -10,6 +10,63 @@ import {
 } from '../utils/server';
 import { getOrCreateAnonymousAlias } from '../utils/writingAnonymousAlias';
 
+const COMMENT_SELECT =
+  'id, post_id, user_id, parent_id, content, anonymous_alias, created_at, author:users!writing_comments_user_id_fkey(id, name, username)';
+async function getPostComments(postId: string) {
+  const query = supabase
+    .from('writing_comments')
+    .select(`${COMMENT_SELECT}, review_post_id`)
+    .eq('post_id', postId)
+    .eq('status', 'published')
+    .order('created_at');
+  let result = await query;
+  if (
+    result.error &&
+    ['42703', 'PGRST204'].includes(result.error.code) &&
+    /review_post_id/.test(result.error.message)
+  ) {
+    result = await query.select(COMMENT_SELECT);
+  }
+  if (result.error) return result;
+  const rows: any[] = result.data || [];
+  const reviewIds = [
+    ...new Set(
+      rows
+        .filter((row) => row.review_post_id)
+        .map((row) => String(row.review_post_id))
+    ),
+  ];
+  let visible = rows;
+  if (reviewIds.length) {
+    // Check the current review visibility as well as comment status. This also
+    // protects readers during schema rollout or when a stale response still exists.
+    const { data: reviews, error } = await supabase
+      .from('writing_posts')
+      .select('id')
+      .in('id', reviewIds)
+      .eq('visibility', 'public')
+      .eq('status', 'published');
+    if (error) return { data: null, error };
+    const publicIds = new Set(
+      (reviews || []).map((row: any) => String(row.id))
+    );
+    visible = rows.filter(
+      (row) => !row.review_post_id || publicIds.has(String(row.review_post_id))
+    );
+  }
+  // Replies belonging to a hidden review response must not appear on their own.
+  let changed = true;
+  while (changed) {
+    const ids = new Set(visible.map((row) => String(row.id)));
+    const next = visible.filter(
+      (row) => !row.parent_id || ids.has(String(row.parent_id))
+    );
+    changed = next.length !== visible.length;
+    visible = next;
+  }
+  return { ...result, data: visible };
+}
+
 const validId = (value: unknown) =>
   /^\d+$/.test(String(value || '')) ? String(value) : null;
 
@@ -48,6 +105,7 @@ function mapComment(row: any, userId?: string, isAdmin = false) {
     post_id: String(row.post_id),
     user_id: isAnonymous ? '' : String(row.user_id),
     parent_id: row.parent_id ? String(row.parent_id) : null,
+    review_post_id: row.review_post_id ? String(row.review_post_id) : null,
     content: row.content || '',
     created_at: row.created_at,
     author: {
@@ -76,14 +134,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('书写不存在', 404);
     const [{ data: comments, error }, { count }, { data: mine }] =
       await Promise.all([
-        supabase
-          .from('writing_comments')
-          .select(
-            'id, post_id, user_id, parent_id, content, anonymous_alias, created_at, author:users!writing_comments_user_id_fkey(id, name, username)'
-          )
-          .eq('post_id', postId)
-          .eq('status', 'published')
-          .order('created_at'),
+        getPostComments(postId),
         supabase
           .from('writing_resonances')
           .select('id', { count: 'exact', head: true })

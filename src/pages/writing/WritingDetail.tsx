@@ -368,12 +368,28 @@ const WritingDetail: React.FC = () => {
         >
           <Typography fontWeight={700} color="#576b95" fontSize={14}>
             {item.author.name}
+            {item.review_post_id && (
+              <Chip
+                size="small"
+                label="作者回看"
+                sx={{ ml: 1, bgcolor: '#e8f1ed', color: '#3e685b' }}
+              />
+            )}
           </Typography>
           <Typography
             sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, mt: 0.25 }}
           >
             {item.content}
           </Typography>
+          {item.review_post_id && (
+            <Button
+              size="small"
+              onClick={() => navigate(`/writing-circle/${item.review_post_id}`)}
+              sx={{ px: 0, mt: 0.5 }}
+            >
+              查看回看全文
+            </Button>
+          )}
           <Stack
             direction="row"
             alignItems="center"
@@ -657,6 +673,31 @@ const WritingDetail: React.FC = () => {
               </>
             )}
 
+            {post.writing_type === 'review' && (
+              <Box
+                sx={{
+                  mb: 3,
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: '#edf3ee',
+                  color: '#3e685b',
+                }}
+              >
+                <Typography fontWeight={700}>
+                  回看书写 · 重新看见自己
+                </Typography>
+                {post.can_edit && post.review_source_id && (
+                  <Button
+                    onClick={() =>
+                      navigate(`/writing-circle/${post.review_source_id}`)
+                    }
+                    size="small"
+                  >
+                    查看当时的原书写
+                  </Button>
+                )}
+              </Box>
+            )}
             {post.body.trim() && (
               <>
                 <Divider />
@@ -767,7 +808,7 @@ const WritingDetail: React.FC = () => {
               </Box>
             )}
 
-            {post.visibility !== 'private' && (
+            {(post.visibility !== 'private' || post.can_edit) && (
               <>
                 <Divider />
                 <Box>
@@ -977,7 +1018,7 @@ const WritingDetail: React.FC = () => {
           </Box>
         </Box>
       )}
-      {post?.visibility !== 'private' && (
+      {post && (post.visibility !== 'private' || post.can_edit) && (
         <Paper
           square
           elevation={10}

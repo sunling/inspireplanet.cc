@@ -80,6 +80,8 @@ export interface WritingAuthor {
 }
 
 export interface WritingPost {
+  writing_type: 'original' | 'review';
+  review_source_id?: string | null;
   id: string;
   user_id: string;
   title?: string | null;
@@ -105,6 +107,7 @@ export interface WritingPost {
 }
 
 export interface WritingComment {
+  review_post_id?: string | null;
   id: string;
   post_id: string;
   user_id: string;
@@ -131,6 +134,7 @@ export interface WritingAnswerInput {
 }
 
 export interface CreateWritingRequest {
+  review_source_id?: string | null;
   title?: string;
   body: string;
   editor_mode?: WritingEditorMode;
@@ -147,6 +151,8 @@ export interface CreateWritingRequest {
 export type UpdateWritingRequest = CreateWritingRequest;
 
 export interface WritingListParams {
+  writing_type?: 'original' | 'review';
+  keyword?: string;
   scope?: 'all' | 'mine' | 'partners';
   group_id?: string;
   topic_ids?: string[];
@@ -163,4 +169,19 @@ export interface WritingListResponse {
   total: number;
   page: number;
   page_size: number;
+}
+
+export interface WritingReviewNote {
+  post_id: string;
+  discovery: string;
+  updated_at: string;
+}
+export interface WritingWeeklyReview {
+  week: string;
+  last_day: string;
+  post: WritingPost | null;
+  note: WritingReviewNote | null;
+  note_error?: string | null;
+  total: number;
+  page: number;
 }

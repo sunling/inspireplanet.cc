@@ -40,7 +40,8 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
         height: '100%',
         borderRadius: 3,
         border: '1px solid',
-        borderColor: 'divider',
+        borderColor: post.writing_type === 'review' ? '#b9d3c7' : 'divider',
+        bgcolor: post.writing_type === 'review' ? '#fcfefc' : undefined,
         transition: 'transform 0.2s ease, border-color 0.2s ease',
         '&:hover': {
           transform: 'translateY(-2px)',
@@ -57,6 +58,19 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
             p: 3,
           }}
         >
+          {post.writing_type === 'review' && (
+            <Chip
+              size="small"
+              label="回看书写"
+              sx={{
+                alignSelf: 'flex-start',
+                mb: 1.5,
+                bgcolor: '#e8f1ed',
+                color: '#3e685b',
+                fontWeight: 700,
+              }}
+            />
+          )}
           {(post.visibility === 'private' || post.template_snapshot) && (
             <Stack
               direction="row"

@@ -8,6 +8,8 @@ import {
 export const WRITING_POST_SELECT = `
   id,
   user_id,
+  writing_type,
+  review_source_id,
   title,
   body,
   editor_mode,
@@ -27,6 +29,37 @@ export const WRITING_POST_SELECT = `
     topic:writing_topics(id, name, slug, description, sort_order, is_user_created)
   )
 `;
+
+// Deployments can receive application code before the review schema migration.
+// Retry only these two additive columns. Each caller retains every owner and
+// visibility filter, pagination option and single-row/count setting.
+export const LEGACY_WRITING_POST_SELECT = WRITING_POST_SELECT.replace(
+  /  (writing_type|review_source_id),\n/g,
+  ''
+);
+export function isMissingWritingReviewColumn(
+  error: { code?: string; message?: string } | null | undefined
+): boolean {
+  return (
+    !!error &&
+    ['42703', 'PGRST204'].includes(error.code || '') &&
+    /(?:writing_type|review_source_id)/.test(error.message || '')
+  );
+}
+export const WRITING_REVIEW_UPGRADE_MESSAGE =
+  '回看数据库尚未升级，请执行回看功能的数据库迁移后重试';
+interface WritingQueryResult {
+  data: any;
+  error: { code?: string; message: string } | null;
+  count?: number | null;
+}
+export async function readWritingPosts(
+  run: (columns: string) => PromiseLike<WritingQueryResult>
+): Promise<WritingQueryResult> {
+  const result = await run(WRITING_POST_SELECT);
+  if (!isMissingWritingReviewColumn(result.error)) return result;
+  return await run(LEGACY_WRITING_POST_SELECT);
+}
 
 export function getWritingDateRangeError(
   dateFrom: string,
@@ -128,6 +161,9 @@ export function mapWritingPost(
     row.body_rich.type === 'doc';
 
   return {
+    writing_type: row.writing_type === 'review' ? 'review' : 'original',
+    review_source_id:
+      isOwner && row.review_source_id ? String(row.review_source_id) : null,
     id: String(row.id),
     user_id: isAnonymous && !isOwner ? '' : String(row.user_id || ''),
     title: row.title || null,

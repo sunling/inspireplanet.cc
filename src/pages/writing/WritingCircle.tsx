@@ -12,6 +12,7 @@ import {
   IconButton,
   InputLabel,
   InputAdornment,
+  Menu,
   MenuItem,
   Pagination,
   Paper,
@@ -22,6 +23,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import AddIcon from '@mui/icons-material/Add';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -37,6 +40,7 @@ import 'dayjs/locale/zh-cn';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import WeeklyReview from '../../components/writing/WeeklyReview';
 import WritingCard from '../../components/writing/WritingCard';
 import TopicChip from '../../components/writing/TopicChip';
 import Loading from '../../components/Loading';
@@ -57,6 +61,14 @@ import { useAuth } from '../../context/auth';
 import { buildWritingTxt } from '../user/ebook';
 
 const PAGE_SIZE = 9;
+const AI_WEBSITES = [
+  { name: 'DeepSeek', url: 'https://chat.deepseek.com/' },
+  { name: '豆包', url: 'https://www.doubao.com/chat/' },
+  { name: 'Kimi', url: 'https://www.kimi.com/' },
+  { name: 'ChatGPT', url: 'https://chatgpt.com/' },
+  { name: 'Claude', url: 'https://claude.ai/' },
+  { name: 'Gemini', url: 'https://gemini.google.com/' },
+];
 
 function matchesTopic(topic: WritingTopic, query: string): boolean {
   const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -131,6 +143,7 @@ const WritingCircle: React.FC = () => {
       ? dayjs(searchParams.get('date_to'))
       : null,
   ]);
+  const [aiMenuAnchor, setAiMenuAnchor] = useState<HTMLElement | null>(null);
   const [downloadingTxt, setDownloadingTxt] = useState(false);
   const mineLoadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -150,6 +163,10 @@ const WritingCircle: React.FC = () => {
   const dateTo = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.get('date_to') || '')
     ? searchParams.get('date_to') || ''
     : '';
+  const keyword = searchParams.get('keyword') || '';
+  const [keywordInput, setKeywordInput] = useState(keyword);
+  const isReview = searchParams.get('scope') === 'review';
+  useEffect(() => setKeywordInput(keyword), [keyword]);
   const creator = searchParams.get('creator') || '';
   const normalizedCreatorInput = creatorInput || '';
   const groupId = searchParams.get('group') || '';
@@ -197,7 +214,7 @@ const WritingCircle: React.FC = () => {
   }, [isAuthenticated, isAuthLoading, retryCount]);
 
   useEffect(() => {
-    if (scope === 'mine') return;
+    if (scope === 'mine' || isReview) return;
     let active = true;
     setLoading(true);
     setError('');
@@ -210,6 +227,7 @@ const WritingCircle: React.FC = () => {
         sort,
         page,
         page_size: PAGE_SIZE,
+        keyword: keyword || undefined,
         creator: creator || undefined,
         date_from: dateFrom || undefined,
         date_to: dateTo || undefined,
@@ -234,6 +252,8 @@ const WritingCircle: React.FC = () => {
       active = false;
     };
   }, [
+    isReview,
+    keyword,
     creator,
     dateFrom,
     dateTo,
@@ -247,7 +267,7 @@ const WritingCircle: React.FC = () => {
 
   useEffect(() => {
     if (scope === 'mine') setMinePage(1);
-  }, [creator, dateFrom, dateTo, groupId, scope, sort, topicId]);
+  }, [keyword, creator, dateFrom, dateTo, groupId, scope, sort, topicId]);
 
   useEffect(() => {
     if (scope !== 'mine') return;
@@ -268,6 +288,7 @@ const WritingCircle: React.FC = () => {
         sort,
         page: minePage,
         page_size: PAGE_SIZE,
+        keyword: keyword || undefined,
         creator: creator || undefined,
         date_from: dateFrom || undefined,
         date_to: dateTo || undefined,
@@ -302,6 +323,7 @@ const WritingCircle: React.FC = () => {
       active = false;
     };
   }, [
+    keyword,
     creator,
     dateFrom,
     dateTo,
@@ -376,6 +398,7 @@ const WritingCircle: React.FC = () => {
     setDraftTopicId('');
     setTopicQuery('');
     updateParams({
+      keyword: null,
       creator: null,
       date_from: null,
       date_to: null,
@@ -403,14 +426,17 @@ const WritingCircle: React.FC = () => {
   );
 
   const handleScopeChange = (_event: React.SyntheticEvent, value: string) => {
-    if ((value === 'mine' || value === 'partners') && !isAuthenticated) {
+    if (
+      (value === 'mine' || value === 'partners' || value === 'review') &&
+      !isAuthenticated
+    ) {
       navigate(
         `/login?redirect=${encodeURIComponent(`/writing-circle?scope=${value}`)}`
       );
       return;
     }
     updateParams({
-      scope: value === 'mine' || value === 'partners' ? value : null,
+      scope: ['mine', 'partners', 'review'].includes(value) ? value : null,
       page: null,
     });
   };
@@ -459,6 +485,7 @@ const WritingCircle: React.FC = () => {
           sort,
           page: downloadPage,
           page_size: 50,
+          keyword: keyword || undefined,
           creator: creator || undefined,
           date_from: dateFrom || undefined,
           date_to: dateTo || undefined,
@@ -504,6 +531,12 @@ const WritingCircle: React.FC = () => {
     }
   };
 
+  const aiAnchorRect = aiMenuAnchor?.getBoundingClientRect();
+  const aiSpaceBelow = aiAnchorRect
+    ? Math.max(0, window.innerHeight - aiAnchorRect.bottom - 24)
+    : 0;
+  const aiSpaceAbove = aiAnchorRect ? Math.max(0, aiAnchorRect.top - 24) : 0;
+  const aiMenuAbove = aiSpaceBelow < 320 && aiSpaceAbove > aiSpaceBelow;
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const orderedTopics = draftTopicId
     ? [
@@ -517,6 +550,7 @@ const WritingCircle: React.FC = () => {
   );
   const isSearchingTopics = Boolean(topicQuery.trim());
   const activeFilterCount = [
+    keyword,
     creator,
     dateFrom,
     dateTo,
@@ -751,6 +785,42 @@ const WritingCircle: React.FC = () => {
           }}
         >
           <Stack spacing={2.5}>
+            <Box
+              component="form"
+              sx={{ display: isReview ? 'none' : 'block' }}
+              onSubmit={(event) => {
+                event.preventDefault();
+                updateParams({
+                  keyword: keywordInput.trim() || null,
+                  page: null,
+                });
+              }}
+            >
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="按标题搜索书写"
+                  placeholder="输入标题关键字"
+                  value={keywordInput}
+                  onChange={(event) => setKeywordInput(event.target.value)}
+                  slotProps={{ htmlInput: { maxLength: 80 } }}
+                />
+                <Button type="submit" variant="outlined">
+                  搜索
+                </Button>
+                {keyword && (
+                  <Button
+                    onClick={() => {
+                      setKeywordInput('');
+                      updateParams({ keyword: null, page: null });
+                    }}
+                  >
+                    清除
+                  </Button>
+                )}
+              </Stack>
+            </Box>
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               justifyContent="space-between"
@@ -760,16 +830,108 @@ const WritingCircle: React.FC = () => {
               sx={{ flexWrap: 'wrap' }}
             >
               <Tabs
-                value={scope}
+                value={isReview ? 'review' : scope}
                 onChange={handleScopeChange}
                 variant="fullWidth"
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
+                scrollButtons={false}
+                sx={{
+                  width: { xs: '100%', sm: 440 },
+                  maxWidth: '100%',
+                  flexShrink: 0,
+                  '& .MuiTab-root': {
+                    minWidth: 0,
+                    px: { xs: 0.75, sm: 2 },
+                    fontSize: { xs: 13, sm: 14 },
+                  },
+                }}
               >
                 <Tab value="all" label="全部书写" />
                 <Tab value="mine" label="我的书写" />
                 <Tab value="partners" label="我的搭子" />
+                <Tab value="review" label="回看" />
               </Tabs>
-              <Stack direction="row" spacing={1} justifyContent="flex-end">
+              <Stack
+                direction="row"
+                spacing={1}
+                justifyContent="flex-end"
+                useFlexGap
+                flexWrap="wrap"
+                sx={{ display: isReview ? 'none' : 'flex' }}
+              >
+                {scope === 'mine' && (
+                  <>
+                    <Button
+                      id="writing-ai-analysis-button"
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AutoAwesomeOutlinedIcon />}
+                      endIcon={<ExpandMoreIcon />}
+                      aria-haspopup="menu"
+                      aria-controls={
+                        aiMenuAnchor ? 'writing-ai-analysis-menu' : undefined
+                      }
+                      aria-expanded={aiMenuAnchor ? true : undefined}
+                      onClick={(event) => setAiMenuAnchor(event.currentTarget)}
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      AI 分析
+                    </Button>
+                    <Menu
+                      id="writing-ai-analysis-menu"
+                      anchorEl={aiMenuAnchor}
+                      anchorOrigin={{
+                        vertical: aiMenuAbove ? 'top' : 'bottom',
+                        horizontal: 'left',
+                      }}
+                      transformOrigin={{
+                        vertical: aiMenuAbove ? 'bottom' : 'top',
+                        horizontal: 'left',
+                      }}
+                      open={Boolean(aiMenuAnchor)}
+                      onClose={() => setAiMenuAnchor(null)}
+                      slotProps={{
+                        paper: {
+                          sx: {
+                            mt: aiMenuAbove ? -1 : 1,
+                            maxHeight: aiMenuAnchor
+                              ? aiMenuAbove
+                                ? aiSpaceAbove
+                                : aiSpaceBelow
+                              : undefined,
+                            overflowY: 'auto',
+                          },
+                        },
+                        list: {
+                          'aria-labelledby': 'writing-ai-analysis-button',
+                        },
+                      }}
+                    >
+                      {AI_WEBSITES.map((website) => (
+                        <MenuItem
+                          key={website.name}
+                          component="a"
+                          href={website.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setAiMenuAnchor(null)}
+                          sx={{
+                            minWidth: 190,
+                            justifyContent: 'space-between',
+                            gap: 3,
+                          }}
+                        >
+                          {website.name}
+                          <OpenInNewIcon fontSize="small" color="action" />
+                        </MenuItem>
+                      ))}
+                      <Box sx={{ px: 2, py: 1, maxWidth: 260 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          可下载TXT后，借助AI分析
+                        </Typography>
+                      </Box>
+                    </Menu>
+                  </>
+                )}
                 {scope === 'mine' && (
                   <Button
                     size="small"
@@ -807,7 +969,7 @@ const WritingCircle: React.FC = () => {
                 direction={{ xs: 'column', md: 'row' }}
                 spacing={1}
                 sx={{
-                  display: filtersExpanded ? 'flex' : 'none',
+                  display: !isReview && filtersExpanded ? 'flex' : 'none',
                   width: '100%',
                 }}
               >
@@ -932,7 +1094,7 @@ const WritingCircle: React.FC = () => {
               </Stack>
             </Stack>
 
-            <Collapse in={filtersExpanded} unmountOnExit>
+            <Collapse in={!isReview && filtersExpanded} unmountOnExit>
               <Box>
                 <TextField
                   fullWidth
@@ -1085,7 +1247,30 @@ const WritingCircle: React.FC = () => {
           </Paper>
         )}
 
-        {loading ? (
+        {isReview ? (
+          isAuthLoading ? (
+            <Loading message="正在准备回看..." />
+          ) : isAuthenticated && user ? (
+            <WeeklyReview key={user.id} userId={String(user.id)} />
+          ) : (
+            <Alert
+              severity="info"
+              action={
+                <Button
+                  onClick={() =>
+                    navigate(
+                      `/login?redirect=${encodeURIComponent('/writing-circle?scope=review')}`
+                    )
+                  }
+                >
+                  登录
+                </Button>
+              }
+            >
+              登录后回看自己的书写。
+            </Alert>
+          )
+        ) : loading ? (
           <Loading message="正在加载书写..." />
         ) : error ? (
           <Alert
@@ -1106,11 +1291,13 @@ const WritingCircle: React.FC = () => {
           <Paper elevation={0} sx={{ p: 6, borderRadius: 3 }}>
             <Empty
               message={
-                scope === 'mine'
-                  ? '还没有书写记录'
-                  : scope === 'partners'
-                    ? '搭子暂时还没有公开书写'
-                    : '还没有公开书写'
+                keyword
+                  ? '没有找到匹配标题的书写，试试其他关键字'
+                  : scope === 'mine'
+                    ? '还没有书写记录'
+                    : scope === 'partners'
+                      ? '搭子暂时还没有公开书写'
+                      : '还没有公开书写'
               }
               description="从一次真实的思考开始吧"
             />

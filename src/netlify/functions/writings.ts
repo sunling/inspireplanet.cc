@@ -1,3 +1,4 @@
+import { escapeWritingKeyword } from '../../utils/writingReview';
 import { supabase } from '../../database/supabase';
 import { extractHashtags } from '../../utils/hashtags';
 import {
@@ -23,6 +24,9 @@ import {
   getWritingDateRangeError,
   normalizeTemplateSnapshot,
   WRITING_POST_SELECT,
+  readWritingPosts,
+  isMissingWritingReviewColumn,
+  WRITING_REVIEW_UPGRADE_MESSAGE,
 } from '../utils/writing';
 import { getOrCreateAnonymousAlias } from '../utils/writingAnonymousAlias';
 
@@ -337,11 +341,9 @@ async function prepareWriting(
 }
 
 async function fetchWritingRow(id: string): Promise<any> {
-  const { data, error } = await supabase
-    .from('writing_posts')
-    .select(WRITING_POST_SELECT)
-    .eq('id', id)
-    .single();
+  const { data, error } = await readWritingPosts((columns) =>
+    supabase.from('writing_posts').select(columns).eq('id', id).single()
+  );
 
   if (error || !data) throw new RequestError('书写不存在', 404);
   return data;
@@ -494,6 +496,17 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
       : query.eq('visibility', 'public');
   }
 
+  if (
+    requestData.writing_type === 'review' ||
+    requestData.writing_type === 'original'
+  )
+    query = query.eq('writing_type', requestData.writing_type);
+  const keyword = String(requestData.keyword || '').trim();
+  if (keyword.length > 80)
+    return createErrorResponse('搜索关键字不能超过 80 个字');
+  if (keyword)
+    query = query.ilike('title', `%${escapeWritingKeyword(keyword)}%`);
+
   if (filteredPostIds) query = query.in('id', filteredPostIds);
 
   if (creator) {
@@ -516,15 +529,23 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
     query = query.lte('created_at', `${effectiveDateTo}T23:59:59.999Z`);
 
   const from = (page - 1) * page_size;
-  const { data, error, count } = await query
+  const pageQuery = query
     .order('created_at', { ascending: sort === 'oldest' })
     .range(from, from + page_size - 1);
+  const { data, error, count } = await readWritingPosts((columns) =>
+    columns === WRITING_POST_SELECT ? pageQuery : pageQuery.select(columns)
+  );
 
-  if (error) return createErrorResponse('获取书写列表失败', 500);
+  if (isMissingWritingReviewColumn(error))
+    return createErrorResponse(WRITING_REVIEW_UPGRADE_MESSAGE, 503);
+  if (error) {
+    console.error('[writings] list query failed:', error);
+    return createErrorResponse('获取书写列表失败', 500);
+  }
 
   return createSuccessResponse({
     records: await Promise.all(
-      (data || []).map((row) => mapPost(row, currentUser?.id || null))
+      (data || []).map((row: any) => mapPost(row, currentUser?.id || null))
     ),
     total: count || 0,
     page,
@@ -566,8 +587,32 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   const currentUser = await getAuthenticatedUser(event);
   if (!currentUser) return createErrorResponse('未授权', 401);
 
+  const payload = getDataFromEvent(event) as CreateWritingRequest;
+  const sourceId = payload.review_source_id
+    ? parseId(payload.review_source_id, '原书写 ID')
+    : null;
+  if (sourceId) {
+    const { data: source, error: sourceError } = await supabase
+      .from('writing_posts')
+      .select('id, writing_type, review_source_id')
+      .eq('id', sourceId)
+      .eq('user_id', currentUser.id)
+      .eq('status', 'published')
+      .maybeSingle();
+    if (isMissingWritingReviewColumn(sourceError))
+      throw new RequestError(WRITING_REVIEW_UPGRADE_MESSAGE, 503);
+    if (sourceError) throw new RequestError('检查回看原文失败', 500);
+    if (!source) throw new RequestError('只能回看自己的书写', 403);
+  }
   const writing = await prepareWriting(
-    getDataFromEvent(event) as CreateWritingRequest,
+    sourceId
+      ? {
+          ...payload,
+          visibility: payload.visibility === 'private' ? 'private' : 'public',
+          is_anonymous: false,
+          group_id: null,
+        }
+      : payload,
     currentUser.id
   );
   const { data: postId, error } = await supabase.rpc('create_writing_post_v2', {
@@ -576,7 +621,7 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
     p_body: writing.body,
     p_template_id: writing.template_id ? Number(writing.template_id) : null,
     p_template_snapshot: writing.template_snapshot,
-    p_visibility: writing.visibility,
+    p_visibility: sourceId ? 'private' : writing.visibility,
     p_topic_ids: writing.topic_ids.map(Number),
     p_custom_topic_names: writing.custom_topic_names,
     // 线上旧版 RPC 最多接受 3 张；完整图片数组在下方统一写入。
@@ -586,29 +631,6 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
   if (error || !postId) {
     console.error('[writings] create RPC failed:', error);
     throw new RequestError('发布书写失败', 500);
-  }
-  const { error: permissionError } = await supabase
-    .from('writing_posts')
-    .update({
-      visibility: writing.visibility,
-      is_anonymous: writing.is_anonymous,
-      group_id: writing.group_id ? Number(writing.group_id) : null,
-      editor_mode: writing.editor_mode,
-      body_rich: writing.body_rich,
-    })
-    .eq('id', postId)
-    .eq('user_id', currentUser.id);
-  if (permissionError) {
-    console.error(
-      '[writings] create permission update failed:',
-      permissionError
-    );
-    await supabase
-      .from('writing_posts')
-      .delete()
-      .eq('id', postId)
-      .eq('user_id', currentUser.id);
-    throw new RequestError('设置书写权限失败', 500);
   }
   const { error: imageError } = await supabase
     .from('writing_posts')
@@ -628,6 +650,43 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
         : '保存书写图片失败';
     throw new RequestError(message, 500);
   }
+  const { error: permissionError } = sourceId
+    ? await supabase.rpc('publish_writing_review', {
+        p_post_id: Number(postId),
+        p_user_id: Number(currentUser.id),
+        p_source_id: Number(sourceId),
+        p_visibility: writing.visibility,
+        p_editor_mode: writing.editor_mode,
+        p_body_rich: writing.body_rich,
+      })
+    : await supabase
+        .from('writing_posts')
+        .update({
+          visibility: writing.visibility,
+          is_anonymous: writing.is_anonymous,
+          group_id: writing.group_id ? Number(writing.group_id) : null,
+          editor_mode: writing.editor_mode,
+          body_rich: writing.body_rich,
+        })
+        .eq('id', postId)
+        .eq('user_id', currentUser.id);
+  if (permissionError) {
+    console.error(
+      '[writings] create permission update failed:',
+      permissionError
+    );
+    await supabase
+      .from('writing_posts')
+      .delete()
+      .eq('id', postId)
+      .eq('user_id', currentUser.id);
+    if (sourceId && ['PGRST202', '42883'].includes(permissionError.code))
+      throw new RequestError(WRITING_REVIEW_UPGRADE_MESSAGE, 503);
+    throw new RequestError(
+      sourceId ? '发布回看及作者评论失败，请重试' : '设置书写权限失败',
+      500
+    );
+  }
   const row = await fetchWritingRow(String(postId));
   return createSuccessResponse(
     { post: await mapPost(row, currentUser.id) },
@@ -641,19 +700,20 @@ async function handleUpdate(event: NetlifyEvent): Promise<NetlifyResponse> {
 
   const payload = getDataFromEvent(event);
   const id = parseId(payload.id, '书写 ID');
-  const { data: existing, error: existingError } = await supabase
-    .from('writing_posts')
-    .select('id, user_id, template_id, template_snapshot, image_urls')
-    .eq('id', id)
-    .single();
-
-  if (existingError || !existing) throw new RequestError('书写不存在', 404);
+  const existing = await fetchWritingRow(id);
   if (String(existing.user_id) !== currentUser.id) {
     throw new RequestError('没有权限修改此书写', 403);
   }
 
   const writing = await prepareWriting(
-    payload as CreateWritingRequest,
+    existing.writing_type === 'review'
+      ? {
+          ...payload,
+          visibility: payload.visibility === 'private' ? 'private' : 'public',
+          is_anonymous: false,
+          group_id: null,
+        }
+      : (payload as CreateWritingRequest),
     currentUser.id,
     existing
   );

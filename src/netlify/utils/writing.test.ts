@@ -47,3 +47,23 @@ describe('mapWritingPost rich-text compatibility', () => {
     expect(post.body_rich).toBeNull();
   });
 });
+
+describe('review source privacy', () => {
+  it('shows the review badge to readers while keeping the source link owner-only', () => {
+    const row = { ...baseRow, writing_type: 'review', review_source_id: 10 };
+    expect(mapWritingPost(row, '2').review_source_id).toBe('10');
+    expect(mapWritingPost(row, '3')).toMatchObject({
+      writing_type: 'review',
+      review_source_id: null,
+    });
+    expect(mapWritingPost(row, null).review_source_id).toBeNull();
+  });
+  it('keeps the review identity if the source has been deleted', () => {
+    expect(
+      mapWritingPost(
+        { ...baseRow, writing_type: 'review', review_source_id: null },
+        '2'
+      )
+    ).toMatchObject({ writing_type: 'review', review_source_id: null });
+  });
+});
