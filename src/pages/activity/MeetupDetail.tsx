@@ -18,7 +18,7 @@ import {
 } from '../../utils/recurring';
 import dayjs from 'dayjs';
 import QuestionRenderer from '../../components/QuestionRenderer';
-import QuestionRoundtable from '../roundtable/QuestionRoundtable';
+import { getCurrentRoundtableDate } from '../../utils/meetupRoundtable';
 
 import {
   Box,
@@ -151,6 +151,8 @@ const MeetupDetail: React.FC = () => {
   const loadMeetupDetail = async (meetupId: string) => {
     setIsLoading(true);
     setError(null);
+    setEpisode(null);
+    setSpeakerSignups([]);
 
     try {
       // 使用统一的api客户端获取活动详情
@@ -187,7 +189,10 @@ const MeetupDetail: React.FC = () => {
       let episodeId: number | undefined;
       if (hasMeetupEpisodes(processedMeetup)) {
         const searchParams = new URLSearchParams(location.search);
-        const urlDate = searchParams.get('date');
+        const requestedDate = searchParams.get('date');
+        const urlDate =
+          getCurrentRoundtableDate(processedMeetup, requestedDate) ??
+          requestedDate;
         // URL 传来的日期（从日历点击）→ 用北京时区解析；否则算最近一期
         const targetDay = urlDate
           ? dayjs(urlDate)
@@ -491,6 +496,16 @@ const MeetupDetail: React.FC = () => {
     }
   };
 
+  const handleOpenSpeakerForm = () => {
+    const user = getUserInfo();
+    setSpeakerForm((current) => ({
+      ...current,
+      name: user?.name || user?.email || '',
+      email: user?.email || '',
+    }));
+    setShowSpeakerForm(true);
+  };
+
   // 提交分享报名
   const handleSpeakerSubmit = async () => {
     if (!episode || !speakerForm.name.trim() || !speakerForm.topic.trim())
@@ -572,9 +587,15 @@ const MeetupDetail: React.FC = () => {
   const renderMeetupDetail = () => {
     if (!meetup) return null;
 
+    const roundtableDate = getCurrentRoundtableDate(
+      meetup,
+      new URLSearchParams(location.search).get('date')
+    );
+
     // 循环活动：用 episode.date（本地日期）+ meetup 本地时分，避免 UTC 偏移导致日期偏移一天
     // 普通活动：直接用 meetup.datetime
     const displayDatetime = (() => {
+      if (roundtableDate) return getNextOccurrence(meetup.datetime);
       if (meetup.is_recurring && episode?.date) {
         const [y, m, d] = episode.date.split('-').map(Number);
         const baseLocal = dayjs(meetup.datetime);
@@ -840,15 +861,7 @@ const MeetupDetail: React.FC = () => {
                   <Button
                     variant="contained"
                     size="small"
-                    onClick={() => {
-                      const u = getUserInfo();
-                      setSpeakerForm((p) => ({
-                        ...p,
-                        name: u?.name || u?.email || '',
-                        email: u?.email || '',
-                      }));
-                      setShowSpeakerForm(true);
-                    }}
+                    onClick={handleOpenSpeakerForm}
                     sx={{ fontWeight: 600 }}
                   >
                     申请分享 🎤
@@ -1074,22 +1087,56 @@ const MeetupDetail: React.FC = () => {
               </Box>
             </Box>
 
-            {/* 线上长期活动：把本期真实场景圆桌直接放进详情页 */}
-            {meetup.mode === 'online' &&
-              meetup.is_recurring &&
-              isUpcomingMeetup && (
-                <Box sx={{ mb: 4 }}>
-                  <QuestionRoundtable
-                    embedded
-                    sessionDate={episode?.date || formattedDate}
-                    sessionLabel={
-                      meetup.is_recurring && episode
-                        ? `${meetup.title} EP${episode.episode_number} · ${episode.date}`
-                        : `${meetup.title} · ${formattedDate}`
-                    }
-                  />
+            {roundtableDate && (
+              <Card
+                component="section"
+                aria-labelledby="meetup-roundtable-title"
+                sx={{ mb: 3, p: 2, borderRadius: 2 }}
+              >
+                <Typography
+                  id="meetup-roundtable-title"
+                  variant="subtitle1"
+                  fontWeight={600}
+                >
+                  本期问题圆桌
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5 }}
+                >
+                  欢迎来听、来分享，也可以带来一个真实的问题场景。分享会最后 20
+                  分钟，我们选一个共同关心的问题，先理解，再分享经历。
+                </Typography>
+                <Box
+                  sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1.5 }}
+                >
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={handleJoinMeetup}
+                    disabled={isActionLoading || isCurrentUserRSVPed}
+                  >
+                    {isCurrentUserRSVPed ? '已报名参加' : '报名参加'}
+                  </Button>
+                  {episode && (
+                    <Button size="small" onClick={handleOpenSpeakerForm}>
+                      申请分享
+                    </Button>
+                  )}
+                  <Button
+                    size="small"
+                    component={Link}
+                    to={`/questions?date=${roundtableDate}#submit-question`}
+                  >
+                    提交问题场景
+                  </Button>
+                  <Button size="small" component={Link} to="/questions">
+                    查看问题圆桌 →
+                  </Button>
                 </Box>
-              )}
+              </Card>
+            )}
           </Box>
         </Box>
       </Box>

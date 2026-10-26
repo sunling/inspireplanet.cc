@@ -8,7 +8,7 @@ import {
   TextField,
 } from '@mui/material';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   roundtableEpisodeHref,
   roundtableSessionLabel,
@@ -110,7 +110,9 @@ const getUpcomingSaturdayOptions = () => {
 
   return Array.from({ length: 43 }, (_, index) => {
     const date = new Date(start + index * 24 * 60 * 60 * 1000);
-    if (date.getUTCDay() !== 6 || date.getTime() <= start) return null;
+    // Saturday 08:00 in Beijing is Saturday 00:00 UTC. Keep today's
+    // session available until it actually starts.
+    if (date.getUTCDay() !== 6 || date.getTime() <= now.getTime()) return null;
     const year = date.getUTCFullYear();
     const month = date.getUTCMonth() + 1;
     const day = date.getUTCDate();
@@ -130,11 +132,20 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
   sessionDate,
   sessionLabel,
 }) => {
+  const [searchParams] = useSearchParams();
+  const requestedDate = searchParams.get('date');
+  const submissionDate =
+    sessionDate ||
+    (getUpcomingSaturdayOptions().some(
+      (option) => option.value === requestedDate
+    )
+      ? requestedDate!
+      : undefined);
   const [questions, setQuestions] = useState<PublicRoundtableQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [form, setForm] = useState<FormState>(() =>
-    createInitialForm(sessionDate)
+    createInitialForm(submissionDate)
   );
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -155,8 +166,8 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
 
   useEffect(() => {
     loadQuestions();
-    setForm(createInitialForm(sessionDate));
-  }, [sessionDate]);
+    setForm(createInitialForm(submissionDate));
+  }, [sessionDate, submissionDate]);
 
   const loadQuestions = async () => {
     setLoading(true);
@@ -173,14 +184,21 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
   };
 
   useEffect(() => {
-    if (loading || !/^#question-\d+$/.test(window.location.hash)) return;
+    if (
+      loading ||
+      !(
+        /^#question-\d+$/.test(window.location.hash) ||
+        window.location.hash === `#${submitSectionId}`
+      )
+    )
+      return;
     const frame = window.requestAnimationFrame(() => {
       document
         .getElementById(window.location.hash.slice(1))
         ?.scrollIntoView({ block: 'start' });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [loading, questions]);
+  }, [loading, questions, submitSectionId]);
 
   const update = <K extends keyof FormState>(field: K, value: FormState[K]) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -206,7 +224,7 @@ const QuestionRoundtable: React.FC<QuestionRoundtableProps> = ({
       if (response.data?.question) {
         setQuestions((current) => [response.data!.question!, ...current]);
       }
-      setForm(createInitialForm(sessionDate));
+      setForm(createInitialForm(submissionDate));
       setSubmitted(true);
       window.setTimeout(() => {
         document
