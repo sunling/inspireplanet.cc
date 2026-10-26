@@ -4,7 +4,6 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   CircularProgress,
   Container,
   FormControl,
@@ -109,6 +108,7 @@ const WritingEditor: React.FC = () => {
   const [promptFields, setPromptFields] = useState<WritingTemplatePrompt[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [topicIds, setTopicIds] = useState<string[]>([]);
+  const [isReview, setIsReview] = useState(false);
   const [visibility, setVisibility] = useState<WritingVisibility>('public');
   const [groupId, setGroupId] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -170,9 +170,12 @@ const WritingEditor: React.FC = () => {
           setEditorMode(post.editor_mode || 'basic');
           setRichBody(post.body_rich || null);
           setTemplateId(post.template_id || '');
+          setIsReview(post.writing_type === 'review');
           setVisibility(post.visibility);
           setGroupId(post.group_id || '');
-          setIsAnonymous(post.is_anonymous);
+          setIsAnonymous(
+            post.writing_type === 'review' ? false : post.is_anonymous
+          );
           setImageUrls(post.image_urls || []);
 
           const savedHashtags = extractHashtags(
@@ -756,6 +759,11 @@ const WritingEditor: React.FC = () => {
                 <Typography variant="h6" gutterBottom>
                   谁可以看见
                 </Typography>
+                {isReview && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    回看默认公开分享；设为私密后，原书写下的作者回看评论会隐藏，重新公开后恢复。
+                  </Alert>
+                )}
                 <RadioGroup
                   value={visibility}
                   onChange={(event) =>
@@ -775,6 +783,7 @@ const WritingEditor: React.FC = () => {
                   {groups.length > 0 && (
                     <FormControlLabel
                       value="group"
+                      disabled={isReview}
                       control={<Radio />}
                       label="仅指定讨论组成员可见"
                     />
@@ -807,6 +816,7 @@ const WritingEditor: React.FC = () => {
                   control={
                     <Switch
                       checked={isAnonymous}
+                      disabled={isReview}
                       onChange={(event) => setIsAnonymous(event.target.checked)}
                     />
                   }
