@@ -1,3 +1,4 @@
+import type { ParticipationPeriod } from '../../utils/participationPeriods';
 import { http } from '../config/http';
 
 interface BatchConfirmParams {
@@ -44,6 +45,33 @@ export interface Participant {
 }
 
 const participantsApi = {
+  updateParticipationPeriods: (
+    meetup_id: number,
+    rsvp_id: string,
+    participation_periods: ParticipationPeriod[]
+  ) =>
+    http.post<{ participation_periods: ParticipationPeriod[] }>(
+      '/participants',
+      'updateParticipationPeriods',
+      { meetup_id, rsvp_id, participation_periods }
+    ),
+
+  batchUpdateParticipationPeriods: (
+    meetup_id: number,
+    rsvp_ids: string[],
+    participation_periods: ParticipationPeriod[]
+  ) =>
+    http.post<{
+      participants: Array<{
+        id: string;
+        participation_periods: ParticipationPeriod[];
+      }>;
+    }>('/participants', 'batchUpdateParticipationPeriods', {
+      meetup_id,
+      rsvp_ids,
+      participation_periods,
+    }),
+
   getParticipants: async (params: GetParticipantsParams) => {
     return await http.post('/participants', 'getParticipants', params);
   },
