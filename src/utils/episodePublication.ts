@@ -10,6 +10,7 @@ export interface EpisodePublication {
     intro?: string;
     /** Zero-based position in this episode's quote-cards.json. */
     featuredQuoteIndex?: number;
+    featuredQuoteIndices?: number[];
   };
 }
 
@@ -101,7 +102,8 @@ export function parseEpisodePublication(
     const newsletter = row.newsletter as Record<string, unknown>;
     if (
       Object.keys(newsletter).some(
-        (key) => !['intro', 'featuredQuoteIndex'].includes(key)
+        (key) =>
+          !['intro', 'featuredQuoteIndex', 'featuredQuoteIndices'].includes(key)
       )
     )
       return null;
@@ -119,12 +121,31 @@ export function parseEpisodePublication(
         newsletter.featuredQuoteIndex < 0)
     )
       return null;
+    if (newsletter.featuredQuoteIndices !== undefined) {
+      const indices = newsletter.featuredQuoteIndices;
+      if (
+        !Array.isArray(indices) ||
+        !indices.length ||
+        indices.length > 3 ||
+        indices.some((index) => !Number.isInteger(index) || index < 0) ||
+        new Set(indices).size !== indices.length ||
+        newsletter.featuredQuoteIndex !== undefined
+      )
+        return null;
+    }
     result.newsletter = {
       ...(newsletter.intro !== undefined
         ? { intro: (newsletter.intro as string).trim() }
         : {}),
       ...(newsletter.featuredQuoteIndex !== undefined
         ? { featuredQuoteIndex: newsletter.featuredQuoteIndex as number }
+        : {}),
+      ...(newsletter.featuredQuoteIndices !== undefined
+        ? {
+            featuredQuoteIndices: [
+              ...(newsletter.featuredQuoteIndices as number[]),
+            ],
+          }
         : {}),
     };
   }

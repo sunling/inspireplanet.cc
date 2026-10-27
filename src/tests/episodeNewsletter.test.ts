@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildEpisodeNewsletterPreview } from '../utils/episodeNewsletter';
+import {
+  buildEpisodeNewsletterPreview,
+  selectDefaultQuoteIndices,
+} from '../utils/episodeNewsletter';
 import { parseEpisodePublication } from '../utils/episodePublication';
 import type {
   EpisodeSummary,
@@ -115,7 +118,7 @@ describe('newsletter preview', () => {
     expect(
       buildEpisodeNewsletterPreview({ ...input, featuredQuoteIndex: 99 })
         .missing
-    ).toContain('请选择一张有内容和署名的金句卡片');
+    ).toContain('请选择 1–3 条有内容和署名的原话');
     const empty = buildEpisodeNewsletterPreview({
       ...input,
       cards: [],
@@ -126,5 +129,37 @@ describe('newsletter preview', () => {
     expect(() =>
       buildEpisodeNewsletterPreview({ ...input, year: NaN })
     ).toThrow();
+  });
+});
+
+describe('three original quotes', () => {
+  it('prefers three distinct speakers without inventing or rewriting quotes', () => {
+    const all = [
+      cards[0],
+      { ...cards[0], id: 'same-speaker', quote: '同一人的另一句' },
+      cards[1],
+      { ...cards[0], id: 'third', name: 'Wendy', quote: '先照顾自己。' },
+    ];
+    expect(selectDefaultQuoteIndices(all)).toEqual([0, 2, 3]);
+    const preview = buildEpisodeNewsletterPreview({ ...input, cards: all });
+    for (const i of [0, 2, 3]) expect(preview.text).toContain(all[i].quote);
+    expect(preview.text).not.toContain('同一人的另一句');
+  });
+  it('supports 1–3 explicit choices, rejects duplicate indices and more than three', () => {
+    expect(
+      parseEpisodePublication({ newsletter: { featuredQuoteIndices: [0, 1] } })
+    ).toEqual({ newsletter: { featuredQuoteIndices: [0, 1] } });
+    for (const list of [[], [0, 0], [0, 1, 2, 3], [-1]])
+      expect(
+        parseEpisodePublication({ newsletter: { featuredQuoteIndices: list } })
+      ).toBeNull();
+    expect(
+      buildEpisodeNewsletterPreview({ ...input, featuredQuoteIndices: [1] })
+        .text
+    ).not.toContain(cards[0].quote);
+    expect(
+      buildEpisodeNewsletterPreview({ ...input, featuredQuoteIndices: [0, 0] })
+        .missing
+    ).toContain('请选择 1–3 条有内容和署名的原话');
   });
 });
