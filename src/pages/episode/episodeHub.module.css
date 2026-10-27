@@ -879,3 +879,22 @@
 .sectionHeading > a.cardCollectionLink:hover {
   text-decoration: underline;
 }
+
+.publicationActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.podcastLink {
+  color: #a3462e;
+  text-decoration: none;
+  font-weight: 600;
+  line-height: 1.8;
+}
+
+.podcastLink:hover {
+  text-decoration: underline;
+}

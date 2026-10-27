@@ -1,5 +1,9 @@
 import { supabase } from '../../database/supabase';
 import {
+  EpisodePublication,
+  parseEpisodePublication,
+} from '../../utils/episodePublication';
+import {
   EpisodeSummary,
   EpisodeTopic,
   WeeklyCard,
@@ -27,6 +31,8 @@ export interface GitHubEpisodeEntry {
   summarySha?: string;
   recapPath?: string; // recap.md path
   recapSha?: string;
+  publicationPath?: string;
+  publicationSha?: string;
 }
 
 interface RawQuoteCard {
@@ -44,6 +50,7 @@ let cachedTreeTimestamp = 0;
 // Cache parsed cards and summaries by git blob sha (immutable per content) or path
 const episodeCardsCache = new Map<string, WeeklyCard[]>();
 const episodeSummaryCache = new Map<string, EpisodeSummary>();
+const episodePublicationCache = new Map<string, EpisodePublication>();
 
 function getGitHubHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
@@ -87,7 +94,7 @@ export async function getGitHubEpisodeEntries(): Promise<GitHubEpisodeEntry[]> {
       if (item.type !== 'blob' || !item.path) continue;
 
       const match = item.path.match(
-        /^(events\/(\d{4})\/(\d{8})-ep(\d+))\/(quote-cards\.json|summary\.json|recap\.md|gzh-ep\d+\.md)$/i
+        /^(events\/(\d{4})\/(\d{8})-ep(\d+))\/(quote-cards\.json|summary\.json|episode-publication\.json|recap\.md|gzh-ep\d+\.md)$/i
       );
       if (!match) continue;
 
@@ -117,6 +124,9 @@ export async function getGitHubEpisodeEntries(): Promise<GitHubEpisodeEntry[]> {
       if (fileName === 'quote-cards.json') {
         entry.path = item.path;
         entry.sha = item.sha || item.path;
+      } else if (fileName === 'episode-publication.json') {
+        entry.publicationPath = item.path;
+        entry.publicationSha = item.sha || item.path;
       } else if (fileName === 'summary.json') {
         entry.summaryPath = item.path;
         entry.summarySha = item.sha || item.path;
@@ -224,7 +234,9 @@ function parseRecapMarkdownToSummary(
 
     let speaker = '';
     let topicTitle = currentSectionTitle;
-    const colonMatch = currentSectionTitle.match(/^([^：:]{1,12})[：:]\s*(.+)$/);
+    const colonMatch = currentSectionTitle.match(
+      /^([^：:]{1,12})[：:]\s*(.+)$/
+    );
     if (colonMatch) {
       speaker = colonMatch[1].trim();
       topicTitle = colonMatch[2].trim();
@@ -730,18 +742,22 @@ export async function getAllWeeklyCards(limit?: number): Promise<WeeklyCard[]> {
   try {
     const entries = (await getGitHubEpisodeEntries()).filter((e) => !!e.path);
     has2025ArchiveOnGitHub = entries.some((e) => e.year <= 2025);
-    const perEpisodeLists = await fetchConcurrency(entries, 12, async (entry) => {
-      try {
-        const cards = await fetchEpisodeCardsFromGitHub(entry);
-        githubKeys.add(
-          `${entry.year}-EP${String(entry.episodeNum).padStart(2, '0')}`
-        );
-        return cards;
-      } catch (err) {
-        console.warn(`Failed to fetch episode ${entry.path}:`, err);
-        return [];
+    const perEpisodeLists = await fetchConcurrency(
+      entries,
+      12,
+      async (entry) => {
+        try {
+          const cards = await fetchEpisodeCardsFromGitHub(entry);
+          githubKeys.add(
+            `${entry.year}-EP${String(entry.episodeNum).padStart(2, '0')}`
+          );
+          return cards;
+        } catch (err) {
+          console.warn(`Failed to fetch episode ${entry.path}:`, err);
+          return [];
+        }
       }
-    });
+    );
     githubCards = perEpisodeLists.flat();
   } catch (error) {
     console.warn(
@@ -781,4 +797,40 @@ export async function getAllWeeklyCards(limit?: number): Promise<WeeklyCard[]> {
     return combined.slice(0, limit);
   }
   return combined;
+}
+
+/** Publication metadata is optional: its absence must not hide the recap/cards. */
+export async function getEpisodePublication(
+  episodeInput: string,
+  yearInput?: string | number
+): Promise<EpisodePublication | null> {
+  if (!/^(?:EP)?\d+$/i.test(episodeInput)) return null;
+  const episode = Number(episodeInput.replace(/^EP/i, ''));
+  const hasYear = yearInput !== undefined && yearInput !== null;
+  if (hasYear && !/^\d{4}$/.test(String(yearInput))) return null;
+  try {
+    const entries = await getGitHubEpisodeEntries();
+    const entry = entries.find(
+      (item) =>
+        item.episodeNum === episode &&
+        (!hasYear || item.year === Number(yearInput))
+    );
+    if (!entry?.publicationPath) return null;
+    const cacheKey = `${entry.publicationPath}:${entry.publicationSha || ''}`;
+    const cached = episodePublicationCache.get(cacheKey);
+    if (cached) return cached;
+    const response = await fetch(`${RAW_BASE_URL}/${entry.publicationPath}`, {
+      headers: { 'User-Agent': 'inspireplanet-cc' },
+    });
+    if (!response.ok) return null;
+    const publication = parseEpisodePublication(await response.json());
+    if (publication) episodePublicationCache.set(cacheKey, publication);
+    return publication;
+  } catch (error) {
+    console.warn(
+      'Unable to read optional episode publication metadata:',
+      error
+    );
+    return null;
+  }
 }
