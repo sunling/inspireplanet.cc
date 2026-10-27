@@ -2,6 +2,10 @@ import { createHash } from 'crypto';
 import { Resend } from 'resend';
 import { supabase } from '../../database/supabase';
 import { buildEpisodeNewsletterPreview } from '../../utils/episodeNewsletter';
+import {
+  renderNewsletterDocument,
+  validateNewsletterSubject,
+} from '../../utils/newsletterDocument';
 import { normalizeNewsletterImageUrl } from '../../utils/newsletterImage';
 import { isXiaoyuzhouEpisodeUrl } from '../../utils/episodePublication';
 import type { NetlifyEvent, NetlifyResponse } from '../types/http';
@@ -42,6 +46,44 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('只有组织者可以发送测试邮件', 403);
 
     const data = getDataFromEvent(event);
+    // The editable document is a bounded JSON format, never arbitrary client HTML.
+    // Keep the previous structured payload compatible while preview deployments update.
+    if (data.document !== undefined) {
+      if (
+        !Number.isInteger(data.year) ||
+        data.year < 2000 ||
+        data.year > 9999 ||
+        !Number.isInteger(data.episode) ||
+        data.episode < 1 ||
+        data.episode > 9999
+      )
+        return createErrorResponse('请选择有效的年份和期数');
+      if (!validateNewsletterSubject(data.subject))
+        return createErrorResponse('请填写不超过 200 字符且不含换行的邮件主题');
+      if (
+        typeof data.requestId !== 'string' ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          data.requestId
+        )
+      )
+        return createErrorResponse('无效的测试请求，请刷新页面重试');
+      let rendered;
+      try {
+        rendered = renderNewsletterDocument(data.document);
+      } catch (error) {
+        return createErrorResponse(
+          error instanceof Error ? error.message : '邮件正文格式不正确'
+        );
+      }
+      return await sendRenderedTest(
+        authUser.id,
+        authUser.email,
+        data.requestId,
+        data.subject.trim(),
+        rendered
+      );
+    }
+
     const {
       year,
       episode,
@@ -161,42 +203,13 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       (message) => !(omitPodcast && message.includes('小宇宙'))
     );
     if (missing.length) return createErrorResponse(missing.join('；'));
-    const key = process.env.RESEND_API_KEY;
-    if (!key)
-      return createErrorResponse(
-        '当前环境尚未配置邮件服务，请配置 RESEND_API_KEY 后重新部署',
-        503
-      );
-    const from = process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc';
-    const testFooter = '测试邮件 · 仅发送给当前组织者，不会发送给订阅者。';
-    const html = preview.html.replace(
-      '邮件预览 · 正式邮件将包含退订入口',
-      testFooter
+    return await sendRenderedTest(
+      authUser.id,
+      authUser.email,
+      requestId,
+      preview.subject,
+      preview
     );
-    const text = preview.text.replace(
-      '邮件预览 · 正式邮件将包含退订入口',
-      testFooter
-    );
-    const fingerprint = createHash('sha256')
-      .update(JSON.stringify([authUser.id, requestId, preview.subject, html]))
-      .digest('hex');
-    const { data: sent, error } = await new Resend(key).emails.send(
-      {
-        from: `启发星球 <${from}>`,
-        // Never accept client-supplied recipients, HTML, subject or quote content.
-        to: authUser.email,
-        subject: `[测试] ${preview.subject}`,
-        html,
-        text,
-      },
-      { idempotencyKey: `episode-newsletter-test-${fingerprint}` }
-    );
-    if (error || !sent?.id)
-      return createErrorResponse('邮件服务未接受发送，请稍后重试', 502);
-    return createSuccessResponse({
-      recipient: authUser.email,
-      messageId: sent.id,
-    });
   } catch (error) {
     console.error(
       '[newsletterPreview] Test email failed',
@@ -204,4 +217,49 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     );
     return createErrorResponse('测试邮件发送失败，请稍后重试', 500);
   }
+}
+
+async function sendRenderedTest(
+  userId: string,
+  recipient: string,
+  requestId: string,
+  subject: string,
+  preview: { html: string; text: string }
+): Promise<NetlifyResponse> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key)
+    return createErrorResponse(
+      '当前环境尚未配置邮件服务，请配置 RESEND_API_KEY 后重新部署',
+      503
+    );
+  const from = process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc';
+  const testFooter = '测试邮件 · 仅发送给当前组织者，不会发送给订阅者。';
+  const html = preview.html.replace(
+    '邮件预览 · 正式邮件将包含退订入口',
+    testFooter
+  );
+  const text = preview.text.replace(
+    '邮件预览 · 正式邮件将包含退订入口',
+    testFooter
+  );
+  const fingerprint = createHash('sha256')
+    .update(JSON.stringify([userId, requestId, subject, html]))
+    .digest('hex');
+  const { data: sent, error } = await new Resend(key).emails.send(
+    {
+      from: `启发星球 <${from}>`,
+      // Recipient always comes from the verified session; HTML is rendered server-side.
+      to: recipient,
+      subject: `[测试] ${subject}`,
+      html,
+      text,
+    },
+    { idempotencyKey: `episode-newsletter-test-${fingerprint}` }
+  );
+  if (error || !sent?.id)
+    return createErrorResponse('邮件服务未接受发送，请稍后重试', 502);
+  return createSuccessResponse({
+    recipient: recipient,
+    messageId: sent.id,
+  });
 }

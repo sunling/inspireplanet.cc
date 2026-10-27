@@ -1,4 +1,5 @@
 import { http } from '../config/http';
+import type { NewsletterDocument } from '../../utils/newsletterDocument';
 
 export interface NewsletterTestDraft {
   year: number;
@@ -14,8 +15,16 @@ export interface NewsletterTestDraft {
   imageAlt?: string;
 }
 
+export interface EditableNewsletterTestDraft {
+  year: number;
+  episode: number;
+  requestId: string;
+  subject: string;
+  document: NewsletterDocument;
+}
+
 export const newsletterPreviewApi = {
-  sendTest: (draft: NewsletterTestDraft) =>
+  sendTest: (draft: NewsletterTestDraft | EditableNewsletterTestDraft) =>
     http.post<{ recipient: string; messageId: string }>(
       '/newsletterPreview',
       'sendTest',

@@ -160,6 +160,54 @@ describe('send test newsletter', () => {
       (await request({ imageUrl: 'https://example.com/a.jpg' })).statusCode
     ).toBe(400);
   });
+  it('sends the complete edited document and custom subject, not the old generated text', async () => {
+    const document = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: '编辑后的导语' }],
+        },
+        {
+          type: 'blockquote',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: '简单编辑后的金句 —— 分享者' }],
+            },
+          ],
+        },
+      ],
+    };
+    const result = await request({
+      document,
+      subject: '修改后的主题',
+      to: 'stranger@example.com',
+      html: '<script>bad</script>',
+    });
+    expect(result.statusCode).toBe(200);
+    const message = mocks.send.mock.calls[0][0];
+    expect(message.to).toBe('organizer@example.com');
+    expect(message.subject).toBe('[测试] 修改后的主题');
+    expect(message.text).toContain('编辑后的导语');
+    expect(message.text).toContain('简单编辑后的金句');
+    expect(message.html).not.toContain('<script>');
+    expect(
+      (await request({ document, subject: '主题\r\nBcc: bad@example.com' }))
+        .statusCode
+    ).toBe(400);
+    expect(
+      (
+        await request({
+          document: {
+            type: 'doc',
+            content: [{ type: 'html', text: '<script>bad</script>' }],
+          },
+          subject: '主题',
+        })
+      ).statusCode
+    ).toBe(400);
+  });
   it('uses a stable idempotency key when retrying an identical draft', async () => {
     await request();
     await request();
