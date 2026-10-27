@@ -186,7 +186,7 @@ export default function EpisodeNewsletterPreview({
           )}
           <Typography variant="body2">主题：{preview.subject}</Typography>
           <TextField
-            label="邮件导语：本期的 1–2 个问题"
+            label="邮件导语：本期精华与 1–2 个问题"
             disabled={sending}
             multiline
             minRows={3}
@@ -196,7 +196,7 @@ export default function EpisodeNewsletterPreview({
               setIntro(event.target.value);
               setCopied(false);
             }}
-            helperText="优先读取内容制作时摘出的本期问题；没有配置时复用本期话题里的问句。保留真实疑问，不编悬念。"
+            helperText="先用一小段概括本期最有意思的交流，再自然带出 1–2 个真实讨论的问题；可直接修改。"
           />
           <Box
             component="fieldset"
@@ -262,21 +262,22 @@ export default function EpisodeNewsletterPreview({
             </Stack>
           </Box>
           <TextField
-            label="本期小宇宙单集链接"
+            label="本期小宇宙单集链接（可编辑）"
             value={podcastUrl}
-            disabled={sending || skipPodcast}
+            disabled={sending}
             error={!skipPodcast && Boolean(podcastUrl.trim()) && !validPodcast}
             onChange={(event) => {
               setPodcastUrl(event.target.value);
+              if (event.target.value.trim()) setSkipPodcast(false);
               setCopied(false);
             }}
             inputProps={{ maxLength: 2048 }}
-            helperText="默认读取本期已回填的播客链接；缺失时可在此补入。补入只用于本次预览与测试发送。"
+            helperText="默认带入本期播客，可直接修改或粘贴新链接；填写后自动取消“不附播客”。修改用于本次预览与测试发送。"
           />
           <TextField
             label="播客标题"
             value={podcastTitle}
-            disabled={sending || skipPodcast}
+            disabled={sending}
             onChange={(event) => {
               setPodcastTitle(event.target.value);
               setCopied(false);

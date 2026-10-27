@@ -188,14 +188,14 @@ describe('question-based email introduction', () => {
   });
   it('reuses at most two existing question titles without rewriting them', () => {
     expect(getDefaultNewsletterIntro(recap)).toBe(
-      '自责也是一种方法吗？\n稳定的生活，也一定要认识新人吗？'
+      `${summary.overview}\n\n自责也是一种方法吗？\n稳定的生活，也一定要认识新人吗？`
     );
     expect(
       getDefaultNewsletterIntro({
         ...recap,
         topics: [recap.topics[0], recap.topics[0]],
       })
-    ).toBe('自责也是一种方法吗？');
+    ).toBe(`${summary.overview}\n\n自责也是一种方法吗？`);
   });
   it('counts individual questions even when a title contains several', () => {
     expect(
@@ -205,7 +205,11 @@ describe('question-based email introduction', () => {
           { speaker: '孙玲', title: '为什么自责？怎样停下来？还有什么办法？' },
         ],
       })
-    ).toBe('为什么自责？\n怎样停下来？');
+    ).toBe(`${summary.overview}\n\n为什么自责？\n怎样停下来？`);
+  });
+  it('does not append more questions when the overview already raises them', () => {
+    const overview = '伙伴们聊起自己的经历。稳定的生活需要改变吗？';
+    expect(getDefaultNewsletterIntro({ ...recap, overview })).toBe(overview);
   });
   it('keeps a factual introduction when no real question is available', () => {
     expect(getDefaultNewsletterIntro(summary)).toBe(summary.overview);

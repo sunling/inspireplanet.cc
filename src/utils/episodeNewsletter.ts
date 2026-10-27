@@ -59,7 +59,7 @@ export function selectDefaultQuoteIndices(cards: WeeklyCard[]): number[] {
   return selected;
 }
 
-/** Reuse the edited episode questions; never invent questions or generic hooks. */
+/** Start with the edited highlights, followed by real questions from this episode. */
 export function getDefaultNewsletterIntro(
   summary: EpisodeSummary | null,
   publication?: EpisodePublication | null
@@ -70,7 +70,10 @@ export function getDefaultNewsletterIntro(
     .flatMap((topic) => topic.title.match(/[^。！？!?\n]+[？?]/g) || [])
     .map((question) => question.trim());
   const selected = [...new Set(questions)].slice(0, 2);
-  return selected.length ? selected.join('\n') : summary?.overview || '';
+  const overview = summary?.overview?.trim() || '';
+  // An overview that already raises questions is a complete introduction.
+  if (/[？?]/.test(overview)) return overview;
+  return [overview, selected.join('\n')].filter(Boolean).join('\n\n');
 }
 
 /** Preview only. Sending must later supply recipient-specific unsubscribe links. */
