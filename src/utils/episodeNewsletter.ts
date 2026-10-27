@@ -7,6 +7,8 @@ import {
   parseEpisodePublication,
 } from './episodePublication';
 
+import { normalizeNewsletterImageUrl } from './newsletterImage';
+
 const SITE_URL = 'https://inspireplanet.cc';
 const escapeHtml = (value: string) =>
   value.replace(
@@ -30,6 +32,7 @@ interface PreviewInput {
   intro?: string;
   featuredQuoteIndex?: number;
   featuredQuoteIndices?: number[];
+  image?: { url: string; alt: string };
 }
 
 /** Prefer three distinct speakers, then fill from remaining original quotes. */
@@ -104,6 +107,8 @@ export function buildEpisodeNewsletterPreview(input: PreviewInput) {
     .map((index) => cards[index])
     .filter(Boolean);
   const podcast = publication?.podcast;
+  const imageUrl = normalizeNewsletterImageUrl(input.image?.url);
+  const imageAlt = input.image?.alt?.trim() || '启发星球本期分享';
   const intro = input.intro ?? getDefaultNewsletterIntro(summary, publication);
   const title = summary?.title || `本期分享回顾`;
   const subject = `启发星球 ${year} · EP${episode}｜${title}`;
@@ -124,6 +129,8 @@ export function buildEpisodeNewsletterPreview(input: PreviewInput) {
   )
     missing.push('请选择 1–3 条有内容和署名的原话');
   if (!podcast) missing.push('尚未补入已发布的小宇宙单集链接');
+  if (input.image?.url.trim() && !imageUrl)
+    missing.push('请使用公开 GitHub 图片链接（PNG、JPG、GIF 或 WebP）');
 
   const quoteHtml = selectedCards
     .map(
@@ -137,6 +144,7 @@ export function buildEpisodeNewsletterPreview(input: PreviewInput) {
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#fffdf9;border:1px solid #eadfd4;border-radius:12px">
 <tr><td style="padding:32px 24px 20px;border-bottom:1px solid #eadfd4"><p style="margin:0 0 12px;font-size:13px;letter-spacing:2px;color:#b44a2d">启发星球 · 每期分享</p><p style="margin:0 0 12px;color:#8c7869;font-size:12px">${year} · EP${episode}${summary?.date ? ` · ${escapeHtml(summary.date)}` : ''}</p><h1 style="margin:0;font-size:25px;line-height:1.6">${escapeHtml(title)}</h1></td></tr>
 <tr><td style="padding:24px"><p style="margin:0 0 24px;line-height:1.9;font-size:16px;white-space:pre-line">${escapeHtml(intro)}</p>
+${imageUrl ? `<p style="margin:0 0 24px"><img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(imageAlt)}" width="552" style="display:block;width:100%;max-width:552px;height:auto;border:0;border-radius:8px" /></p>` : ''}
 <a href="${episodeUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:12px 22px;background:#b44a2d;color:#fff;text-decoration:none;border-radius:6px;font-size:15px">阅读本期总结与回应 ↗</a>
 ${quoteHtml}
 ${selectedCards.length ? `<p style="font-size:14px"><a href="${cardsUrl}" target="_blank" rel="noopener noreferrer" style="color:#b44a2d">查看本期全部金句卡片 ↗</a></p>` : ''}
@@ -146,6 +154,7 @@ ${podcast ? `<div style="margin-top:28px;padding-top:24px;border-top:1px solid #
   const text = [
     subject,
     intro,
+    ...(imageUrl ? [`图片：${imageAlt}\n${imageUrl}`] : []),
     `阅读本期总结与回应：${episodeUrl}`,
     ...selectedCards.flatMap((card) => [card.quote, `—— ${card.name}`]),
     ...(selectedCards.length ? [`本期金句卡片：${cardsUrl}`] : []),

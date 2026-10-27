@@ -2,6 +2,7 @@ import { createHash } from 'crypto';
 import { Resend } from 'resend';
 import { supabase } from '../../database/supabase';
 import { buildEpisodeNewsletterPreview } from '../../utils/episodeNewsletter';
+import { normalizeNewsletterImageUrl } from '../../utils/newsletterImage';
 import { isXiaoyuzhouEpisodeUrl } from '../../utils/episodePublication';
 import type { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
@@ -51,6 +52,8 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       skipPodcast,
       requestId,
       expectedTitle,
+      imageUrl = '',
+      imageAlt = '',
     } = data;
     if (
       !Number.isInteger(year) ||
@@ -88,12 +91,24 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       (skipPodcast !== undefined && typeof skipPodcast !== 'boolean')
     )
       return createErrorResponse('播客信息格式不正确');
+    const omitPodcast = skipPodcast === true || !podcastUrl.trim();
     if (
-      !skipPodcast &&
+      !omitPodcast &&
       (!isXiaoyuzhouEpisodeUrl(podcastUrl.trim()) || !podcastTitle.trim())
     )
       return createErrorResponse(
         '请填写真实的小宇宙单集链接和标题，或选择本期不附播客'
+      );
+
+    if (
+      typeof imageUrl !== 'string' ||
+      imageUrl.length > 2048 ||
+      typeof imageAlt !== 'string' ||
+      imageAlt.length > 200 ||
+      (imageUrl.trim() && !normalizeNewsletterImageUrl(imageUrl))
+    )
+      return createErrorResponse(
+        '请使用公开 GitHub 图片链接及不超过 200 字符的说明'
       );
 
     const [summary, cards, publication] = await Promise.all([
@@ -126,7 +141,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       return createErrorResponse('请选择不重复且有署名的本期原话');
     const draft = {
       ...publication,
-      podcast: skipPodcast
+      podcast: omitPodcast
         ? undefined
         : { url: podcastUrl.trim(), title: podcastTitle.trim() },
     };
@@ -138,9 +153,12 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       publication: draft,
       intro,
       featuredQuoteIndices: selected,
+      image: imageUrl.trim()
+        ? { url: normalizeNewsletterImageUrl(imageUrl)!, alt: imageAlt }
+        : undefined,
     });
     const missing = preview.missing.filter(
-      (message) => !(skipPodcast && message.includes('小宇宙'))
+      (message) => !(omitPodcast && message.includes('小宇宙'))
     );
     if (missing.length) return createErrorResponse(missing.join('；'));
     const key = process.env.RESEND_API_KEY;

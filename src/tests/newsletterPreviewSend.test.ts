@@ -142,6 +142,24 @@ describe('send test newsletter', () => {
     ).toBe(200);
     expect(mocks.send.mock.calls[0][0].html).not.toContain('小宇宙收听');
   });
+  it('allows a test without a podcast and includes normalized GitHub images', async () => {
+    const result = await request({
+      podcastUrl: '',
+      imageUrl:
+        'https://github.com/sunling/inspireplanet-assets/blob/main/example.jpg',
+      imageAlt: '会议照片',
+    });
+    expect(result.statusCode).toBe(200);
+    const message = mocks.send.mock.calls[0][0];
+    expect(message.html).not.toContain('小宇宙收听');
+    expect(message.html).toContain(
+      '<img src="https://raw.githubusercontent.com/sunling/inspireplanet-assets/main/example.jpg"'
+    );
+    expect(message.html).toContain('会议照片');
+    expect(
+      (await request({ imageUrl: 'https://example.com/a.jpg' })).statusCode
+    ).toBe(400);
+  });
   it('uses a stable idempotency key when retrying an identical draft', async () => {
     await request();
     await request();

@@ -10,6 +10,8 @@ export interface NewsletterTestDraft {
   skipPodcast: boolean;
   expectedTitle: string;
   requestId: string;
+  imageUrl?: string;
+  imageAlt?: string;
 }
 
 export const newsletterPreviewApi = {

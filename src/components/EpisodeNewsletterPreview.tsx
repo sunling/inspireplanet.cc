@@ -24,6 +24,7 @@ import {
   getDefaultNewsletterIntro,
 } from '../utils/episodeNewsletter';
 import { isXiaoyuzhouEpisodeUrl } from '../utils/episodePublication';
+import { normalizeNewsletterImageUrl } from '../utils/newsletterImage';
 import { newsletterPreviewApi } from '../netlify/services/newsletterPreview';
 
 interface Props {
@@ -57,6 +58,11 @@ export default function EpisodeNewsletterPreview({
     publication?.podcast?.title ?? `启发星球 EP${episode}`
   );
   const [skipPodcast, setSkipPodcast] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageAlt, setImageAlt] = useState('启发星球本期分享');
+  const effectiveSkipPodcast = skipPodcast || !podcastUrl.trim();
+  const imageSource = normalizeNewsletterImageUrl(imageUrl);
+  const podcastInputRef = useRef<HTMLInputElement>(null);
   const [sending, setSending] = useState(false);
   const sendingRef = useRef(false);
   const requestRef = useRef<{ fingerprint: string; id: string } | null>(null);
@@ -79,7 +85,7 @@ export default function EpisodeNewsletterPreview({
         publication: {
           ...publication,
           podcast:
-            !skipPodcast && validPodcast && podcastTitle.trim()
+            !effectiveSkipPodcast && validPodcast && podcastTitle.trim()
               ? {
                   ...(publication?.podcast?.url === podcastUrl.trim()
                     ? publication.podcast
@@ -91,6 +97,7 @@ export default function EpisodeNewsletterPreview({
         },
         intro,
         featuredQuoteIndices: quoteIndices,
+        image: imageUrl.trim() ? { url: imageUrl, alt: imageAlt } : undefined,
       }),
     [
       year,
@@ -103,23 +110,33 @@ export default function EpisodeNewsletterPreview({
       podcastUrl,
       podcastTitle,
       validPodcast,
-      skipPodcast,
+      effectiveSkipPodcast,
+      imageUrl,
+      imageAlt,
     ]
   );
   const missing = preview.missing.filter(
-    (message) => !(skipPodcast && message.includes('小宇宙'))
+    (message) => !(effectiveSkipPodcast && message.includes('小宇宙'))
   );
   const fingerprint = JSON.stringify([
     intro,
     quoteIndices,
     podcastUrl.trim(),
     podcastTitle.trim(),
-    skipPodcast,
+    effectiveSkipPodcast,
+    imageUrl,
+    imageAlt,
   ]);
   const sentCurrent = sendResult?.fingerprint === fingerprint;
 
   const sendTest = async () => {
-    if (sendingRef.current || missing.length || sentCurrent) return;
+    if (sendingRef.current || sentCurrent) return;
+    if (missing.length) {
+      setSendError(missing.join('；'));
+      if (!effectiveSkipPodcast && !validPodcast)
+        podcastInputRef.current?.focus();
+      return;
+    }
     sendingRef.current = true;
     setSending(true);
     setSendError(null);
@@ -137,7 +154,9 @@ export default function EpisodeNewsletterPreview({
         })),
         podcastUrl: podcastUrl.trim(),
         podcastTitle: podcastTitle.trim(),
-        skipPodcast,
+        skipPodcast: effectiveSkipPodcast,
+        imageUrl: imageUrl.trim(),
+        imageAlt,
         expectedTitle: summary?.title || '',
         requestId: requestRef.current.id,
       });
@@ -179,15 +198,15 @@ export default function EpisodeNewsletterPreview({
         <Stack spacing={2}>
           <Alert severity="info">
             默认选 3
-            条不同分享者的原话，保留署名。补入小宇宙链接后，可以发送测试邮件到当前账号的已验证邮箱。修改只用于本次预览，关闭后不保存。
+            条不同分享者的原话，保留署名。可发送测试邮件到当前账号的已验证邮箱。未填播客链接时，先发送不含播客的版本。修改只用于本次预览，关闭后不保存。
           </Alert>
           {missing.length > 0 && (
             <Alert severity="warning">待补齐：{missing.join('；')}。</Alert>
           )}
+          <Typography variant="h6">编辑邮件内容</Typography>
           <Typography variant="body2">主题：{preview.subject}</Typography>
           <TextField
             label="邮件导语：本期精华与 1–2 个问题"
-            disabled={sending}
             multiline
             minRows={3}
             value={intro}
@@ -200,7 +219,6 @@ export default function EpisodeNewsletterPreview({
           />
           <Box
             component="fieldset"
-            disabled={sending}
             sx={{
               m: 0,
               p: 2,
@@ -263,9 +281,13 @@ export default function EpisodeNewsletterPreview({
           </Box>
           <TextField
             label="本期小宇宙单集链接（可编辑）"
+            inputRef={podcastInputRef}
             value={podcastUrl}
-            disabled={sending}
-            error={!skipPodcast && Boolean(podcastUrl.trim()) && !validPodcast}
+            error={
+              !effectiveSkipPodcast &&
+              Boolean(podcastUrl.trim()) &&
+              !validPodcast
+            }
             onChange={(event) => {
               setPodcastUrl(event.target.value);
               if (event.target.value.trim()) setSkipPodcast(false);
@@ -277,7 +299,6 @@ export default function EpisodeNewsletterPreview({
           <TextField
             label="播客标题"
             value={podcastTitle}
-            disabled={sending}
             onChange={(event) => {
               setPodcastTitle(event.target.value);
               setCopied(false);
@@ -288,7 +309,6 @@ export default function EpisodeNewsletterPreview({
             control={
               <Checkbox
                 checked={skipPodcast}
-                disabled={sending}
                 onChange={(event) => {
                   setSkipPodcast(event.target.checked);
                   setCopied(false);
@@ -297,6 +317,38 @@ export default function EpisodeNewsletterPreview({
             }
             label="本期暂不附播客"
           />
+          {effectiveSkipPodcast && (
+            <Alert severity="info">
+              本次测试邮件不包含播客。可先试发，也可在上方输入链接后加入。
+            </Alert>
+          )}
+          <TextField
+            label="邮件配图（可选，GitHub 图片链接）"
+            value={imageUrl}
+            onChange={(event) => {
+              setImageUrl(event.target.value);
+              setCopied(false);
+            }}
+            error={Boolean(imageUrl.trim()) && !imageSource}
+            inputProps={{ maxLength: 2048 }}
+            helperText="可粘贴公开 GitHub 图库中的图片页面地址或 raw 直链，会自动转换为图片直链。私有仓库图片无法供收件人读取。"
+          />
+          {imageUrl.trim() && (
+            <TextField
+              label="图片说明"
+              value={imageAlt}
+              onChange={(event) => {
+                setImageAlt(event.target.value);
+                setCopied(false);
+              }}
+              inputProps={{ maxLength: 200 }}
+              helperText="收件人屏蔽图片时显示这段说明。"
+            />
+          )}
+          <Typography variant="h6">邮件效果预览（只读）</Typography>
+          <Typography variant="body2" color="text.secondary">
+            下方显示实际邮件效果；需要修改文字、播客或图片，请使用上方编辑框。
+          </Typography>
           <Stack direction="row" spacing={1}>
             <Button
               variant={format === 'html' ? 'contained' : 'outlined'}
@@ -357,11 +409,22 @@ export default function EpisodeNewsletterPreview({
           )}
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ flexWrap: 'wrap', gap: 1 }}>
+        <Button
+          onClick={() => {
+            podcastInputRef.current?.focus();
+            podcastInputRef.current?.scrollIntoView({
+              block: 'center',
+              behavior: 'smooth',
+            });
+          }}
+        >
+          修改播客链接
+        </Button>
         <Button onClick={copy}>{copied ? '已复制' : '复制纯文字'}</Button>
         <Button
           variant="contained"
-          disabled={sending || missing.length > 0 || sentCurrent}
+          disabled={sending || sentCurrent}
           onClick={sendTest}
         >
           {sending
