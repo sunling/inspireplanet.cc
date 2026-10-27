@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildEpisodeNewsletterPreview,
   selectDefaultQuoteIndices,
+  getDefaultNewsletterIntro,
 } from '../utils/episodeNewsletter';
 import { parseEpisodePublication } from '../utils/episodePublication';
 import type {
@@ -161,5 +162,66 @@ describe('three original quotes', () => {
       buildEpisodeNewsletterPreview({ ...input, featuredQuoteIndices: [0, 0] })
         .missing
     ).toContain('请选择 1–3 条有内容和署名的原话');
+  });
+});
+
+describe('question-based email introduction', () => {
+  const recap = {
+    ...summary,
+    topics: [
+      { speaker: '孙玲', title: '自责也是一种方法吗？' },
+      { speaker: '抹茶', title: '稳定的生活，也一定要认识新人吗？' },
+      { speaker: 'Nancy', title: '重要的事做了吗？' },
+    ],
+  };
+  it('prefers the questions edited during content generation', () => {
+    const publication = {
+      newsletter: { intro: '现场留下的第一个问题？\n现场留下的第二个问题？' },
+    };
+    expect(getDefaultNewsletterIntro(recap, publication)).toBe(
+      publication.newsletter.intro
+    );
+    expect(
+      buildEpisodeNewsletterPreview({ ...input, summary: recap, publication })
+        .text
+    ).toContain(publication.newsletter.intro);
+  });
+  it('reuses at most two existing question titles without rewriting them', () => {
+    expect(getDefaultNewsletterIntro(recap)).toBe(
+      '自责也是一种方法吗？\n稳定的生活，也一定要认识新人吗？'
+    );
+    expect(
+      getDefaultNewsletterIntro({
+        ...recap,
+        topics: [recap.topics[0], recap.topics[0]],
+      })
+    ).toBe('自责也是一种方法吗？');
+  });
+  it('counts individual questions even when a title contains several', () => {
+    expect(
+      getDefaultNewsletterIntro({
+        ...recap,
+        topics: [
+          { speaker: '孙玲', title: '为什么自责？怎样停下来？还有什么办法？' },
+        ],
+      })
+    ).toBe('为什么自责？\n怎样停下来？');
+  });
+  it('keeps a factual introduction when no real question is available', () => {
+    expect(getDefaultNewsletterIntro(summary)).toBe(summary.overview);
+    expect(getDefaultNewsletterIntro(null)).toBe('');
+  });
+  it('automatically includes the saved podcast link while using the question introduction', () => {
+    const preview = buildEpisodeNewsletterPreview({
+      ...input,
+      summary: recap,
+      publication: {
+        podcast: { url: podcastUrl, title: '已回填的播客' },
+        newsletter: { intro: '本期实际讨论的问题？' },
+      },
+    });
+    expect(preview.text).toContain(podcastUrl);
+    expect(preview.html).toContain('已回填的播客');
+    expect(preview.text).toContain('本期实际讨论的问题？');
   });
 });

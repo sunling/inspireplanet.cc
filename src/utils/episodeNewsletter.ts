@@ -59,6 +59,20 @@ export function selectDefaultQuoteIndices(cards: WeeklyCard[]): number[] {
   return selected;
 }
 
+/** Reuse the edited episode questions; never invent questions or generic hooks. */
+export function getDefaultNewsletterIntro(
+  summary: EpisodeSummary | null,
+  publication?: EpisodePublication | null
+): string {
+  if (publication?.newsletter?.intro?.trim())
+    return publication.newsletter.intro;
+  const questions = (summary?.topics || [])
+    .flatMap((topic) => topic.title.match(/[^。！？!?\n]+[？?]/g) || [])
+    .map((question) => question.trim());
+  const selected = [...new Set(questions)].slice(0, 2);
+  return selected.length ? selected.join('\n') : summary?.overview || '';
+}
+
 /** Preview only. Sending must later supply recipient-specific unsubscribe links. */
 export function buildEpisodeNewsletterPreview(input: PreviewInput) {
   if (
@@ -87,8 +101,7 @@ export function buildEpisodeNewsletterPreview(input: PreviewInput) {
     .map((index) => cards[index])
     .filter(Boolean);
   const podcast = publication?.podcast;
-  const intro =
-    input.intro ?? publication?.newsletter?.intro ?? summary?.overview ?? '';
+  const intro = input.intro ?? getDefaultNewsletterIntro(summary, publication);
   const title = summary?.title || `本期分享回顾`;
   const subject = `启发星球 ${year} · EP${episode}｜${title}`;
   const episodeUrl = `${SITE_URL}/episodes/${year}/${episode}`;

@@ -21,6 +21,7 @@ import type { EpisodePublication } from '../utils/episodePublication';
 import {
   buildEpisodeNewsletterPreview,
   selectDefaultQuoteIndices,
+  getDefaultNewsletterIntro,
 } from '../utils/episodeNewsletter';
 import { isXiaoyuzhouEpisodeUrl } from '../utils/episodePublication';
 import { newsletterPreviewApi } from '../netlify/services/newsletterPreview';
@@ -43,7 +44,7 @@ export default function EpisodeNewsletterPreview({
   onClose,
 }: Props) {
   const [intro, setIntro] = useState(
-    publication?.newsletter?.intro ?? summary?.overview ?? ''
+    getDefaultNewsletterIntro(summary, publication)
   );
   const [quoteIndices, setQuoteIndices] = useState<number[]>(
     publication?.newsletter?.featuredQuoteIndices ??
@@ -185,7 +186,7 @@ export default function EpisodeNewsletterPreview({
           )}
           <Typography variant="body2">主题：{preview.subject}</Typography>
           <TextField
-            label="邮件导语"
+            label="邮件导语：本期的 1–2 个问题"
             disabled={sending}
             multiline
             minRows={3}
@@ -195,7 +196,7 @@ export default function EpisodeNewsletterPreview({
               setIntro(event.target.value);
               setCopied(false);
             }}
-            helperText="默认复用本期总结的导语，无需重新写一份。"
+            helperText="优先读取内容制作时摘出的本期问题；没有配置时复用本期话题里的问句。保留真实疑问，不编悬念。"
           />
           <Box
             component="fieldset"
@@ -270,7 +271,7 @@ export default function EpisodeNewsletterPreview({
               setCopied(false);
             }}
             inputProps={{ maxLength: 2048 }}
-            helperText="粘贴已发布的单集链接，邮件预览会同步更新。这里只用于本次预览与测试发送。"
+            helperText="默认读取本期已回填的播客链接；缺失时可在此补入。补入只用于本次预览与测试发送。"
           />
           <TextField
             label="播客标题"
