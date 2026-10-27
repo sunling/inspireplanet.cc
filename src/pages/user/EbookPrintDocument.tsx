@@ -32,7 +32,10 @@ body { color: #302d29; font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
 .ebook-print-title { font-size: 34pt; line-height: 1.35; margin: 12mm 0 7mm; }
 .ebook-print-subtitle { font-size: 13pt; line-height: 1.9; opacity: .84; max-width: 125mm; }
 .ebook-print-meta { margin-top: 25mm; font: 10pt sans-serif; opacity: .72; }
-.ebook-print-toc { }
+.ebook-print-toc {
+  break-before: page;
+  page-break-before: always;
+}
 .ebook-print-toc h1 { color: #3f554d; font-size: 25pt; margin: 0 0 12mm; }
 .ebook-print-toc-group { margin: 0 0 7mm; }
 .ebook-print-toc-group h2 { color: #9d5238; font-size: 13pt; margin: 0 0 3mm; }
