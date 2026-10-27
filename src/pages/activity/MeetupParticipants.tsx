@@ -1,3 +1,5 @@
+import ParticipationPeriodsEditor from '../../components/participants/ParticipationPeriodsEditor';
+import type { ParticipationPeriod } from '../../utils/participationPeriods';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -211,6 +213,57 @@ const MeetupParticipants: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const saveParticipationPeriods = async (
+    id: string,
+    periods: ParticipationPeriod[]
+  ) => {
+    const response = await participantsApi.updateParticipationPeriods(
+      Number(meetupId),
+      id,
+      periods
+    );
+    if (!response.success || !response.data)
+      throw new Error(response.error || '保存参与周期失败');
+    const saved = response.data.participation_periods;
+    setParticipants((current) =>
+      current.map((participant) =>
+        participant.id === id
+          ? { ...participant, participation_periods: saved }
+          : participant
+      )
+    );
+    showSnackbar.success('参与周期已保存');
+  };
+
+  const saveBatchParticipationPeriods = async (
+    periods: ParticipationPeriod[]
+  ) => {
+    const response = await participantsApi.batchUpdateParticipationPeriods(
+      Number(meetupId),
+      selectedParticipants,
+      periods
+    );
+    if (!response.success || !response.data)
+      throw new Error(response.error || '批量保存失败');
+    const saved = new Map(
+      response.data.participants.map((participant) => [
+        String(participant.id),
+        participant.participation_periods,
+      ])
+    );
+    setParticipants((current) =>
+      current.map((participant) =>
+        saved.has(String(participant.id))
+          ? {
+              ...participant,
+              participation_periods: saved.get(String(participant.id))!,
+            }
+          : participant
+      )
+    );
+    showSnackbar.success(`已更新 ${saved.size} 位参与者的参与周期`);
   };
 
   // 刷新统计数据（不重新加载整个页面）
@@ -708,7 +761,32 @@ const MeetupParticipants: React.FC = () => {
 
         {/* 操作按钮 */}
         {selectedParticipants.length > 0 && (
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 1,
+              alignItems: 'center',
+            }}
+          >
+            <ParticipationPeriodsEditor
+              key={selectedParticipants.join(',')}
+              periods={
+                participants.find((participant) =>
+                  selectedParticipants.includes(participant.id)
+                )?.participation_periods || []
+              }
+              bulkParticipants={participants
+                .filter((participant) =>
+                  selectedParticipants.includes(participant.id)
+                )
+                .map((participant) => ({
+                  name: participant.name,
+                  periods: participant.participation_periods || [],
+                }))}
+              bulkCount={selectedParticipants.length}
+              onSave={saveBatchParticipationPeriods}
+            />
             <Button
               variant="contained"
               startIcon={<WorkspacePremiumOutlined />}
@@ -979,6 +1057,14 @@ const MeetupParticipants: React.FC = () => {
                       </Box>
 
                       <Divider sx={{ my: 2 }} />
+                      <Typography variant="subtitle2">参与周期</Typography>
+                      <ParticipationPeriodsEditor
+                        periods={participant.participation_periods || []}
+                        onSave={(periods) =>
+                          saveParticipationPeriods(participant.id, periods)
+                        }
+                      />
+                      <Divider sx={{ my: 2 }} />
 
                       <Box>
                         <Typography
@@ -1093,7 +1179,7 @@ const MeetupParticipants: React.FC = () => {
           </Box>
         ) : (
           <TableContainer component={Paper}>
-            <Table sx={{ tableLayout: 'fixed', minWidth: 960 }}>
+            <Table sx={{ tableLayout: 'fixed', minWidth: 1280 }}>
               <TableHead>
                 <TableRow>
                   <TableCell padding="checkbox">
@@ -1112,7 +1198,8 @@ const MeetupParticipants: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell sx={{ width: 220 }}>报名用户</TableCell>
-                  <TableCell sx={{ width: '38%' }}>报名答案</TableCell>
+                  <TableCell sx={{ width: 300 }}>参与周期</TableCell>
+                  <TableCell>报名答案</TableCell>
                   <TableCell sx={{ width: 100 }}>报名状态</TableCell>
                   <TableCell sx={{ width: 100 }}>审批状态</TableCell>
                   <TableCell sx={{ width: 120 }}>操作</TableCell>
@@ -1148,6 +1235,14 @@ const MeetupParticipants: React.FC = () => {
                           'zh-CN'
                         )}
                       </Typography>
+                    </TableCell>
+                    <TableCell sx={{ verticalAlign: 'top' }}>
+                      <ParticipationPeriodsEditor
+                        periods={participant.participation_periods || []}
+                        onSave={(periods) =>
+                          saveParticipationPeriods(participant.id, periods)
+                        }
+                      />
                     </TableCell>
                     <TableCell sx={{ verticalAlign: 'top' }}>
                       {participant.survey_answers && survey ? (

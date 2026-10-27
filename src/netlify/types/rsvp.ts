@@ -1,3 +1,4 @@
+import type { ParticipationPeriod } from '../../utils/participationPeriods';
 export enum RSVPStatus {
   CONFIRMED = 'confirmed',
   CANCELLED = 'cancelled',
@@ -103,6 +104,7 @@ export function getApprovalStatusStyle(status: ApprovalStatus | string): {
 }
 
 export interface RSVP {
+  participation_periods?: ParticipationPeriod[];
   id: string;
   name: string;
   email?: string | null;

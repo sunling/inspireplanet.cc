@@ -1,3 +1,4 @@
+import { validateParticipationPeriods } from '../../utils/participationPeriods';
 import { supabase } from '../../database/supabase';
 import { NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
@@ -17,6 +18,8 @@ import { RSVPStatus, ApprovalStatus } from '../types/rsvp';
 
 export interface ParticipantAction {
   functionName:
+    | 'batchUpdateParticipationPeriods'
+    | 'updateParticipationPeriods'
     | 'confirm'
     | 'batchConfirm'
     | 'batchReject'
@@ -35,6 +38,10 @@ export async function handler(event: NetlifyEvent, context: any) {
     const functionName = getFunctionNameFromEvent(event);
 
     switch (functionName) {
+      case 'batchUpdateParticipationPeriods':
+        return await handleUpdateParticipationPeriods(event, true);
+      case 'updateParticipationPeriods':
+        return await handleUpdateParticipationPeriods(event);
       case 'batchConfirm':
         return await handleBatchConfirm(event);
       case 'batchReject':
@@ -652,4 +659,55 @@ async function handleGetParticipants(event: NetlifyEvent) {
     console.error('Get participants error:', error);
     return createErrorResponse('获取参与者失败', 500);
   }
+}
+
+async function handleUpdateParticipationPeriods(
+  event: NetlifyEvent,
+  batch = false
+) {
+  if (event.httpMethod !== 'POST')
+    return createErrorResponse('请使用 POST 请求', 405);
+  const auth = await requireOrganizer(event);
+  if (auth.error) return auth.error;
+  const input = getDataFromEvent(event);
+  const meetupId = Number(input.meetup_id);
+  const rsvpIds: number[] = batch
+    ? Array.isArray(input.rsvp_ids)
+      ? [...new Set<number>(input.rsvp_ids.map(Number))]
+      : []
+    : [Number(input.rsvp_id)];
+  if (
+    !Number.isSafeInteger(meetupId) ||
+    meetupId <= 0 ||
+    rsvpIds.length === 0 ||
+    rsvpIds.length > 100 ||
+    rsvpIds.some((id) => !Number.isSafeInteger(id) || id <= 0)
+  )
+    return createErrorResponse('活动或参与者 ID 不合法');
+  const validation = validateParticipationPeriods(input.participation_periods);
+  if (validation) return createErrorResponse(validation);
+  const periods = input.participation_periods.map(
+    (period: { start_date: string; end_date: string }) => ({
+      start_date: period.start_date,
+      end_date: period.end_date,
+    })
+  );
+  const { data: existing, error: readError } = await supabase
+    .from('meetup_rsvps')
+    .select('id')
+    .eq('meetup_id', meetupId)
+    .in('id', rsvpIds);
+  if (readError) return createErrorResponse('获取参与者失败', 500);
+  if (existing?.length !== rsvpIds.length)
+    return createErrorResponse('参与者不存在或不属于该活动', 404);
+  const { data, error } = await supabase
+    .from('meetup_rsvps')
+    .update({ participation_periods: periods })
+    .in('id', rsvpIds)
+    .eq('meetup_id', meetupId)
+    .select('id, participation_periods');
+  if (error) return createErrorResponse('保存参与周期失败', 500);
+  if (!data?.length)
+    return createErrorResponse('参与者不存在或不属于该活动', 404);
+  return createSuccessResponse(batch ? { participants: data } : data[0]);
 }
