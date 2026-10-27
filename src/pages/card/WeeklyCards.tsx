@@ -744,20 +744,14 @@ const WeeklyCards: React.FC = () => {
       <Container maxWidth="lg" ref={readingRef}>
         <header className={styles.header}>
           <p>星友分享</p>
-          <h1>启发星球周刊</h1>
+          <h1>启发星球 · 金句卡片</h1>
           <span>从每周真实的分享里，收藏一句话，也带走一个新的视角。</span>
         </header>
 
         {activeEpisodeNumber > 0 && (
-          <nav className={styles.episodeJourney} aria-label="本期参与入口">
-            <span>EP{activeEpisodeNumber} 不只是一份周刊</span>
-            <Link to={`/episodes/${activeEpisodePath}`}>看本期分享与回应</Link>
-            <Link
-              to={`/episodes/${activeEpisodePath}/respond`}
-              className={styles.episodeJourneyPrimary}
-            >
-              留下感受和收获
-            </Link>
+          <nav className={styles.episodeJourney} aria-label="返回本期回顾">
+            <span>EP{activeEpisodeNumber} · 保存或分享喜欢的卡片</span>
+            <Link to={`/episodes/${activeEpisodePath}`}>返回本期回顾 →</Link>
           </nav>
         )}
 

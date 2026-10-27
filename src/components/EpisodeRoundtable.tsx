@@ -43,6 +43,9 @@ const EpisodeRoundtable: React.FC<{
     };
   }, [episodeNumber, year, attempt]);
 
+  // A missing association is not content for readers to work through.
+  if (!loading && !error && questions.length === 0) return null;
+
   return (
     <section
       className={`${styles.section} ${styles.roundtableSection}`}
@@ -72,7 +75,7 @@ const EpisodeRoundtable: React.FC<{
         >
           {error}
         </Alert>
-      ) : questions.length ? (
+      ) : (
         <div className={styles.topicList}>
           {questions.map((question) => (
             <article className={styles.topicCard} key={question.id}>
@@ -98,11 +101,6 @@ const EpisodeRoundtable: React.FC<{
               </Link>
             </article>
           ))}
-        </div>
-      ) : (
-        <div className={styles.pendingCard}>
-          <p>本期暂未关联圆桌问题。</p>
-          <Link to="/questions">去问题池看看，或带来你的问题 →</Link>
         </div>
       )}
     </section>
