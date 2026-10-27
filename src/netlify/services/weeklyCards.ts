@@ -1,5 +1,6 @@
 import { ApiResponse } from '../types/http';
 import { http } from '../config/http';
+import type { EpisodePublication } from '../../utils/episodePublication';
 
 // 周刊卡片接口
 export interface WeeklyCard {
@@ -36,6 +37,7 @@ export interface EpisodeSummary {
 export interface WeeklyCardResponse {
   records: WeeklyCard[];
   summary?: EpisodeSummary | null;
+  publication?: EpisodePublication | null;
 }
 
 export const weeklyCardsApi = {
@@ -53,17 +55,11 @@ export const weeklyCardsApi = {
   getByEpisode: async (
     episode: string,
     year?: number | string
-  ): Promise<
-    ApiResponse<{ records: WeeklyCard[]; summary?: EpisodeSummary | null }>
-  > => {
-    return http.get<{ records: WeeklyCard[]; summary?: EpisodeSummary | null }>(
-      '/weeklyCards',
-      'getByEpisode',
-      {
-        episode,
-        ...(year ? { year } : {}),
-      }
-    );
+  ): Promise<ApiResponse<WeeklyCardResponse>> => {
+    return http.get<WeeklyCardResponse>('/weeklyCards', 'getByEpisode', {
+      episode,
+      ...(year ? { year } : {}),
+    });
   },
 
   getAllLimited: async (

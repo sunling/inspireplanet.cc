@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, CircularProgress } from '@mui/material';
+import { Alert, Button, CircularProgress } from '@mui/material';
+import { useAuth } from '@/context/auth';
+import EpisodeNewsletterPreview from '@/components/EpisodeNewsletterPreview';
+import type { EpisodePublication } from '@/utils/episodePublication';
 import html2canvas from 'html2canvas';
 import { QRCodeSVG } from 'qrcode.react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -58,6 +61,11 @@ const getEpisodeYear = (date: string) =>
 const EpisodeHub: React.FC = () => {
   const params = useParams<{ year?: string; episode: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [publication, setPublication] = useState<EpisodePublication | null>(
+    null
+  );
+  const [showNewsletterPreview, setShowNewsletterPreview] = useState(false);
   const readingRef = useRef<HTMLElement>(null);
   const meetupId = INSPIRE_PLANET_MEETUP_ID;
   const episodeNumber = Number(params.episode);
@@ -95,6 +103,8 @@ const EpisodeHub: React.FC = () => {
 
       setIsLoading(true);
       setError(null);
+      setPublication(null);
+      setShowNewsletterPreview(false);
 
       try {
         const [episodeResult, responsesResult, weeklyResult] =
@@ -125,6 +135,7 @@ const EpisodeHub: React.FC = () => {
         if (weeklyResult.success) {
           setWeeklyCards(weeklyResult.data?.records || []);
           setEpisodeSummary(weeklyResult.data?.summary || null);
+          setPublication(weeklyResult.data?.publication || null);
         } else {
           setWeeklyCards([]);
           setEpisodeSummary(null);
@@ -315,8 +326,47 @@ const EpisodeHub: React.FC = () => {
                 ? `本期共整理了 ${weeklyCards.length} 段来自现场真实分享的记录，涵盖过去一周的阅读、观察与实践。`
                 : '大家从过去一周带来各自的碎片输入、启发与思考。这里收集本期分享，以及会议结束后仍想留下的话。')}
           </p>
+          {(publication?.podcast ||
+            (user?.role === 'organizer' && episodeYear)) && (
+            <div className={styles.publicationActions}>
+              {publication?.podcast && (
+                <a
+                  href={publication.podcast.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.podcastLink}
+                >
+                  🎧 小宇宙收听本期
+                  {publication.podcast.durationSeconds
+                    ? ` · 约 ${Math.ceil(publication.podcast.durationSeconds / 60)} 分钟`
+                    : ''}{' '}
+                  ↗
+                </a>
+              )}
+              {user?.role === 'organizer' && episodeYear && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setShowNewsletterPreview(true)}
+                >
+                  预览本期邮件
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </header>
+      {showNewsletterPreview && user?.role === 'organizer' && episodeYear && (
+        <EpisodeNewsletterPreview
+          key={`${episodeYear}/${episodeNumber}`}
+          year={episodeYear}
+          episode={episodeNumber}
+          summary={episodeSummary}
+          cards={weeklyCards}
+          publication={publication}
+          onClose={() => setShowNewsletterPreview(false)}
+        />
+      )}
 
       <section
         ref={readingRef}
