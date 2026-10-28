@@ -1,3 +1,4 @@
+import NewsletterSignup from '../../components/NewsletterSignup';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, CircularProgress } from '@mui/material';
 import { useAuth } from '@/context/auth';
@@ -356,6 +357,9 @@ const EpisodeHub: React.FC = () => {
           )}
         </div>
       </header>
+      <NewsletterSignup
+        source={episodeYear ? `/episodes/${episodeYear}/${episodeNumber}` : '/'}
+      />
       {showNewsletterPreview && user?.role === 'organizer' && episodeYear && (
         <EpisodeNewsletterPreview
           key={`${episodeYear}/${episodeNumber}`}

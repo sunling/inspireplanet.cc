@@ -107,6 +107,12 @@ const createOrganizerProtectedRoute = (Component: React.ReactNode) => (
 );
 
 // 懒加载页面组件
+const NewsletterAction = lazy(
+  () => import('../pages/newsletter/NewsletterAction')
+);
+const NewsletterAdmin = lazy(
+  () => import('../pages/newsletter/NewsletterAdmin')
+);
 const Home = lazy(() => import('../pages/home/Home'));
 const Pomodoro = lazy(() => import('../pages/tools/Pomodoro'));
 const About = lazy(() => import('../pages/introduce/About'));
@@ -229,6 +235,18 @@ const router = createBrowserRouter(
         {
           path: 'page-poster',
           element: createLazyRoute(<DialoguePoster />),
+        },
+        {
+          path: 'newsletter/confirm',
+          element: createLazyRoute(<NewsletterAction key="confirm" />),
+        },
+        {
+          path: 'newsletter/unsubscribe',
+          element: createLazyRoute(<NewsletterAction key="unsubscribe" />),
+        },
+        {
+          path: 'admin/newsletter',
+          element: createOrganizerProtectedRoute(<NewsletterAdmin />),
         },
         { path: 'join', element: createLazyRoute(<CommunityJoin />) },
         { path: 'login', element: createLazyRoute(<Login />) },

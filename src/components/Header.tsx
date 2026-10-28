@@ -29,6 +29,7 @@ import {
   Logout,
   Lock,
   AutoStoriesOutlined,
+  MailOutline,
 } from '@mui/icons-material';
 import {
   meetupsApi,
@@ -730,6 +731,16 @@ const Header: React.FC<HeaderProps> = ({
                   <CalendarToday fontSize="small" sx={{ mr: 1 }} />
                   我的活动
                 </MenuItem>
+                {isOrganizer() && (
+                  <MenuItem
+                    component={Link}
+                    to="/admin/newsletter"
+                    onClick={() => setUserMenuAnchor(null)}
+                  >
+                    <MailOutline fontSize="small" sx={{ mr: 1 }} />
+                    邮件订阅管理
+                  </MenuItem>
+                )}
                 <MenuItem
                   component={Link}
                   to="/profile"
