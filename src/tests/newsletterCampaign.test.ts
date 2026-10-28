@@ -67,7 +67,7 @@ const request = (
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.deployment.production = true;
-  vi.stubEnv('JWT_SECRET', '');
+  vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
   vi.stubEnv('RESEND_API_KEY', 'mock-provider-key');
   vi.stubEnv('NEWSLETTER_UNSUBSCRIBE_SECRET', 'x'.repeat(64));
   mocks.getUser.mockResolvedValue({
@@ -125,7 +125,10 @@ describe('formal newsletter campaigns', () => {
   });
   it('uses the production build marker and an existing server secret without new runtime variables', async () => {
     vi.stubEnv('NEWSLETTER_UNSUBSCRIBE_SECRET', '');
-    vi.stubEnv('JWT_SECRET', 'existing-server-secret-'.repeat(3));
+    vi.stubEnv(
+      'SUPABASE_SERVICE_ROLE_KEY',
+      'existing-server-secret-'.repeat(3)
+    );
     vi.stubEnv('NEWSLETTER_BROADCAST_ENABLED', '');
     vi.stubEnv('CONTEXT', '');
     const r = await request('status', {}, 'GET');
@@ -135,7 +138,7 @@ describe('formal newsletter campaigns', () => {
   });
   it('reports missing server configuration instead of calling production a preview', async () => {
     vi.stubEnv('NEWSLETTER_UNSUBSCRIBE_SECRET', '');
-    vi.stubEnv('JWT_SECRET', '');
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
     const data = JSON.parse((await request('status', {}, 'GET')).body).data;
     expect(data.canSend).toBe(false);
     expect(data.sendUnavailableReason).toContain('配置不完整');

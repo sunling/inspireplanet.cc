@@ -3,7 +3,8 @@ import { createHmac } from 'crypto';
 /** Domain-separated HMAC; fallback reuses an existing server-only secret. */
 export function newsletterTokenSecret(): string | null {
   const value =
-    process.env.NEWSLETTER_UNSUBSCRIBE_SECRET || process.env.JWT_SECRET;
+    process.env.NEWSLETTER_UNSUBSCRIBE_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
   return value && value.length >= 32 ? value : null;
 }
 export function deliveryUnsubscribeToken(deliveryId: string): string {
