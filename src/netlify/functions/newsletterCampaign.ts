@@ -27,7 +27,9 @@ const reply = (
 });
 const hash = (value: string) =>
   createHash('sha256').update(value).digest('hex');
-const production = () => process.env.CONTEXT === 'production';
+// Explicit Functions-scoped switch exists only in the production deploy context.
+// Netlify's build-time CONTEXT is not guaranteed in the Functions runtime.
+const production = () => process.env.NEWSLETTER_BROADCAST_ENABLED === 'true';
 async function status(year: number, episode: number) {
   const { data, error } = await supabase.rpc('newsletter_campaign_status', {
     p_year: year,

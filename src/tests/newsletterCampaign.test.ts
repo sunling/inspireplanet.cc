@@ -62,7 +62,7 @@ const request = (
   });
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.stubEnv('CONTEXT', 'production');
+  vi.stubEnv('NEWSLETTER_BROADCAST_ENABLED', 'true');
   vi.stubEnv('RESEND_API_KEY', 'mock-provider-key');
   vi.stubEnv('NEWSLETTER_UNSUBSCRIBE_SECRET', 'x'.repeat(64));
   mocks.getUser.mockResolvedValue({
@@ -110,7 +110,7 @@ describe('formal newsletter campaigns', () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it('preview environments can view status but never prepare, start or send real mail', async () => {
-    vi.stubEnv('CONTEXT', 'deploy-preview');
+    vi.stubEnv('NEWSLETTER_BROADCAST_ENABLED', '');
     expect((await request('status', {}, 'GET')).body).toContain(
       '"canSend":false'
     );
