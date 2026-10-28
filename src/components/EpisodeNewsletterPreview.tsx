@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useState } from 'react';
+import NewsletterBroadcast from './NewsletterBroadcast';
+import { useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -242,6 +243,14 @@ export default function EpisodeNewsletterPreview({
             </Alert>
           )}
           {sendError && <Alert severity="error">{sendError}</Alert>}
+          <NewsletterBroadcast
+            draft={{ year, episode, subject, document }}
+            disabled={
+              sending ||
+              Boolean(preview.error) ||
+              !validateNewsletterSubject(subject)
+            }
+          />
         </Stack>
       </DialogContent>
       <DialogActions sx={{ flexWrap: 'wrap', gap: 1 }}>
