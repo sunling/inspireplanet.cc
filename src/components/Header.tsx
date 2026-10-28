@@ -243,6 +243,7 @@ const Header: React.FC<HeaderProps> = ({
     ];
 
     if (isOrganizer()) {
+      baseItems.push({ path: '/admin/newsletter', label: '邮件订阅管理' });
       baseItems.push({ path: '/create-meetup', label: '创建活动' });
       baseItems.push({ path: '/meetup-participants-list', label: '报名管理' });
       baseItems.push({
