@@ -29,6 +29,7 @@ import {
   Logout,
   Lock,
   AutoStoriesOutlined,
+  MailOutline,
 } from '@mui/icons-material';
 import {
   meetupsApi,
@@ -243,7 +244,6 @@ const Header: React.FC<HeaderProps> = ({
     ];
 
     if (isOrganizer()) {
-      baseItems.push({ path: '/admin/newsletter', label: '邮件订阅管理' });
       baseItems.push({ path: '/create-meetup', label: '创建活动' });
       baseItems.push({ path: '/meetup-participants-list', label: '报名管理' });
       baseItems.push({
@@ -731,6 +731,16 @@ const Header: React.FC<HeaderProps> = ({
                   <CalendarToday fontSize="small" sx={{ mr: 1 }} />
                   我的活动
                 </MenuItem>
+                {isOrganizer() && (
+                  <MenuItem
+                    component={Link}
+                    to="/admin/newsletter"
+                    onClick={() => setUserMenuAnchor(null)}
+                  >
+                    <MailOutline fontSize="small" sx={{ mr: 1 }} />
+                    邮件订阅管理
+                  </MenuItem>
+                )}
                 <MenuItem
                   component={Link}
                   to="/profile"
