@@ -16,6 +16,9 @@ import {
 import type { NewsletterDocument } from '../utils/newsletterDocument';
 import { safeNewsletterLink } from '../utils/newsletterDocument';
 import { normalizeNewsletterImageUrl } from '../utils/newsletterImage';
+import { isXiaoyuzhouEpisodeUrl } from '../utils/episodePublication';
+
+const DEFAULT_PODCAST_LABEL = '🎧 在小宇宙收听本期播客';
 
 const EmailImage = Node.create({
   name: 'image',
@@ -127,8 +130,11 @@ export default function NewsletterEditor({
           .insertContent({ type: 'image', attrs: { src, alt: label } })
           .run();
     } else {
-      const href = safeNewsletterLink(url);
-      if (!href || !label.trim()) {
+      const href = safeNewsletterLink(url.trim());
+      const linkLabel =
+        label.trim() ||
+        (isXiaoyuzhouEpisodeUrl(url.trim()) ? DEFAULT_PODCAST_LABEL : '');
+      if (!href || !linkLabel) {
         setError('请填写链接文字，以及完整的 HTTP 或 HTTPS 地址');
         return;
       }
@@ -137,7 +143,7 @@ export default function NewsletterEditor({
         .focus()
         .insertContent({
           type: 'text',
-          text: label,
+          text: linkLabel,
           marks: [{ type: 'link', attrs: { href } }],
         })
         .run();
@@ -281,7 +287,17 @@ export default function NewsletterEditor({
               autoFocus
               label={dialog === 'image' ? 'GitHub 图片链接' : '链接地址'}
               value={url}
-              onChange={(event) => setUrl(event.target.value)}
+              onChange={(event) => {
+                const nextUrl = event.target.value;
+                setUrl(nextUrl);
+                if (
+                  dialog === 'link' &&
+                  !label.trim() &&
+                  isXiaoyuzhouEpisodeUrl(nextUrl.trim())
+                ) {
+                  setLabel(DEFAULT_PODCAST_LABEL);
+                }
+              }}
               inputProps={{ maxLength: 2048 }}
               helperText={
                 dialog === 'image'
@@ -292,6 +308,11 @@ export default function NewsletterEditor({
             <TextField
               label={dialog === 'image' ? '图片说明' : '链接文字'}
               value={label}
+              helperText={
+                dialog === 'link'
+                  ? '粘贴小宇宙单集链接后自动填写默认文字，也可以自行修改。'
+                  : undefined
+              }
               onChange={(event) => setLabel(event.target.value)}
               inputProps={{ maxLength: 200 }}
             />
