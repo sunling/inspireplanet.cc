@@ -1,7 +1,7 @@
 [build]
   publish = "dist"
   functions = "src/netlify/functions"
-  command = "vite build"
+  command = "node scripts/write-newsletter-deploy-context.mjs && vite build"
 
 [dev]
   publish = "dist"

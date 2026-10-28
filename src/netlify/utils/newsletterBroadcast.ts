@@ -1,8 +1,15 @@
 import { createHmac } from 'crypto';
 
+/** Domain-separated HMAC; fallback reuses an existing server-only secret. */
+export function newsletterTokenSecret(): string | null {
+  const value =
+    process.env.NEWSLETTER_UNSUBSCRIBE_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return value && value.length >= 32 ? value : null;
+}
 export function deliveryUnsubscribeToken(deliveryId: string): string {
-  const secret = process.env.NEWSLETTER_UNSUBSCRIBE_SECRET;
-  if (!secret || secret.length < 32) throw new Error('NewsletterSecretMissing');
+  const secret = newsletterTokenSecret();
+  if (!secret) throw new Error('NewsletterSecretMissing');
   return createHmac('sha256', secret)
     .update(`newsletter-unsubscribe-v1:${deliveryId}`)
     .digest('hex');

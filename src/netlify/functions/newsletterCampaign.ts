@@ -1,3 +1,4 @@
+import deployment from '../generated/newsletterDeployment.json';
 import { createHash, randomUUID } from 'crypto';
 import { supabase } from '../../database/supabase';
 import {
@@ -6,6 +7,7 @@ import {
 } from '../../utils/newsletterDocument';
 import {
   deliveryUnsubscribeToken,
+  newsletterTokenSecret,
   renderDeliveryEmail,
 } from '../utils/newsletterBroadcast';
 import type { NetlifyEvent, NetlifyResponse } from '../types/http';
@@ -27,16 +29,22 @@ const reply = (
 });
 const hash = (value: string) =>
   createHash('sha256').update(value).digest('hex');
-// Explicit Functions-scoped switch exists only in the production deploy context.
-// Netlify's build-time CONTEXT is not guaranteed in the Functions runtime.
-const production = () => process.env.NEWSLETTER_BROADCAST_ENABLED === 'true';
+// Netlify CONTEXT is captured by the build, not assumed to exist at runtime.
+const production = () => deployment.production === true;
+function unavailableReason() {
+  if (!production()) return '预览环境不允许正式群发，请在正式站操作';
+  if (!process.env.RESEND_API_KEY || !newsletterTokenSecret())
+    return '正式邮件服务配置不完整，请联系组织者检查服务器密钥';
+  return null;
+}
 async function status(year: number, episode: number) {
   const { data, error } = await supabase.rpc('newsletter_campaign_status', {
     p_year: year,
     p_episode: episode,
   });
   if (error) throw new Error('CampaignReadFailed');
-  return { ...data, canSend: production() };
+  const reason = unavailableReason();
+  return { ...data, canSend: !reason, sendUnavailableReason: reason };
 }
 export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
   if (!['POST', 'GET'].includes(event.httpMethod))
@@ -94,11 +102,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       return reply(405, undefined, '请求方式不支持');
     if (!production())
       return reply(403, undefined, '预览环境不允许正式群发，请在正式站操作');
-    if (
-      !process.env.RESEND_API_KEY ||
-      !process.env.NEWSLETTER_UNSUBSCRIBE_SECRET ||
-      process.env.NEWSLETTER_UNSUBSCRIBE_SECRET.length < 32
-    )
+    if (!process.env.RESEND_API_KEY || !newsletterTokenSecret())
       return reply(503, undefined, '正式邮件服务暂未配置完整');
     const origin = event.headers.origin || event.headers.Origin;
     if (

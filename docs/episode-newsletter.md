@@ -73,8 +73,12 @@ yarn build
 
 每位收件人的发送记录有独立租约，防止多个窗口并发处理同一条；租约 90 秒后可恢复。相同记录重试使用完全相同的正文、主题、发件人、退订链接和 Resend 幂等键。提供方的幂等窗口是 24 小时，因此首次尝试超过 23 小时的失败／中断项会转为「待核实」，停止自动重发，需人工在 Resend 核实。成功项永不再次领取，失败项不会在同一轮里反复重试。
 
-仅生产上下文的 Functions 开关 `NEWSLETTER_BROADCAST_ENABLED=true` 允许准备／开始／处理（已配置，其他上下文不设置此值），Deploy Preview 只读发送状态并支持原有给自己试发。所有正式 API 重新验证已确认邮箱与 organizer 角色；数据库表与 RPC 均仅 service_role 可访问。退订仍兼容原有确认邮件里的链接；旧正式邮件不能撤销后来独立确认的新订阅。
+仅 Netlify 正式构建 (`CONTEXT=production`) 允许准备／开始／处理。构建命令先运行 `scripts/write-newsletter-deploy-context.mjs`，将部署上下文写入随函数打包的 JSON；不依赖运行时 CONTEXT 或额外的发送开关配置，Deploy Preview 只读发送状态并支持原有给自己试发。所有正式 API 重新验证已确认邮箱与 organizer 角色；数据库表与 RPC 均仅 service_role 可访问。退订仍兼容原有确认邮件里的链接；旧正式邮件不能撤销后来独立确认的新订阅。
 
-新增 Functions 专用密钥 `NEWSLETTER_UNSUBSCRIBE_SECRET`，已配置为 secret、all contexts、functions scope，无前端配置。每条发送记录用 HMAC 派生稳定退订令牌，数据库仅保存摘要；旧链接可在不依赖密钥的情况下验证。不要随意轮换：对已有尝试记录，派生令牌变化会触发待核实保护，避免改变幂等请求内容。保留现有 RESEND_API_KEY／RESEND_FROM_EMAIL。
+每条发送记录用带用途前缀的 HMAC 派生稳定退订令牌，数据库仅保存摘要。优先使用可选的 `NEWSLETTER_UNSUBSCRIBE_SECRET`，没有时复用现有服务器 `SUPABASE_SERVICE_ROLE_KEY`（至少 32 字符），无需新增 Netlify 配置，也不向前端暴露。Netlify 配置写入接口曾返回 403，旧版文档误称新密钥和开关已写入，已更正。旧邮件链接不依赖根密钥验证；根密钥变化会使已尝试但未完成的记录进入待核实保护，避免改变幂等内容。保留现有 RESEND_API_KEY／RESEND_FROM_EMAIL。
 
 三份新增迁移已通过数据库工具应用并登记，仓库文件版本与实际 migration history 对齐，无需手动重复执行。`tests/newsletter/campaigns.sql` 用真实数据库事务验证锁定版本、租约、重试、跳过、退订与过期窗口，最后回滚；API 单元测试使用 mock provider，不发真实邮件。
+
+默认邮件末尾插入「启发星球笔记」公众号二维码（公开 GitHub 图片），宽 200px、居中，可在正文编辑器移动或删除。普通图片仍默认最大宽 552px；图像节点可保存 80–552px 的整数宽度，编辑及前后端渲染保持一致。
+
+邮件编辑器底部有「正式发送给订阅者…」快捷入口，会滚动到发送区域；仍需准备、核对并勾选确认才发送。状态接口会明确区分预览禁发与服务器配置缺失，已确认名单为空时也有单独说明，不再只显示灰色按钮。

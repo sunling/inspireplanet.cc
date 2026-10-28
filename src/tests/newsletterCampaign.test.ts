@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   from: vi.fn(),
   single: vi.fn(),
   fetch: vi.fn(),
+  deployment: { production: true, context: 'production' },
 }));
 vi.mock('../database/supabase', () => ({
   supabase: {
@@ -12,6 +13,9 @@ vi.mock('../database/supabase', () => ({
     auth: { getUser: mocks.getUser },
     from: mocks.from,
   },
+}));
+vi.mock('../netlify/generated/newsletterDeployment.json', () => ({
+  default: mocks.deployment,
 }));
 import { handler } from '../netlify/functions/newsletterCampaign';
 import {
@@ -62,7 +66,8 @@ const request = (
   });
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.stubEnv('NEWSLETTER_BROADCAST_ENABLED', 'true');
+  mocks.deployment.production = true;
+  vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
   vi.stubEnv('RESEND_API_KEY', 'mock-provider-key');
   vi.stubEnv('NEWSLETTER_UNSUBSCRIBE_SECRET', 'x'.repeat(64));
   mocks.getUser.mockResolvedValue({
@@ -110,13 +115,34 @@ describe('formal newsletter campaigns', () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it('preview environments can view status but never prepare, start or send real mail', async () => {
-    vi.stubEnv('NEWSLETTER_BROADCAST_ENABLED', '');
+    mocks.deployment.production = false;
     expect((await request('status', {}, 'GET')).body).toContain(
       '"canSend":false'
     );
     for (const action of ['prepare', 'start', 'process'])
       expect((await request(action)).statusCode).toBe(403);
     expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it('uses the production build marker and an existing server secret without new runtime variables', async () => {
+    vi.stubEnv('NEWSLETTER_UNSUBSCRIBE_SECRET', '');
+    vi.stubEnv(
+      'SUPABASE_SERVICE_ROLE_KEY',
+      'existing-server-secret-'.repeat(3)
+    );
+    vi.stubEnv('NEWSLETTER_BROADCAST_ENABLED', '');
+    vi.stubEnv('CONTEXT', '');
+    const r = await request('status', {}, 'GET');
+    expect(JSON.parse(r.body).data.canSend).toBe(true);
+    expect(deliveryUnsubscribeToken(delivery.id)).toMatch(/^[a-f0-9]{64}$/);
+    expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it('reports missing server configuration instead of calling production a preview', async () => {
+    vi.stubEnv('NEWSLETTER_UNSUBSCRIBE_SECRET', '');
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
+    const data = JSON.parse((await request('status', {}, 'GET')).body).data;
+    expect(data.canSend).toBe(false);
+    expect(data.sendUnavailableReason).toContain('配置不完整');
+    expect(data.sendUnavailableReason).not.toContain('预览');
   });
   it('GET does not start sending and invalid documents cannot prepare', async () => {
     expect((await request('start', {}, 'GET')).statusCode).toBe(405);

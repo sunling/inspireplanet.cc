@@ -132,7 +132,13 @@ export default function NewsletterBroadcast({
         </Typography>
         {state && !state?.canSend && (
           <Alert severity="info">
-            预览环境只支持给自己试发。正式群发请在合并后的正式站操作。
+            {state.sendUnavailableReason ||
+              '正式发送暂不可用，请刷新发送进度查看状态。'}
+          </Alert>
+        )}
+        {state?.canSend && !started && state.available === 0 && (
+          <Alert severity="info">
+            当前没有已确认订阅者，确认订阅后即可准备正式发送。
           </Alert>
         )}
         {!started && (
