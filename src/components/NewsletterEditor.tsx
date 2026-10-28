@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { Node } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -26,7 +26,19 @@ const EmailImage = Node.create({
   atom: true,
   draggable: true,
   addAttributes() {
-    return { src: { default: null }, alt: { default: '' } };
+    return {
+      src: { default: null },
+      alt: { default: '' },
+      width: {
+        default: null,
+        parseHTML: (element: HTMLElement) => {
+          const width = Number(element.getAttribute('width'));
+          return Number.isInteger(width) && width >= 80 && width <= 552
+            ? width
+            : null;
+        },
+      },
+    };
   },
   parseHTML() {
     return [
@@ -42,12 +54,16 @@ const EmailImage = Node.create({
     ];
   },
   renderHTML({ HTMLAttributes }) {
+    const width = Number(HTMLAttributes.width);
+    const displayWidth =
+      Number.isInteger(width) && width >= 80 && width <= 552 ? width : 552;
     return [
       'img',
       {
         src: normalizeNewsletterImageUrl(HTMLAttributes.src) || '',
         alt: String(HTMLAttributes.alt || ''),
-        style: 'max-width:100%;height:auto;display:block;margin:20px 0',
+        width: displayWidth,
+        style: `width:100%;max-width:${displayWidth}px;height:auto;display:block;margin:20px auto`,
       },
     ];
   },

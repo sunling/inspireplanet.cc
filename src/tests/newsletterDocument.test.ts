@@ -19,6 +19,35 @@ const paragraph = (value: string) => ({
 });
 
 describe('editable newsletter document', () => {
+  it('includes the official WeChat QR image at a compact width and preserves its size on rendering', () => {
+    const generated = createDefaultNewsletterDocument(2026, 42, null, [], null);
+    const qr = generated.document.content.find((n) => n.type === 'image');
+    expect(qr?.attrs?.src).toBe(
+      'https://raw.githubusercontent.com/sunling/inspireplanet-assets/main/user_uploads/qrcode_for_gh_e0969fd9d88b_344.jpg'
+    );
+    expect(qr?.attrs?.width).toBe(200);
+    const rendered = renderNewsletterDocument(generated.document);
+    expect(rendered.html).toContain('width="200"');
+    expect(rendered.html).toContain('max-width:200px');
+    expect(rendered.text).toContain('微信公众号二维码');
+  });
+  it('rejects unsafe image widths', () => {
+    expect(() =>
+      renderNewsletterDocument({
+        type: 'doc',
+        content: [
+          {
+            type: 'image',
+            attrs: {
+              src: 'https://raw.githubusercontent.com/sunling/assets/main/image.jpg',
+              width: '200px;display:none',
+            },
+          },
+        ],
+      })
+    ).toThrow('图片宽度');
+  });
+
   it('starts from real episode content but permits subsequent edits throughout', () => {
     const generated = createDefaultNewsletterDocument(
       2026,

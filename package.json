@@ -6,7 +6,7 @@
   },
   "scripts": {
     "dev": "netlify dev",
-    "build": "vite build",
+    "build": "node scripts/write-newsletter-deploy-context.mjs && vite build",
     "preview": "vite preview",
     "vite:dev": "vite",
     "test": "vitest run",

@@ -25,4 +25,5 @@ export interface NewsletterCampaignStatus {
   total: number;
   available: number;
   canSend: boolean;
+  sendUnavailableReason?: string | null;
 }

@@ -43,6 +43,7 @@ export default function EpisodeNewsletterPreview({
   publication,
   onClose,
 }: Props) {
+  const broadcastRef = useRef<HTMLDivElement>(null);
   const [generated] = useState(() =>
     createDefaultNewsletterDocument(year, episode, summary, cards, publication)
   );
@@ -243,14 +244,16 @@ export default function EpisodeNewsletterPreview({
             </Alert>
           )}
           {sendError && <Alert severity="error">{sendError}</Alert>}
-          <NewsletterBroadcast
-            draft={{ year, episode, subject, document }}
-            disabled={
-              sending ||
-              Boolean(preview.error) ||
-              !validateNewsletterSubject(subject)
-            }
-          />
+          <Box ref={broadcastRef} sx={{ scrollMarginTop: 16 }}>
+            <NewsletterBroadcast
+              draft={{ year, episode, subject, document }}
+              disabled={
+                sending ||
+                Boolean(preview.error) ||
+                !validateNewsletterSubject(subject)
+              }
+            />
+          </Box>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ flexWrap: 'wrap', gap: 1 }}>
@@ -265,6 +268,18 @@ export default function EpisodeNewsletterPreview({
             : sentCurrent
               ? '已发送本版测试邮件'
               : '发送测试邮件给自己'}
+        </Button>
+        <Button
+          variant="outlined"
+          disabled={sending}
+          onClick={() =>
+            broadcastRef.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            })
+          }
+        >
+          正式发送给订阅者…
         </Button>
         <Button disabled={sending} onClick={onClose}>
           关闭

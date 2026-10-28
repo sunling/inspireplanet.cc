@@ -97,6 +97,14 @@ export function createDefaultNewsletterDocument(
         : []),
       { type: 'horizontalRule' },
       paragraph('更多文章，欢迎关注微信公众号「启发星球笔记」。'),
+      {
+        type: 'image',
+        attrs: {
+          src: 'https://raw.githubusercontent.com/sunling/inspireplanet-assets/main/user_uploads/qrcode_for_gh_e0969fd9d88b_344.jpg',
+          alt: '启发星球笔记微信公众号二维码',
+          width: 200,
+        },
+      },
     ],
   };
   return {
@@ -185,8 +193,11 @@ export function renderNewsletterDocument(value: unknown) {
         typeof node.attrs?.alt === 'string' ? node.attrs.alt : '启发星球配图';
       if (!src || alt.length > 200)
         throw new Error('图片请使用公开 GitHub 图片链接，说明不超过 200 字符');
+      const width = node.attrs?.width == null ? 552 : node.attrs.width;
+      if (!Number.isInteger(width) || Number(width) < 80 || Number(width) > 552)
+        throw new Error('图片宽度须为 80 至 552 像素');
       return {
-        html: `<p style="margin:22px 0"><img src="${escape(src)}" alt="${escape(alt)}" width="552" style="display:block;width:100%;max-width:552px;height:auto;border:0;border-radius:8px" /></p>`,
+        html: `<p style="margin:22px 0"><img src="${escape(src)}" alt="${escape(alt)}" width="${width}" style="display:block;width:100%;max-width:${width}px;height:auto;border:0;border-radius:8px;margin:0 auto" /></p>`,
         text: `\n图片：${alt}\n${src}\n`,
       };
     }
