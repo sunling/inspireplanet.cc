@@ -357,9 +357,6 @@ const EpisodeHub: React.FC = () => {
           )}
         </div>
       </header>
-      <NewsletterSignup
-        source={episodeYear ? `/episodes/${episodeYear}/${episodeNumber}` : '/'}
-      />
       {showNewsletterPreview && user?.role === 'organizer' && episodeYear && (
         <EpisodeNewsletterPreview
           key={`${episodeYear}/${episodeNumber}`}
@@ -611,6 +608,16 @@ const EpisodeHub: React.FC = () => {
           </div>
         )}
       </section>
+
+      <div className={styles.section}>
+        <details className={styles.newsletterFooter}>
+          <summary>想收到下一期？订阅每周分享</summary>
+          <p>会议精华、真实金句和播客链接，每周一封，随时退订。</p>
+          <NewsletterSignup
+            source={episodeYear ? `/episodes/${episodeYear}/${episodeNumber}` : '/'}
+          />
+        </details>
+      </div>
 
       <QuoteResponseBar
         container={readingRef}
