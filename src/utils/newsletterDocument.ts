@@ -96,6 +96,23 @@ export function createDefaultNewsletterDocument(
           ]
         : []),
       { type: 'horizontalRule' },
+      {
+        type: 'heading',
+        attrs: { level: 2 },
+        content: [text('下一期，一起来聊聊')],
+      },
+      paragraph(
+        '欢迎报名参与下一期启发星球：来听听大家这一周的经历，也可以申请分享自己的观察、收获或困惑，或提交一个你正在面对的问题场景。'
+      ),
+      link(
+        '报名参与／申请分享 ↗',
+        'https://inspireplanet.cc/meetup-detail?id=39'
+      ),
+      link(
+        '提交问题场景 ↗',
+        'https://inspireplanet.cc/questions#submit-question'
+      ),
+      { type: 'horizontalRule' },
       paragraph('更多文章，欢迎关注微信公众号「启发星球笔记」。'),
       {
         type: 'image',
