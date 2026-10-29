@@ -107,6 +107,9 @@ const createOrganizerProtectedRoute = (Component: React.ReactNode) => (
 );
 
 // 懒加载页面组件
+const NewsletterSubscribe = lazy(
+  () => import('../pages/newsletter/NewsletterSubscribe')
+);
 const NewsletterAction = lazy(
   () => import('../pages/newsletter/NewsletterAction')
 );
@@ -235,6 +238,10 @@ const router = createBrowserRouter(
         {
           path: 'page-poster',
           element: createLazyRoute(<DialoguePoster />),
+        },
+        {
+          path: 'subscribe',
+          element: createLazyRoute(<NewsletterSubscribe />),
         },
         {
           path: 'newsletter/confirm',

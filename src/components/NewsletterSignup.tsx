@@ -14,8 +14,10 @@ import { normalizeSubscriptionEmail } from '../utils/newsletterSubscription';
 
 export default function NewsletterSignup({
   source = '/',
+  showIntroduction = true,
 }: {
   source?: string;
+  showIntroduction?: boolean;
 }) {
   const [email, setEmail] = useState('');
   const [consent, setConsent] = useState(false);
@@ -59,19 +61,23 @@ export default function NewsletterSignup({
       component="section"
       aria-label="订阅每周分享"
       sx={{
-        my: 4,
+        my: showIntroduction ? 4 : 3,
         p: { xs: 2.5, sm: 4 },
         borderRadius: 3,
         bgcolor: '#f3f6f1',
         border: '1px solid #dce6d8',
       }}
     >
-      <Typography component="h2" variant="h5" fontWeight={650} gutterBottom>
-        把每周的启发，带进收件箱
-      </Typography>
-      <Typography color="text.secondary" sx={{ mb: 2 }}>
-        一封邮件回顾本期精华、三条真实金句，以及已发布的小宇宙播客。无需注册账号，随时可以退订。
-      </Typography>
+      {showIntroduction && (
+        <>
+          <Typography component="h2" variant="h5" fontWeight={650} gutterBottom>
+            把每周的启发，带进收件箱
+          </Typography>
+          <Typography color="text.secondary" sx={{ mb: 2 }}>
+            一封邮件回顾本期精华、三条真实金句，以及已发布的小宇宙播客。无需注册账号，随时可以退订。
+          </Typography>
+        </>
+      )}
       <Box component="form" onSubmit={submit}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
           <TextField
