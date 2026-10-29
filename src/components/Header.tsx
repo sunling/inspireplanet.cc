@@ -14,6 +14,8 @@ import {
   Menu,
   MenuItem,
   Badge,
+  Divider,
+  ListSubheader,
 } from '@mui/material';
 import { useResponsive } from '../hooks/useResponsive';
 import {
@@ -261,8 +263,6 @@ const Header: React.FC<HeaderProps> = ({
       ? [
           { path: '/create-card', label: '创建卡片' },
           { path: '/page-poster', label: '页面分享海报' },
-          { path: '/cover-editor', label: '横版封面制作' },
-          { path: '/cover-editor-mobile', label: '竖版封面制作' },
           { path: '/surveys', label: '调查问卷' },
         ]
       : []),
@@ -741,6 +741,27 @@ const Header: React.FC<HeaderProps> = ({
                     邮件订阅管理
                   </MenuItem>
                 )}
+                <Divider />
+                <ListSubheader component="div" disableSticky>
+                  创作工具
+                </ListSubheader>
+                <MenuItem
+                  component={Link}
+                  to="/cover-editor"
+                  onClick={() => setUserMenuAnchor(null)}
+                >
+                  <CardMembership fontSize="small" sx={{ mr: 1 }} />
+                  横版封面制作
+                </MenuItem>
+                <MenuItem
+                  component={Link}
+                  to="/cover-editor-mobile"
+                  onClick={() => setUserMenuAnchor(null)}
+                >
+                  <CardMembership fontSize="small" sx={{ mr: 1 }} />
+                  竖版封面制作
+                </MenuItem>
+                <Divider />
                 <MenuItem
                   component={Link}
                   to="/profile"
