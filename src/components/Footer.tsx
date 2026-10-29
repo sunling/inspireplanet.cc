@@ -8,9 +8,9 @@ const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   const footerLinks = [
-    { path: '/cover-editor', label: '横版封面制作' },
-    { path: '/cover-editor-mobile', label: '竖版封面制作' },
-    { path: '/about', label: '关于我们' },
+    { path: '/about', label: '关于启发星球' },
+    { path: '/subscribe', label: '订阅每周分享' },
+    { path: '/join', label: '加入微信群' },
   ];
 
   return (
@@ -40,6 +40,8 @@ const Footer: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: 1,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
             }}
           >
             <Typography
@@ -63,16 +65,20 @@ const Footer: React.FC = () => {
 
           <Box>
             <Box
+              component="nav"
+              aria-label="页脚导航"
               sx={{
                 display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
                 gap: { xs: 1, sm: 2 },
                 alignItems: { xs: 'center', sm: 'flex-start' },
               }}
             >
-              {footerLinks.map((link, index) => (
+              {footerLinks.map((link) => (
                 <Link
-                  key={index}
+                  key={link.path}
                   to={link.path}
                   style={{
                     textDecoration: 'none',
