@@ -106,7 +106,7 @@ const WritingEditor: React.FC = () => {
   const [richBody, setRichBody] = useState<WritingRichContent | null>(null);
   const [templateId, setTemplateId] = useState('');
   const [promptFields, setPromptFields] = useState<WritingTemplatePrompt[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<string[]>([]);
   const [topicIds, setTopicIds] = useState<string[]>([]);
   const [isReview, setIsReview] = useState(false);
   const [visibility, setVisibility] = useState<WritingVisibility>('public');
@@ -201,12 +201,7 @@ const WritingEditor: React.FC = () => {
               }))
             );
             setAnswers(
-              Object.fromEntries(
-                post.template_snapshot.items.map((item) => [
-                  item.key,
-                  item.answer,
-                ])
-              )
+              post.template_snapshot.items.map((item) => item.answer)
             );
           }
         }
@@ -229,13 +224,13 @@ const WritingEditor: React.FC = () => {
   );
 
   const detectedHashtags = useMemo(
-    () => extractHashtags(title, body, ...Object.values(answers)),
+    () => extractHashtags(title, body, ...answers),
     [answers, body, title]
   );
 
   const handleTemplateChange = (nextTemplateId: string) => {
     if (nextTemplateId === templateId) return;
-    const hasAnswers = Object.values(answers).some((answer) => answer.trim());
+    const hasAnswers = answers.some((answer) => answer.trim());
     if (hasAnswers && !window.confirm('切换模板会清空当前模板回答，继续吗？')) {
       return;
     }
@@ -356,7 +351,7 @@ const WritingEditor: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const hasAnswer = Object.values(answers).some((answer) => answer.trim());
+    const hasAnswer = answers.some((answer) => answer.trim());
     if (!body.trim() && !hasAnswer) {
       showSnackbar.warning('请填写正文或至少一个模板问题');
       return;
@@ -384,9 +379,9 @@ const WritingEditor: React.FC = () => {
       body_rich: editorMode === 'rich' ? richBody : null,
       image_urls: imageUrls,
       template_id: templateId || null,
-      template_answers: promptFields.map((prompt) => ({
+      template_answers: promptFields.map((prompt, index) => ({
         key: prompt.key,
-        answer: answers[prompt.key] || '',
+        answer: answers[index] || '',
       })),
       topic_ids: topicIds,
       visibility,
@@ -495,17 +490,21 @@ const WritingEditor: React.FC = () => {
                     模板引导
                   </Typography>
                   <Stack spacing={2}>
-                    {promptFields.map((prompt) => (
-                      <Box key={prompt.key} sx={{ position: 'relative' }}>
+                    {promptFields.map((prompt, index) => (
+                      <Box
+                        key={`${prompt.key}-${index}`}
+                        sx={{ position: 'relative' }}
+                      >
                         <TextField
                           label={prompt.prompt}
                           placeholder={prompt.placeholder}
-                          value={answers[prompt.key] || ''}
+                          value={answers[index] || ''}
                           onChange={(event) =>
-                            setAnswers((current) => ({
-                              ...current,
-                              [prompt.key]: event.target.value,
-                            }))
+                            setAnswers((current) => {
+                              const next = [...current];
+                              next[index] = event.target.value;
+                              return next;
+                            })
                           }
                           multiline
                           minRows={3}
@@ -513,7 +512,7 @@ const WritingEditor: React.FC = () => {
                           fullWidth
                         />
                         <CharacterCount
-                          current={(answers[prompt.key] || '').length}
+                          current={(answers[index] || '').length}
                           max={4000}
                         />
                       </Box>

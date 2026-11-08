@@ -230,6 +230,19 @@ const WeeklyReview: React.FC<{ userId: string }> = ({ userId }) => {
         onChange={(_, value) => setTab(value)}
         aria-label="回看内容"
         variant="scrollable"
+        sx={{
+          '& .MuiTab-root': {
+            border: 0,
+            borderRadius: 0,
+            boxShadow: 'none',
+            transition: 'color 150ms ease',
+          },
+          '& .MuiTab-root:hover': {
+            background: 'transparent',
+            boxShadow: 'none',
+            transform: 'none',
+          },
+        }}
       >
         <Tab value="weekly" label="每周回看" />
         <Tab value="writings" label="回看书写" />

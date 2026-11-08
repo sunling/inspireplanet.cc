@@ -496,11 +496,10 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
       : query.eq('visibility', 'public');
   }
 
-  if (
-    requestData.writing_type === 'review' ||
-    requestData.writing_type === 'original'
-  )
-    query = query.eq('writing_type', requestData.writing_type);
+  query = query.eq(
+    'writing_type',
+    requestData.writing_type === 'review' ? 'review' : 'original'
+  );
   const keyword = String(requestData.keyword || '').trim();
   if (keyword.length > 80)
     return createErrorResponse('搜索关键字不能超过 80 个字');
