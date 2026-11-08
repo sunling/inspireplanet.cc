@@ -41,6 +41,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
           .select(columns, { count: 'exact' })
           .eq('user_id', user.id)
           .eq('status', 'published')
+          .eq('writing_type', 'original')
           .gte('created_at', range.start)
           .lt('created_at', range.end)
           .order('created_at', { ascending: true })
