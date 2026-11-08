@@ -59,10 +59,22 @@ const ReviewWritings: React.FC = () => {
   return (
     <Stack spacing={3}>
       <Typography color="text.secondary">
-        从回看中写下的感想，会作为独立书写保存在这里，也出现在「我的书写」中。
+        从回看中写下的感想，会作为独立书写保存在这里。
       </Typography>
       {loading ? (
-        <CircularProgress aria-label="加载回看书写" />
+        <Box
+          role="status"
+          aria-label="加载回看书写"
+          sx={{
+            width: '100%',
+            minHeight: 240,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <CircularProgress />
+        </Box>
       ) : error ? (
         <Alert
           severity="error"
