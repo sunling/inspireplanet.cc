@@ -240,7 +240,7 @@ const WritingEditor: React.FC = () => {
     );
     setTemplateId(nextTemplateId);
     setPromptFields(nextTemplate?.prompts || []);
-    setAnswers({});
+    setAnswers([]);
     setHistoricalTemplateName('');
   };
 
