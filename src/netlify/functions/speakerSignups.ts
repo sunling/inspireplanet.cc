@@ -1,3 +1,4 @@
+import { getEpisodeDatetime } from '../../utils/recurring';
 import { supabase } from '../../database/supabase';
 import { NetlifyContext, NetlifyEvent, NetlifyResponse } from '../types/http';
 import {
@@ -65,7 +66,7 @@ async function handleGetByEpisode(
 }
 
 async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
-  const { meetup_id, episode_number, name, topic, duration, email, timezone } =
+  const { meetup_id, episode_number, name, topic, duration, email, timezone, episode_date } =
     getDataFromEvent(event);
   if (!meetup_id || !episode_number || !name?.trim() || !topic?.trim()) {
     return createErrorResponse('缺少必填字段');
@@ -96,7 +97,14 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       .eq('id', meetup_id)
       .single();
 
-    const { data: episode } = await supabase
+    const selectedDate = typeof episode_date === 'string' &&
+      /^\d{4}-\d{2}-\d{2}$/.test(episode_date) &&
+      !Number.isNaN(Date.parse(episode_date)) &&
+      new Date(episode_date).toISOString().slice(0, 10) === episode_date
+      ? episode_date
+      : undefined;
+
+    const { data: episode } = selectedDate ? { data: null } : await supabase
       .from('meetup_episodes')
       .select('date')
       .eq('meetup_id', meetup_id)
@@ -104,7 +112,10 @@ async function handleCreate(event: NetlifyEvent): Promise<NetlifyResponse> {
       .single();
 
     if (meetup) {
-      const eventDatetime = meetup.datetime;
+      const date = selectedDate ?? episode?.date;
+      const eventDatetime = date
+        ? getEpisodeDatetime(meetup.datetime, date)
+        : meetup.datetime;
 
       sendSpeakerConfirmEmail({
         to: email.trim(),
