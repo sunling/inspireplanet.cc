@@ -18,6 +18,15 @@ export function formatBeijingDateStr(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+// Apply the episode's Beijing calendar date while preserving the scheduled time.
+export function getEpisodeDatetime(datetimeISO: string, episodeDate: string): string {
+  const base = new Date(datetimeISO);
+  const dateOffset =
+    parseDatePartsToUTCNoon(episodeDate) -
+    parseDatePartsToUTCNoon(formatBeijingDateStr(base));
+  return new Date(base.getTime() + dateOffset).toISOString();
+}
+
 // 用 UTC 计算下一次发生的时间点（不受浏览器夏令时/冬令时切换影响）
 export function nextUTCOccurrenceDate(
   datetimeISO: string,

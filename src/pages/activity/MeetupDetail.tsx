@@ -522,6 +522,7 @@ const MeetupDetail: React.FC = () => {
       const res = await speakerSignupsApi.create({
         meetup_id: episode.meetup_id,
         episode_number: episode.episode_number,
+        episode_date: episode.date,
         name: speakerForm.name,
         email: speakerForm.email.trim() || undefined,
         topic: speakerForm.topic,

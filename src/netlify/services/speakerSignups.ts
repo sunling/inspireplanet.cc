@@ -23,7 +23,7 @@ export const speakerSignupsApi = {
       | 'duration'
       | 'email'
       | 'timezone'
-    >
+    > & { episode_date?: string }
   ): Promise<ApiResponse<{ signup: SpeakerSignup }>> => {
     return http.post('/speakerSignups', 'create', data);
   },
