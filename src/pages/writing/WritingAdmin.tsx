@@ -1,3 +1,4 @@
+import { Link as RouterLink } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -11,6 +12,7 @@ import {
   DialogTitle,
   FormControl,
   InputLabel,
+  Link,
   MenuItem,
   Paper,
   Select,
@@ -162,9 +164,12 @@ const WritingAdmin: React.FC = () => {
                     justifyContent="space-between"
                     sx={{ p: 2, bgcolor: '#faf8f5', borderRadius: 2 }}
                   >
-                    <Typography>
+                    <Link
+                      component={RouterLink}
+                      to={`/writing-circle?topic=${encodeURIComponent(topic.id)}`}
+                    >
                       {index + 1}. {topic.name}
-                    </Typography>
+                    </Link>
                     <Typography fontWeight={700}>
                       {topic.post_count} 篇
                     </Typography>
@@ -195,7 +200,13 @@ const WritingAdmin: React.FC = () => {
                     sx={{ p: 2, bgcolor: '#faf8f5', borderRadius: 2 }}
                   >
                     <Box>
-                      <Typography fontWeight={700}>{topic.name}</Typography>
+                      <Link
+                        component={RouterLink}
+                        to={`/writing-circle?topic=${encodeURIComponent(topic.id)}`}
+                        fontWeight={700}
+                      >
+                        {topic.name}
+                      </Link>
                       <Typography variant="body2" color="text.secondary">
                         {topic.description || topic.slug}
                       </Typography>
@@ -233,9 +244,13 @@ const WritingAdmin: React.FC = () => {
                     sx={{ p: 2, bgcolor: '#faf8f5', borderRadius: 2 }}
                   >
                     <Box>
-                      <Typography fontWeight={700}>
+                      <Link
+                        component={RouterLink}
+                        to={`/writing-circle?template=${encodeURIComponent(template.id)}`}
+                        fontWeight={700}
+                      >
                         {template.name} · v{template.version}
-                      </Typography>
+                      </Link>
                       <Typography variant="body2" color="text.secondary">
                         {template.description ||
                           `${template.prompts.length} 个问题`}

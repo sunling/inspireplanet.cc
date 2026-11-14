@@ -427,9 +427,13 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
     }
   }
 
+  const templateId = requestData.template_id
+    ? parseId(requestData.template_id, '模板 ID')
+    : null;
   let query = supabase
     .from('writing_posts')
     .select(WRITING_POST_SELECT, { count: 'exact' });
+  if (templateId) query = query.eq('template_id', templateId);
 
   if (groupId) {
     query = query
