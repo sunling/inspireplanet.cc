@@ -27,6 +27,7 @@ import {
   Tabs,
   TextField,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
 import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -137,6 +138,11 @@ const WritingCircle: React.FC = () => {
   const [groups, setGroups] = useState<WritingGroup[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [groupsError, setGroupsError] = useState('');
+  const isDesktop = useMediaQuery((theme: import('@mui/material').Theme) =>
+    theme.breakpoints.up('md')
+  );
+  const [calendarExpanded, setCalendarExpanded] = useState(false);
+  const canShowCalendar = !isAuthLoading && isAuthenticated && Boolean(user);
   const [groupsExpanded, setGroupsExpanded] = useState(false);
   const [partners, setPartners] = useState<WritingPartner[]>([]);
   const [creatorInput, setCreatorInput] = useState(
@@ -654,7 +660,7 @@ const WritingCircle: React.FC = () => {
                 用话题和书写模板记录思考，让零散的感受慢慢成为可以回看的成长轨迹。
               </Typography>
             </Box>
-            {!isAuthLoading && isAuthenticated && user && (
+            {isDesktop && canShowCalendar && user && (
               <MonthlyCheckins key={user.id} userId={String(user.id)} />
             )}
             <Stack
@@ -694,11 +700,13 @@ const WritingCircle: React.FC = () => {
                 direction={{ xs: 'row', md: 'column' }}
                 alignItems="stretch"
                 useFlexGap
-                flexWrap={{ xs: 'wrap', md: 'nowrap' }}
-                spacing={1}
+                spacing={{ xs: 0.5, sm: 1 }}
                 sx={{
                   '& > .MuiButton-root': {
-                    flex: { xs: '1 0 auto', md: 'initial' },
+                    flex: { xs: '1 1 0', md: 'initial' },
+                    minWidth: { xs: 0, md: 64 },
+                    px: { xs: 0.25, sm: 1 },
+                    whiteSpace: 'nowrap',
                   },
                 }}
               >
@@ -706,7 +714,7 @@ const WritingCircle: React.FC = () => {
                   <Button
                     variant="outlined"
                     size="small"
-                    startIcon={<MenuBookOutlinedIcon />}
+                    startIcon={isDesktop ? <MenuBookOutlinedIcon /> : undefined}
                     onClick={() => navigate('/my-ebook')}
                   >
                     我的电子书
@@ -725,25 +733,44 @@ const WritingCircle: React.FC = () => {
                   size="small"
                   variant="outlined"
                   endIcon={
-                    groupsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />
+                    isDesktop &&
+                    (groupsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />)
                   }
+                  aria-expanded={groupsExpanded}
                   onClick={() => setGroupsExpanded((expanded) => !expanded)}
                 >
                   讨论组
                   {groups.length > 0 ? `（${groups.length}）` : ''}
                 </Button>
-                {groupId && (
+                {!isDesktop && canShowCalendar && (
                   <Button
                     size="small"
-                    color="inherit"
-                    onClick={() => updateParams({ group: null, page: null })}
+                    variant="outlined"
+                    aria-expanded={calendarExpanded}
+                    onClick={() => setCalendarExpanded((expanded) => !expanded)}
                   >
-                    返回全部
+                    书写日历
                   </Button>
                 )}
               </Stack>
+              {groupId && (
+                <Button
+                  size="small"
+                  color="inherit"
+                  onClick={() => updateParams({ group: null, page: null })}
+                >
+                  返回全部
+                </Button>
+              )}
             </Stack>
           </Stack>
+          {!isDesktop && canShowCalendar && user && (
+            <Collapse in={calendarExpanded} unmountOnExit>
+              <Box sx={{ mt: 1.5 }}>
+                <MonthlyCheckins key={user.id} userId={String(user.id)} />
+              </Box>
+            </Collapse>
+          )}
           <Collapse in={groupsExpanded} unmountOnExit>
             <Box
               sx={{
