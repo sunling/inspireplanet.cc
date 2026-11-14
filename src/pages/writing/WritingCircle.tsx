@@ -1,3 +1,4 @@
+import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Link as RouterLink,
@@ -47,6 +48,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import WeeklyReview from '../../components/writing/WeeklyReview';
 import WritingCard from '../../components/writing/WritingCard';
+import MonthlyCheckins from '../../components/writing/MonthlyCheckins';
 import TopicChip from '../../components/writing/TopicChip';
 import Loading from '../../components/Loading';
 import Empty from '../../components/Empty';
@@ -621,15 +623,16 @@ const WritingCircle: React.FC = () => {
         <Paper
           elevation={0}
           sx={{
-            p: { xs: 3, md: 5 },
+            px: { xs: 2, md: 3 },
+            py: 0.75,
             mb: 3,
             borderRadius: 4,
             bgcolor: '#fffaf4',
           }}
         >
           <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            alignItems={{ xs: 'stretch', sm: 'center' }}
+            direction={{ xs: 'column', md: 'row' }}
+            alignItems={{ xs: 'stretch', md: 'center' }}
             justifyContent="space-between"
             spacing={2}
           >
@@ -651,10 +654,12 @@ const WritingCircle: React.FC = () => {
                 用话题和书写模板记录思考，让零散的感受慢慢成为可以回看的成长轨迹。
               </Typography>
             </Box>
+            {!isAuthLoading && isAuthenticated && user && (
+              <MonthlyCheckins key={user.id} userId={String(user.id)} />
+            )}
             <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              alignItems={{ xs: 'stretch', sm: 'center' }}
-              justifyContent="flex-end"
+              direction="column"
+              alignItems="stretch"
               spacing={1}
               sx={{ flexShrink: 0, width: { xs: '100%', sm: 'auto' } }}
             >
@@ -686,11 +691,27 @@ const WritingCircle: React.FC = () => {
                 />
               )}
               <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+                direction={{ xs: 'row', md: 'column' }}
+                alignItems="stretch"
+                useFlexGap
+                flexWrap={{ xs: 'wrap', md: 'nowrap' }}
                 spacing={1}
+                sx={{
+                  '& > .MuiButton-root': {
+                    flex: { xs: '1 0 auto', md: 'initial' },
+                  },
+                }}
               >
+                {isAuthenticated && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<MenuBookOutlinedIcon />}
+                    onClick={() => navigate('/my-ebook')}
+                  >
+                    我的电子书
+                  </Button>
+                )}
                 <Button
                   component={RouterLink}
                   to="/my-ebook"
