@@ -613,16 +613,6 @@ const WritingCircle: React.FC = () => {
               spacing={1}
               sx={{ flexShrink: 0, width: { xs: '100%', sm: 'auto' } }}
             >
-              {isAuthenticated && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<MenuBookOutlinedIcon />}
-                  onClick={() => navigate('/my-ebook')}
-                >
-                  我的电子书
-                </Button>
-              )}
               {groupId && (
                 <Chip
                   icon={<GroupsOutlinedIcon />}
@@ -651,11 +641,27 @@ const WritingCircle: React.FC = () => {
                 />
               )}
               <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+                direction={{ xs: 'row', md: 'column' }}
+                alignItems="stretch"
+                useFlexGap
+                flexWrap={{ xs: 'wrap', md: 'nowrap' }}
                 spacing={1}
+                sx={{
+                  '& > .MuiButton-root': {
+                    flex: { xs: '1 0 auto', md: 'initial' },
+                  },
+                }}
               >
+                {isAuthenticated && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<MenuBookOutlinedIcon />}
+                    onClick={() => navigate('/my-ebook')}
+                  >
+                    我的电子书
+                  </Button>
+                )}
                 <Button
                   size="small"
                   variant="outlined"
