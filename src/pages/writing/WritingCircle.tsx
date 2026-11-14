@@ -60,9 +60,11 @@ import {
   writingGroupsApi,
   writingsApi,
   writingTopicsApi,
+  writingTemplatesApi,
 } from '../../netlify/config';
 import { useGlobalSnackbar } from '../../context/app';
 import { useAuth } from '../../context/auth';
+import type { WritingTemplateOption } from '../../netlify/services/writingTemplates';
 import { buildWritingTxt } from '../user/ebook';
 
 const PAGE_SIZE = 9;
@@ -113,6 +115,10 @@ const WritingCircle: React.FC = () => {
   const navigate = useNavigate();
   const snackbar = useGlobalSnackbar();
   const [searchParams, setSearchParams] = useSearchParams();
+  const templateId = searchParams.get('template') || '';
+  const [draftTemplateId, setDraftTemplateId] = useState(templateId);
+  const [templates, setTemplates] = useState<WritingTemplateOption[]>([]);
+  const [templateOptionsFailed, setTemplateOptionsFailed] = useState(false);
   const [topics, setTopics] = useState<WritingTopic[]>([]);
   const [posts, setPosts] = useState<WritingPost[]>([]);
   const [total, setTotal] = useState(0);
@@ -121,7 +127,9 @@ const WritingCircle: React.FC = () => {
   const [minePage, setMinePage] = useState(1);
   const [error, setError] = useState('');
   const [topicsExpanded, setTopicsExpanded] = useState(false);
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(() =>
+    Boolean(templateId || searchParams.get('topic'))
+  );
   const [topicQuery, setTopicQuery] = useState('');
   const [retryCount, setRetryCount] = useState(0);
   const [groups, setGroups] = useState<WritingGroup[]>([]);
@@ -180,6 +188,23 @@ const WritingCircle: React.FC = () => {
 
   useEffect(() => {
     let active = true;
+    writingTemplatesApi
+      .getFilterOptions()
+      .then((response) => {
+        if (!active) return;
+        if (response.success) setTemplates(response.data?.templates || []);
+        else setTemplateOptionsFailed(true);
+      })
+      .catch(() => {
+        if (active) setTemplateOptionsFailed(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
     writingTopicsApi.getAll().then((response) => {
       if (active && response.success) {
         setTopics(response.data?.topics || []);
@@ -229,6 +254,7 @@ const WritingCircle: React.FC = () => {
         scope,
         group_id: groupId || undefined,
         topic_ids: topicId ? [topicId] : undefined,
+        template_id: templateId || undefined,
         sort,
         page,
         page_size: PAGE_SIZE,
@@ -268,11 +294,22 @@ const WritingCircle: React.FC = () => {
     scope,
     sort,
     topicId,
+    templateId,
   ]);
 
   useEffect(() => {
     if (scope === 'mine') setMinePage(1);
-  }, [keyword, creator, dateFrom, dateTo, groupId, scope, sort, topicId]);
+  }, [
+    keyword,
+    creator,
+    dateFrom,
+    dateTo,
+    groupId,
+    scope,
+    sort,
+    topicId,
+    templateId,
+  ]);
 
   useEffect(() => {
     if (scope !== 'mine') return;
@@ -290,6 +327,7 @@ const WritingCircle: React.FC = () => {
         scope: 'mine',
         group_id: groupId || undefined,
         topic_ids: topicId ? [topicId] : undefined,
+        template_id: templateId || undefined,
         sort,
         page: minePage,
         page_size: PAGE_SIZE,
@@ -338,6 +376,7 @@ const WritingCircle: React.FC = () => {
     scope,
     sort,
     topicId,
+    templateId,
   ]);
 
   useEffect(() => {
@@ -369,12 +408,13 @@ const WritingCircle: React.FC = () => {
   useEffect(() => {
     setCreatorInput(creator);
     setDraftTopicId(topicId);
+    setDraftTemplateId(templateId);
     setDraftSort(sort);
     setDraftDateRange([
       dateFrom ? dayjs(dateFrom) : null,
       dateTo ? dayjs(dateTo) : null,
     ]);
-  }, [creator, dateFrom, dateTo, sort, topicId]);
+  }, [creator, dateFrom, dateTo, sort, topicId, templateId]);
 
   const applyFilters = () => {
     const [from, to] = draftDateRange;
@@ -392,6 +432,7 @@ const WritingCircle: React.FC = () => {
       date_to: to?.format('YYYY-MM-DD') || null,
       sort: draftSort === 'oldest' ? 'oldest' : null,
       topic: draftTopicId || null,
+      template: draftTemplateId || null,
       page: null,
     });
   };
@@ -401,6 +442,7 @@ const WritingCircle: React.FC = () => {
     setDraftDateRange([null, null]);
     setDraftSort('latest');
     setDraftTopicId('');
+    setDraftTemplateId('');
     setTopicQuery('');
     updateParams({
       keyword: null,
@@ -409,6 +451,7 @@ const WritingCircle: React.FC = () => {
       date_to: null,
       sort: null,
       topic: null,
+      template: null,
       page: null,
     });
   };
@@ -487,6 +530,7 @@ const WritingCircle: React.FC = () => {
           scope: 'mine',
           group_id: groupId || undefined,
           topic_ids: topicId ? [topicId] : undefined,
+          template_id: templateId || undefined,
           sort,
           page: downloadPage,
           page_size: 50,
@@ -560,6 +604,7 @@ const WritingCircle: React.FC = () => {
     dateFrom,
     dateTo,
     topicId,
+    templateId,
     sort === 'oldest' ? sort : '',
   ].filter(Boolean).length;
 
@@ -1086,6 +1131,34 @@ const WritingCircle: React.FC = () => {
                     />
                   </Stack>
                 </LocalizationProvider>
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel id="writing-template-label" shrink>
+                    书写模板
+                  </InputLabel>
+                  <Select
+                    labelId="writing-template-label"
+                    label="书写模板"
+                    displayEmpty
+                    value={draftTemplateId}
+                    onChange={(event) => setDraftTemplateId(event.target.value)}
+                  >
+                    <MenuItem value="">全部模板</MenuItem>
+                    {templateOptionsFailed && (
+                      <MenuItem disabled>模板加载失败</MenuItem>
+                    )}
+                    {draftTemplateId &&
+                      !templates.some(({ id }) => id === draftTemplateId) && (
+                        <MenuItem value={draftTemplateId}>
+                          模板 #{draftTemplateId}
+                        </MenuItem>
+                      )}
+                    {templates.map(({ id, name, version }) => (
+                      <MenuItem key={id} value={id}>
+                        {name} · v{version}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
                 <FormControl
                   size="small"
                   sx={{ minWidth: { xs: 115, sm: 130 } }}

@@ -151,6 +151,7 @@ export interface CreateWritingRequest {
 export type UpdateWritingRequest = CreateWritingRequest;
 
 export interface WritingListParams {
+  template_id?: string;
   writing_type?: 'original' | 'review';
   keyword?: string;
   scope?: 'all' | 'mine' | 'partners';
