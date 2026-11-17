@@ -54,6 +54,7 @@ import Loading from '../../components/Loading';
 import Empty from '../../components/Empty';
 import {
   WritingGroup,
+  WritingLayout,
   WritingPartner,
   WritingPost,
   WritingTopic,
@@ -118,6 +119,10 @@ const WritingCircle: React.FC = () => {
   const snackbar = useGlobalSnackbar();
   const [searchParams, setSearchParams] = useSearchParams();
   const templateId = searchParams.get('template') || '';
+  const layoutParam = searchParams.get('layout');
+  const layout =
+    layoutParam === 'single' || layoutParam === 'multiple' ? layoutParam : '';
+  const [draftLayout, setDraftLayout] = useState<WritingLayout | ''>(layout);
   const [draftTemplateId, setDraftTemplateId] = useState(templateId);
   const [templates, setTemplates] = useState<WritingTemplateOption[]>([]);
   const [templateOptionsFailed, setTemplateOptionsFailed] = useState(false);
@@ -130,7 +135,7 @@ const WritingCircle: React.FC = () => {
   const [error, setError] = useState('');
   const [topicsExpanded, setTopicsExpanded] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(() =>
-    Boolean(templateId || searchParams.get('topic'))
+    Boolean(layout || templateId || searchParams.get('topic'))
   );
   const [topicQuery, setTopicQuery] = useState('');
   const [retryCount, setRetryCount] = useState(0);
@@ -262,6 +267,7 @@ const WritingCircle: React.FC = () => {
         group_id: groupId || undefined,
         topic_ids: topicId ? [topicId] : undefined,
         template_id: templateId || undefined,
+        layout: layout || undefined,
         sort,
         page,
         page_size: PAGE_SIZE,
@@ -302,6 +308,7 @@ const WritingCircle: React.FC = () => {
     sort,
     topicId,
     templateId,
+    layout,
   ]);
 
   useEffect(() => {
@@ -316,6 +323,7 @@ const WritingCircle: React.FC = () => {
     sort,
     topicId,
     templateId,
+    layout,
   ]);
 
   useEffect(() => {
@@ -335,6 +343,7 @@ const WritingCircle: React.FC = () => {
         group_id: groupId || undefined,
         topic_ids: topicId ? [topicId] : undefined,
         template_id: templateId || undefined,
+        layout: layout || undefined,
         sort,
         page: minePage,
         page_size: PAGE_SIZE,
@@ -384,6 +393,7 @@ const WritingCircle: React.FC = () => {
     sort,
     topicId,
     templateId,
+    layout,
   ]);
 
   useEffect(() => {
@@ -416,12 +426,13 @@ const WritingCircle: React.FC = () => {
     setCreatorInput(creator);
     setDraftTopicId(topicId);
     setDraftTemplateId(templateId);
+    setDraftLayout(layout);
     setDraftSort(sort);
     setDraftDateRange([
       dateFrom ? dayjs(dateFrom) : null,
       dateTo ? dayjs(dateTo) : null,
     ]);
-  }, [creator, dateFrom, dateTo, sort, topicId, templateId]);
+  }, [creator, dateFrom, dateTo, sort, topicId, templateId, layout]);
 
   const applyFilters = () => {
     const [from, to] = draftDateRange;
@@ -440,6 +451,7 @@ const WritingCircle: React.FC = () => {
       sort: draftSort === 'oldest' ? 'oldest' : null,
       topic: draftTopicId || null,
       template: draftTemplateId || null,
+      layout: draftLayout || null,
       page: null,
     });
   };
@@ -450,6 +462,7 @@ const WritingCircle: React.FC = () => {
     setDraftSort('latest');
     setDraftTopicId('');
     setDraftTemplateId('');
+    setDraftLayout('');
     setTopicQuery('');
     updateParams({
       keyword: null,
@@ -459,6 +472,7 @@ const WritingCircle: React.FC = () => {
       sort: null,
       topic: null,
       template: null,
+      layout: null,
       page: null,
     });
   };
@@ -538,6 +552,7 @@ const WritingCircle: React.FC = () => {
           group_id: groupId || undefined,
           topic_ids: topicId ? [topicId] : undefined,
           template_id: templateId || undefined,
+          layout: layout || undefined,
           sort,
           page: downloadPage,
           page_size: 50,
@@ -612,6 +627,7 @@ const WritingCircle: React.FC = () => {
     dateTo,
     topicId,
     templateId,
+    layout,
     sort === 'oldest' ? sort : '',
   ].filter(Boolean).length;
 
@@ -1219,6 +1235,21 @@ const WritingCircle: React.FC = () => {
             </Stack>
 
             <Collapse in={!isReview && filtersExpanded} unmountOnExit>
+              <FormControl size="small" sx={{ minWidth: 160, mb: 2 }}>
+                <InputLabel id="writing-layout-label">书写模式</InputLabel>
+                <Select
+                  labelId="writing-layout-label"
+                  label="书写模式"
+                  value={draftLayout}
+                  onChange={(event) =>
+                    setDraftLayout(event.target.value as WritingLayout | '')
+                  }
+                >
+                  <MenuItem value="">全部模式</MenuItem>
+                  <MenuItem value="single">单篇</MenuItem>
+                  <MenuItem value="multiple">多段落</MenuItem>
+                </Select>
+              </FormControl>
               <Box>
                 <TextField
                   fullWidth

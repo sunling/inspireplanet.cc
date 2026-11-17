@@ -1,3 +1,4 @@
+import WritingSectionTemplates from '../../components/writing/WritingSectionTemplates';
 import { plainTextToRichContent } from '../../components/rich-text/config';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -688,6 +689,7 @@ const WritingDetail: React.FC = () => {
               </Stack>
             </Stack>
 
+            <WritingSectionTemplates post={post} />
             {post.template_snapshot?.items.some((item) =>
               item.answer.trim()
             ) && (

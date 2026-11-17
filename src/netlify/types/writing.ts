@@ -150,7 +150,10 @@ export interface CreateWritingRequest {
 
 export type UpdateWritingRequest = CreateWritingRequest;
 
+export type WritingLayout = 'single' | 'multiple';
+
 export interface WritingListParams {
+  layout?: WritingLayout;
   template_id?: string;
   writing_type?: 'original' | 'review';
   keyword?: string;

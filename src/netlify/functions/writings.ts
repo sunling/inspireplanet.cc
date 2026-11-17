@@ -435,6 +435,12 @@ async function handleGetAll(event: NetlifyEvent): Promise<NetlifyResponse> {
   let query = supabase
     .from('writing_posts')
     .select(WRITING_POST_SELECT, { count: 'exact' });
+  // The editor stores this array only for multi-paragraph writings.
+  if (requestData.layout === 'multiple') {
+    query = query.not('body_rich->writingSections->>sections', 'is', null);
+  } else if (requestData.layout === 'single') {
+    query = query.is('body_rich->writingSections->>sections', null);
+  }
   if (templateId) query = query.eq('template_id', templateId);
 
   if (groupId) {
