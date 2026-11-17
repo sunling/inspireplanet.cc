@@ -1,3 +1,4 @@
+import WritingSectionTemplates from './WritingSectionTemplates';
 import React from 'react';
 import {
   Box,
@@ -92,6 +93,7 @@ const WritingCard: React.FC<WritingCardProps> = ({ post, onClick }) => {
             </Stack>
           )}
 
+          <WritingSectionTemplates post={post} />
           <Typography variant="h6" component="h2" fontWeight={700} gutterBottom>
             {title}
           </Typography>
