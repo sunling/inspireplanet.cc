@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, Fragment } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
-import { marked } from 'marked';
+import { renderSafeMarkdown } from '@/utils/safeMarkdown';
 import {
   downloadCard as utilsDownloadCard,
   isMobileBrowser,
@@ -202,25 +202,14 @@ const CardDetail: React.FC = () => {
       return DOMPurify.sanitize(String(content));
     } catch (e) {
       console.error('内容净化错误:', e);
-      return String(content);
+      return '';
     }
   };
 
-  // 处理Markdown内容
-  const renderMarkdown = (text: string | undefined | null) => {
-    if (!text) return '';
-    try {
-      marked.setOptions({ breaks: true });
-      const html = marked.parse(sanitizeContent(text));
-      return (
-        <Fragment>
-          <span dangerouslySetInnerHTML={{ __html: html as string }} />
-        </Fragment>
-      );
-    } catch (e) {
-      return <Fragment>{sanitizeContent(text)}</Fragment>;
-    }
-  };
+  // Markdown must be parsed before sanitizing the final HTML.
+  const renderMarkdown = (text: string | undefined | null) => (
+    <span dangerouslySetInnerHTML={{ __html: renderSafeMarkdown(text) }} />
+  );
 
   return (
     <Box
