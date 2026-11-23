@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Alert,
@@ -204,6 +204,7 @@ const WritingEditor: React.FC = () => {
   const [historicalTemplateName, setHistoricalTemplateName] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const submittingRef = useRef(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -588,6 +589,7 @@ const WritingEditor: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (submittingRef.current) return;
     const hasAnswer = answers.some((answer) => answer.trim());
     if (
       !body.trim() &&
@@ -651,7 +653,10 @@ const WritingEditor: React.FC = () => {
       is_anonymous: isAnonymous,
     };
 
+    // Lock synchronously: React state updates may not render before another submit.
+    submittingRef.current = true;
     setSaving(true);
+    let published = false;
     try {
       const response = id
         ? await writingsApi.update(id, payload)
@@ -660,12 +665,17 @@ const WritingEditor: React.FC = () => {
         showSnackbar.error(response.error || '保存失败');
         return;
       }
+      published = true;
       showSnackbar.success(id ? '书写已更新' : '书写已发布');
       navigate(`/writing-circle/${response.data.post.id}`);
     } catch {
       showSnackbar.error('保存失败，请稍后重试');
     } finally {
-      setSaving(false);
+      // Keep successful submissions locked until navigation unmounts the editor.
+      if (!published) {
+        submittingRef.current = false;
+        setSaving(false);
+      }
     }
   };
 
