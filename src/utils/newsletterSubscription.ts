@@ -5,6 +5,7 @@ export interface NewsletterSubscriber {
   status: SubscriptionStatus;
   source: string;
   created_at: string;
+  requested_at?: string | null;
   confirmed_at: string | null;
   unsubscribed_at: string | null;
 }
