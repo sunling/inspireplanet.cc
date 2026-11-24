@@ -97,6 +97,65 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     const params = event.queryStringParameters || {};
     const action =
       event.httpMethod === 'GET' ? params.functionName : body.functionName;
+    if (action === 'resendConfirmation') {
+      if (event.httpMethod !== 'POST')
+        return reply(405, undefined, '请求方式不支持');
+      if (!(await isOrganizer(event)))
+        return reply(403, undefined, '请使用已验证邮箱的组织者账号登录');
+      if (process.env.CONTEXT === 'deploy-preview' || process.env.CONTEXT === 'branch-deploy')
+        return reply(403, undefined, '请在正式站发送');
+      if (typeof body.id !== 'string' || !/^[a-f0-9-]{36}$/i.test(body.id))
+        return reply(400, undefined, '订阅记录不正确');
+      const key = process.env.RESEND_API_KEY;
+      if (!key) return reply(503, undefined, '邮件服务暂未配置');
+      const now = new Date();
+      const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+      const confirmation = randomBytes(32).toString('hex');
+      const unsubscribe = randomBytes(32).toString('hex');
+      const hash = digest(confirmation);
+      // Conditional update is atomic: only pending records, at most once per day.
+      const { data: previous, error: readError } = await supabase
+        .from('newsletter_subscribers')
+        .select('id,email,status,requested_at,confirmation_token_hash,confirmation_expires_at,unsubscribe_token_hash')
+        .eq('id', body.id).maybeSingle();
+      if (readError) throw new Error('SubscriberReadFailed');
+      if (!previous || previous.status !== 'pending' ||
+          (previous.requested_at && previous.requested_at > cutoff))
+        return reply(200, { outcome: 'skipped' });
+      let claim = supabase.from('newsletter_subscribers').update({
+        requested_at: now.toISOString(),
+        confirmation_token_hash: hash,
+        confirmation_expires_at: new Date(now.getTime() + 7 * 86400000).toISOString(),
+        unsubscribe_token_hash: digest(unsubscribe),
+      }).eq('id', body.id).eq('status', 'pending');
+      claim = previous.requested_at
+        ? claim.eq('requested_at', previous.requested_at)
+        : claim.is('requested_at', null);
+      const { data: claimed, error: claimError } = await claim.select('id').maybeSingle();
+      if (claimError) throw new Error('SubscriberUpdateFailed');
+      if (!claimed) return reply(200, { outcome: 'skipped' });
+      const site = subscriptionSiteUrl();
+      const confirmUrl = `${site}/newsletter/confirm#${confirmation}`;
+      const unsubscribeUrl = `${site}/newsletter/unsubscribe#${unsubscribe}`;
+      const { data: sent, error: sendError } = await new Resend(key).emails.send({
+        from: `启发星球 <${process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc'}>`,
+        to: previous.email,
+        subject: '还差一步，开启你的启发星球每周分享',
+        text: `你好！你之前申请订阅启发星球每周分享，但还未完成邮箱确认。请在 7 天内打开链接并确认订阅：\n${confirmUrl}\n\n每周接收分享精华、金句及小宇宙播客链接。如果不再希望订阅，可以忽略此邮件，或取消申请：\n${unsubscribeUrl}\n\n期待每个人既是启发的接收者，也是启发的创造者。\n启发星球`,
+        html: `<div style="max-width:560px;margin:auto;padding:32px;font:16px/1.8 sans-serif;color:#263630"><h1 style="font-size:24px">还差一步，开启你的启发星球每周分享</h1><p>你之前申请订阅启发星球每周分享，但还未完成邮箱确认。</p><p>请在 7 天内打开链接并确认订阅：</p><p><a href="${confirmUrl}">确认订阅每周分享 →</a></p><p>每周接收分享精华、金句及小宇宙播客链接。</p><p>如果不再希望订阅，可以忽略此邮件，或<a href="${unsubscribeUrl}">取消申请</a>。</p><p>期待每个人既是启发的接收者，也是启发的创造者。</p></div>`,
+      }, { idempotencyKey: `newsletter-confirm-${hash}` });
+      if (sendError || !sent?.id) {
+        const { error: restoreError } = await supabase.from('newsletter_subscribers').update({
+          requested_at: previous.requested_at,
+          confirmation_token_hash: previous.confirmation_token_hash,
+          confirmation_expires_at: previous.confirmation_expires_at,
+          unsubscribe_token_hash: previous.unsubscribe_token_hash,
+        }).eq('id', body.id).eq('status', 'pending').eq('confirmation_token_hash', hash);
+        if (restoreError) throw new Error('SubscriberRestoreFailed');
+        return reply(502, undefined, '确认邮件未发送成功');
+      }
+      return reply(200, { outcome: 'sent' });
+    }
     if (action === 'list' || action === 'remove') {
       if (!(await isOrganizer(event)))
         return reply(403, undefined, '请使用已验证邮箱的组织者账号登录');
@@ -118,7 +177,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         let query = supabase
           .from('newsletter_subscribers')
           .select(
-            'id,email,status,source,created_at,confirmed_at,unsubscribed_at',
+            'id,email,status,source,created_at,requested_at,confirmed_at,unsubscribed_at',
             { count: 'exact' }
           )
           .order('created_at', { ascending: false })
