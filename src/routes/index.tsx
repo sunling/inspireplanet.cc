@@ -13,6 +13,8 @@ import Error from '../components/ErrorCard/index';
 import Loading from '../components/Loading/index';
 import MyMeetups from '../pages/user/MyMeetups';
 import { AuthProvider, useAuth } from '../context/auth';
+import { meetupsApi, weeklyCardsApi } from '../netlify/config';
+import { getLatestActiveEpisode } from '../utils/recurring';
 
 // 错误边界组件
 const ErrorBoundary: React.FC<{ children?: React.ReactNode }> = ({
@@ -200,6 +202,83 @@ const LegacyEpisodeRoute: React.FC = () => {
   );
 };
 
+const LatestEpisodeRoute: React.FC = () => {
+  const [href, setHref] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    const resolve = async () => {
+      try {
+    const [weeklyRes, meetupsRes] = await Promise.allSettled([
+      weeklyCardsApi.getLatest(),
+      meetupsApi.getAll({ status: 'active' }),
+    ]);
+
+    let bestEpisode = 0;
+    let bestYear = Number(
+      new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        timeZone: 'Asia/Shanghai',
+      }).format(new Date())
+    );
+
+    if (weeklyRes.status === 'fulfilled') {
+      const latestCard = weeklyRes.value.data?.records?.[0];
+      const cardEp = Number(latestCard?.episode?.replace(/\D/g, '') || 0);
+      const createdAt = latestCard?.created
+        ? new Date(latestCard.created)
+        : null;
+      if (cardEp > 0) {
+        bestEpisode = cardEp;
+        if (createdAt && !Number.isNaN(createdAt.getTime())) {
+          bestYear = Number(
+            new Intl.DateTimeFormat('en-US', {
+              year: 'numeric',
+              timeZone: 'Asia/Shanghai',
+            }).format(createdAt)
+          );
+        }
+      }
+    }
+
+    if (meetupsRes.status === 'fulfilled') {
+      const meetups = meetupsRes.value.data?.meetups || [];
+      const recurringMeetup =
+        meetups.find(
+          (m: any) =>
+            Number(m.id) === 39 && m.is_recurring && m.episode_start_date
+        ) ||
+        meetups.find((m: any) => m.is_recurring && m.episode_start_date);
+      if (recurringMeetup?.episode_start_date) {
+        const activeEp = getLatestActiveEpisode(
+          recurringMeetup.datetime,
+          recurringMeetup.episode_start_date
+        );
+        if (
+          activeEp &&
+          (activeEp.year > bestYear ||
+            (activeEp.year === bestYear &&
+              activeEp.episodeNumber >= bestEpisode))
+        ) {
+          bestEpisode = activeEp.episodeNumber;
+          bestYear = activeEp.year;
+        }
+      }
+    }
+
+
+        if (active) {
+          setHref(bestEpisode > 0 ? `/episodes/${bestYear}/${bestEpisode}` : '/weekly-cards');
+        }
+      } catch {
+        if (active) setHref('/weekly-cards');
+      }
+    };
+    void resolve();
+    return () => { active = false; };
+  }, []);
+  return href ? <Navigate to={href} replace /> : <Loading />;
+};
+
 // 创建路由器
 const router = createBrowserRouter(
   [
@@ -278,6 +357,7 @@ const router = createBrowserRouter(
           path: 'weekly-cards/:episode',
           element: createLazyRoute(<WeeklyCards />),
         },
+        { path: 'episodes/latest', element: <LatestEpisodeRoute /> },
         {
           path: 'episodes/:year/:episode',
           element: createLazyRoute(<EpisodeHub />),
