@@ -27,6 +27,8 @@ export const newsletterSubscriptionsApi = {
       status,
       search,
     }),
+  resendConfirmation: (id: string) =>
+    http.post<{ outcome: 'sent' | 'skipped' }>('/newsletterSubscriptions', 'resendConfirmation', { id }),
   remove: (id: string) =>
     http.post<{ message: string }>('/newsletterSubscriptions', 'remove', {
       id,
