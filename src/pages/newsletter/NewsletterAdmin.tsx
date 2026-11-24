@@ -46,7 +46,53 @@ export default function NewsletterAdmin() {
   const [refresh, setRefresh] = useState(0);
   const [selected, setSelected] = useState<NewsletterSubscriber | null>(null);
   const [removing, setRemoving] = useState(false);
+  const [reminder, setReminder] = useState<NewsletterSubscriber | 'all' | null>(null);
+  const [sending, setSending] = useState(false);
+  const [progress, setProgress] = useState('');
   const generation = useRef(0);
+  const sendLock = useRef(false);
+  async function sendReminders() {
+    if (!reminder || sendLock.current) return;
+    sendLock.current = true;
+    setSending(true);
+    setError('');
+    setNotice('');
+    let sent = 0, skipped = 0, failed = 0;
+    try {
+      let targets: NewsletterSubscriber[] = [];
+      if (reminder === 'all') {
+        let p = 1;
+        while (true) {
+          const result = await newsletterSubscriptionsApi.list(p, 'pending', '');
+          if (!result.success || !result.data)
+            throw new Error(result.error || '待确认名单加载失败');
+          targets.push(...result.data.subscribers);
+          if (p * 25 >= result.data.total || !result.data.subscribers.length) break;
+          p++;
+        }
+      } else targets = [reminder];
+      targets = Array.from(new Map(targets.map(s => [s.id, s])).values());
+      for (const [i, target] of targets.entries()) {
+        setProgress(`正在处理 ${i + 1}/${targets.length}…`);
+        try {
+          const result = await newsletterSubscriptionsApi.resendConfirmation(target.id);
+          if (!result.success || !result.data) failed++;
+          else if (result.data.outcome === 'sent') sent++;
+          else skipped++;
+        } catch { failed++; }
+        if (i + 1 < targets.length) await new Promise(resolve => setTimeout(resolve, 650));
+      }
+      setNotice(`邮件服务已接受 ${sent} 封，跳过 ${skipped} 条（状态变化或 24 小时内已申请/发送），失败 ${failed} 条。接受不代表已送达。`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '发送失败');
+    } finally {
+      setReminder(null);
+      setSending(false);
+      setProgress('');
+      sendLock.current = false;
+      setRefresh(v => v + 1);
+    }
+  }
   useEffect(() => {
     const id = ++generation.current;
     setBusy(true);
@@ -143,6 +189,9 @@ export default function NewsletterAdmin() {
             搜索
           </Button>
           <Button onClick={() => setRefresh((v) => v + 1)}>刷新名单</Button>
+          <Button variant="contained" disabled={busy || sending || removing || !list?.counts.pending} onClick={() => setReminder('all')}>
+            批量重发确认邮件（{list?.counts.pending ?? 0}）
+          </Button>
         </Stack>
       </Box>
       {notice && (
@@ -168,6 +217,7 @@ export default function NewsletterAdmin() {
                       '邮箱',
                       '状态',
                       '申请时间',
+                      '最近确认邮件申请时间',
                       '确认时间',
                       '退订时间',
                       '操作',
@@ -190,13 +240,19 @@ export default function NewsletterAdmin() {
                         {labels[s.status]}
                       </TableCell>
                       <TableCell>{date(s.created_at)}</TableCell>
+                      <TableCell>{date(s.requested_at ?? null)}</TableCell>
                       <TableCell>{date(s.confirmed_at)}</TableCell>
                       <TableCell>{date(s.unsubscribed_at)}</TableCell>
                       <TableCell>
+                        {s.status === 'pending' && (
+                          <Button size="small" disabled={sending || removing || (!!s.requested_at && Date.now() - new Date(s.requested_at).getTime() < 86400000)} onClick={() => setReminder(s)}>
+                            重发确认邮件
+                          </Button>
+                        )}
                         <Button
                           size="small"
                           color="error"
-                          disabled={s.status === 'unsubscribed'}
+                          disabled={sending || s.status === 'unsubscribed'}
                           onClick={() => setSelected(s)}
                         >
                           移除
@@ -206,7 +262,7 @@ export default function NewsletterAdmin() {
                   ))}
                   {!list?.subscribers.length && (
                     <TableRow>
-                      <TableCell colSpan={6}>
+                      <TableCell colSpan={7}>
                         暂时没有符合条件的订阅记录。
                       </TableCell>
                     </TableRow>
@@ -239,6 +295,22 @@ export default function NewsletterAdmin() {
           </>
         )
       )}
+      <Dialog open={!!reminder} onClose={() => !sending && setReminder(null)}>
+        <DialogTitle>重新发送确认邮件？</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ overflowWrap: 'anywhere' }}>
+            {reminder === 'all' ? `全部待确认用户（当前 ${list?.counts.pending ?? 0} 人，不受搜索或分页限制）` : reminder?.email}
+          </Typography>
+          <Typography color="text.secondary">
+            仅向待确认用户发送，跳过 24 小时内已申请或发送的记录。新确认链接有效期 7 天，旧链接将失效。不会自动确认订阅。
+          </Typography>
+          {sending && <Typography role="status">{progress}</Typography>}
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={sending} onClick={() => setReminder(null)}>取消</Button>
+          <Button disabled={sending} onClick={sendReminders}>{sending ? '正在发送…' : '确认发送'}</Button>
+        </DialogActions>
+      </Dialog>
       <Dialog open={!!selected} onClose={() => !removing && setSelected(null)}>
         <DialogTitle>移出订阅名单？</DialogTitle>
         <DialogContent>
