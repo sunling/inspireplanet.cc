@@ -230,6 +230,45 @@ const About: React.FC = () => {
 
         <section
           style={{
+            padding: isMobile ? '1.5rem' : '2.5rem',
+            marginBottom: '2.5rem',
+            borderRadius: '12px',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+          }}
+        >
+          <h2
+            style={{
+              marginBottom: '2rem',
+              color: '#ff5a36',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              fontSize: isMobile ? '1.75rem' : '2rem',
+            }}
+          >
+            每周分享与内容平台
+          </h2>
+          <div style={{ lineHeight: 1.8 }}>
+            <h3 style={{ color: '#ff5a36', margin: '0 0 1rem' }}>每周线上分享会</h3>
+            <ul style={{ paddingLeft: '1.25rem', margin: '0 0 1.5rem' }}>
+              <li>时间：每周六早上 8 点（北京时间）</li>
+              <li>腾讯会议号：986-9669-8023</li>
+              <li><a href="/meetup-detail?id=39">活动报名</a>（报名参会、分享及提交问题场景）</li>
+              <li><a href="/episodes/latest">最新分享</a>（内容总结、金句卡片，会议期间及会后均可记录回应与感受）</li>
+              <li><a href="/subscribe">邮件订阅</a>（每周接收分享精华、金句及播客链接）</li>
+            </ul>
+            <h3 style={{ color: '#ff5a36', margin: '0 0 1rem' }}>内容平台</h3>
+            <ul style={{ paddingLeft: '1.25rem', margin: 0 }}>
+              <li>小宇宙：启发星球（每期播客回放）</li>
+              <li>公众号：启发星球笔记（每期分享者的内容整理成文）</li>
+              <li>视频号、小红书：启发星球笔记（每期会议原声视频切片）</li>
+            </ul>
+          </div>
+        </section>
+
+        <section
+          style={{
             padding: '2.5rem',
             borderRadius: '12px',
             backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -260,7 +299,7 @@ const About: React.FC = () => {
           <div style={{ lineHeight: 1.8, marginBottom: '2rem' }}>
             <h3 style={{ color: '#ff5a36', margin: '0 0 1rem' }}>一起参与</h3>
             <p style={{ margin: '0 0 1rem' }}>
-              你可以<a href="/join">加入每周交流</a>，从倾听开始，也可以带来一次分享，或在<a href="/questions">问题圆桌</a>留下你正在思考的问题。
+              你可以<a href="/join">加入微信群</a>，从倾听开始，也可以带来一次分享，或在<a href="/questions">问题圆桌</a>留下你正在思考的问题。
             </p>
             <p style={{ margin: 0 }}>
               <a href="https://github.com/sunling/inspireplanet.cc" target="_blank" rel="noopener noreferrer">站点</a>和<a href="https://github.com/sunling/inspire-planet" target="_blank" rel="noopener noreferrer">内容仓库</a>都是开源的。无论你是在校学生，还是想找一个具体项目练手，都欢迎参与网站优化、文章整理、播客剪辑、视频制作，或提出让内容更容易被看见的想法。
