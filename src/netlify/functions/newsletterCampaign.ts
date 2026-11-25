@@ -106,7 +106,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     if (action === 'status' && event.httpMethod === 'GET')
       return reply(200, await status(year, episode));
     if (
-      !['prepare', 'start', 'process', 'autoEdit', 'autoPause'].includes(action) ||
+      !['prepare', 'start', 'process', 'autoEdit', 'autoPause', 'saveDraft'].includes(action) ||
       event.httpMethod !== 'POST'
     )
       return reply(405, undefined, '请求方式不支持');
@@ -149,39 +149,22 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       if (!result.data) return reply(409, undefined, '草稿已经变化，请刷新');
       return reply(200, await status(year, episode));
     }
-    if (action === 'prepare') {
-      const current = (await status(year, episode)).campaign;
-      if (current?.auto_managed)
-        return reply(409, undefined, '请使用自动发送草稿的保存功能');
+    if (action === 'prepare' || action === 'saveDraft') {
       if (!validateNewsletterSubject(data.subject))
         return reply(400, undefined, '请填写有效的邮件主题');
-      let rendered;
-      try {
-        rendered = renderNewsletterDocument(data.document);
-      } catch (err) {
-        return reply(
-          400,
-          undefined,
-          err instanceof Error ? err.message : '邮件正文格式不正确'
-        );
-      }
+      if (data.hash !== null && (typeof data.hash !== 'string' || !/^[a-f0-9-]{36}$/i.test(data.hash)))
+        return reply(400, undefined, '缺少草稿版本，请重新载入');
+      const rendered = renderNewsletterDocument(data.document);
       const subject = data.subject.trim();
       const from = `启发星球 <${process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc'}>`;
-      const contentHash = hash(
-        JSON.stringify([subject, rendered.html, rendered.text, from])
-      );
-      const { error } = await supabase.rpc('newsletter_prepare_campaign', {
-        p_year: year,
-        p_episode: episode,
-        p_subject: subject,
-        p_document: data.document,
-        p_html: rendered.html,
-        p_text: rendered.text,
-        p_hash: contentHash,
-        p_from: from,
-        p_actor: actor,
+      const result = await supabase.rpc('newsletter_save_draft', {
+        p_year: year, p_episode: episode, p_revision: data.hash,
+        p_subject: subject, p_document: data.document, p_html: rendered.html, p_text: rendered.text,
+        p_hash: hash(JSON.stringify([subject, rendered.html, rendered.text, from])),
+        p_from: from, p_actor: actor, p_prepare: action === 'prepare',
       });
-      if (error) throw new Error('CampaignPrepareFailed');
+      if (result.error) throw Error('DraftSaveFailed');
+      if (!result.data) return reply(409, undefined, '草稿已经变化或已发送，请刷新并重新载入');
       return reply(200, await status(year, episode));
     }
     if (action === 'start') {
