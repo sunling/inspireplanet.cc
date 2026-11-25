@@ -1,5 +1,5 @@
 import deployment from '../generated/newsletterDeployment.json';
-import { createHash, randomUUID } from 'crypto';
+import { createHash, randomUUID, timingSafeEqual } from 'crypto';
 import { supabase } from '../../database/supabase';
 import {
   renderNewsletterDocument,
@@ -52,7 +52,13 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
   try {
     const auth = event.headers.authorization || event.headers.Authorization;
     if (!auth?.startsWith('Bearer ')) return reply(401, undefined, '请先登录');
-    const verified = await supabase.auth.getUser(auth.slice(7));
+    const automationSecret = process.env.NEWSLETTER_AUTOMATION_SECRET;
+    const supplied = auth.slice(7);
+    const automated = Boolean(automationSecret && automationSecret.length >= 32 &&
+      timingSafeEqual(Buffer.from(hash(supplied)), Buffer.from(hash(automationSecret))));
+    let actor = 'newsletter-automation';
+    if (!automated) {
+    const verified = await supabase.auth.getUser(supplied);
     const user = verified.data?.user;
     if (verified.error || !user?.email || !user.email_confirmed_at)
       return reply(401, undefined, '请使用已验证邮箱重新登录');
@@ -63,6 +69,8 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       .single();
     if (role.error || role.data?.role !== 'organizer')
       return reply(403, undefined, '只有组织者可以管理正式邮件');
+    actor = user.id;
+    }
     if ((event.body?.length || 0) > 250000)
       return reply(413, undefined, '邮件内容过长');
     let data: Record<string, any>;
@@ -93,6 +101,8 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     )
       return reply(400, undefined, '年份或期数不正确');
     const action = data.functionName;
+    if (automated && action !== 'process')
+      return reply(403, undefined, '自动化仅允许处理已开始的发送任务');
     if (action === 'status' && event.httpMethod === 'GET')
       return reply(200, await status(year, episode));
     if (
@@ -141,7 +151,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         p_text: rendered.text,
         p_hash: contentHash,
         p_from: from,
-        p_actor: user.id,
+        p_actor: actor,
       });
       if (error) throw new Error('CampaignPrepareFailed');
       return reply(200, await status(year, episode));
