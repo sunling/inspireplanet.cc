@@ -116,7 +116,8 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         if (!claim.data) return reply(200, { success: true, status: 'draft' });
       }
       const url = `${site}/episodes/${c.year}/${c.episode}`;
-      const intro = `本期订阅邮件已准备好。提醒成功后至少保留 24 小时，随后在下一个工作日上午 8 点（北京时间）定时任务中自动发送。无需确认；如需修改或暂停，请登录网站打开本期邮件编辑器：${url}`;
+      const expected = nextSendSlot(new Date(Date.parse(attempt) + 60000)).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+      const intro = `本期订阅邮件已准备好，预计北京时间 ${expected} 自动发送（以两封提醒均成功后至少 24 小时为准，网站显示实际计划时间）。无需确认；如需修改或暂停，请登录网站打开本期邮件编辑器：${url}`;
       const banner = `<p style="padding:18px;background:#fff5ec">${intro} <a href="${url}">查看及编辑本期邮件 →</a></p>`;
       await sendNotice('[发送预告] ' + c.subject, intro + '\n\n' + c.body_text,
         c.body_html.replace(/<body[^>]*>/i, (tag: string) => tag + banner), 'newsletter-notice-' + c.id);
@@ -128,6 +129,8 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       return reply(200, { success: true, status: 'draft' });
     }
     if (c.status === 'draft' && !c.auto_paused && c.auto_notice_at) {
+      if (!c.auto_send_at || Date.parse(c.auto_send_at) > Date.now())
+        return reply(200, { success: true, status: 'draft', dueAt: c.auto_send_at });
       // A newly published podcast may be appended only to an untouched generated draft.
       if (!c.auto_edited && !c.body_text.includes('xiaoyuzhoufm.com/episode/')) {
         const pub = await getEpisodePublication(String(c.episode), c.year);
