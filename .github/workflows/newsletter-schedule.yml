@@ -6,11 +6,16 @@ on:
     - cron: '0 12 * * 0'
   workflow_dispatch:
     inputs:
-      dry_run:
-        description: 'Read-only verification (no emails or database writes)'
-        type: boolean
-        default: true
+      mode:
+        description: 'Choose an execution mode'
+        type: choice
+        default: dry-run
         required: true
+        options:
+          - dry-run
+          - test-reminder
+          - test-newsletter
+          - live
 permissions:
   contents: read
 concurrency:
@@ -18,7 +23,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   newsletter:
-    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.dry_run) || vars.NEWSLETTER_AUTOMATION_ENABLED == 'true')
+    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run') || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'test-reminder' || inputs.mode == 'test-newsletter') && vars.NEWSLETTER_AUTOMATION_ENABLED == 'false') || ((github.event_name == 'schedule' || inputs.mode == 'live') && vars.NEWSLETTER_AUTOMATION_ENABLED == 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -29,10 +34,10 @@ jobs:
       - name: Check and advance newsletter
         env:
           NEWSLETTER_AUTOMATION_SECRET: ${{ secrets.NEWSLETTER_AUTOMATION_SECRET }}
-          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          MODE: ${{ github.event_name == 'schedule' && 'live' || inputs.mode }}
+          NEWSLETTER_TEST_AT: ${{ github.event.head_commit.timestamp || github.event.repository.updated_at }}
         run: |
-          if [ "$DRY_RUN" = "true" ]; then
-            node scripts/newsletter-schedule.mjs --dry-run
-          else
-            node scripts/newsletter-schedule.mjs
-          fi
+          case "$MODE" in
+            dry-run|test-reminder|test-newsletter|live) node scripts/newsletter-schedule.mjs "--$MODE" ;;
+            *) echo "Unknown mode"; exit 1 ;;
+          esac
