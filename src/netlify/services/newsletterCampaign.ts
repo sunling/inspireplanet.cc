@@ -19,6 +19,10 @@ export const newsletterCampaignApi = {
       'prepare',
       draft
     ),
+  autoEdit: (draft: CampaignDraft, hash: string) =>
+    http.post<NewsletterCampaignStatus>('/newsletterCampaign', 'autoEdit', { ...draft, hash }),
+  autoPause: (year: number, episode: number, hash: string, paused: boolean) =>
+    http.post<NewsletterCampaignStatus>('/newsletterCampaign', 'autoPause', { year, episode, hash, paused }),
   start: (year: number, episode: number, hash: string) =>
     http.post<NewsletterCampaignStatus>('/newsletterCampaign', 'start', {
       year,
