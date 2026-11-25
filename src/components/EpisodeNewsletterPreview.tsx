@@ -179,7 +179,7 @@ export default function EpisodeNewsletterPreview({
           </Stack>
           <Box sx={{ display: format === 'edit' ? 'block' : 'none' }}>
             <NewsletterEditor
-              initialContent={generated.document}
+              initialContent={document}
               resetToken={resetToken}
               onChange={onChange}
             />
@@ -247,6 +247,11 @@ export default function EpisodeNewsletterPreview({
           <Box ref={broadcastRef} sx={{ scrollMarginTop: 16 }}>
             <NewsletterBroadcast
               draft={{ year, episode, subject, document }}
+              onLoadDraft={(saved) => {
+                setSubject(saved.subject);
+                setDocument(saved.document);
+                setResetToken(v => v + 1);
+              }}
               disabled={
                 sending ||
                 Boolean(preview.error) ||
