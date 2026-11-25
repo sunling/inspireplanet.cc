@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   newsletter:
-    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run') || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'test-reminder' || inputs.mode == 'test-newsletter') && vars.NEWSLETTER_AUTOMATION_ENABLED == 'false') || ((github.event_name == 'schedule' || inputs.mode == 'live') && vars.NEWSLETTER_AUTOMATION_ENABLED == 'true'))
+    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run') || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'test-reminder' || inputs.mode == 'test-newsletter') && vars.NEWSLETTER_AUTOMATION_ENABLED != 'true') || ((github.event_name == 'schedule' || inputs.mode == 'live') && vars.NEWSLETTER_AUTOMATION_ENABLED == 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
