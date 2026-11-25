@@ -4,7 +4,7 @@ import { supabase } from '../../database/supabase';
 import { createDefaultNewsletterDocument, renderNewsletterDocument, validateNewsletterSubject } from '../../utils/newsletterDocument';
 import { buildEpisodeNewsletterPreview } from '../../utils/episodeNewsletter';
 import { getGitHubEpisodeEntries, fetchEpisodeCardsFromGitHub, getEpisodePublication } from '../utils/githubWeeklyCards';
-import { newsletterTokenSecret } from '../utils/newsletterBroadcast';
+import { newsletterTokenSecret, renderDeliveryEmail } from '../utils/newsletterBroadcast';
 import type { EpisodeSummary } from '../services/weeklyCards';
 import type { NetlifyEvent, NetlifyResponse } from '../types/http';
 
@@ -27,19 +27,29 @@ export function nextSendSlot(notice: Date): Date {
     first.setUTCDate(first.getUTCDate() + 1);
   return new Date(Math.max(first.getTime(), earliest));
 }
-async function sendNotice(subject: string, text: string, html: string | undefined, id: string) {
+async function sendNotice(subject: string, text: string, html: string | undefined, id: string, targets: string[] = recipients, from = `启发星球 <${process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc'}>`) {
+  const ids: string[] = [];
   // Separate messages so recipients don't see a shared To list.
-  for (const [index, to] of recipients.entries()) {
+  for (const [index, to] of targets.entries()) {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST', signal: AbortSignal.timeout(8000),
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
         'Content-Type': 'application/json', 'Idempotency-Key': `${id}-${index}` },
-      body: JSON.stringify({ from: `启发星球 <${process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc'}>`, to, subject, text, ...(html ? { html } : {}) }),
+      body: JSON.stringify({ from, to, subject, text, ...(html ? { html } : {}) }),
     });
     const data = await res.json();
     if (!res.ok || !data.id) throw Error('NoticeProviderRejected');
+    ids.push(data.id);
     await new Promise(resolve => setTimeout(resolve, 600));
   }
+  return ids;
+}
+function reminderContent(c: { year: number; episode: number; body_html: string; body_text: string }, attempt: string, test = false) {
+  const url = `${site}/episodes/${c.year}/${c.episode}`;
+  const expected = nextSendSlot(new Date(Date.parse(attempt) + 60000)).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+  const intro = (test ? '【测试】以下为模拟发送预告，不会安排实际群发。' : '') + `本期订阅邮件已准备好，预计北京时间 ${expected} 自动发送（以两封提醒均成功后至少 24 小时为准，网站显示实际计划时间）。无需确认；如需修改或暂停，请登录网站打开本期邮件编辑器：${url}`;
+  const banner = `<p style="padding:18px;background:#fff5ec">${intro} <a href="${url}">查看及编辑本期邮件 →</a></p>`;
+  return { text: intro + '\n\n' + c.body_text, html: c.body_html.replace(/<body[^>]*>/i, (tag: string) => tag + banner) };
 }
 async function discover(dryRun = false) {
   const now = Date.now();
@@ -93,6 +103,45 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     return reply(503, { success: false, error: 'Production deployment required' });
   try {
     const request = JSON.parse(event.body || '{}');
+    if (request.action === 'testReminder' || request.action === 'testNewsletter') {
+      // Deliberately fixed test audience and episode. Never accept recipient overrides.
+      if (process.env.NEWSLETTER_AUTOMATION_ENABLED !== 'false' ||
+          !process.env.RESEND_API_KEY || !newsletterTokenSecret())
+        return reply(503, { success: false, error: 'Test requires disabled automation and configured mail service' });
+      if (typeof request.requestId !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(request.requestId))
+        return reply(400, { success: false, error: 'Invalid test request id' });
+      const row = await supabase.from('newsletter_campaigns')
+        .select('id,year,episode,subject,body_html,body_text,site_url,from_email')
+        .eq('year', 2026).eq('episode', 46).maybeSingle();
+      if (row.error) throw Error('TestCampaignReadFailed');
+      if (!row.data) return reply(404, { success: false, error: 'EP46 campaign not found' });
+      const c = row.data;
+      const reminder = request.action === 'testReminder';
+      const recipient = reminder ? 'sunling621@gmail.com' : 'lingsun.us@gmail.com';
+      let content;
+      if (reminder) {
+        // A fixed timestamp supplied by the runner preserves identical payload on retries.
+        if (typeof request.testAt !== 'string' || !Number.isFinite(Date.parse(request.testAt)))
+          return reply(400, { success: false, error: 'Invalid test timestamp' });
+        content = reminderContent(c, request.testAt, true);
+      } else {
+        const subscriber = await supabase.from('newsletter_subscribers').select('id')
+          .eq('email', recipient).eq('status', 'subscribed').not('confirmed_at', 'is', null).maybeSingle();
+        if (subscriber.error) throw Error('TestSubscriberReadFailed');
+        if (!subscriber.data) return reply(409, { success: false, error: 'Test recipient not confirmed' });
+        // Synthetic token renders the real footer but cannot unsubscribe a real subscriber.
+        const token = sha('newsletter-test-only:' + request.requestId + ':' + c.id);
+        content = renderDeliveryEmail(c, token);
+        const note = '【测试】这是正式邮件模板测试；退订链接仅供预览，不会取消订阅。';
+        content = { html: content.html.replace(/<body[^>]*>/i, tag => tag + '<p>' + note + '</p>'),
+          text: note + '\n\n' + content.text };
+      }
+      const ids = await sendNotice((reminder ? '【测试·发送预告】' : '【测试·正式邮件】') + c.subject,
+        content.text, content.html, 'newsletter-test-' + request.action + '-' + request.requestId,
+        [recipient], reminder ? undefined : c.from_email);
+      return reply(200, { success: true, testMode: request.action, year: 2026, episode: 46,
+        recipient, providerAccepted: true, messageId: ids[0], emailsSent: 1, writesPerformed: 0 });
+    }
     if (request.action === 'dryRun') {
       // No write RPC, update, delivery processing or Resend request in this branch.
       const [subscribers, queue, discovery] = await Promise.all([
@@ -141,12 +190,8 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         if (claim.error) throw Error('NoticeClaimFailed');
         if (!claim.data) return reply(200, { success: true, status: 'draft' });
       }
-      const url = `${site}/episodes/${c.year}/${c.episode}`;
-      const expected = nextSendSlot(new Date(Date.parse(attempt) + 60000)).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
-      const intro = `本期订阅邮件已准备好，预计北京时间 ${expected} 自动发送（以两封提醒均成功后至少 24 小时为准，网站显示实际计划时间）。无需确认；如需修改或暂停，请登录网站打开本期邮件编辑器：${url}`;
-      const banner = `<p style="padding:18px;background:#fff5ec">${intro} <a href="${url}">查看及编辑本期邮件 →</a></p>`;
-      await sendNotice('[发送预告] ' + c.subject, intro + '\n\n' + c.body_text,
-        c.body_html.replace(/<body[^>]*>/i, (tag: string) => tag + banner), 'newsletter-notice-' + c.id);
+      const reminder = reminderContent(c, attempt);
+      await sendNotice('[发送预告] ' + c.subject, reminder.text, reminder.html, 'newsletter-notice-' + c.id);
       const sentAt = new Date();
       const saved = await supabase.from('newsletter_campaigns').update({
         auto_notice_at: sentAt.toISOString(), auto_send_at: nextSendSlot(sentAt).toISOString(),
