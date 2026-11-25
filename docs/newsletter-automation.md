@@ -28,3 +28,5 @@
 - 发送前退订者跳过，发送后重复调度不重复投递。
 - 手动发送与原功能兼容；预览环境禁发；非组织者和无专用密钥请求拒绝。
 - 真实发送结果只记录 provider accepted；有失败/待核实的任务需人工检查。
+
+Organizer reminders and result notifications use the existing comma-separated Netlify `CONTACT_EMAIL` (two distinct verified organizer accounts). Dry run checks `organizerRecipientCount` and `organizerRecipientsVerified`. No additional organizer email environment variable is needed.
