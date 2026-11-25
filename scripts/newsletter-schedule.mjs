@@ -17,7 +17,12 @@ catch (e) { console.error(e.message); failures++; }
 const {tasks} = await call('newsletterSchedule', {action:'queue'});
 for (const task of tasks) {
   try {
-    const advanced = await call('newsletterSchedule', {action:'advance',id:task.id});
+    let advanced = await call('newsletterSchedule', {action:'advance',id:task.id});
+    const wait = Date.parse(advanced.dueAt || '') - Date.now();
+    if (advanced.status === 'draft' && wait > 0 && wait <= 10 * 60000) {
+      await new Promise(resolve => setTimeout(resolve, wait + 2000));
+      advanced = await call('newsletterSchedule', {action:'advance',id:task.id});
+    }
     if (advanced.status !== 'sending') continue;
     // First batch may safely reclaim an interrupted delivery; subsequent batches
     // only process pending rows, never spin on a failed recipient.
