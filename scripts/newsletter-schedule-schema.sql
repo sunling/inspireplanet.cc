@@ -6,7 +6,9 @@ alter table public.newsletter_campaigns
  add column if not exists auto_notice_at timestamptz,
  add column if not exists auto_notice_attempt_at timestamptz,
  add column if not exists auto_send_at timestamptz,
- add column if not exists auto_result_at timestamptz;
+ add column if not exists auto_result_at timestamptz,
+ add column if not exists auto_result_attempt_at timestamptz,
+ add column if not exists auto_edited boolean not null default false;
 
 create or replace function public.newsletter_auto_create(p_year integer,p_episode integer,p_subject text,p_document jsonb,p_html text,p_text text,p_hash text,p_from text)
 returns uuid language plpgsql security invoker set search_path='' as $$
@@ -42,7 +44,7 @@ end $$;
 create or replace function public.newsletter_auto_edit(p_id uuid,p_revision uuid,p_subject text,p_document jsonb,p_html text,p_text text,p_hash text)
 returns boolean language plpgsql security invoker set search_path='' as $$
 begin
- update public.newsletter_campaigns set subject=p_subject,document=p_document,body_html=p_html,body_text=p_text,content_hash=p_hash,revision=gen_random_uuid()
+ update public.newsletter_campaigns set subject=p_subject,document=p_document,body_html=p_html,body_text=p_text,content_hash=p_hash,revision=gen_random_uuid(),auto_edited=true
  where id=p_id and revision=p_revision and status='draft' and auto_managed;
  return found;
 end $$;
@@ -56,4 +58,18 @@ begin
 end $$;
 revoke all on function public.newsletter_auto_create(integer,integer,text,jsonb,text,text,text,text),public.newsletter_auto_start(uuid,uuid),public.newsletter_auto_edit(uuid,uuid,text,jsonb,text,text,text),public.newsletter_auto_pause(uuid,uuid,boolean) from public,anon,authenticated;
 grant execute on function public.newsletter_auto_create(integer,integer,text,jsonb,text,text,text,text),public.newsletter_auto_start(uuid,uuid),public.newsletter_auto_edit(uuid,uuid,text,jsonb,text,text,text),public.newsletter_auto_pause(uuid,uuid,boolean) to service_role;
+-- Prevent an already-open manual editor from overwriting a newly created auto draft.
+create or replace function public.newsletter_guard_auto_draft()
+returns trigger language plpgsql security invoker set search_path='' as $
+begin
+ if old.auto_managed and new.created_by is distinct from old.created_by then
+   raise exception 'Use scheduled draft editor';
+ end if;
+ return new;
+end $;
+drop trigger if exists newsletter_guard_auto_draft on public.newsletter_campaigns;
+create trigger newsletter_guard_auto_draft before update on public.newsletter_campaigns
+for each row execute function public.newsletter_guard_auto_draft();
+revoke all on function public.newsletter_guard_auto_draft() from public,anon,authenticated;
+grant execute on function public.newsletter_guard_auto_draft() to service_role;
 commit;
