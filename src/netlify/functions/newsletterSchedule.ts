@@ -61,10 +61,21 @@ async function discover(dryRun = false) {
   if (!entry) return { ready: false, reason: 'No recent episode' };
   const episode = { year: entry.year, episode: entry.episodeNum, date: entry.dateFormatted };
   if (!entry.summaryPath || !entry.path) return { ...episode, ready: false, reason: 'Missing summary or quote cards' };
-  const existing = await supabase.from('newsletter_campaigns').select('id')
+  const existing = await supabase.from('newsletter_campaigns').select('id,status,revision,auto_managed')
     .eq('year', entry.year).eq('episode', entry.episodeNum).maybeSingle();
   if (existing.error) throw Error('CampaignReadFailed');
-  if (existing.data && !dryRun) return { ...episode, ready: false, reason: 'Campaign already exists' };
+  if (existing.data && !dryRun) {
+    if (existing.data.status === 'draft' && !existing.data.auto_managed) {
+      // Preserve the organizer's draft; claim only this exact unsent revision.
+      const adopted = await supabase.from('newsletter_campaigns')
+        .update({ auto_managed: true, auto_edited: true, revision: randomUUID() })
+        .eq('id', existing.data.id).eq('revision', existing.data.revision)
+        .eq('status', 'draft').eq('auto_managed', false).select('id').maybeSingle();
+      if (adopted.error) throw Error('DraftAdoptionFailed');
+      return { ...episode, ready: Boolean(adopted.data), reason: adopted.data ? 'Existing draft adopted' : 'Draft changed' };
+    }
+    return { ...episode, ready: false, reason: 'Campaign already exists', status: existing.data.status };
+  }
   // Require the actual structured summary, never historical fallback text.
   const raw = await fetch(`https://raw.githubusercontent.com/sunling/inspire-planet/main/${entry.summaryPath}`, { signal: AbortSignal.timeout(8000) });
   if (!raw.ok) throw Error('SummaryFetchFailed');
@@ -162,8 +173,8 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         !process.env.RESEND_API_KEY || !newsletterTokenSecret())
       return reply(503, { success: false, error: 'Automation disabled or not configured' });
     if (request.action === 'discover') {
-      await discover();
-      return reply(200, { success: true });
+      const discovery = await discover();
+      return reply(200, { success: true, discovery });
     }
     if (request.action === 'queue') {
       const rows = await supabase.from('newsletter_campaigns').select('id,year,episode,status')
