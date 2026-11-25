@@ -8,6 +8,10 @@ export interface NewsletterCampaignStatus {
     content_hash: string;
     revision: string;
     status: 'draft' | 'sending' | 'completed';
+    auto_managed?: boolean;
+    auto_paused?: boolean;
+    auto_notice_at?: string | null;
+    auto_send_at?: string | null;
     created_at: string;
     started_at: string | null;
     document: NewsletterDocument;

@@ -17,9 +17,11 @@ import type { NewsletterCampaignStatus } from '../utils/newsletterCampaign';
 export default function NewsletterBroadcast({
   draft,
   disabled,
+  onLoadDraft,
 }: {
   draft: CampaignDraft;
   disabled: boolean;
+  onLoadDraft?: (draft: CampaignDraft) => void;
 }) {
   const [state, setState] = useState<NewsletterCampaignStatus | null>(null);
   const [busy, setBusy] = useState(false);
@@ -28,6 +30,7 @@ export default function NewsletterBroadcast({
   const [checked, setChecked] = useState(false);
   const [reviewVersion, setReviewVersion] = useState('');
   const [reviewBody, setReviewBody] = useState(false);
+  const [loadedRevision, setLoadedRevision] = useState('');
   const mounted = useRef(true);
   const running = useRef(false);
   const fingerprint = JSON.stringify(draft);
@@ -72,6 +75,29 @@ export default function NewsletterBroadcast({
       setReviewVersion(fingerprint);
     } catch (e) {
       setError(e instanceof Error ? e.message : '准备失败');
+    } finally {
+      running.current = false;
+      setBusy(false);
+    }
+  }
+  async function changeSchedule(action: 'save' | 'pause' | 'resume') {
+    const c = state?.campaign;
+    if (running.current || !c || c.status !== 'draft' || !c.auto_managed) return;
+    if (action === 'save' && (disabled || loadedRevision !== c.revision)) return;
+    running.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      const r = action === 'save'
+        ? await newsletterCampaignApi.autoEdit(draft, c.revision)
+        : await newsletterCampaignApi.autoPause(draft.year, draft.episode, c.revision, action === 'pause');
+      if (!r.success || !r.data) throw Error(r.error || '保存失败');
+      setState(r.data);
+      if (action === 'save') setLoadedRevision(r.data.campaign?.revision || '');
+      else setLoadedRevision('');
+      setReviewing(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '操作失败');
     } finally {
       running.current = false;
       setBusy(false);
@@ -123,6 +149,7 @@ export default function NewsletterBroadcast({
   }
   const c = state?.campaign;
   const started = c && c.status !== 'draft';
+  const scheduled = c?.auto_managed && !started;
   const counts = state?.counts;
   return (
     <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #eadfd4' }}>
@@ -173,6 +200,36 @@ export default function NewsletterBroadcast({
               </Alert>
             )}
           </>
+        )}
+        {scheduled && c && (
+          <Box sx={{ p: 2, border: '1px solid #e6cfbc', borderRadius: 2 }}>
+            <Stack spacing={1}>
+              <Alert severity={c.auto_paused ? 'warning' : 'info'}>
+                {c.auto_paused ? '自动发送已暂停' : c.auto_send_at
+                  ? '计划发送（北京时间）：' + new Date(c.auto_send_at).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+                  : '等待发送预览提醒；提醒成功后至少保留 24 小时。'}
+              </Alert>
+              <Typography variant="body2">无需人工确认。若需修改，请先载入服务器草稿，再编辑并保存；未保存的修改不会用于自动发送。</Typography>
+              <Stack direction="row" flexWrap="wrap" gap={1}>
+                <Button disabled={busy || !onLoadDraft} onClick={() => {
+                  if (loadedRevision && !window.confirm('重新载入将覆盖当前未保存的编辑，继续？')) return;
+                  onLoadDraft?.({year: draft.year, episode: draft.episode, subject: c.subject, document: c.document});
+                  setLoadedRevision(c.revision);
+                }}>载入已保存草稿</Button>
+                <Button variant="outlined" disabled={busy || disabled || !state?.canSend || loadedRevision !== c.revision}
+                  onClick={() => changeSchedule('save')}>保存邮件修改</Button>
+                <Button color="warning" disabled={busy || !state?.canSend} onClick={() => changeSchedule(c.auto_paused ? 'resume' : 'pause')}>
+                  {c.auto_paused ? '恢复自动发送' : '暂停自动发送'}
+                </Button>
+                <Button disabled={busy || !state?.canSend || !state?.total} onClick={() => {
+                  if (!window.confirm('立即发送服务器已保存版本？未保存的修改不包含在内。')) return;
+                  setChecked(false);
+                  setReviewVersion(fingerprint);
+                  setReviewing(true);
+                }}>立即发送已保存版本…</Button>
+              </Stack>
+            </Stack>
+          </Box>
         )}
         {reviewing && c?.status === 'draft' && (
           <Box sx={{ p: 2, border: '1px solid #e6cfbc', borderRadius: 2 }}>
@@ -241,7 +298,7 @@ export default function NewsletterBroadcast({
           </>
         )}
         <Stack direction="row" flexWrap="wrap" gap={1}>
-          {!started && (
+          {!started && !scheduled && (
             <Button
               variant="outlined"
               disabled={
