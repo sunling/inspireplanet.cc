@@ -26,7 +26,7 @@ if (mode === '--test-reminder' || mode === '--test-newsletter') {
   if (report.dryRun !== true || report.writesPerformed !== 0 || report.emailsSent !== 0)
     throw Error('Unexpected dry-run response');
   console.log(JSON.stringify(report, null, 2));
-  if (!report.databaseReadable || !report.resendConfigured || !report.unsubscribeSecretConfigured)
+  if (!report.databaseReadable || !report.resendConfigured || !report.unsubscribeSecretConfigured || !report.organizerRecipientsVerified)
     process.exitCode = 1;
 } else if (mode === '--live') {
 let failures = 0;
