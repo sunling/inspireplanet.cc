@@ -11,14 +11,24 @@ async function call(endpoint, body) {
   if (!res.ok || !data.success) throw Error(endpoint + ' failed: HTTP ' + res.status);
   return data;
 }
-if (process.argv.includes('--dry-run')) {
+const mode = process.argv[2] || '--live';
+if (mode === '--test-reminder' || mode === '--test-newsletter') {
+  const action = mode === '--test-reminder' ? 'testReminder' : 'testNewsletter';
+  const requestId = process.env.GITHUB_RUN_ID;
+  const testAt = process.env.NEWSLETTER_TEST_AT;
+  if (!requestId || !testAt) throw Error('Missing test run metadata');
+  const result = await call('newsletterSchedule', {action, requestId, testAt});
+  if (result.testMode !== action || result.emailsSent !== 1 || result.writesPerformed !== 0 || !result.providerAccepted)
+    throw Error('Unexpected test response');
+  console.log(JSON.stringify(result, null, 2));
+} else if (mode === '--dry-run') {
   const report = await call('newsletterSchedule', {action:'dryRun'});
   if (report.dryRun !== true || report.writesPerformed !== 0 || report.emailsSent !== 0)
     throw Error('Unexpected dry-run response');
   console.log(JSON.stringify(report, null, 2));
   if (!report.databaseReadable || !report.resendConfigured || !report.unsubscribeSecretConfigured)
     process.exitCode = 1;
-} else {
+} else if (mode === '--live') {
 let failures = 0;
 try { await call('newsletterSchedule', {action:'discover'}); }
 catch (e) { console.error(e.message); failures++; }
@@ -47,4 +57,4 @@ for (const task of tasks) {
   } catch(e) { console.error('Episode',task.year,task.episode,e.message); failures++; }
 }
 if(failures) process.exitCode=1;
-}
+} else { throw Error('Unknown newsletter mode'); }
