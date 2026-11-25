@@ -18,10 +18,12 @@ export default function NewsletterBroadcast({
   draft,
   disabled,
   onLoadDraft,
+  onSaveState,
 }: {
   draft: CampaignDraft;
   disabled: boolean;
   onLoadDraft?: (draft: CampaignDraft) => void;
+  onSaveState?: (state: 'loading' | 'saved' | 'dirty' | 'saving' | 'error' | 'locked') => void;
 }) {
   const [state, setState] = useState<NewsletterCampaignStatus | null>(null);
   const [busy, setBusy] = useState(false);
@@ -30,7 +32,14 @@ export default function NewsletterBroadcast({
   const [checked, setChecked] = useState(false);
   const [reviewVersion, setReviewVersion] = useState('');
   const [reviewBody, setReviewBody] = useState(false);
-  const [loadedRevision, setLoadedRevision] = useState('');
+  const [loadedRevision, setLoadedRevision] = useState<string | null>(null);
+  const [savedFingerprint, setSavedFingerprint] = useState('');
+  const [saveTime, setSaveTime] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const initialDraft = useRef(draft);
+  const loadRef = useRef(onLoadDraft);
+  loadRef.current = onLoadDraft;
   const mounted = useRef(true);
   const running = useRef(false);
   const fingerprint = JSON.stringify(draft);
@@ -40,7 +49,17 @@ export default function NewsletterBroadcast({
       .status(draft.year, draft.episode)
       .then((r) => {
         if (mounted.current) {
-          if (r.success && r.data) setState(r.data);
+          if (r.success && r.data) {
+            setState(r.data);
+            const c = r.data.campaign;
+            if (c) {
+              const saved = {year: draft.year, episode: draft.episode, subject: c.subject, document: c.document};
+              setSavedFingerprint(JSON.stringify(saved));
+              setLoadedRevision(c.revision);
+              loadRef.current?.(saved);
+            } else setSavedFingerprint(JSON.stringify(initialDraft.current));
+            setLoaded(true);
+          }
           else setError(r.error || '无法读取发送记录');
         }
       })
@@ -62,15 +81,18 @@ export default function NewsletterBroadcast({
     }
   }
   async function prepare() {
-    if (running.current || disabled) return;
+    if (running.current || disabled || !loaded || saveFailed) return;
     running.current = true;
     setBusy(true);
     setError('');
     setChecked(false);
     try {
-      const r = await newsletterCampaignApi.prepare(draft);
+      const r = await newsletterCampaignApi.prepare(draft, loadedRevision);
       if (!r.success || !r.data) throw Error(r.error || '准备失败');
       setState(r.data);
+      setLoadedRevision(r.data.campaign?.revision || null);
+      setSavedFingerprint(fingerprint);
+      setSaveFailed(false);
       setReviewing(true);
       setReviewVersion(fingerprint);
     } catch (e) {
@@ -80,21 +102,42 @@ export default function NewsletterBroadcast({
       setBusy(false);
     }
   }
-  async function changeSchedule(action: 'save' | 'pause' | 'resume') {
+  async function saveDraft() {
+    if (running.current || disabled || !loaded || !state?.canSend ||
+        (state.campaign && state.campaign.status !== 'draft')) return;
+    running.current = true;
+    setBusy(true);
+    setSaveFailed(false);
+    setError('');
+    try {
+      const r = await newsletterCampaignApi.saveDraft(draft, loadedRevision);
+      if (!r.success || !r.data?.campaign) throw Error(r.error || '保存失败');
+      setState(r.data);
+      setLoadedRevision(r.data.campaign.revision);
+      setSavedFingerprint(fingerprint);
+      setSaveTime(new Date().toLocaleTimeString('zh-CN'));
+      setReviewing(false);
+      setChecked(false);
+    } catch (e) {
+      setSaveFailed(true);
+      setError(e instanceof Error ? e.message : '保存失败，请重新载入');
+    } finally {
+      running.current = false;
+      setBusy(false);
+    }
+  }
+  async function changeSchedule(action: 'pause' | 'resume') {
     const c = state?.campaign;
-    if (running.current || !c || c.status !== 'draft' || !c.auto_managed) return;
-    if (action === 'save' && (disabled || loadedRevision !== c.revision)) return;
+    if (running.current || !c || c.status !== 'draft' || !c.auto_managed ||
+        loadedRevision !== c.revision || fingerprint !== savedFingerprint) return;
     running.current = true;
     setBusy(true);
     setError('');
     try {
-      const r = action === 'save'
-        ? await newsletterCampaignApi.autoEdit(draft, c.revision)
-        : await newsletterCampaignApi.autoPause(draft.year, draft.episode, c.revision, action === 'pause');
-      if (!r.success || !r.data) throw Error(r.error || '保存失败');
+      const r = await newsletterCampaignApi.autoPause(draft.year, draft.episode, c.revision, action === 'pause');
+      if (!r.success || !r.data) throw Error(r.error || '操作失败');
       setState(r.data);
-      if (action === 'save') setLoadedRevision(r.data.campaign?.revision || '');
-      else setLoadedRevision('');
+      setLoadedRevision(r.data.campaign?.revision || null);
       setReviewing(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : '操作失败');
@@ -151,6 +194,14 @@ export default function NewsletterBroadcast({
   const started = c && c.status !== 'draft';
   const scheduled = c?.auto_managed && !started;
   const counts = state?.counts;
+  const dirty = loaded && fingerprint !== savedFingerprint;
+  const saveState = started ? 'locked' : !loaded ? 'loading' : saveFailed ? 'error' : busy ? 'saving' : dirty ? 'dirty' : 'saved';
+  useEffect(() => { onSaveState?.(saveState); }, [saveState, onSaveState]);
+  useEffect(() => {
+    if (!dirty || busy || disabled || started || !state?.canSend || saveFailed || reviewing) return;
+    const timer = window.setTimeout(() => { void saveDraft(); }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [fingerprint, savedFingerprint, busy, disabled, started, state?.canSend, saveFailed, reviewing, loadedRevision]);
   return (
     <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #eadfd4' }}>
       <Stack spacing={1.5}>
@@ -201,6 +252,23 @@ export default function NewsletterBroadcast({
             )}
           </>
         )}
+        {!started && (
+          <Stack direction="row" flexWrap="wrap" alignItems="center" gap={1}>
+            <Typography variant="caption" role="status">
+              {!loaded ? '正在载入草稿…' : saveFailed ? '保存失败，请重试或重新载入' : busy ? '正在处理…' : dirty ? '尚未保存' : saveTime ? '已保存 · ' + saveTime : c ? '已载入服务器草稿' : '尚未创建草稿'}
+            </Typography>
+            <Button variant="outlined" disabled={!loaded || busy || disabled || !state?.canSend} onClick={saveDraft}>保存草稿</Button>
+            {c && <Button disabled={busy} onClick={async () => {
+              if (dirty && !window.confirm('重新载入会覆盖未保存的修改，继续？')) return;
+              const r = await newsletterCampaignApi.status(draft.year, draft.episode);
+              if (!r.success || !r.data?.campaign) { setError('无法载入草稿'); return; }
+              const latest = r.data.campaign;
+              const saved = {year: draft.year, episode: draft.episode, subject: latest.subject, document: latest.document};
+              setState(r.data); setLoadedRevision(latest.revision); setSavedFingerprint(JSON.stringify(saved));
+              onLoadDraft?.(saved); setSaveFailed(false); setReviewing(false);
+            }}>重新载入草稿</Button>}
+          </Stack>
+        )}
         {scheduled && c && (
           <Box sx={{ p: 2, border: '1px solid #e6cfbc', borderRadius: 2 }}>
             <Stack spacing={1}>
@@ -209,24 +277,12 @@ export default function NewsletterBroadcast({
                   ? '计划发送（北京时间）：' + new Date(c.auto_send_at).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
                   : '等待发送预览提醒；提醒成功后至少保留 24 小时。'}
               </Alert>
-              <Typography variant="body2">无需人工确认。若需修改，请先载入服务器草稿，再编辑并保存；未保存的修改不会用于自动发送。</Typography>
+              <Typography variant="body2">无需人工确认。编辑后自动保存；只有服务器已保存的版本会用于发送。</Typography>
               <Stack direction="row" flexWrap="wrap" gap={1}>
-                <Button disabled={busy || !onLoadDraft} onClick={() => {
-                  if (loadedRevision && !window.confirm('重新载入将覆盖当前未保存的编辑，继续？')) return;
-                  onLoadDraft?.({year: draft.year, episode: draft.episode, subject: c.subject, document: c.document});
-                  setLoadedRevision(c.revision);
-                }}>载入已保存草稿</Button>
-                <Button variant="outlined" disabled={busy || disabled || !state?.canSend || loadedRevision !== c.revision}
-                  onClick={() => changeSchedule('save')}>保存邮件修改</Button>
-                <Button color="warning" disabled={busy || !state?.canSend} onClick={() => changeSchedule(c.auto_paused ? 'resume' : 'pause')}>
+                <Button color="warning" disabled={busy || dirty || !state?.canSend} onClick={() => changeSchedule(c.auto_paused ? 'resume' : 'pause')}>
                   {c.auto_paused ? '恢复自动发送' : '暂停自动发送'}
                 </Button>
-                <Button disabled={busy || !state?.canSend || !state?.total} onClick={() => {
-                  if (!window.confirm('立即发送服务器已保存版本？未保存的修改不包含在内。')) return;
-                  setChecked(false);
-                  setReviewVersion(fingerprint);
-                  setReviewing(true);
-                }}>立即发送已保存版本…</Button>
+                <Button disabled={busy || dirty || !state?.canSend || !state?.available} onClick={prepare}>立即发送已保存版本…</Button>
               </Stack>
             </Stack>
           </Box>
@@ -302,7 +358,7 @@ export default function NewsletterBroadcast({
             <Button
               variant="outlined"
               disabled={
-                busy || disabled || !state?.canSend || !state?.available
+                busy || disabled || !loaded || !state?.canSend || !state?.available
               }
               onClick={prepare}
             >
