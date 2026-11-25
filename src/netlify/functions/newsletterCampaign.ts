@@ -106,7 +106,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     if (action === 'status' && event.httpMethod === 'GET')
       return reply(200, await status(year, episode));
     if (
-      !['prepare', 'start', 'process'].includes(action) ||
+      !['prepare', 'start', 'process', 'autoEdit', 'autoPause'].includes(action) ||
       event.httpMethod !== 'POST'
     )
       return reply(405, undefined, '请求方式不支持');
@@ -124,7 +124,35 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       ].includes(origin)
     )
       return reply(403, undefined, '请从启发星球正式站操作');
+    if (action === 'autoPause' || action === 'autoEdit') {
+      const current = (await status(year, episode)).campaign;
+      if (!current?.auto_managed || current.status !== 'draft' || current.revision !== data.hash)
+        return reply(409, undefined, '草稿已经变化，请刷新并重新载入');
+      let result;
+      if (action === 'autoPause') {
+        if (typeof data.paused !== 'boolean') return reply(400, undefined, '参数无效');
+        result = await supabase.rpc('newsletter_auto_pause', {
+          p_id: current.id, p_revision: data.hash, p_paused: data.paused,
+        });
+      } else {
+        if (!validateNewsletterSubject(data.subject))
+          return reply(400, undefined, '邮件主题无效');
+        const rendered = renderNewsletterDocument(data.document);
+        const subject = data.subject.trim();
+        result = await supabase.rpc('newsletter_auto_edit', {
+          p_id: current.id, p_revision: data.hash, p_subject: subject,
+          p_document: data.document, p_html: rendered.html, p_text: rendered.text,
+          p_hash: hash(JSON.stringify([subject, rendered.html, rendered.text])),
+        });
+      }
+      if (result.error) throw new Error('ScheduledUpdateFailed');
+      if (!result.data) return reply(409, undefined, '草稿已经变化，请刷新');
+      return reply(200, await status(year, episode));
+    }
     if (action === 'prepare') {
+      const current = (await status(year, episode)).campaign;
+      if (current?.auto_managed)
+        return reply(409, undefined, '请使用自动发送草稿的保存功能');
       if (!validateNewsletterSubject(data.subject))
         return reply(400, undefined, '请填写有效的邮件主题');
       let rendered;
@@ -176,6 +204,11 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
           '邮件或收件名单已有变化，请刷新并重新核对'
         );
       return reply(200, await status(year, episode));
+    }
+    if (automated) {
+      const current = (await status(year, episode)).campaign;
+      if (!current?.auto_managed || current.status !== 'sending')
+        return reply(403, undefined, '仅允许处理已经开始的自动发送任务');
     }
     const lease = randomUUID();
     const { data: claimed, error: claimError } = await supabase.rpc(
