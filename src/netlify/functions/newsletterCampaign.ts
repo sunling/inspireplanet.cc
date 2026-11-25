@@ -203,7 +203,20 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
           undefined,
           '邮件或收件名单已有变化，请刷新并重新核对'
         );
-      return reply(200, await status(year, episode));
+      // For scheduled drafts explicitly sent early by an organizer, enqueue
+      // a server-side worker. The existing browser loop is a safe fallback.
+      const current = await status(year, episode);
+      if (current.campaign?.auto_managed && automationSecret && automationSecret.length >= 32 &&
+          process.env.NEWSLETTER_AUTOMATION_ENABLED === 'true') {
+        try {
+          await fetch('https://inspireplanet.cc/.netlify/functions/newsletterDispatch-background', {
+            method: 'POST', redirect: 'error', signal: AbortSignal.timeout(5000),
+            headers: { Authorization: 'Bearer ' + automationSecret, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ year, episode }),
+          });
+        } catch { /* Already started; schedule runner/browser can resume safely. */ }
+      }
+      return reply(200, current);
     }
     if (automated) {
       const current = (await status(year, episode)).campaign;
