@@ -1,5 +1,5 @@
 import deployment from '../generated/newsletterDeployment.json';
-import { createHash, timingSafeEqual } from 'crypto';
+import { createHash, timingSafeEqual, randomUUID } from 'crypto';
 import { supabase } from '../../database/supabase';
 import { createDefaultNewsletterDocument, renderNewsletterDocument, validateNewsletterSubject } from '../../utils/newsletterDocument';
 import { buildEpisodeNewsletterPreview } from '../../utils/episodeNewsletter';
@@ -22,10 +22,10 @@ export function nextSendSlot(notice: Date): Date {
   const earliest = notice.getTime() + day;
   const first = new Date(earliest);
   first.setUTCHours(0, 0, 0, 0);
-  if (first.getTime() < earliest) first.setUTCDate(first.getUTCDate() + 1);
+  if (earliest - first.getTime() > 10 * 60000) first.setUTCDate(first.getUTCDate() + 1);
   while (first.getUTCDay() === 0 || first.getUTCDay() === 6)
     first.setUTCDate(first.getUTCDate() + 1);
-  return first;
+  return new Date(Math.max(first.getTime(), earliest));
 }
 async function sendNotice(subject: string, text: string, html: string | undefined, id: string) {
   // Separate messages so recipients don't see a shared To list.
@@ -128,11 +128,42 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       return reply(200, { success: true, status: 'draft' });
     }
     if (c.status === 'draft' && !c.auto_paused && c.auto_notice_at) {
+      // A newly published podcast may be appended only to an untouched generated draft.
+      if (!c.auto_edited && !c.body_text.includes('xiaoyuzhoufm.com/episode/')) {
+        const pub = await getEpisodePublication(String(c.episode), c.year);
+        if (pub?.podcast) {
+          const doc = { ...c.document, content: [...c.document.content] };
+          const index = doc.content.findIndex((node: { type: string }) => node.type === 'horizontalRule');
+          doc.content.splice(index < 0 ? doc.content.length : index, 0, {
+            type: 'paragraph', content: [{ type: 'text', text: pub.podcast.title + ' · 小宇宙收听 ↗',
+              marks: [{ type: 'link', attrs: { href: pub.podcast.url } }] }],
+          });
+          const rendered = renderNewsletterDocument(doc);
+          const updated = await supabase.from('newsletter_campaigns').update({
+            document: doc, body_html: rendered.html, body_text: rendered.text,
+            content_hash: sha(JSON.stringify([c.subject, rendered.html, rendered.text, c.from_email])),
+            revision: randomUUID(),
+          }).eq('id', c.id).eq('revision', c.revision).eq('status', 'draft').eq('auto_edited', false)
+            .eq('auto_paused', false).select('revision').maybeSingle();
+          if (updated.error) throw Error('PodcastUpdateFailed');
+          if (!updated.data) return reply(200, { success: true, status: 'draft' });
+          c.revision = updated.data.revision;
+        }
+      }
       const started = await supabase.rpc('newsletter_auto_start', { p_id: c.id, p_revision: c.revision });
       if (started.error) throw Error('AutoStartFailed');
-      return reply(200, { success: true, status: started.data ? 'sending' : 'draft' });
+      return reply(200, { success: true, status: started.data ? 'sending' : 'draft', dueAt: c.auto_send_at });
     }
     if (c.status === 'completed' && !c.auto_result_at) {
+      const now = new Date();
+      if (c.auto_result_attempt_at && now.getTime() - Date.parse(c.auto_result_attempt_at) >= 23 * 3600000)
+        return reply(409, { success: false, error: 'Result notification requires manual verification' });
+      if (!c.auto_result_attempt_at) {
+        const claim = await supabase.from('newsletter_campaigns').update({ auto_result_attempt_at: now.toISOString() })
+          .eq('id', c.id).is('auto_result_attempt_at', null).select('id').maybeSingle();
+        if (claim.error) throw Error('ResultClaimFailed');
+        if (!claim.data) return reply(200, { success: true, status: 'completed' });
+      }
       const state = await supabase.rpc('newsletter_campaign_status', { p_year: c.year, p_episode: c.episode });
       if (state.error) throw Error('ResultReadFailed');
       const k = state.data.counts;
