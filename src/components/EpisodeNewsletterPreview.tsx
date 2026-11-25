@@ -52,6 +52,12 @@ export default function EpisodeNewsletterPreview({
     generated.document
   );
   const [resetToken, setResetToken] = useState(0);
+  const [saveState, setSaveState] = useState<'loading' | 'saved' | 'dirty' | 'saving' | 'error' | 'locked'>('loading');
+  const close = () => {
+    if (saveState === 'saving') return;
+    if ((saveState === 'dirty' || saveState === 'error') && !window.confirm('还有未保存的修改，确定关闭？')) return;
+    onClose();
+  };
   const [format, setFormat] = useState<'edit' | 'html' | 'text'>('edit');
   const [sending, setSending] = useState(false);
   const sendingRef = useRef(false);
@@ -133,7 +139,7 @@ export default function EpisodeNewsletterPreview({
   return (
     <Dialog
       open
-      onClose={sending ? undefined : onClose}
+      onClose={sending || saveState === 'saving' ? undefined : close}
       fullWidth
       maxWidth="md"
       aria-labelledby="newsletter-preview-title"
@@ -144,11 +150,12 @@ export default function EpisodeNewsletterPreview({
       <DialogContent dividers>
         <Stack spacing={2}>
           <Alert severity="info">
-            下面是可编辑的完整邮件。导语、金句、署名、链接和图片位置都可以修改。试发使用你最后编辑的内容；修改仅保留在本次预览，不更新正式详情页。
+            下面是可编辑的完整邮件。导语、金句、署名、链接和图片位置都可以修改。试发使用你最后编辑的内容。未发送草稿停止编辑约 2 秒后自动保存，也可以手动保存；已发送版本不会被修改。
           </Alert>
           <TextField
             label="邮件主题（可编辑）"
             value={subject}
+            disabled={saveState === 'loading'}
             onChange={(event) => {
               setSubject(event.target.value);
               setCopied(false);
@@ -175,9 +182,9 @@ export default function EpisodeNewsletterPreview({
             >
               纯文字
             </Button>
-            <Button onClick={reset}>恢复自动生成内容</Button>
+            <Button disabled={saveState === 'loading'} onClick={reset}>恢复自动生成内容</Button>
           </Stack>
-          <Box sx={{ display: format === 'edit' ? 'block' : 'none' }}>
+          <Box sx={{ display: format === 'edit' ? 'block' : 'none', pointerEvents: saveState === 'loading' ? 'none' : 'auto' }}>
             <NewsletterEditor
               initialContent={document}
               resetToken={resetToken}
@@ -247,6 +254,7 @@ export default function EpisodeNewsletterPreview({
           <Box ref={broadcastRef} sx={{ scrollMarginTop: 16 }}>
             <NewsletterBroadcast
               draft={{ year, episode, subject, document }}
+              onSaveState={setSaveState}
               onLoadDraft={(saved) => {
                 setSubject(saved.subject);
                 setDocument(saved.document);
@@ -286,7 +294,7 @@ export default function EpisodeNewsletterPreview({
         >
           正式发送给订阅者…
         </Button>
-        <Button disabled={sending} onClick={onClose}>
+        <Button disabled={sending || saveState === 'saving'} onClick={close}>
           关闭
         </Button>
       </DialogActions>
