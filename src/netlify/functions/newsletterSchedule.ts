@@ -183,11 +183,17 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       const discovery = await discover();
       return reply(200, { success: true, discovery });
     }
-    if (request.action === 'queue') {
+    if (request.action === 'queue' || request.action === 'tick') {
+      let discovery;
+      let discoveryFailed = false;
+      if (request.action === 'tick') {
+        try { discovery = await discover(); }
+        catch { discoveryFailed = true; console.error('[newsletterSchedule] Discovery failed'); }
+      }
       const rows = await supabase.from('newsletter_campaigns').select('id,year,episode,status')
         .eq('auto_managed', true).is('auto_result_at', null).order('created_at').limit(100);
       if (rows.error) throw Error('QueueReadFailed');
-      return reply(200, { success: true, tasks: rows.data || [] });
+      return reply(200, { success: true, tasks: rows.data || [], discovery, discoveryFailed });
     }
     if (request.action !== 'advance' || typeof request.id !== 'string' || !/^[a-f0-9-]{36}$/i.test(request.id))
       return reply(400, { success: false });
