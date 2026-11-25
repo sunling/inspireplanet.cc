@@ -41,39 +41,47 @@ async function sendNotice(subject: string, text: string, html: string | undefine
     await new Promise(resolve => setTimeout(resolve, 600));
   }
 }
-async function discover() {
+async function discover(dryRun = false) {
   const now = Date.now();
   const entries = await getGitHubEpisodeEntries();
   const entry = entries.find(e => {
     const time = Date.parse(e.dateFormatted + 'T00:00:00+08:00');
     return time <= now && now - time < 7 * day;
   });
-  if (!entry || !entry.summaryPath || !entry.path) return;
+  if (!entry) return { ready: false, reason: 'No recent episode' };
+  const episode = { year: entry.year, episode: entry.episodeNum, date: entry.dateFormatted };
+  if (!entry.summaryPath || !entry.path) return { ...episode, ready: false, reason: 'Missing summary or quote cards' };
   const existing = await supabase.from('newsletter_campaigns').select('id')
     .eq('year', entry.year).eq('episode', entry.episodeNum).maybeSingle();
   if (existing.error) throw Error('CampaignReadFailed');
-  if (existing.data) return;
+  if (existing.data && !dryRun) return { ...episode, ready: false, reason: 'Campaign already exists' };
   // Require the actual structured summary, never historical fallback text.
   const raw = await fetch(`https://raw.githubusercontent.com/sunling/inspire-planet/main/${entry.summaryPath}`, { signal: AbortSignal.timeout(8000) });
   if (!raw.ok) throw Error('SummaryFetchFailed');
   const summary = await raw.json() as EpisodeSummary;
   if (!summary || typeof summary.title !== 'string' || typeof summary.overview !== 'string' ||
-      !summary.title.trim() || !summary.overview.trim() || !Array.isArray(summary.topics) || !summary.topics.length) return;
+      !summary.title.trim() || !summary.overview.trim() || !Array.isArray(summary.topics) || !summary.topics.length) return { ...episode, ready: false, reason: 'Incomplete summary' };
   const [cards, publication] = await Promise.all([
     fetchEpisodeCardsFromGitHub(entry), getEpisodePublication(String(entry.episodeNum), entry.year),
   ]);
   const preview = buildEpisodeNewsletterPreview({ year: entry.year, episode: entry.episodeNum, summary, cards, publication });
-  if (preview.missing.some(m => !m.includes('小宇宙'))) return;
+  if (preview.missing.some(m => !m.includes('小宇宙'))) return { ...episode, ready: false, reason: 'Incomplete newsletter content' };
   const draft = createDefaultNewsletterDocument(entry.year, entry.episodeNum, summary, cards, publication);
-  if (!validateNewsletterSubject(draft.subject)) return;
+  if (!validateNewsletterSubject(draft.subject)) return { ...episode, ready: false, reason: 'Invalid subject' };
   const rendered = renderNewsletterDocument(draft.document);
   const from = `启发星球 <${process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc'}>`;
+  const report = { ...episode, ready: true, campaignExists: Boolean(existing.data),
+    podcastIncluded: Boolean(publication?.podcast), quoteCount: cards.length,
+    rendered: true, htmlBytes: Buffer.byteLength(rendered.html), textBytes: Buffer.byteLength(rendered.text),
+    estimatedSendAt: nextSendSlot(new Date()).toISOString() };
+  if (dryRun) return report;
   const result = await supabase.rpc('newsletter_auto_create', {
     p_year: entry.year, p_episode: entry.episodeNum, p_subject: draft.subject,
     p_document: draft.document, p_html: rendered.html, p_text: rendered.text,
     p_hash: sha(JSON.stringify([draft.subject, rendered.html, rendered.text, from])), p_from: from,
   });
   if (result.error) throw Error('AutoCreateFailed');
+  return report;
 }
 export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
   const secret = process.env.NEWSLETTER_AUTOMATION_SECRET;
@@ -81,11 +89,29 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
   if (event.httpMethod !== 'POST' || !secret || secret.length < 32 ||
       !timingSafeEqual(Buffer.from(sha(auth)), Buffer.from(sha('Bearer ' + secret))))
     return reply(403, { success: false });
-  if (!deployment.production || process.env.NEWSLETTER_AUTOMATION_ENABLED !== 'true' ||
-      !process.env.RESEND_API_KEY || !newsletterTokenSecret())
-    return reply(503, { success: false, error: 'Automation disabled or not configured' });
+  if (!deployment.production)
+    return reply(503, { success: false, error: 'Production deployment required' });
   try {
     const request = JSON.parse(event.body || '{}');
+    if (request.action === 'dryRun') {
+      // No write RPC, update, delivery processing or Resend request in this branch.
+      const [subscribers, queue, discovery] = await Promise.all([
+        supabase.from('newsletter_subscribers').select('id', { count: 'exact', head: true })
+          .eq('status', 'subscribed').not('confirmed_at', 'is', null),
+        supabase.from('newsletter_campaigns').select('auto_managed,auto_paused,auto_edited,auto_notice_at,auto_notice_attempt_at,auto_send_at,auto_result_at,auto_result_attempt_at', { count: 'exact', head: true })
+          .eq('auto_managed', true).is('auto_result_at', null),
+        discover(true),
+      ]);
+      if (subscribers.error || queue.error) throw Error('DryRunReadFailed');
+      return reply(200, { success: true, dryRun: true, databaseReadable: true,
+        automationEnabled: process.env.NEWSLETTER_AUTOMATION_ENABLED === 'true',
+        resendConfigured: Boolean(process.env.RESEND_API_KEY), unsubscribeSecretConfigured: Boolean(newsletterTokenSecret()),
+        confirmedSubscribers: subscribers.count, queuedCampaigns: queue.count, discovery,
+        emailsSent: 0, writesPerformed: 0 });
+    }
+    if (process.env.NEWSLETTER_AUTOMATION_ENABLED !== 'true' ||
+        !process.env.RESEND_API_KEY || !newsletterTokenSecret())
+      return reply(503, { success: false, error: 'Automation disabled or not configured' });
     if (request.action === 'discover') {
       await discover();
       return reply(200, { success: true });
