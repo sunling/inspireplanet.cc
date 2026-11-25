@@ -8,10 +8,11 @@ vi.mock('../netlify/utils/githubWeeklyCards', () => ({
   getEpisodePublication: mocks.publication,
 }));
 vi.mock('../netlify/generated/newsletterDeployment.json', () => ({ default: { production: true } }));
-import { nextSendSlot, handler } from '../netlify/functions/newsletterSchedule';
+import { nextSendSlot, handler, organizerRecipients } from '../netlify/functions/newsletterSchedule';
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
 describe('newsletter schedule', () => {
   it('allows authenticated dry run with sending disabled, without writes or mail calls', async () => {
+    vi.stubEnv('CONTACT_EMAIL', '');
     vi.stubEnv('NEWSLETTER_AUTOMATION_SECRET', 'x'.repeat(64));
     vi.stubEnv('NEWSLETTER_AUTOMATION_ENABLED', 'false');
     vi.stubEnv('RESEND_API_KEY', 'test-key');
@@ -32,6 +33,9 @@ describe('newsletter schedule', () => {
     expect(fetch).not.toHaveBeenCalled();
     const live = await handler({ httpMethod: 'POST', headers: { authorization: 'Bearer ' + 'x'.repeat(64) }, body: JSON.stringify({action:'discover'}) });
     expect(live.statusCode).toBe(503);
+  });
+  it('normalizes, deduplicates and sorts contact emails', () => {
+    expect(organizerRecipients(' sunling621@gmail.com, ECHOLEE4420@gmail.com, sunling621@gmail.com, ')).toEqual(['echolee4420@gmail.com', 'sunling621@gmail.com']);
   });
   it('allows Monday morning after a Sunday reminder', () => {
     expect(nextSendSlot(new Date('2026-11-29T00:03:00Z')).toISOString()).toBe('2026-11-30T00:03:00.000Z');
