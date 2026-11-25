@@ -60,13 +60,13 @@ revoke all on function public.newsletter_auto_create(integer,integer,text,jsonb,
 grant execute on function public.newsletter_auto_create(integer,integer,text,jsonb,text,text,text,text),public.newsletter_auto_start(uuid,uuid),public.newsletter_auto_edit(uuid,uuid,text,jsonb,text,text,text),public.newsletter_auto_pause(uuid,uuid,boolean) to service_role;
 -- Prevent an already-open manual editor from overwriting a newly created auto draft.
 create or replace function public.newsletter_guard_auto_draft()
-returns trigger language plpgsql security invoker set search_path='' as $
+returns trigger language plpgsql security invoker set search_path='' as $$
 begin
  if old.auto_managed and new.created_by is distinct from old.created_by then
    raise exception 'Use scheduled draft editor';
  end if;
  return new;
-end $;
+end $$;
 drop trigger if exists newsletter_guard_auto_draft on public.newsletter_campaigns;
 create trigger newsletter_guard_auto_draft before update on public.newsletter_campaigns
 for each row execute function public.newsletter_guard_auto_draft();
