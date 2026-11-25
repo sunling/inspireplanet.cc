@@ -14,7 +14,15 @@ const reply = (statusCode: number, data: unknown): NetlifyResponse => ({
   body: JSON.stringify(data),
 });
 const site = 'https://inspireplanet.cc';
-const recipients = ['sunling621@gmail.com', process.env.NEWSLETTER_SECOND_ORGANIZER_EMAIL || ''];
+export function organizerRecipients(value = process.env.CONTACT_EMAIL || ''): string[] {
+  return [...new Set(value.split(',').map(email => email.trim().toLowerCase()).filter(Boolean))].sort();
+}
+async function verifyOrganizerRecipients(targets: string[]): Promise<boolean> {
+  if (targets.length !== 2 || targets.some(to => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))) return false;
+  const verified = await supabase.from('users').select('email').eq('role', 'organizer').in('email', targets);
+  if (verified.error) throw Error('OrganizerRecipientsReadFailed');
+  return targets.every(to => verified.data?.some(row => row.email === to));
+}
 const day = 86400000;
 
 // The next allowed weekday 08:00 Beijing slot, at least 24h after notice.
@@ -27,19 +35,18 @@ export function nextSendSlot(notice: Date): Date {
     first.setUTCDate(first.getUTCDate() + 1);
   return new Date(Math.max(first.getTime(), earliest));
 }
-async function sendNotice(subject: string, text: string, html: string | undefined, id: string, targets: string[] = recipients, from = `启发星球 <${process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc'}>`) {
+async function sendNotice(subject: string, text: string, html: string | undefined, id: string, targets?: string[], from = `启发星球 <${process.env.RESEND_FROM_EMAIL || 'noreply@inspireplanet.cc'}>`) {
   const ids: string[] = [];
-  if (targets === recipients) {
-    if (targets.some(to => !to) || new Set(targets).size !== 2) throw Error('OrganizerRecipientsNotConfigured');
-    const verified = await supabase.from('users').select('email').eq('role', 'organizer').in('email', targets);
-    if (verified.error || verified.data?.length !== 2) throw Error('OrganizerRecipientsNotVerified');
+  if (!targets) {
+    targets = organizerRecipients();
+    if (!await verifyOrganizerRecipients(targets)) throw Error('OrganizerRecipientsNotVerified');
   }
   // Separate messages so recipients don't see a shared To list.
-  for (const [index, to] of targets.entries()) {
+  for (const to of targets) {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST', signal: AbortSignal.timeout(8000),
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json', 'Idempotency-Key': `${id}-${index}` },
+        'Content-Type': 'application/json', 'Idempotency-Key': `${id}-${sha(to).slice(0, 16)}` },
       body: JSON.stringify({ from, to, subject, text, ...(html ? { html } : {}) }),
     });
     const data = await res.json();
@@ -162,23 +169,27 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     }
     if (request.action === 'dryRun') {
       // No write RPC, update, delivery processing or Resend request in this branch.
-      const [subscribers, queue, discovery] = await Promise.all([
+      const targets = organizerRecipients();
+      const [subscribers, queue, discovery, organizerRecipientsVerified] = await Promise.all([
         supabase.from('newsletter_subscribers').select('id', { count: 'exact', head: true })
           .eq('status', 'subscribed').not('confirmed_at', 'is', null),
         supabase.from('newsletter_campaigns').select('auto_managed,auto_paused,auto_edited,auto_notice_at,auto_notice_attempt_at,auto_send_at,auto_result_at,auto_result_attempt_at', { count: 'exact', head: true })
           .eq('auto_managed', true).is('auto_result_at', null),
-        discover(true),
+        discover(true), verifyOrganizerRecipients(targets),
       ]);
       if (subscribers.error || queue.error) throw Error('DryRunReadFailed');
       return reply(200, { success: true, dryRun: true, databaseReadable: true,
         automationEnabled: process.env.NEWSLETTER_AUTOMATION_ENABLED === 'true',
         resendConfigured: Boolean(process.env.RESEND_API_KEY), unsubscribeSecretConfigured: Boolean(newsletterTokenSecret()),
         confirmedSubscribers: subscribers.count, queuedCampaigns: queue.count, discovery,
+        organizerRecipientCount: targets.length, organizerRecipientsVerified,
         emailsSent: 0, writesPerformed: 0 });
     }
     if (process.env.NEWSLETTER_AUTOMATION_ENABLED !== 'true' ||
         !process.env.RESEND_API_KEY || !newsletterTokenSecret())
       return reply(503, { success: false, error: 'Automation disabled or not configured' });
+    if (!await verifyOrganizerRecipients(organizerRecipients()))
+      return reply(503, { success: false, error: 'CONTACT_EMAIL must contain two verified organizer emails' });
     if (request.action === 'discover') {
       const discovery = await discover();
       return reply(200, { success: true, discovery });
