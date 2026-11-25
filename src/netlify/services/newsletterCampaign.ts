@@ -13,11 +13,13 @@ export const newsletterCampaignApi = {
       year,
       episode,
     }),
-  prepare: (draft: CampaignDraft) =>
+  saveDraft: (draft: CampaignDraft, hash: string | null) =>
+    http.post<NewsletterCampaignStatus>('/newsletterCampaign', 'saveDraft', { ...draft, hash }),
+  prepare: (draft: CampaignDraft, hash: string | null = null) =>
     http.post<NewsletterCampaignStatus>(
       '/newsletterCampaign',
       'prepare',
-      draft
+      { ...draft, hash }
     ),
   autoEdit: (draft: CampaignDraft, hash: string) =>
     http.post<NewsletterCampaignStatus>('/newsletterCampaign', 'autoEdit', { ...draft, hash }),
