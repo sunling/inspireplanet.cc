@@ -101,7 +101,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     )
       return reply(400, undefined, '年份或期数不正确');
     const action = data.functionName;
-    if (automated && action !== 'process')
+    if (automated && (action !== 'process' || process.env.NEWSLETTER_AUTOMATION_ENABLED !== 'true'))
       return reply(403, undefined, '自动化仅允许处理已开始的发送任务');
     if (action === 'status' && event.httpMethod === 'GET')
       return reply(200, await status(year, episode));
