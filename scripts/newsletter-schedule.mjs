@@ -30,9 +30,13 @@ if (mode === '--test-reminder' || mode === '--test-newsletter') {
     process.exitCode = 1;
 } else if (mode === '--live') {
 let failures = 0;
-try { await call('newsletterSchedule', {action:'discover'}); }
+try {
+  const {discovery} = await call('newsletterSchedule', {action:'discover'});
+  console.log('Discovery:', JSON.stringify(discovery));
+}
 catch (e) { console.error(e.message); failures++; }
 const {tasks} = await call('newsletterSchedule', {action:'queue'});
+if (!tasks.length) console.log('No pending automatic campaigns; exiting without rendering or sending additional emails.');
 for (const task of tasks) {
   try {
     let advanced = await call('newsletterSchedule', {action:'advance',id:task.id});
