@@ -11,6 +11,14 @@ async function call(endpoint, body) {
   if (!res.ok || !data.success) throw Error(endpoint + ' failed: HTTP ' + res.status);
   return data;
 }
+if (process.argv.includes('--dry-run')) {
+  const report = await call('newsletterSchedule', {action:'dryRun'});
+  if (report.dryRun !== true || report.writesPerformed !== 0 || report.emailsSent !== 0)
+    throw Error('Unexpected dry-run response');
+  console.log(JSON.stringify(report, null, 2));
+  if (!report.databaseReadable || !report.resendConfigured || !report.unsubscribeSecretConfigured)
+    process.exitCode = 1;
+} else {
 let failures = 0;
 try { await call('newsletterSchedule', {action:'discover'}); }
 catch (e) { console.error(e.message); failures++; }
@@ -39,3 +47,4 @@ for (const task of tasks) {
   } catch(e) { console.error('Episode',task.year,task.episode,e.message); failures++; }
 }
 if(failures) process.exitCode=1;
+}
