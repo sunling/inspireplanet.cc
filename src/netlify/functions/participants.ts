@@ -295,9 +295,13 @@ async function handleAddToWritingGroup(event: NetlifyEvent) {
 }
 
 async function handleBatchReject(event: NetlifyEvent) {
+  const auth = await requireOrganizer(event);
+  if (auth.error) return auth.error;
+  if (event.httpMethod !== 'POST')
+    return createErrorResponse('请求方式不支持', 405);
   try {
     const requestData = getDataFromEvent(event);
-    const { meetup_id, rsvp_ids, send_email, approved_by } = requestData;
+    const { meetup_id, rsvp_ids, send_email } = requestData;
 
     if (!meetup_id || !rsvp_ids || !Array.isArray(rsvp_ids)) {
       return createErrorResponse('缺少必要参数');
@@ -326,7 +330,7 @@ async function handleBatchReject(event: NetlifyEvent) {
       .from('meetup_rsvps')
       .update({
         application_status: ApprovalStatus.REJECTED,
-        approved_by: approved_by || 'Organizer',
+        approved_by: auth.user.name,
         approved_at: now,
       })
       .in('id', rsvp_ids)
@@ -392,9 +396,13 @@ async function handleBatchReject(event: NetlifyEvent) {
 }
 
 async function handleBatchConfirm(event: NetlifyEvent) {
+  const auth = await requireOrganizer(event);
+  if (auth.error) return auth.error;
+  if (event.httpMethod !== 'POST')
+    return createErrorResponse('请求方式不支持', 405);
   try {
     const requestData = getDataFromEvent(event);
-    const { meetup_id, rsvp_ids, send_email, approved_by } = requestData;
+    const { meetup_id, rsvp_ids, send_email } = requestData;
 
     if (!meetup_id || !rsvp_ids || !Array.isArray(rsvp_ids)) {
       return createErrorResponse('缺少必要参数');
@@ -420,7 +428,7 @@ async function handleBatchConfirm(event: NetlifyEvent) {
     const updateFields: Record<string, any> = {
       status: RSVPStatus.CONFIRMED,
       application_status: ApprovalStatus.APPROVED,
-      approved_by: approved_by || 'Organizer',
+      approved_by: auth.user.name,
       approved_at: now,
     };
 
@@ -496,6 +504,8 @@ async function handleBatchConfirm(event: NetlifyEvent) {
 }
 
 async function handleGetParticipants(event: NetlifyEvent) {
+  const auth = await requireOrganizer(event);
+  if (auth.error) return auth.error;
   try {
     const requestData = getDataFromEvent(event);
     const { meetup_id, page = 1, limit = 10, stats_only = false } = requestData;
